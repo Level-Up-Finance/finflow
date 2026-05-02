@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compromissos · FinFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/variables.css">
+  <link rel="stylesheet" href="src/css/global.css">
+  <link rel="stylesheet" href="src/css/components.css">
+  <link rel="stylesheet" href="src/css/layout.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-sidebar" id="sidebar-container"></div>
+
+    <header class="app-header header">
+      <div class="header-left">
+        <h2 class="header-title">Compromissos</h2>
+      </div>
+    </header>
+
+    <main class="app-main main">
+      <!-- Currency widget (compartilhado) -->
+      <div id="currency-widget"></div>
+
+      <div class="page-header">
+        <div class="page-header-content">
+          <p class="page-eyebrow">Configuração mestre</p>
+          <h1 class="page-title">Compromissos</h1>
+          <p class="page-description">Suas entradas e saídas recorrentes. Organizadas em Categorias e Subcategorias.</p>
+        </div>
+        <div style="display: flex; gap: var(--space-2);">
+          <button class="btn btn-ghost" id="btn-gerenciar-categorias" type="button" title="Gerenciar Categorias">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Categorias
+          </button>
+          <button class="btn btn-primary" id="btn-novo-compromisso" type="button">
+            <span style="font-size: 1.25em; line-height: 0.8;">+</span> Novo compromisso
+          </button>
+        </div>
+      </div>
+
+      <!-- View toggle -->
+      <div class="toolbar">
+        <div class="view-toggle" id="view-toggle">
+          <button class="view-toggle-btn active" data-view="table" type="button" title="Tabela" aria-label="Tabela">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+          </button>
+          <button class="view-toggle-btn" data-view="calendar" type="button" title="Calendário" aria-label="Calendário">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div id="filters-wrapper">
+        <div class="filter-pills" id="status-filters">
+          <button class="filter-pill active" data-status="todas" type="button">
+            Todas <span class="filter-count" data-count-status="todas">0</span>
+          </button>
+          <button class="filter-pill" data-status="ativa" type="button">
+            Ativas <span class="filter-count" data-count-status="ativa">0</span>
+          </button>
+          <button class="filter-pill" data-status="inativa" type="button">
+            Inativas <span class="filter-count" data-count-status="inativa">0</span>
+          </button>
+          <button class="filter-pill" data-status="arquivada" type="button">
+            Arquivadas <span class="filter-count" data-count-status="arquivada">0</span>
+          </button>
+        </div>
+
+        <div class="filter-pills" id="categoria-filters" style="margin-top: -8px;">
+          <button class="filter-pill active" data-categoria="all" type="button">Todas as categorias</button>
+          <!-- pills geradas pelo JS -->
+        </div>
+      </div>
+
+      <!-- Lista (só tabela) -->
+      <div id="compromissos-container"></div>
+
+      <!-- Empty state global -->
+      <div id="empty-state" class="empty-state hidden">
+        <div class="empty-state-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+        </div>
+        <h2 class="empty-state-title">Nenhum compromisso cadastrado</h2>
+        <p class="empty-state-message">Cadastre seus compromissos recorrentes (salário, aluguel, internet, mercado, etc) pra começar a organizar suas finanças.</p>
+        <button class="btn btn-primary" type="button" data-trigger-novo>
+          <span style="font-size: 1.25em; line-height: 0.8;">+</span> Novo compromisso
+        </button>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Detalhes (visualização read-only)
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-details" role="dialog" aria-modal="true">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <button type="button" class="modal-close" data-close-modal="modal-details" aria-label="Fechar" style="margin-left: auto;">×</button>
+      </div>
+
+      <div class="details-header" style="padding-top: 0;">
+        <div id="details-icon"></div>
+        <div class="details-header-info">
+          <h2 class="details-name" id="details-name">—</h2>
+          <p class="details-official-name" id="details-official-name"></p>
+          <div class="details-meta" id="details-meta"></div>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="details-grid" id="details-grid"></div>
+
+        <!-- Histórico de alterações -->
+        <div id="details-history" class="hidden" style="margin-top: var(--space-6); border-top: 1px solid var(--color-border); padding-top: var(--space-5);">
+          <h3 style="font-family: var(--font-display); font-size: var(--fs-base); font-weight: var(--fw-semibold); margin: 0 0 var(--space-3); color: var(--color-text-main);">
+            Histórico de alterações
+          </h3>
+          <div id="details-history-list"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="justify-content: space-between;">
+        <div style="display: flex; gap: var(--space-2);">
+          <button type="button" class="btn btn-ghost hidden" id="btn-arquivar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+            Arquivar
+          </button>
+          <button type="button" class="btn btn-danger hidden" id="btn-deletar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+            Deletar permanentemente
+          </button>
+        </div>
+        <div style="display: flex; gap: var(--space-2);">
+          <button type="button" class="btn btn-secondary" id="btn-atualizar-valor">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            Atualizar valor
+          </button>
+          <button type="button" class="btn btn-primary" id="btn-editar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+            Editar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Novo / Editar compromisso
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-compromisso" role="dialog" aria-modal="true">
+    <form class="modal modal-lg" id="form-compromisso" novalidate>
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-compromisso-title">Novo compromisso</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-compromisso" aria-label="Fechar">×</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Nome -->
+        <div class="field">
+          <label class="field-label" for="comp-nome">Nome <span class="required">*</span></label>
+          <input type="text" id="comp-nome" name="nome" class="input" required maxlength="80" placeholder="Ex: Aluguel, Salário, Internet, Mercado…">
+        </div>
+
+        <!-- Apelido -->
+        <div class="field">
+          <label class="field-label" for="comp-apelido">Apelido (opcional)</label>
+          <input type="text" id="comp-apelido" name="apelido" class="input" maxlength="50" placeholder="Como você quer chamar esse compromisso">
+        </div>
+
+        <!-- Tipo (Receita/Despesa) -->
+        <div class="field">
+          <label class="field-label">Tipo <span class="required">*</span></label>
+          <div class="tipo-selector" id="tipo-selector"></div>
+          <input type="hidden" name="tipo" id="comp-tipo" value="Despesa">
+        </div>
+
+        <!-- Categoria parent -->
+        <div class="field">
+          <label class="field-label" for="comp-categoria">Categoria <span class="required">*</span></label>
+          <select id="comp-categoria" name="categoria_id" class="select" required></select>
+          <p class="field-hint">Os compromissos ficam agrupados pela categoria. Use o ícone de engrenagem no topo da página pra criar/editar categorias.</p>
+        </div>
+
+        <!-- Banco/Cartão (opcional) -->
+        <div class="field">
+          <label class="field-label" for="comp-conta">Banco / Cartão (opcional)</label>
+          <select id="comp-conta" name="conta_id" class="select"></select>
+          <p class="field-hint">Pode deixar em branco e preencher depois.</p>
+        </div>
+
+        <!-- Tipo de pagamento -->
+        <div class="field">
+          <label class="field-label" for="comp-tipo-pagamento">Tipo de pagamento</label>
+          <select id="comp-tipo-pagamento" name="tipo_pagamento" class="select"></select>
+        </div>
+
+        <!-- Recorrência: Período + (Dia mês ou Dia semana) -->
+        <div class="field">
+          <label class="field-label">Recorrência <span class="required">*</span></label>
+          <div class="field-group">
+            <div class="field">
+              <label class="field-label" for="comp-periodo">Período</label>
+              <select id="comp-periodo" name="periodo" class="select" required></select>
+            </div>
+            <div class="field" id="vencimento-dia-field">
+              <label class="field-label" for="comp-vencimento-dia">Dia do mês (1–31)</label>
+              <input type="number" min="1" max="31" id="comp-vencimento-dia" name="vencimento_dia" class="input" placeholder="Ex: 5">
+            </div>
+            <div class="field hidden" id="dia-semana-field">
+              <label class="field-label" for="comp-dia-semana">Dia da semana</label>
+              <select id="comp-dia-semana" name="dia_semana" class="select"></select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Projeto de investimento (só pra categoria do grupo Investimentos) -->
+        <div class="field hidden" id="projeto-field">
+          <label class="field-label" for="comp-projeto">Projeto de investimento</label>
+          <select id="comp-projeto" name="projeto_id" class="select"></select>
+          <p class="field-hint">Agrupa este compromisso a uma meta (Casa própria, Aposentadoria, etc).</p>
+        </div>
+
+        <!-- Comportamento (variável / renda principal) -->
+        <div class="field">
+          <div class="checkbox-row">
+            <label class="checkbox-item">
+              <input type="checkbox" id="comp-valor-variavel" name="valor_variavel">
+              <span>Valor varia por mês</span>
+            </label>
+            <label class="checkbox-item hidden" id="renda-principal-row">
+              <input type="checkbox" id="comp-renda-principal" name="eh_renda_principal">
+              <span>É a renda principal</span>
+            </label>
+          </div>
+          <p class="field-hint">"Valor varia" → você define o valor mês a mês. "Renda principal" → as datas dela definem os blocos de pagamento (só 1 por usuário).</p>
+        </div>
+
+        <!-- Valor + Moeda (escondido quando valor_variavel) -->
+        <div class="field" id="valor-base-field">
+          <label class="field-label">Valor base</label>
+          <div class="field-group">
+            <div class="field">
+              <label class="field-label" for="comp-valor-base">Valor <span class="required">*</span></label>
+              <input type="number" step="0.01" min="0" id="comp-valor-base" name="valor_base" class="input" required placeholder="0,00">
+            </div>
+            <div class="field">
+              <label class="field-label" for="comp-moeda">Moeda</label>
+              <select id="comp-moeda" name="moeda" class="select"></select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grid de valores mensais (só quando valor_variavel) -->
+        <div class="field hidden" id="valores-mensais-field">
+          <div class="field-group">
+            <div class="field" style="flex: 1;">
+              <label class="field-label">Valores por mês</label>
+              <p class="field-hint">Preencha o valor pra cada mês. Meses sem valor contam como 0.</p>
+            </div>
+            <div class="field" style="flex: 0 0 120px;">
+              <label class="field-label" for="comp-moeda-var">Moeda</label>
+              <select id="comp-moeda-var" name="moeda_var" class="select"></select>
+            </div>
+          </div>
+          <div class="valores-mensais-grid" id="valores-mensais-grid"></div>
+        </div>
+
+        <!-- Período do compromisso -->
+        <div class="field">
+          <label class="field-label">Período do compromisso</label>
+          <div class="field-group">
+            <div class="field">
+              <label class="field-label" for="comp-iniciado-em">Iniciado em <span class="required">*</span></label>
+              <input type="date" id="comp-iniciado-em" name="iniciado_em" class="input" required>
+            </div>
+            <div class="field">
+              <label class="field-label" for="comp-terminado-em">Termina em</label>
+              <input type="date" id="comp-terminado-em" name="terminado_em" class="input">
+            </div>
+          </div>
+          <p class="field-hint">"Iniciado em" é a data base pra calcular vencimentos. "Termina em" é opcional — deixa em branco se não tem fim previsto.</p>
+        </div>
+
+        <!-- Descrição -->
+        <div class="field">
+          <label class="field-label" for="comp-descricao">Descrição</label>
+          <textarea id="comp-descricao" name="descricao" class="textarea" rows="2" maxlength="200" placeholder="Anotações (opcional)"></textarea>
+        </div>
+
+        <!-- Status -->
+        <div class="field">
+          <label class="field-label">Status</label>
+          <div class="segmented" id="status-segmented">
+            <button type="button" class="segmented-btn active" data-status="ativa">Ativa</button>
+            <button type="button" class="segmented-btn" data-status="inativa">Inativa</button>
+            <button type="button" class="segmented-btn" data-status="arquivada">Arquivada</button>
+          </div>
+          <input type="hidden" name="status" id="comp-status" value="ativa">
+        </div>
+
+        <!-- Motivo da mudança (só em edit mode) -->
+        <div class="field hidden" id="motivo-field" style="background: var(--color-surface-alt); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-4);">
+          <label class="field-label" for="comp-motivo">Motivo da mudança (opcional)</label>
+          <textarea id="comp-motivo" name="motivo" class="textarea" rows="2" maxlength="200" placeholder="Ex: Aumento de salário, Reajuste anual, Negociação…"></textarea>
+          <p class="field-hint">Será registrado no histórico junto com mudanças de valor, período, vencimento ou tipo.</p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-compromisso">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="btn-salvar-compromisso">Salvar</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Atualizar valor (atalho rápido)
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-quick-valor" role="dialog" aria-modal="true">
+    <form class="modal modal-sm" id="form-quick-valor" novalidate>
+      <div class="modal-header">
+        <h2 class="modal-title">Atualizar valor</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-quick-valor" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label class="field-label">Compromisso</label>
+          <p style="font-size: var(--fs-base); font-weight: var(--fw-semibold); color: var(--color-text-main); margin: 0;" id="quick-compromisso-name">—</p>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Valor atual</label>
+          <p style="font-size: var(--fs-md); color: var(--color-text-secondary); margin: 0;" id="quick-valor-current">—</p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="quick-valor-input">Novo valor (<span id="quick-valor-moeda">BRL</span>) <span class="required">*</span></label>
+          <input type="number" step="0.01" min="0" id="quick-valor-input" class="input" required>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="quick-motivo-input">Motivo da mudança</label>
+          <textarea id="quick-motivo-input" class="textarea" rows="2" maxlength="200" placeholder="Ex: Aumento de salário, Reajuste anual, Negociação…"></textarea>
+          <p class="field-hint">Recomendado — registra o porquê da mudança no histórico.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-quick-valor">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="btn-salvar-quick-valor">Salvar</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Gerenciar categorias
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-categorias" role="dialog" aria-modal="true">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h2 class="modal-title">Gerenciar Categorias</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-categorias" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--color-text-secondary); margin-bottom: var(--space-4); font-size: var(--fs-sm);">
+          Categorias são os grupos de organização dos seus compromissos. As 3 padrões (Receitas, Dívidas, Investimentos) são fixas. Você pode adicionar, editar ou remover categorias customizadas.
+        </p>
+
+        <!-- Form pra adicionar nova -->
+        <div style="display: flex; gap: var(--space-3); align-items: flex-end; margin-bottom: var(--space-6);">
+          <div class="field" style="flex: 1;">
+            <label class="field-label" for="cat-nova-nome">Nome da nova categoria</label>
+            <input type="text" id="cat-nova-nome" class="input" maxlength="50" placeholder="Ex: Lazer, Saúde, Imóveis…">
+          </div>
+          <div style="flex-shrink: 0;">
+            <label class="field-label" for="cat-nova-cor">Cor</label>
+            <div id="cat-nova-cor-wrapper" style="width: 42px; height: 42px; border-radius: var(--radius-md); background: #6D5EF5; cursor: pointer; border: 1px solid var(--color-border); position: relative; overflow: hidden;">
+              <input type="color" id="cat-nova-cor" value="#6D5EF5" style="position: absolute; inset: -10px; width: calc(100% + 20px); height: calc(100% + 20px); opacity: 0; cursor: pointer; border: none;">
+            </div>
+          </div>
+          <button type="button" class="btn btn-primary" id="btn-add-categoria" style="flex-shrink: 0;">
+            <span style="font-size: 1.25em; line-height: 0.8;">+</span> Adicionar
+          </button>
+        </div>
+
+        <h3 style="font-family: var(--font-display); font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 var(--space-3);">
+          Suas categorias
+        </h3>
+
+        <!-- Lista de categorias existentes -->
+        <div id="categorias-list"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-close-modal="modal-categorias">Pronto</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Compromissos do dia (clicado no calendário)
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-day" role="dialog" aria-modal="true">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-day-title">—</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-day" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="day-summary" style="display: flex; gap: var(--space-4); margin-bottom: var(--space-4); padding: var(--space-3); background: var(--color-surface-alt); border-radius: var(--radius-md); font-size: var(--fs-sm);"></div>
+        <div id="day-list"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-close-modal="modal-day">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmação genérica -->
+  <div class="modal-backdrop hidden" id="modal-confirmar" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-confirmar-title">Confirmar</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-confirmar" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <p id="modal-confirmar-msg" style="color: var(--color-text-secondary); line-height: 1.6;"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-confirmar">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btn-confirmar-acao">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script type="module" src="src/js/pages/compromissos.js"></script>
+</body>
+</html>

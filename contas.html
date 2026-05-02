@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contas · FinFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/variables.css">
+  <link rel="stylesheet" href="src/css/global.css">
+  <link rel="stylesheet" href="src/css/components.css">
+  <link rel="stylesheet" href="src/css/layout.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-sidebar" id="sidebar-container"></div>
+
+    <header class="app-header header">
+      <div class="header-left">
+        <h2 class="header-title">Contas</h2>
+      </div>
+    </header>
+
+    <main class="app-main main">
+      <div class="page-header">
+        <div class="page-header-content">
+          <p class="page-eyebrow">Cadastro</p>
+          <h1 class="page-title">Contas</h1>
+          <p class="page-description">Bancos, cartões, carteiras e investimentos. Alimenta as demais telas.</p>
+        </div>
+        <button class="btn btn-primary" id="btn-nova-conta" type="button">
+          <span style="font-size: 1.25em; line-height: 0.8;">+</span> Nova conta
+        </button>
+      </div>
+
+      <!-- Toolbar: view toggle -->
+      <div class="toolbar">
+        <div class="view-toggle" id="view-toggle">
+          <button class="view-toggle-btn active" data-view="cards" type="button" title="Visualizar em cards" aria-label="Cards">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/></svg>
+          </button>
+          <button class="view-toggle-btn" data-view="table" type="button" title="Visualizar em tabela" aria-label="Tabela">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filtros (estado padrão: cards = 2 rows) -->
+      <div id="filters-wrapper">
+        <div class="filter-pills" id="status-filters">
+          <button class="filter-pill active" data-status="todas" type="button">
+            Todas <span class="filter-count" data-count-status="todas">0</span>
+          </button>
+          <button class="filter-pill" data-status="ativa" type="button">
+            Ativas <span class="filter-count" data-count-status="ativa">0</span>
+          </button>
+          <button class="filter-pill" data-status="inativa" type="button">
+            Inativas <span class="filter-count" data-count-status="inativa">0</span>
+          </button>
+          <button class="filter-pill" data-status="arquivada" type="button">
+            Arquivadas <span class="filter-count" data-count-status="arquivada">0</span>
+          </button>
+        </div>
+
+        <div class="filter-pills" id="tipo-filters" style="margin-top: -8px;">
+          <button class="filter-pill active" data-tipo="all" type="button">Todos os tipos</button>
+        </div>
+      </div>
+
+      <!-- Lista (cards ou tabela renderizada aqui) -->
+      <div id="contas-container"></div>
+
+      <!-- Empty state global -->
+      <div id="empty-state" class="empty-state hidden">
+        <div class="empty-state-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+        </div>
+        <h2 class="empty-state-title">Nenhuma conta cadastrada</h2>
+        <p class="empty-state-message">Cadastre seu primeiro banco, cartão ou carteira pra começar a controlar suas finanças.</p>
+        <button class="btn btn-primary" type="button" data-trigger-nova>
+          <span style="font-size: 1.25em; line-height: 0.8;">+</span> Nova conta
+        </button>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Detalhes (visualização read-only)
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-details" role="dialog" aria-modal="true">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <button type="button" class="modal-close" data-close-modal="modal-details" aria-label="Fechar" style="margin-left: auto;">×</button>
+      </div>
+
+      <div class="details-header" style="padding-top: 0;">
+        <div id="details-avatar"></div>
+        <div class="details-header-info">
+          <h2 class="details-name" id="details-name">—</h2>
+          <p class="details-official-name" id="details-official-name"></p>
+          <div class="details-meta" id="details-meta"></div>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="details-grid" id="details-grid"></div>
+      </div>
+
+      <div class="modal-footer" style="justify-content: space-between;">
+        <div style="display: flex; gap: var(--space-2);">
+          <button type="button" class="btn btn-ghost hidden" id="btn-arquivar-conta">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+            Arquivar
+          </button>
+          <button type="button" class="btn btn-danger hidden" id="btn-deletar-conta">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+            Deletar permanentemente
+          </button>
+        </div>
+        <button type="button" class="btn btn-primary" id="btn-editar-conta">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+          Editar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Nova / Editar conta
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-conta" role="dialog" aria-modal="true">
+    <form class="modal modal-lg" id="form-conta" novalidate>
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-conta-title">Nova conta</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-conta" aria-label="Fechar">×</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Banco oficial (autocomplete) -->
+        <div class="field">
+          <label class="field-label" for="conta-nome">Banco / Cartão (oficial) <span class="required">*</span></label>
+          <div class="combobox" id="bank-combobox">
+            <input type="text" id="conta-nome" name="nome" class="combobox-input" required maxlength="80" placeholder="Comece a digitar o nome do banco…" autocomplete="off">
+            <button type="button" class="combobox-toggle" tabindex="-1" aria-label="Mostrar opções">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="combobox-dropdown hidden" id="bank-dropdown"></div>
+          </div>
+        </div>
+
+        <!-- Apelido -->
+        <div class="field">
+          <label class="field-label" for="conta-apelido">Apelido (opcional)</label>
+          <input type="text" id="conta-apelido" name="apelido" class="input" maxlength="50" placeholder="Ex: Itaú principal, Cartão da viagem, etc.">
+          <p class="field-hint">Se preenchido, aparece no lugar do nome oficial nas listagens.</p>
+        </div>
+
+        <!-- Tipo -->
+        <div class="field">
+          <label class="field-label">Tipo <span class="required">*</span></label>
+          <div class="tipo-selector" id="tipo-selector"></div>
+          <input type="hidden" name="tipo" id="conta-tipo" value="Corrente">
+        </div>
+
+        <!-- Cartão de Crédito: fechamento + vencimento -->
+        <div class="field hidden" id="cartao-fields">
+          <label class="field-label">Faturamento</label>
+          <div class="field-group">
+            <div class="field">
+              <label class="field-label" for="conta-fec-fatura">Fechamento <span class="required">*</span></label>
+              <input type="number" min="1" max="31" id="conta-fec-fatura" name="fec_fatura" class="input" placeholder="Dia 1–31">
+            </div>
+            <div class="field">
+              <label class="field-label" for="conta-vencimento">Vencimento <span class="required">*</span></label>
+              <input type="number" min="1" max="31" id="conta-vencimento" name="vencimento" class="input" placeholder="Dia 1–31">
+            </div>
+          </div>
+        </div>
+
+        <!-- Cor -->
+        <div class="field">
+          <label class="field-label">
+            Cor do avatar
+            <span class="field-hint" style="display: block; font-weight: normal; margin-top: 2px;">Auto-preenchida pela cor do banco. Você pode trocar se quiser.</span>
+          </label>
+          <div class="color-picker" id="color-picker"></div>
+          <input type="hidden" name="icone_cor" id="conta-cor" value="#6D5EF5">
+        </div>
+
+        <!-- Descrição -->
+        <div class="field">
+          <label class="field-label" for="conta-descricao">Descrição</label>
+          <textarea id="conta-descricao" name="descricao" class="textarea" rows="2" maxlength="200" placeholder="Anotações sobre essa conta (opcional)"></textarea>
+        </div>
+
+        <!-- Datas -->
+        <div class="field">
+          <label class="field-label">Período</label>
+          <div class="field-group">
+            <div class="field">
+              <label class="field-label" for="conta-desde">Desde <span class="required">*</span></label>
+              <input type="date" id="conta-desde" name="desde" class="input" required>
+            </div>
+            <div class="field">
+              <label class="field-label" for="conta-fechada-em">Fechada em</label>
+              <input type="date" id="conta-fechada-em" name="fechada_em" class="input" placeholder="—">
+            </div>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div class="field">
+          <label class="field-label">Status</label>
+          <div class="segmented" id="status-segmented">
+            <button type="button" class="segmented-btn active" data-status="ativa">Ativa</button>
+            <button type="button" class="segmented-btn" data-status="inativa">Inativa</button>
+            <button type="button" class="segmented-btn" data-status="arquivada">Arquivada</button>
+          </div>
+          <input type="hidden" name="status" id="conta-status" value="ativa">
+        </div>
+
+        <!-- Preview -->
+        <div class="field">
+          <label class="field-label">Pré-visualização</label>
+          <div class="conta-preview">
+            <div id="preview-avatar"></div>
+            <div>
+              <p class="conta-preview-name" id="preview-name">Nome do banco</p>
+              <p class="conta-preview-type" id="preview-meta">Corrente</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-conta">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="btn-salvar-conta">Salvar</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Confirmação genérica
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-confirmar" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-confirmar-title">Confirmar</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-confirmar" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <p id="modal-confirmar-msg" style="color: var(--color-text-secondary); line-height: 1.6;"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-confirmar">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btn-confirmar-acao">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script type="module" src="src/js/pages/contas.js"></script>
+</body>
+</html>

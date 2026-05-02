@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pagamentos · FinFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/variables.css">
+  <link rel="stylesheet" href="src/css/global.css">
+  <link rel="stylesheet" href="src/css/components.css">
+  <link rel="stylesheet" href="src/css/layout.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-sidebar" id="sidebar-container"></div>
+
+    <header class="app-header header">
+      <div class="header-left">
+        <h2 class="header-title">Pagamentos</h2>
+      </div>
+    </header>
+
+    <main class="app-main main">
+      <!-- Currency widget (compartilhado) -->
+      <div id="currency-widget"></div>
+
+      <div class="page-header">
+        <div class="page-header-content">
+          <p class="page-eyebrow">Operacional</p>
+          <h1 class="page-title">Pagamentos</h1>
+          <p class="page-description">Controle do que foi pago no mês. Marque status e registre o valor real efetivamente pago.</p>
+        </div>
+        <div style="display:flex; gap: var(--space-2);">
+          <button type="button" class="btn btn-ghost" id="btn-regen-blocos" title="Apaga pagamentos pendentes (Agendado, sem valor real) e recria com a divisão de blocos atual. Útil ao mudar renda principal.">Regenerar blocos</button>
+          <button type="button" class="btn btn-ghost" id="btn-hoje" title="Voltar pro mês atual">Hoje</button>
+        </div>
+      </div>
+
+      <!-- Navegação de mês -->
+      <div class="orcamento-monthnav">
+        <button type="button" class="calendar-nav" id="pag-prev" aria-label="Mês anterior">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <span class="orcamento-monthnav-label" id="pag-month-label">—</span>
+        <button type="button" class="calendar-nav" id="pag-next" aria-label="Próximo mês">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+
+      <!-- Filtros -->
+      <div class="filter-pills" id="status-filters">
+        <button class="filter-pill active" data-filter="todos" type="button">
+          Todos <span class="filter-count" data-count="todos">0</span>
+        </button>
+        <button class="filter-pill" data-filter="pendentes" type="button">
+          Pendentes <span class="filter-count" data-count="pendentes">0</span>
+        </button>
+        <button class="filter-pill" data-filter="atrasados" type="button">
+          Atrasados <span class="filter-count" data-count="atrasados">0</span>
+        </button>
+        <button class="filter-pill" data-filter="pagos" type="button">
+          Pagos <span class="filter-count" data-count="pagos">0</span>
+        </button>
+        <button class="filter-pill" data-filter="cancelados" type="button">
+          Cancelados <span class="filter-count" data-count="cancelados">0</span>
+        </button>
+      </div>
+
+      <!-- Container dos blocos -->
+      <div id="pagamentos-container"></div>
+
+      <!-- Empty state (sem orçamento gerado pra esse mês) -->
+      <div id="empty-state" class="empty-state hidden">
+        <div class="empty-state-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+        </div>
+        <h2 class="empty-state-title">Nenhum pagamento neste mês</h2>
+        <p class="empty-state-message">Cadastre compromissos ativos pra começar a registrar pagamentos. Pagamentos são gerados automaticamente a partir do orçamento.</p>
+        <a href="/compromissos.html" class="btn btn-primary">Ir para Compromissos</a>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Detalhes do pagamento (com edição de observação)
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-pag-details" role="dialog" aria-modal="true">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h2 class="modal-title" id="pag-details-title">—</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-pag-details" aria-label="Fechar">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="pag-details-grid" id="pag-details-grid"></div>
+
+        <div class="field" style="margin-top: var(--space-5);">
+          <label class="field-label" for="pag-observacao">Observação</label>
+          <textarea
+            id="pag-observacao"
+            class="textarea"
+            rows="3"
+            maxlength="300"
+            placeholder="Anotação sobre este pagamento (opcional)"
+          ></textarea>
+          <p class="field-hint">Salvo ao clicar em "Salvar observação".</p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-pag-details">Fechar</button>
+        <button type="button" class="btn btn-primary" id="btn-salvar-observacao">Salvar observação</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script type="module" src="src/js/pages/pagamentos.js"></script>
+</body>
+</html>

@@ -1,0 +1,1248 @@
+// =============================================================
+// FinFlow — Página: Orçamento Geral (Fase 4.A)
+//
+// • Auto-geração de entradas em orcamento_geral a partir das
+//   subcategorias ativas, com base no período + ocorrências no mês
+// • Visão de 1 mês com nav prev/next
+// • Tabela agrupada por Categoria parent (Receitas/Dívidas/...)
+// • Edição inline do valor planejado (salva no blur ou Enter)
+// • Totais por categoria + Resumo (Receitas/Despesas/Saldo)
+// • Alerta vermelho piscante quando saldo ≤ 0
+// • Tudo em BRL nesta versão (4.A) — câmbio na 4.B
+// =============================================================
+import { guardSession, getCurrentUser } from '../lib/auth.js';
+import { initSidebar } from '../components/sidebar.js';
+import { supabase } from '../lib/supabase.js';
+import { showToast } from '../components/toast.js';
+import { formatCurrency } from '../lib/compromissos-config.js';
+import { fetchExchangeRate, startCurrencyAutoRefresh } from '../lib/currency.js';
+import { initCurrencyWidget } from '../components/currency-widget.js';
+
+// -----------------------------
+// State
+// -----------------------------
+const today = new Date();
+let viewYear = today.getFullYear();
+let viewMonth = today.getMonth(); // 0-11
+
+let cachedOrcamento = []; // entries do orcamento_geral pro mês visível (com subcategorias + categorias aninhadas)
+let cachedCategorias = []; // pra ordenar blocos
+let cachedSubcategorias = []; // pra auto-gerar entradas
+let cachedProjetos = [];   // pra mostrar badge de projeto nas linhas de investimento
+
+// Câmbio
+const ALL_FOREIGN_CURRENCIES = ['USD', 'EUR', 'GBP']; // sempre exibidas no widget
+const ratesMap = new Map();      // 'USD' → 5.15 (1 USD = X BRL)
+let lastRatesFetch = null;
+let autoRefreshHandle = null;
+
+// View mode
+let viewMode = 'monthly'; // 'monthly' | 'yearly'
+
+const MONTH_LABELS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const MONTH_SHORT_LABELS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+// Agrupamento visual da página em 3 super-blocos
+const SUPER_BLOCOS = [
+  {
+    id: 'contribuicao',
+    label: 'Contribuição',
+    subtitle: 'Receitas e dívidas. O que sobra contribui pra Sonhos e Custo de vida.',
+    grupos: ['receitas', 'dividas'],
+    accent: 'var(--color-success)',
+  },
+  {
+    id: 'sonhos',
+    label: 'Sonhos',
+    subtitle: 'Investimentos.',
+    grupos: ['investimentos'],
+    accent: 'var(--color-primary)',
+  },
+  {
+    id: 'custo_vida',
+    label: 'Custo de vida',
+    subtitle: 'Despesas operacionais do dia a dia.',
+    grupos: ['custo_vida'],
+    accent: 'var(--color-secondary)',
+  },
+];
+
+// -----------------------------
+// Init
+// -----------------------------
+document.addEventListener('DOMContentLoaded', async () => {
+  await guardSession();
+  await initSidebar('orcamento');
+  initCurrencyWidget('currency-widget');
+  bindEvents();
+  await loadCategorias();
+  await loadSubcategorias();
+  await loadProjetos();
+  await loadMonth();
+
+  // Auto-refresh das cotações a cada 5 min
+  if (autoRefreshHandle) clearInterval(autoRefreshHandle);
+  autoRefreshHandle = startCurrencyAutoRefresh(async () => {
+    await refreshRates();
+    if (ratesMap.size > 0) renderOrcamento();
+  });
+});
+
+function bindEvents() {
+  document.getElementById('orc-prev').addEventListener('click', () => navigate(-1));
+  document.getElementById('orc-next').addEventListener('click', () => navigate(1));
+  document.getElementById('btn-hoje').addEventListener('click', () => {
+    const t = new Date();
+    viewYear = t.getFullYear();
+    viewMonth = t.getMonth();
+    dispatchLoad();
+  });
+  document.getElementById('view-toggle').addEventListener('click', (e) => {
+    const btn = e.target.closest('.view-toggle-btn');
+    if (!btn) return;
+    document.querySelectorAll('#view-toggle .view-toggle-btn').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    viewMode = btn.dataset.view;
+    dispatchLoad();
+  });
+}
+
+function dispatchLoad() {
+  if (viewMode === 'yearly') loadYearly();
+  else loadMonth();
+}
+
+function navigate(delta) {
+  viewMonth += delta;
+  if (viewMonth < 0)  { viewMonth = 11; viewYear -= 1; }
+  if (viewMonth > 11) { viewMonth = 0;  viewYear += 1; }
+  dispatchLoad();
+}
+
+// -----------------------------
+// Data loaders
+// -----------------------------
+async function loadCategorias() {
+  const { data, error } = await supabase
+    .from('categorias')
+    .select('*')
+    .eq('ativo', true)
+    .order('ordem')
+    .order('nome');
+  if (error) {
+    console.error('[loadCategorias]', error);
+    return;
+  }
+  cachedCategorias = data || [];
+}
+
+async function loadProjetos() {
+  const { data, error } = await supabase
+    .from('projetos_investimento')
+    .select('*');
+  if (error) {
+    if (!/relation.*projetos_investimento/i.test(error.message)) {
+      console.warn('[orcamento.loadProjetos]', error);
+    }
+    cachedProjetos = [];
+    return;
+  }
+  cachedProjetos = data || [];
+}
+
+function getProjetoOrcamento(id) {
+  return cachedProjetos.find((p) => p.id === id) || null;
+}
+
+async function loadSubcategorias() {
+  const { data, error } = await supabase
+    .from('subcategorias')
+    .select('*')
+    .eq('status', 'ativa');
+  if (error) {
+    console.error('[loadSubcategorias]', error);
+    return;
+  }
+  cachedSubcategorias = data || [];
+}
+
+// -----------------------------
+// Carrega o mês: ensure + fetch + render
+// -----------------------------
+async function loadMonth() {
+  const container = document.getElementById('orcamento-container');
+  container.innerHTML = '<div class="loading-overlay"><span class="spinner"></span>Carregando orçamento…</div>';
+  document.getElementById('orcamento-summary').classList.add('hidden');
+  document.getElementById('empty-state').classList.add('hidden');
+
+  // Atualiza label do mês
+  const label = document.getElementById('orc-month-label');
+  label.textContent = `${MONTH_LABELS[viewMonth]} ${viewYear}`;
+  label.classList.remove('range');
+
+  // Garante que existam entradas pro mês visível
+  await ensureOrcamentoForMonth(viewYear, viewMonth);
+
+  // Busca entradas com subcategoria + categoria aninhadas
+  const mesAno = isoMonth(viewYear, viewMonth);
+  const { data, error } = await supabase
+    .from('orcamento_geral')
+    .select('*, subcategorias(*, categorias(*))')
+    .eq('mes_ano', mesAno);
+
+  if (error) {
+    console.error('[loadMonth]', error);
+    container.innerHTML = '';
+    let msg = error.message || JSON.stringify(error);
+    if (/relation.*orcamento_geral|column.*subcategoria_id/i.test(msg)) {
+      msg = 'Schema desatualizado. Verifique se rodou todas as migrations (0001 a 0008).';
+    }
+    showToast('Erro: ' + msg, 'error', 12000);
+    return;
+  }
+
+  // Filtra subcategorias arquivadas/inativas (entry pode existir mas a sub mudou de status)
+  cachedOrcamento = (data || []).filter((e) => e.subcategorias?.status === 'ativa');
+
+  // Busca cotações pras moedas estrangeiras presentes (live)
+  await refreshRates();
+
+  // Se for mês passado, congela entries com câmbio ainda não travado
+  await freezeUnfrozenEntries();
+
+  // Atualiza banner "mês fechado"
+  updateFrozenBanner();
+
+  renderOrcamento();
+}
+
+// -----------------------------
+// Auto-geração de entradas pro mês
+// -----------------------------
+async function ensureOrcamentoForMonth(year, month) {
+  if (cachedSubcategorias.length === 0) return;
+
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  const mesAno = isoMonth(year, month);
+
+  // Pra cada subcategoria ativa, calcula valor default
+  const rows = [];
+  for (const sub of cachedSubcategorias) {
+    if (!isActiveInMonth(sub, year, month)) continue;
+    const occurrences = countOccurrencesInMonth(sub, year, month);
+    if (occurrences === 0) continue;
+    const valor = (Number(sub.valor_base) || 0) * occurrences;
+    rows.push({
+      user_id: user.id,
+      subcategoria_id: sub.id,
+      mes_ano: mesAno,
+      valor_previsto: valor,
+      moeda: sub.moeda,
+    });
+  }
+
+  if (rows.length === 0) return;
+
+  // Upsert ignorando duplicates (preserva edições manuais)
+  const { error } = await supabase
+    .from('orcamento_geral')
+    .upsert(rows, {
+      onConflict: 'user_id,subcategoria_id,mes_ano',
+      ignoreDuplicates: true,
+    });
+
+  if (error) {
+    console.error('[ensureOrcamentoForMonth]', error);
+    showToast('Erro ao gerar orçamento: ' + error.message, 'error', 10000);
+  }
+}
+
+// -----------------------------
+// Câmbio (Fase 4.B)
+// -----------------------------
+async function refreshRates() {
+  // Sempre busca as 3 padrão (USD, EUR, GBP) + qualquer outra em uso
+  const used = [...new Set(
+    cachedOrcamento.map((e) => e.moeda).filter((m) => m && m !== 'BRL')
+  )];
+  const currencies = [...new Set([...ALL_FOREIGN_CURRENCIES, ...used])];
+
+  // Fetch em paralelo
+  const results = await Promise.allSettled(
+    currencies.map((c) => fetchExchangeRate(c, 'BRL').then((rate) => [c, rate]))
+  );
+
+  for (const r of results) {
+    if (r.status === 'fulfilled') {
+      const [currency, rate] = r.value;
+      ratesMap.set(currency, rate);
+    } else {
+      console.warn('[refreshRates] falhou:', r.reason);
+    }
+  }
+  lastRatesFetch = new Date();
+  // Widget é renderizado pelo componente compartilhado (initCurrencyWidget)
+}
+
+function renderCurrencyWidget() {
+  const widget = document.getElementById('currency-widget');
+  if (!widget) return;
+  if (ratesMap.size === 0) {
+    widget.classList.add('hidden');
+    return;
+  }
+  widget.classList.remove('hidden');
+
+  const ratesEl = document.getElementById('currency-widget-rates');
+  const items = [];
+  for (const [currency, rate] of ratesMap.entries()) {
+    items.push(`<span class="currency-rate">1 <strong>${currency}</strong> = ${formatCurrency(rate, 'BRL')}</span>`);
+  }
+  ratesEl.innerHTML = items.join(' ');
+
+  if (lastRatesFetch) {
+    const time = lastRatesFetch.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('currency-widget-time').textContent = `atualizado às ${time}`;
+  }
+}
+
+/**
+ * Converte um valor de moeda estrangeira pra BRL.
+ *
+ * Prioridade:
+ *   1. cambio_travado da entry (se mês fechado/congelado)
+ *   2. Taxa live do ratesMap (mês corrente/futuro)
+ *
+ * Retorna null se nenhuma das duas estiver disponível.
+ */
+function convertToBRL(value, currency, entry) {
+  if (!currency || currency === 'BRL') return Number(value) || 0;
+  // Prioriza câmbio congelado se existir
+  if (entry?.cambio_travado) {
+    return (Number(value) || 0) * Number(entry.cambio_travado);
+  }
+  const rate = ratesMap.get(currency);
+  if (!rate) return null;
+  return (Number(value) || 0) * rate;
+}
+
+/**
+ * Verifica se o mês visualizado é passado (anterior ao mês atual).
+ */
+function isPastMonth(year, month) {
+  const today = new Date();
+  const startOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const monthStart = new Date(year, month, 1);
+  return monthStart < startOfThisMonth;
+}
+
+/**
+ * Freeze oportunístico: ao visualizar um mês passado, captura cotação atual
+ * pra entradas com cambio_travado null (1ª vez vendo aquele mês após virar).
+ *
+ * Em produção (cron ou Edge Function), isso rodaria automaticamente às 01:00
+ * do dia 1 de cada mês. Aqui é client-side, mas o efeito pra dados históricos
+ * é o mesmo (a partir do 1º acesso, fica congelado).
+ */
+async function freezeUnfrozenEntries() {
+  if (!isPastMonth(viewYear, viewMonth)) return;
+
+  const unfrozen = cachedOrcamento.filter(
+    (e) => e.moeda && e.moeda !== 'BRL' && e.cambio_travado === null
+  );
+  if (unfrozen.length === 0) return;
+
+  // Coleta moedas únicas que precisam ser congeladas
+  const currencies = [...new Set(unfrozen.map((e) => e.moeda))];
+
+  // Fetch live rates pra cada
+  const liveRates = new Map();
+  await Promise.all(currencies.map(async (c) => {
+    try {
+      const rate = await fetchExchangeRate(c, 'BRL');
+      liveRates.set(c, rate);
+    } catch (err) {
+      console.warn(`[freezeUnfrozenEntries] Falhou pra ${c}:`, err);
+    }
+  }));
+
+  // Atualiza cada entry com cambio_travado
+  const now = new Date().toISOString();
+  for (const entry of unfrozen) {
+    const rate = liveRates.get(entry.moeda);
+    if (!rate) continue;
+
+    const { error } = await supabase
+      .from('orcamento_geral')
+      .update({ cambio_travado: rate, travado_em: now })
+      .eq('id', entry.id);
+
+    if (error) {
+      console.warn('[freezeUnfrozenEntries] update error:', error);
+      continue;
+    }
+
+    // Atualiza cache local
+    entry.cambio_travado = rate;
+    entry.travado_em = now;
+  }
+}
+
+function updateFrozenBanner() {
+  const banner = document.getElementById('frozen-banner');
+  if (!banner) return;
+
+  if (isPastMonth(viewYear, viewMonth)) {
+    // Conta quantas entries têm câmbio congelado
+    const frozenCount = cachedOrcamento.filter((e) => e.cambio_travado).length;
+    const nonBrlCount = cachedOrcamento.filter((e) => e.moeda !== 'BRL').length;
+    banner.classList.remove('hidden');
+    let txt = 'Mês passado — câmbio congelado.';
+    if (nonBrlCount > 0) {
+      txt += ` ${frozenCount}/${nonBrlCount} ${frozenCount === 1 ? 'entrada' : 'entradas'} em moeda estrangeira com câmbio fixo.`;
+    }
+    document.getElementById('frozen-banner-text').textContent = txt;
+  } else {
+    banner.classList.add('hidden');
+  }
+  // Widget de cotações é sempre visível (controlado por renderCurrencyWidget)
+}
+
+// -----------------------------
+// Renderização
+// -----------------------------
+function renderOrcamento() {
+  const container = document.getElementById('orcamento-container');
+  const summary = document.getElementById('orcamento-summary');
+  const emptyState = document.getElementById('empty-state');
+
+  if (cachedOrcamento.length === 0) {
+    container.innerHTML = '';
+    summary.classList.add('hidden');
+    emptyState.classList.remove('hidden');
+    return;
+  }
+  emptyState.classList.add('hidden');
+
+  // Agrupa por categoria parent
+  const groups = new Map(); // categoria.id → entries
+  cachedCategorias.forEach((cat) => groups.set(cat.id, []));
+  const orphans = [];
+
+  for (const entry of cachedOrcamento) {
+    const catId = entry.subcategorias?.categoria_id;
+    if (catId && groups.has(catId)) groups.get(catId).push(entry);
+    else orphans.push(entry);
+  }
+
+  // Sort each group alphabetically by subcategoria name
+  for (const arr of groups.values()) {
+    arr.sort((a, b) => displayName(a).localeCompare(displayName(b), 'pt-BR'));
+  }
+  orphans.sort((a, b) => displayName(a).localeCompare(displayName(b), 'pt-BR'));
+
+  // Build sections agrupadas por super-bloco (Contribuição / Sonhos / Custo de vida)
+  const sections = [];
+  for (const bloco of SUPER_BLOCOS) {
+    const blocoCats = cachedCategorias.filter((c) => bloco.grupos.includes(c.grupo || 'custo_vida'));
+    const blocoSections = [];
+    let blocoTotalBRL = 0;
+
+    for (const cat of blocoCats) {
+      const items = groups.get(cat.id) || [];
+      if (items.length === 0) continue;
+      // Acumula total do super-bloco (signed: Receita +, Despesa −)
+      for (const e of items) {
+        const v = Number(e.valor_previsto) || 0;
+        const moeda = e.moeda || 'BRL';
+        const vBRL = convertToBRL(v, moeda, e);
+        if (vBRL === null) continue;
+        blocoTotalBRL += (e.subcategorias?.tipo === 'Receita') ? vBRL : -vBRL;
+      }
+      blocoSections.push(renderCategoriaSection(cat, items));
+    }
+
+    if (blocoSections.length === 0) continue;
+
+    sections.push(renderSuperBlocoHeader(bloco));
+    sections.push(...blocoSections);
+
+    // Linha "Contribuição" no fim do super-bloco CONTRIBUIÇÃO (= receitas signed - dívidas signed)
+    if (bloco.id === 'contribuicao') {
+      sections.push(renderContribuicaoRow(blocoTotalBRL));
+    }
+  }
+
+  // Categorias órfãs (entries sem categoria_id válida) caem em bloco extra "Sem categoria"
+  if (orphans.length > 0) {
+    sections.push(renderSuperBlocoHeader({
+      id: 'orphans', label: 'Sem categoria', subtitle: 'Subcategorias sem grupo definido', accent: 'var(--color-text-muted)',
+    }));
+    sections.push(renderCategoriaSection(
+      { id: null, nome: 'Sem categoria', cor: '#9CA3AF' },
+      orphans
+    ));
+  }
+
+  if (sections.length === 0) {
+    container.innerHTML = '';
+    summary.classList.add('hidden');
+    emptyState.classList.remove('hidden');
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="contas-table-wrapper">
+      <table class="contas-table compromissos-grouped-table orcamento-table">
+        <thead>
+          <tr>
+            <th>Subcategoria</th>
+            <th>Tipo</th>
+            <th>Projeto</th>
+            <th>Período</th>
+            <th class="text-right">Valor base</th>
+            <th class="text-right">Valor planejado</th>
+          </tr>
+        </thead>
+        <tbody>${sections.join('')}</tbody>
+      </table>
+    </div>
+  `;
+
+  bindCellEdits();
+  updateSummary();
+  summary.classList.remove('hidden');
+}
+
+// Header de super-bloco (Contribuição / Sonhos / Custo de vida)
+function renderSuperBlocoHeader(bloco) {
+  return `
+    <tr class="super-bloco-header" style="--bloco-accent: ${bloco.accent};">
+      <td colspan="6">
+        <div class="super-bloco-header-content">
+          <div class="super-bloco-label">${escapeHtml(bloco.label)}</div>
+          ${bloco.subtitle ? `<div class="super-bloco-subtitle">${escapeHtml(bloco.subtitle)}</div>` : ''}
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+// Linha "Contribuição" — destaque ao final do super-bloco CONTRIBUIÇÃO
+function renderContribuicaoRow(valorBRL) {
+  const sign = valorBRL > 0 ? '+' : (valorBRL < 0 ? '-' : '');
+  const cls  = valorBRL > 0 ? 'dre-positive' : (valorBRL < 0 ? 'dre-negative' : 'dre-zero');
+  return `
+    <tr class="contribuicao-row">
+      <td colspan="5" class="text-right">
+        <span class="contribuicao-label">Contribuição</span>
+        <span class="contribuicao-hint">o que sobra pra Sonhos e Custo de vida</span>
+      </td>
+      <td class="text-right">
+        <span class="contribuicao-value ${cls}">${sign}${formatCurrency(Math.abs(valorBRL), 'BRL')}</span>
+      </td>
+    </tr>
+  `;
+}
+
+function renderCategoriaSection(cat, entries) {
+  // Calcula total da categoria (signed) — converte tudo pra BRL (frozen ou live)
+  let categoriaTotal = 0;
+  entries.forEach((e) => {
+    const sub = e.subcategorias;
+    const v = Number(e.valor_previsto) || 0;
+    const moeda = e.moeda || 'BRL';
+    const vBRL = convertToBRL(v, moeda, e);
+    if (vBRL === null) return; // skip se cotação não disponível
+    categoriaTotal += (sub?.tipo === 'Receita') ? vBRL : -vBRL;
+  });
+  const totalSign = categoriaTotal > 0 ? '+' : (categoriaTotal < 0 ? '-' : '');
+  const totalClass = categoriaTotal > 0 ? 'dre-positive' : (categoriaTotal < 0 ? 'dre-negative' : 'dre-zero');
+  const totalDisplay = `${totalSign}${formatCurrency(Math.abs(categoriaTotal), 'BRL')}`;
+
+  const rows = entries.map(renderEntryRow).join('');
+
+  return `
+    <tr class="categoria-section-header" style="--cat-color: ${cat.cor};">
+      <td colspan="6">
+        <span class="cat-dot" style="background: ${cat.cor};"></span>
+        ${escapeHtml(cat.nome)}
+        <span class="cat-count">${entries.length} ${entries.length === 1 ? 'item' : 'itens'}</span>
+      </td>
+    </tr>
+    ${rows}
+    <tr class="orcamento-categoria-total" style="--cat-color: ${cat.cor};">
+      <td colspan="5" class="text-right">Subtotal ${escapeHtml(cat.nome)}</td>
+      <td class="text-right ${totalClass}">${totalDisplay}</td>
+    </tr>
+  `;
+}
+
+function renderEntryRow(entry) {
+  const sub = entry.subcategorias;
+  const display = sub?.apelido?.trim() || sub?.nome || '—';
+  const tipo = sub?.tipo || 'Despesa';
+  const moeda = entry.moeda || 'BRL';
+  const isBRL = moeda === 'BRL';
+
+  // Default value: valor_base × ocorrências (pra mostrar como referência)
+  // Pra valor_variavel: o "valor base" do mês é o próprio valor_previsto (configurado pelo user).
+  const ocurrencias = sub ? countOccurrencesInMonth(sub, viewYear, viewMonth) : 1;
+  const isVariavel = !!sub?.valor_variavel;
+  const valorBase = Number(sub?.valor_base) || 0;
+  const valorBaseTotal = isVariavel ? (Number(entry.valor_previsto) || 0) : (valorBase * ocurrencias);
+  // Valor exibido na coluna "Valor base" (sempre só o número, sem tag inline — tag fica em slot fixo)
+  const baseValueText = isVariavel
+    ? formatCurrency(Number(entry.valor_previsto) || 0, moeda)
+    : `${formatCurrency(valorBase, moeda)}${ocurrencias > 1 ? ` × ${ocurrencias}` : ''}`;
+  const baseDisplay = `
+    <span class="orcamento-base-wrapper">
+      <span class="valor-variavel-tag ${isVariavel ? '' : 'is-hidden'}">varia</span>
+      <span class="base-value-number">${baseValueText}</span>
+    </span>
+  `;
+  const isModified = !isVariavel && Number(entry.valor_previsto) !== valorBaseTotal;
+
+  const tipoColor = tipo === 'Receita' ? 'var(--color-success)' : 'var(--color-danger)';
+  const tipoSymbol = tipo === 'Receita' ? '+' : '-';
+
+  // Input mostra valor em BRL (convertido). Edição em BRL → save converte de volta.
+  const valorOrig = Number(entry.valor_previsto) || 0;
+  const valorBRL = convertToBRL(valorOrig, moeda, entry);
+  const canEdit = isBRL || valorBRL !== null;
+  const inputValue = (valorBRL !== null ? valorBRL : valorOrig).toFixed(2);
+
+  // Pra moeda estrangeira, mostra valor original abaixo como referência
+  let origRef = '';
+  if (!isBRL) {
+    const isFrozen = !!entry.cambio_travado;
+    const frozenIcon = isFrozen
+      ? `<span class="frozen-rate-icon" title="Câmbio congelado em ${entry.travado_em ? new Date(entry.travado_em).toLocaleDateString('pt-BR') : '—'} a R$ ${Number(entry.cambio_travado).toFixed(4)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>`
+      : '';
+    if (canEdit) {
+      origRef = `<div class="orcamento-brl-equivalent">${frozenIcon}orig: ${formatCurrency(valorOrig, moeda)}</div>`;
+    } else {
+      origRef = `<div class="orcamento-brl-equivalent unavailable">câmbio ${moeda} indisponível — edição desabilitada</div>`;
+    }
+  }
+
+  // Célula do projeto de investimento (se houver)
+  const projeto = sub?.projeto_id ? getProjetoOrcamento(sub.projeto_id) : null;
+  const projetoCell = projeto
+    ? `<span class="projeto-badge" style="--projeto-cor: ${projeto.cor};" title="Projeto: ${escapeHtml(projeto.nome)}">${escapeHtml(projeto.nome)}</span>`
+    : '<span class="text-muted">—</span>';
+
+  return `
+    <tr class="compromisso-row orcamento-row tipo-${tipo === 'Receita' ? 'receita' : 'despesa'} ${isModified ? 'modified' : ''}" data-id="${entry.id}" data-tipo="${tipo}" data-moeda="${moeda}">
+      <td>${escapeHtml(display)}</td>
+      <td><span style="color: ${tipoColor}; font-weight: var(--fw-semibold); font-size: var(--fs-xs);">${tipoSymbol} ${tipo}</span></td>
+      <td>${projetoCell}</td>
+      <td>${sub?.periodo || '—'}</td>
+      <td class="text-right tabular orcamento-base-value">${baseDisplay}</td>
+      <td class="text-right value-cell">
+        <div class="orcamento-value-wrapper">
+          <span class="orcamento-modified-icon" title="Valor editado — diferente do padrão (valor base × ocorrências)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+            </svg>
+          </span>
+          <span class="orcamento-input-group">
+            <span class="brl-prefix">R$</span>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              class="orcamento-cell-edit"
+              data-orcamento-id="${entry.id}"
+              value="${inputValue}"
+              ${canEdit ? '' : 'disabled'}
+              aria-label="Valor planejado de ${escapeHtml(display)} em BRL"
+            />
+          </span>
+        </div>
+        ${origRef}
+      </td>
+    </tr>
+  `;
+}
+
+// -----------------------------
+// Inline edit
+// -----------------------------
+function bindCellEdits() {
+  document.querySelectorAll('.orcamento-cell-edit').forEach((input) => {
+    input.addEventListener('blur', () => saveCell(input));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        input.blur();
+      } else if (e.key === 'Escape') {
+        // Restaura valor original
+        const id = input.dataset.orcamentoId;
+        const entry = cachedOrcamento.find((x) => x.id === id);
+        if (entry) input.value = Number(entry.valor_previsto).toFixed(2);
+        input.blur();
+      }
+    });
+  });
+}
+
+async function saveCell(input) {
+  const id = input.dataset.orcamentoId;
+  const newValueBRL = Number(input.value); // Input está em BRL
+  const entry = cachedOrcamento.find((x) => x.id === id);
+  if (!entry) return;
+
+  const oldValueOrig = Number(entry.valor_previsto);
+  const moeda = entry.moeda || 'BRL';
+
+  if (isNaN(newValueBRL) || newValueBRL < 0) {
+    showToast('Valor inválido', 'error');
+    // Restaura input com BRL atual
+    const valorBRLAtual = convertToBRL(oldValueOrig, moeda, entry);
+    input.value = (valorBRLAtual !== null ? valorBRLAtual : oldValueOrig).toFixed(2);
+    return;
+  }
+
+  // Converte BRL → moeda original pra salvar
+  let newValueOrig;
+  if (moeda === 'BRL') {
+    newValueOrig = newValueBRL;
+  } else {
+    const rate = entry.cambio_travado ? Number(entry.cambio_travado) : ratesMap.get(moeda);
+    if (!rate) {
+      showToast(`Câmbio ${moeda} indisponível — não posso salvar agora`, 'error', 8000);
+      const valorBRLAtual = convertToBRL(oldValueOrig, moeda, entry);
+      input.value = (valorBRLAtual !== null ? valorBRLAtual : oldValueOrig).toFixed(2);
+      return;
+    }
+    newValueOrig = newValueBRL / rate;
+  }
+
+  // Sem mudança real (tolerância pra precisão de roundtrip)
+  if (Math.abs(newValueOrig - oldValueOrig) < 0.005) return;
+
+  input.classList.add('saving');
+  input.classList.remove('saved');
+
+  const { error } = await supabase
+    .from('orcamento_geral')
+    .update({ valor_previsto: newValueOrig })
+    .eq('id', id);
+
+  input.classList.remove('saving');
+
+  if (error) {
+    console.error('[saveCell]', error);
+    showToast('Erro ao salvar: ' + error.message, 'error', 8000);
+    const valorBRLAtual = convertToBRL(oldValueOrig, moeda, entry);
+    input.value = (valorBRLAtual !== null ? valorBRLAtual : oldValueOrig).toFixed(2);
+    return;
+  }
+
+  // Update local cache (em moeda original)
+  entry.valor_previsto = newValueOrig;
+
+  // Atualiza modified flag
+  const sub = entry.subcategorias;
+  const ocurrencias = sub ? countOccurrencesInMonth(sub, viewYear, viewMonth) : 1;
+  const isVariavel = !!sub?.valor_variavel;
+  const valorBaseTotal = (Number(sub?.valor_base) || 0) * ocurrencias;
+  const row = input.closest('.orcamento-row, .compromisso-row');
+  // Pra valor_variavel, "modified" não faz sentido (o valor é a referência mensal)
+  if (row) row.classList.toggle('modified', !isVariavel && Math.abs(newValueOrig - valorBaseTotal) > 0.005);
+
+  input.classList.add('saved');
+  setTimeout(() => input.classList.remove('saved'), 1500);
+
+  // Re-render
+  if (viewMode === 'yearly') render12MonthsView();
+  else renderOrcamento();
+}
+
+// -----------------------------
+// Summary (totais Receitas/Despesas/Saldo)
+// -----------------------------
+function updateSummary() {
+  let totalReceitas = 0, totalDespesas = 0;
+  for (const entry of cachedOrcamento) {
+    const tipo = entry.subcategorias?.tipo;
+    const v = Number(entry.valor_previsto) || 0;
+    const moeda = entry.moeda || 'BRL';
+    const vBRL = convertToBRL(v, moeda, entry);
+    if (vBRL === null) continue; // skip se cotação não disponível
+    if (tipo === 'Receita') totalReceitas += vBRL;
+    else if (tipo === 'Despesa') totalDespesas += vBRL;
+  }
+  const saldo = totalReceitas - totalDespesas;
+
+  document.getElementById('summary-receitas').textContent = `+${formatCurrency(totalReceitas, 'BRL')}`;
+  document.getElementById('summary-despesas').textContent = `-${formatCurrency(totalDespesas, 'BRL')}`;
+
+  const saldoEl = document.getElementById('summary-saldo');
+  const saldoCard = document.getElementById('saldo-card');
+  const sign = saldo > 0 ? '+' : (saldo < 0 ? '-' : '');
+  saldoEl.textContent = `${sign}${formatCurrency(Math.abs(saldo), 'BRL')}`;
+
+  // Alerta vermelho piscante se saldo ≤ 0
+  if (saldo <= 0) {
+    saldoCard.classList.add('alerta-negativo');
+    saldoEl.classList.remove('dre-positive', 'dre-negative', 'dre-zero');
+  } else {
+    saldoCard.classList.remove('alerta-negativo');
+    saldoEl.classList.add('dre-positive');
+    saldoEl.classList.remove('dre-negative', 'dre-zero');
+  }
+}
+
+// =============================================================
+// Visão 12 meses (Fase 4.D)
+// =============================================================
+async function loadYearly() {
+  const container = document.getElementById('orcamento-container');
+  container.innerHTML = '<div class="loading-overlay"><span class="spinner"></span>Carregando 12 meses…</div>';
+  document.getElementById('orcamento-summary').classList.add('hidden');
+  document.getElementById('frozen-banner').classList.add('hidden');
+  document.getElementById('empty-state').classList.add('hidden');
+
+  // Atualiza label: range de meses
+  const startLabel = `${MONTH_SHORT_LABELS[viewMonth]}/${String(viewYear).slice(2)}`;
+  const endDate = new Date(viewYear, viewMonth + 11, 1);
+  const endLabel = `${MONTH_SHORT_LABELS[endDate.getMonth()]}/${String(endDate.getFullYear()).slice(2)}`;
+  const label = document.getElementById('orc-month-label');
+  label.textContent = `${startLabel} → ${endLabel}`;
+  label.classList.add('range');
+
+  // Auto-gera entries pra todos os 12 meses (idempotente, só insere o que falta)
+  await ensureOrcamentoFor12Months();
+
+  // Busca todas as entries do range
+  const startMesAno = isoMonth(viewYear, viewMonth);
+  const endMesAnoDate = new Date(viewYear, viewMonth + 11, 1);
+  const endMesAno = isoMonth(endMesAnoDate.getFullYear(), endMesAnoDate.getMonth());
+
+  const { data, error } = await supabase
+    .from('orcamento_geral')
+    .select('*, subcategorias(*, categorias(*))')
+    .gte('mes_ano', startMesAno)
+    .lte('mes_ano', endMesAno);
+
+  if (error) {
+    console.error('[loadYearly]', error);
+    container.innerHTML = '';
+    showToast('Erro: ' + (error.message || JSON.stringify(error)), 'error', 12000);
+    return;
+  }
+
+  cachedOrcamento = (data || []).filter((e) => e.subcategorias?.status === 'ativa');
+
+  // Refresh cotações pra moedas estrangeiras
+  await refreshRates();
+
+  render12MonthsView();
+}
+
+async function ensureOrcamentoFor12Months() {
+  if (cachedSubcategorias.length === 0) return;
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  const allRows = [];
+  for (let i = 0; i < 12; i++) {
+    const date = new Date(viewYear, viewMonth + i, 1);
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const mesAno = isoMonth(year, month);
+
+    for (const sub of cachedSubcategorias) {
+      if (!isActiveInMonth(sub, year, month)) continue;
+      const occurrences = countOccurrencesInMonth(sub, year, month);
+      if (occurrences === 0) continue;
+      const valor = (Number(sub.valor_base) || 0) * occurrences;
+      allRows.push({
+        user_id: user.id,
+        subcategoria_id: sub.id,
+        mes_ano: mesAno,
+        valor_previsto: valor,
+        moeda: sub.moeda,
+      });
+    }
+  }
+
+  if (allRows.length === 0) return;
+
+  const { error } = await supabase.from('orcamento_geral').upsert(allRows, {
+    onConflict: 'user_id,subcategoria_id,mes_ano',
+    ignoreDuplicates: true,
+  });
+
+  if (error) console.error('[ensureOrcamentoFor12Months]', error);
+}
+
+function render12MonthsView() {
+  const container = document.getElementById('orcamento-container');
+  const summary = document.getElementById('orcamento-summary');
+  const emptyState = document.getElementById('empty-state');
+  summary.classList.add('hidden');
+
+  if (cachedOrcamento.length === 0) {
+    container.innerHTML = '';
+    emptyState.classList.remove('hidden');
+    return;
+  }
+  emptyState.classList.add('hidden');
+
+  // Build month headers (12 meses partindo do view atual)
+  const today = new Date();
+  const months = [];
+  for (let i = 0; i < 12; i++) {
+    const date = new Date(viewYear, viewMonth + i, 1);
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    months.push({
+      year, month,
+      mesAno: isoMonth(year, month),
+      label: `${MONTH_SHORT_LABELS[month]}/${String(year).slice(2)}`,
+      isCurrent: year === today.getFullYear() && month === today.getMonth(),
+    });
+  }
+
+  // Index entries por subId|mesAno
+  const entryIndex = new Map();
+  cachedOrcamento.forEach((e) => entryIndex.set(`${e.subcategoria_id}|${e.mes_ano}`, e));
+
+  // Subcategorias únicas com pelo menos 1 entry no range
+  const subById = new Map();
+  cachedOrcamento.forEach((e) => {
+    if (e.subcategorias) subById.set(e.subcategoria_id, e.subcategorias);
+  });
+
+  // Agrupa por categoria parent
+  const groups = new Map();
+  cachedCategorias.forEach((cat) => groups.set(cat.id, []));
+  for (const sub of subById.values()) {
+    const catId = sub.categoria_id;
+    if (catId && groups.has(catId)) groups.get(catId).push(sub);
+  }
+  // Sort cada grupo alfabeticamente
+  for (const arr of groups.values()) {
+    arr.sort((a, b) => (a.apelido?.trim() || a.nome).localeCompare(b.apelido?.trim() || b.nome, 'pt-BR'));
+  }
+
+  // Header das colunas
+  const monthHeaders = months.map((m) =>
+    `<th class="text-right ${m.isCurrent ? 'current-month' : ''}">${m.label}</th>`
+  ).join('');
+
+  // Helper: renderiza as rows de UMA categoria (header + subs + subtotal por mês)
+  function renderCatRows12m(cat, subs) {
+    const out = [];
+    out.push(`
+      <tr class="categoria-section-header" style="--cat-color: ${cat.cor};">
+        <td class="sticky-col" colspan="${1 + months.length}">
+          <span class="cat-dot" style="background: ${cat.cor};"></span>
+          ${escapeHtml(cat.nome)}
+        </td>
+      </tr>
+    `);
+
+    for (const sub of subs) {
+      const cells = months.map((m) => {
+        const entry = entryIndex.get(`${sub.id}|${m.mesAno}`);
+        const occurrences = countOccurrencesInMonth(sub, m.year, m.month);
+        const editable = isActiveInMonth(sub, m.year, m.month) && occurrences > 0;
+        const currentClass = m.isCurrent ? 'current-month' : '';
+
+        if (entry) {
+          const valorOrig = Number(entry.valor_previsto) || 0;
+          const valorBRL = convertToBRL(valorOrig, entry.moeda || 'BRL', entry);
+          const inputValue = (valorBRL !== null ? valorBRL : valorOrig).toFixed(2);
+          const canEdit = (entry.moeda === 'BRL') || valorBRL !== null;
+          return `<td class="text-right value-cell ${currentClass}">
+            <input type="number" step="0.01" min="0"
+              class="orcamento-cell-edit-12m"
+              data-orcamento-id="${entry.id}"
+              value="${inputValue}"
+              ${editable && canEdit ? '' : 'readonly'}
+            />
+          </td>`;
+        }
+        return `<td class="text-right text-muted ${currentClass}" style="font-size: var(--fs-xs);">—</td>`;
+      }).join('');
+
+      const display = sub.apelido?.trim() || sub.nome;
+      const projeto = sub.projeto_id ? getProjetoOrcamento(sub.projeto_id) : null;
+      const projetoBadgeBelow = projeto
+        ? `<div class="sub-projeto-row"><span class="projeto-badge" style="--projeto-cor: ${projeto.cor};" title="Projeto: ${escapeHtml(projeto.nome)}">${escapeHtml(projeto.nome)}</span></div>`
+        : '';
+      out.push(`
+        <tr class="compromisso-row tipo-${sub.tipo === 'Receita' ? 'receita' : 'despesa'}" style="--cat-color: ${cat.cor};" data-tipo="${sub.tipo}">
+          <td class="sticky-col">
+            <div class="sub-name-row">
+              ${sub.tipo === 'Receita' ? '<span class="receita-tag" title="Esta linha é uma Receita">+ Receita</span>' : ''}
+              <span class="sub-name-text">${escapeHtml(display)}</span>
+            </div>
+            ${projetoBadgeBelow}
+          </td>
+          ${cells}
+        </tr>
+      `);
+    }
+
+    // Subtotal da categoria por mês
+    const subtotalCells = months.map((m) => {
+      let total = 0;
+      for (const sub of subs) {
+        const entry = entryIndex.get(`${sub.id}|${m.mesAno}`);
+        if (!entry) continue;
+        const v = Number(entry.valor_previsto) || 0;
+        const moeda = entry.moeda || 'BRL';
+        const vBRL = convertToBRL(v, moeda, entry);
+        if (vBRL === null) continue;
+        total += (sub.tipo === 'Receita') ? vBRL : -vBRL;
+      }
+      const sign = total > 0 ? '+' : (total < 0 ? '-' : '');
+      const cls = total > 0 ? 'dre-positive' : (total < 0 ? 'dre-negative' : 'dre-zero');
+      const currentClass = m.isCurrent ? 'current-month' : '';
+      return `<td class="text-right tabular ${cls} ${currentClass}">${sign}${formatCurrency(Math.abs(total), 'BRL')}</td>`;
+    }).join('');
+
+    out.push(`
+      <tr class="orcamento-categoria-total" style="--cat-color: ${cat.cor};">
+        <td class="sticky-col text-right">Subtotal ${escapeHtml(cat.nome)}</td>
+        ${subtotalCells}
+      </tr>
+    `);
+    return out.join('');
+  }
+
+  // Rows agrupadas por super-bloco
+  const rows = [];
+  const colspan = 1 + months.length;
+  for (const bloco of SUPER_BLOCOS) {
+    const blocoCats = cachedCategorias.filter((c) => bloco.grupos.includes(c.grupo || 'custo_vida'));
+    const renderedCats = [];
+    const blocoCatsList = []; // pra calcular linha contribuição
+
+    for (const cat of blocoCats) {
+      const subs = groups.get(cat.id) || [];
+      if (subs.length === 0) continue;
+      renderedCats.push(renderCatRows12m(cat, subs));
+      blocoCatsList.push({ cat, subs });
+    }
+
+    if (renderedCats.length === 0) continue;
+
+    // Header do super-bloco (atravessa todas as colunas)
+    rows.push(`
+      <tr class="super-bloco-header" style="--bloco-accent: ${bloco.accent};">
+        <td colspan="${colspan}" class="sticky-col">
+          <div class="super-bloco-header-content">
+            <div class="super-bloco-label">${escapeHtml(bloco.label)}</div>
+            ${bloco.subtitle ? `<div class="super-bloco-subtitle">${escapeHtml(bloco.subtitle)}</div>` : ''}
+          </div>
+        </td>
+      </tr>
+    `);
+    rows.push(...renderedCats);
+
+    // Linha "Contribuição" no fim do super-bloco contribuicao (1 valor por mês)
+    if (bloco.id === 'contribuicao') {
+      const contribuicaoCells = months.map((m) => {
+        let total = 0;
+        for (const { subs } of blocoCatsList) {
+          for (const sub of subs) {
+            const entry = entryIndex.get(`${sub.id}|${m.mesAno}`);
+            if (!entry) continue;
+            const v = Number(entry.valor_previsto) || 0;
+            const vBRL = convertToBRL(v, entry.moeda || 'BRL', entry);
+            if (vBRL === null) continue;
+            total += (sub.tipo === 'Receita') ? vBRL : -vBRL;
+          }
+        }
+        const sign = total > 0 ? '+' : (total < 0 ? '-' : '');
+        const cls  = total > 0 ? 'dre-positive' : (total < 0 ? 'dre-negative' : 'dre-zero');
+        const currentClass = m.isCurrent ? 'current-month' : '';
+        return `<td class="text-right tabular ${cls} ${currentClass}"><strong>${sign}${formatCurrency(Math.abs(total), 'BRL')}</strong></td>`;
+      }).join('');
+      rows.push(`
+        <tr class="contribuicao-row contribuicao-row-12m">
+          <td class="sticky-col text-right"><span class="contribuicao-label">Contribuição</span></td>
+          ${contribuicaoCells}
+        </tr>
+      `);
+    }
+  }
+
+  // Totais por mês: Receitas, Despesas, Saldo
+  const receitaCells = months.map((m) => {
+    const t = sumByTipoForMonth('Receita', m.mesAno);
+    const cls = m.isCurrent ? 'current-month' : '';
+    return `<td class="text-right dre-positive ${cls}">+${formatCurrency(t, 'BRL')}</td>`;
+  }).join('');
+
+  const despesaCells = months.map((m) => {
+    const t = sumByTipoForMonth('Despesa', m.mesAno);
+    const cls = m.isCurrent ? 'current-month' : '';
+    return `<td class="text-right dre-negative ${cls}">-${formatCurrency(t, 'BRL')}</td>`;
+  }).join('');
+
+  const saldoCells = months.map((m) => {
+    const r = sumByTipoForMonth('Receita', m.mesAno);
+    const d = sumByTipoForMonth('Despesa', m.mesAno);
+    const s = r - d;
+    const sign = s > 0 ? '+' : (s < 0 ? '-' : '');
+    const cls = s > 0 ? 'dre-positive' : (s < 0 ? 'dre-negative' : 'dre-zero');
+    const alertCls = s <= 0 ? 'alerta-negativo' : '';
+    const currentCls = m.isCurrent ? 'current-month' : '';
+    return `<td class="text-right ${cls} ${alertCls} ${currentCls}">${sign}${formatCurrency(Math.abs(s), 'BRL')}</td>`;
+  }).join('');
+
+  container.innerHTML = `
+    <p style="font-size: var(--fs-xs); color: var(--color-text-muted); margin-bottom: var(--space-2);">
+      Todos os valores na tabela estão convertidos em <strong style="color: var(--color-text-secondary);">R$ (BRL)</strong>.
+    </p>
+    <div class="contas-table-wrapper orcamento-12m-wrapper">
+      <table class="contas-table compromissos-grouped-table orcamento-12m-table">
+        <thead>
+          <tr>
+            <th class="sticky-col">Subcategoria</th>
+            ${monthHeaders}
+          </tr>
+        </thead>
+        <tbody>${rows.join('')}</tbody>
+        <tfoot>
+          <tr>
+            <td class="sticky-col text-right">Total Receitas</td>
+            ${receitaCells}
+          </tr>
+          <tr>
+            <td class="sticky-col text-right">Total Despesas</td>
+            ${despesaCells}
+          </tr>
+          <tr class="saldo">
+            <td class="sticky-col text-right">Saldo</td>
+            ${saldoCells}
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  `;
+
+  bindCellEdits12m();
+}
+
+function sumByTipoForMonth(tipo, mesAno) {
+  let total = 0;
+  for (const e of cachedOrcamento) {
+    if (e.mes_ano !== mesAno) continue;
+    if (e.subcategorias?.tipo !== tipo) continue;
+    const v = Number(e.valor_previsto) || 0;
+    const moeda = e.moeda || 'BRL';
+    const vBRL = convertToBRL(v, moeda, e);
+    if (vBRL === null) continue;
+    total += vBRL;
+  }
+  return total;
+}
+
+function bindCellEdits12m() {
+  document.querySelectorAll('.orcamento-cell-edit-12m').forEach((input) => {
+    input.addEventListener('blur', () => saveCell(input));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        input.blur();
+      } else if (e.key === 'Escape') {
+        const id = input.dataset.orcamentoId;
+        const entry = cachedOrcamento.find((x) => x.id === id);
+        if (entry) input.value = Number(entry.valor_previsto).toFixed(2);
+        input.blur();
+      }
+    });
+  });
+}
+
+// -----------------------------
+// Recurrence helpers (occursOn / countOccurrencesInMonth)
+// Mantidos locais nesta tela; espelham a lógica do calendário em compromissos.js
+// -----------------------------
+function occursOn(c, date) {
+  const target = new Date(date);
+  target.setHours(0, 0, 0, 0);
+
+  const start = c.iniciado_em ? new Date(c.iniciado_em + 'T00:00:00') : null;
+  if (start && target < start) return false;
+
+  if (c.terminado_em) {
+    const term = new Date(c.terminado_em + 'T00:00:00');
+    if (target > term) return false;
+  }
+
+  if (c.periodo === 'Único') {
+    return start && target.getTime() === start.getTime();
+  }
+  if (c.periodo === 'Mensal') {
+    return c.vencimento_dia === target.getDate();
+  }
+  if (c.periodo === 'Anual') {
+    return start
+      && c.vencimento_dia === target.getDate()
+      && start.getMonth() === target.getMonth();
+  }
+  if (c.periodo === 'Semanal') {
+    return c.dia_semana === target.getDay();
+  }
+  if (c.periodo === 'Quinzenal') {
+    if (!start || c.dia_semana !== target.getDay()) return false;
+    const diff = Math.round((target - start) / (24 * 60 * 60 * 1000));
+    return diff >= 0 && diff % 14 === 0;
+  }
+  return false;
+}
+
+function countOccurrencesInMonth(sub, year, month) {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  let count = 0;
+  for (let day = 1; day <= daysInMonth; day++) {
+    const d = new Date(year, month, day);
+    if (occursOn(sub, d)) count++;
+  }
+  return count;
+}
+
+function isActiveInMonth(sub, year, month) {
+  if (sub.status !== 'ativa') return false;
+  const monthStart = new Date(year, month, 1);
+  const monthEnd = new Date(year, month + 1, 0);
+  if (sub.iniciado_em) {
+    const start = new Date(sub.iniciado_em + 'T00:00:00');
+    if (start > monthEnd) return false;
+  }
+  if (sub.terminado_em) {
+    const end = new Date(sub.terminado_em + 'T00:00:00');
+    if (end < monthStart) return false;
+  }
+  return true;
+}
+
+// -----------------------------
+// Util
+// -----------------------------
+function isoMonth(year, month) {
+  // 'YYYY-MM-01' format pra mes_ano
+  return `${year}-${String(month + 1).padStart(2, '0')}-01`;
+}
+
+function displayName(entry) {
+  const sub = entry.subcategorias;
+  return sub?.apelido?.trim() || sub?.nome || '';
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (m) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]
+  );
+}

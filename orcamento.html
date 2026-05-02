@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orçamento · FinFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/variables.css">
+  <link rel="stylesheet" href="src/css/global.css">
+  <link rel="stylesheet" href="src/css/components.css">
+  <link rel="stylesheet" href="src/css/layout.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-sidebar" id="sidebar-container"></div>
+
+    <header class="app-header header">
+      <div class="header-left">
+        <h2 class="header-title">Orçamento</h2>
+      </div>
+    </header>
+
+    <main class="app-main main">
+      <!-- Currency widget (componente compartilhado, no topo) -->
+      <div id="currency-widget"></div>
+
+      <div class="page-header">
+        <div class="page-header-content">
+          <p class="page-eyebrow">Planejamento</p>
+          <h1 class="page-title">Orçamento Geral</h1>
+          <p class="page-description">Visão financeira mensal — gerada automaticamente a partir dos seus compromissos. Edite valores específicos sem alterar a configuração base.</p>
+        </div>
+        <button type="button" class="btn btn-ghost" id="btn-hoje" title="Voltar pro mês atual">Hoje</button>
+      </div>
+
+      <!-- Toggle Mensal / 12 meses -->
+      <div class="toolbar">
+        <div class="view-toggle" id="view-toggle">
+          <button class="view-toggle-btn active" data-view="monthly" type="button" title="Visão mensal" aria-label="Mensal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+          </button>
+          <button class="view-toggle-btn" data-view="yearly" type="button" title="Visão 12 meses" aria-label="12 meses">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Navegação de mês -->
+      <div class="orcamento-monthnav">
+        <button type="button" class="calendar-nav" id="orc-prev" aria-label="Mês anterior">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <span class="orcamento-monthnav-label" id="orc-month-label">—</span>
+        <button type="button" class="calendar-nav" id="orc-next" aria-label="Próximo mês">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+
+      <!-- Banner: mês fechado (câmbio congelado) -->
+      <div id="frozen-banner" class="orcamento-frozen-banner hidden">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span id="frozen-banner-text">Mês passado — câmbio congelado.</span>
+      </div>
+
+      <!-- Tabela renderizada aqui -->
+      <div id="orcamento-container"></div>
+
+      <!-- Summary -->
+      <div class="orcamento-summary hidden" id="orcamento-summary">
+        <div class="orcamento-summary-card">
+          <div class="orcamento-summary-label">Total Receitas</div>
+          <div class="orcamento-summary-value dre-positive" id="summary-receitas">R$ 0,00</div>
+        </div>
+        <div class="orcamento-summary-card">
+          <div class="orcamento-summary-label">Total Despesas</div>
+          <div class="orcamento-summary-value dre-negative" id="summary-despesas">R$ 0,00</div>
+        </div>
+        <div class="orcamento-summary-card saldo-card" id="saldo-card">
+          <div class="orcamento-summary-label">Saldo do mês</div>
+          <div class="orcamento-summary-value" id="summary-saldo">R$ 0,00</div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="empty-state hidden">
+        <div class="empty-state-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+        </div>
+        <h2 class="empty-state-title">Nenhum compromisso ativo neste mês</h2>
+        <p class="empty-state-message">Cadastre compromissos ativos pra começar a planejar seu orçamento. Compromissos com período Anual/Único só aparecem no mês de início.</p>
+        <a href="/compromissos.html" class="btn btn-primary">Ir para Compromissos</a>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script type="module" src="src/js/pages/orcamento.js"></script>
+</body>
+</html>

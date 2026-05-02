@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Investimentos · FinFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/variables.css">
+  <link rel="stylesheet" href="src/css/global.css">
+  <link rel="stylesheet" href="src/css/components.css">
+  <link rel="stylesheet" href="src/css/layout.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-sidebar" id="sidebar-container"></div>
+
+    <header class="app-header header">
+      <div class="header-left">
+        <h2 class="header-title">Investimentos</h2>
+      </div>
+    </header>
+
+    <main class="app-main main">
+      <div class="page-header">
+        <div class="page-header-content">
+          <p class="page-eyebrow">Sonhos</p>
+          <h1 class="page-title">Investimentos</h1>
+          <p class="page-description">Cada projeto é uma meta. Compromissos do grupo Investimentos podem ser atrelados a um projeto.</p>
+        </div>
+        <button type="button" class="btn btn-primary" id="btn-novo-projeto">+ Novo projeto</button>
+      </div>
+
+      <!-- KPIs: Total investido universal + Projetos com meta -->
+      <section class="invest-kpis-row">
+        <div class="invest-kpi" id="kpi-universal">
+          <div class="invest-kpi-content">
+            <div class="invest-kpi-label">Total investido</div>
+            <div class="invest-kpi-value" id="kpi-universal-value">—</div>
+            <div class="invest-kpi-sub" id="kpi-universal-sub">Carregando…</div>
+          </div>
+          <div class="invest-kpi-chart" id="kpi-universal-chart"></div>
+        </div>
+
+        <div class="invest-kpi" id="kpi-meta">
+          <div class="invest-kpi-content">
+            <div class="invest-kpi-label">Projetos com meta</div>
+            <div class="invest-kpi-value" id="kpi-meta-value">—</div>
+            <div class="invest-kpi-sub" id="kpi-meta-sub">Carregando…</div>
+          </div>
+          <div class="invest-kpi-chart" id="kpi-meta-chart"></div>
+        </div>
+      </section>
+
+      <!-- Toggle de visualização -->
+      <div class="toolbar">
+        <div class="view-toggle" id="view-toggle">
+          <button class="view-toggle-btn active" data-view="cards" type="button" title="Cards" aria-label="Cards">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+          </button>
+          <button class="view-toggle-btn" data-view="table" type="button" title="Tabela" aria-label="Tabela">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
+          </button>
+          <button class="view-toggle-btn" data-view="timeline" type="button" title="Timeline" aria-label="Timeline">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filtros por status -->
+      <div class="filter-pills" id="invest-filters">
+        <button class="filter-pill active" data-filter-status="todos" type="button">
+          Todos <span class="filter-count" data-count-status="todos">0</span>
+        </button>
+        <button class="filter-pill" data-filter-status="ativo" type="button">
+          Ativos <span class="filter-count" data-count-status="ativo">0</span>
+        </button>
+        <button class="filter-pill" data-filter-status="concluido" type="button">
+          Concluídos <span class="filter-count" data-count-status="concluido">0</span>
+        </button>
+        <button class="filter-pill" data-filter-status="pausado" type="button">
+          Pausados <span class="filter-count" data-count-status="pausado">0</span>
+        </button>
+        <button class="filter-pill" data-filter-status="arquivado" type="button">
+          Arquivados <span class="filter-count" data-count-status="arquivado">0</span>
+        </button>
+      </div>
+
+      <!-- Lista de projetos -->
+      <div id="projetos-container"></div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="empty-state hidden">
+        <div class="empty-state-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        </div>
+        <h2 class="empty-state-title">Nenhum projeto ainda</h2>
+        <p class="empty-state-message">Crie um projeto pra organizar seus investimentos por meta (ex: Casa própria, Aposentadoria).</p>
+        <button type="button" class="btn btn-primary" data-trigger-novo-projeto>+ Criar primeiro projeto</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Criar / Editar projeto
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-projeto" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-projeto-title">Novo projeto</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-projeto" aria-label="Fechar">×</button>
+      </div>
+      <form id="form-projeto" autocomplete="off">
+        <div class="modal-body">
+          <div class="field">
+            <label class="field-label" for="proj-nome">Nome <span class="required">*</span></label>
+            <input type="text" id="proj-nome" class="input" required maxlength="60" placeholder="Ex: Casa própria, Aposentadoria, Reserva de emergência">
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="proj-descricao">Descrição</label>
+            <textarea id="proj-descricao" class="textarea" rows="2" maxlength="200" placeholder="O que é esse projeto, por que importa pra você"></textarea>
+          </div>
+
+          <div class="field-group" style="grid-template-columns: 80px 1fr;">
+            <div class="field">
+              <label class="field-label" for="proj-cor">Cor</label>
+              <input type="color" id="proj-cor" class="input" value="#6D5EF5" style="height: 40px; padding: 4px; cursor: pointer;">
+            </div>
+            <div class="field">
+              <label class="field-label" for="proj-status">Status</label>
+              <select id="proj-status" class="select">
+                <option value="ativo">Ativo</option>
+                <option value="concluido">Concluído</option>
+                <option value="pausado">Pausado</option>
+                <option value="arquivado">Arquivado</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field">
+              <label class="field-label" for="proj-meta-valor">Meta de valor</label>
+              <input type="number" id="proj-meta-valor" class="input" step="0.01" min="0" placeholder="R$ 0,00 (opcional)">
+              <p class="field-hint">Valor que você quer alcançar.</p>
+            </div>
+            <div class="field">
+              <label class="field-label" for="proj-data-alvo">Término do projeto</label>
+              <input type="date" id="proj-data-alvo" class="input">
+              <p class="field-hint">Quando quer concluir o projeto.</p>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="proj-saldo-inicial">Saldo inicial</label>
+            <input type="number" id="proj-saldo-inicial" class="input" step="0.01" min="0" placeholder="R$ 0,00">
+            <p class="field-hint">Quanto você já investiu nesse projeto antes de começar a usar o FinFlow. Soma ao "Realizado".</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" data-close-modal="modal-projeto">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-salvar-projeto">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Detalhes do projeto (histórico)
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-projeto-details" role="dialog" aria-modal="true">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h2 class="modal-title" id="proj-details-title">—</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-projeto-details" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="proj-details-resumo"></div>
+        <div id="proj-details-subs" style="margin-top: var(--space-5);"></div>
+        <div id="proj-details-historico" style="margin-top: var(--space-5);"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-arquivar-projeto">Arquivar projeto</button>
+        <div style="flex: 1;"></div>
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-projeto-details">Fechar</button>
+        <button type="button" class="btn btn-primary" id="btn-editar-projeto">Editar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script type="module" src="src/js/pages/investimentos.js"></script>
+</body>
+</html>

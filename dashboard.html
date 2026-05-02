@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard · FinFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/variables.css">
+  <link rel="stylesheet" href="src/css/global.css">
+  <link rel="stylesheet" href="src/css/components.css">
+  <link rel="stylesheet" href="src/css/layout.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-sidebar" id="sidebar-container"></div>
+
+    <header class="app-header header">
+      <div class="header-left">
+        <h2 class="header-title">Dashboard</h2>
+      </div>
+    </header>
+
+    <main class="app-main main">
+      <!-- Saudação -->
+      <div class="page-header">
+        <div class="page-header-content">
+          <p class="page-eyebrow" id="dash-eyebrow">—</p>
+          <h1 class="page-title" id="dash-greeting">Olá</h1>
+          <p class="page-description" id="dash-month-label">Carregando…</p>
+        </div>
+      </div>
+
+      <!-- KPI cards -->
+      <section class="dash-kpis" id="dash-kpis">
+        <div class="dash-kpi dash-kpi-skeleton">Carregando saldo…</div>
+        <div class="dash-kpi dash-kpi-skeleton">Carregando oportunidade…</div>
+        <div class="dash-kpi dash-kpi-skeleton">Carregando pagamentos…</div>
+        <div class="dash-kpi dash-kpi-skeleton">Carregando compromissos…</div>
+      </section>
+
+      <!-- Grid: distribuição + próximos vencimentos -->
+      <section class="dash-grid">
+        <!-- Distribuição por super-bloco -->
+        <div class="dash-card">
+          <header class="dash-card-header">
+            <h2 class="dash-card-title">Distribuição do mês</h2>
+            <p class="dash-card-hint">Saída prevista por super-bloco.</p>
+          </header>
+          <div class="dash-card-body" id="dash-blocos-bars">
+            <div class="dash-empty">Carregando…</div>
+          </div>
+        </div>
+
+        <!-- Próximos vencimentos -->
+        <div class="dash-card">
+          <header class="dash-card-header">
+            <h2 class="dash-card-title">Próximos 7 dias</h2>
+            <p class="dash-card-hint">Pagamentos a vencer.</p>
+          </header>
+          <div class="dash-card-body" id="dash-vencimentos">
+            <div class="dash-empty">Carregando…</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Atalhos rápidos -->
+      <section class="dash-shortcuts">
+        <a href="/pagamentos.html" class="dash-shortcut">
+          <span class="dash-shortcut-icon" style="--shortcut-color: var(--color-primary);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+          </span>
+          <div>
+            <div class="dash-shortcut-title">Marcar pagamentos</div>
+            <div class="dash-shortcut-hint">Atualizar status do mês</div>
+          </div>
+        </a>
+        <a href="/orcamento.html" class="dash-shortcut">
+          <span class="dash-shortcut-icon" style="--shortcut-color: var(--color-success);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+          </span>
+          <div>
+            <div class="dash-shortcut-title">Ajustar orçamento</div>
+            <div class="dash-shortcut-hint">Receitas e despesas planejadas</div>
+          </div>
+        </a>
+        <a href="/compromissos.html" class="dash-shortcut">
+          <span class="dash-shortcut-icon" style="--shortcut-color: var(--color-secondary);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+          </span>
+          <div>
+            <div class="dash-shortcut-title">Novo compromisso</div>
+            <div class="dash-shortcut-hint">Cadastrar receita ou despesa</div>
+          </div>
+        </a>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script type="module" src="src/js/pages/dashboard.js"></script>
+</body>
+</html>
