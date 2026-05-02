@@ -1784,7 +1784,9 @@ async function saveCompromisso(event) {
     editingId = null;
     await loadCompromissos();
 
-    if (foiInsert && cat?.grupo === 'dividas' && novaData) {
+    const isDividasCat = cat?.grupo === 'dividas'
+      || /dívida|divida/i.test(cat?.nome || '');
+    if (foiInsert && isDividasCat && novaData) {
       _dividaFlowComp = { ...novaData, cat };
       openSugestaoDivida();
     }

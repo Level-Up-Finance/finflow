@@ -126,7 +126,7 @@ export function formatCurrency(amount, code = 'BRL') {
 
 // ---------- Defaults pra seed inicial ----------
 export const CATEGORIAS_DEFAULT = [
-  { nome: 'Receitas',      cor: '#10B981', ordem: 0 },
-  { nome: 'Dívidas',       cor: '#EF4444', ordem: 1 },
-  { nome: 'Investimentos', cor: '#8B5CF6', ordem: 2 },
+  { nome: 'Receitas',      cor: '#10B981', ordem: 0, grupo: 'receitas' },
+  { nome: 'Dívidas',       cor: '#EF4444', ordem: 1, grupo: 'dividas' },
+  { nome: 'Investimentos', cor: '#8B5CF6', ordem: 2, grupo: 'investimentos' },
 ];
