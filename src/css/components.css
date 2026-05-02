@@ -1747,6 +1747,27 @@
   background: color-mix(in srgb, var(--cat-color, var(--color-primary)) 10%, var(--color-surface));
 }
 
+/* Primeira coluna sticky — mantém o nome visível ao scrollar */
+.compromissos-grouped-table thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--color-surface-alt);
+  box-shadow: 2px 0 4px -1px rgba(0,0,0,0.08);
+}
+
+.compromissos-grouped-table tbody tr.compromisso-row td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: color-mix(in srgb, var(--cat-color, transparent) 4%, var(--color-surface));
+  box-shadow: 2px 0 4px -1px rgba(0,0,0,0.06);
+}
+
+.compromissos-grouped-table tbody tr.compromisso-row:hover td:first-child {
+  background: color-mix(in srgb, var(--cat-color, var(--color-primary)) 10%, var(--color-surface));
+}
+
 /* ============================================================
    DRE VIEW (Compromissos agrupados por Categoria)
    ============================================================ */
