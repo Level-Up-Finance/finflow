@@ -44,6 +44,10 @@ let detailsCompromisso = null;
 let pendingAction = null;
 let filterStatus = 'todas';
 let filterCategorias = new Set(['all']);
+
+// Fluxo dívida vinculada
+let _dividaFlowComp = null;   // compromisso recém-criado
+let _dividaCriada   = null;   // id da dívida criada no fluxo
 let viewMode = 'table'; // 'table' | 'dre' | 'calendar'
 
 // Estado do calendário
@@ -303,6 +307,7 @@ function toggleProjetoField() {
 function bindEvents() {
   document.getElementById('btn-novo-compromisso').addEventListener('click', () => openCompromissoModal());
   document.querySelector('[data-trigger-novo]')?.addEventListener('click', () => openCompromissoModal());
+  bindDividaFlow();
 
   // Botão de gerenciar categorias
   document.getElementById('btn-gerenciar-categorias').addEventListener('click', openCategoriasModal);
@@ -1770,9 +1775,19 @@ async function saveCompromisso(event) {
     }
 
     showToast(editingId ? 'Compromisso atualizado' : 'Compromisso criado', 'success');
+
+    // Fluxo dívida: só para novos compromissos do grupo 'dividas'
+    const foiInsert = !editingId;
+    const novaData  = response.data;
+
     closeModal('modal-compromisso');
     editingId = null;
     await loadCompromissos();
+
+    if (foiInsert && cat?.grupo === 'dividas' && novaData) {
+      _dividaFlowComp = { ...novaData, cat };
+      openSugestaoDivida();
+    }
   } catch (err) {
     console.error('[saveCompromisso]', err);
     let msg = err?.message || err?.hint || err?.details || JSON.stringify(err);
@@ -2195,4 +2210,140 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (m) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]
   );
+}
+
+// =============================================================
+// Fluxo: dívida vinculada ao compromisso
+// =============================================================
+
+function bindDividaFlow() {
+  // Passo 1 — sugestão
+  document.getElementById('btn-sugestao-nao').addEventListener('click', () => {
+    closeModal('modal-divida-sugestao');
+    _dividaFlowComp = null;
+  });
+  document.getElementById('btn-sugestao-sim').addEventListener('click', () => {
+    closeModal('modal-divida-sugestao');
+    openDividaNova();
+  });
+  document.querySelector('[data-close-modal="modal-divida-sugestao"]')
+    ?.addEventListener('click', () => { _dividaFlowComp = null; });
+
+  // Passo 2 — formulário da dívida
+  document.getElementById('form-divida-nova').addEventListener('submit', saveDividaNova);
+  document.querySelector('[data-close-modal="modal-divida-nova"]')
+    ?.addEventListener('click', () => { _dividaFlowComp = null; });
+
+  // Passo 3 — histórico
+  document.getElementById('btn-historico-depois').addEventListener('click', () => {
+    closeModal('modal-divida-historico');
+    _dividaCriada = null;
+    showToast('Dívida criada. Você pode atualizar o histórico na página Dívidas.', 'success', 5000);
+  });
+  document.getElementById('btn-historico-fechar').addEventListener('click', () => {
+    closeModal('modal-divida-historico');
+    _dividaCriada = null;
+    showToast('Dívida criada. Você pode atualizar o histórico na página Dívidas.', 'success', 5000);
+  });
+  document.getElementById('btn-historico-salvar').addEventListener('click', salvarHistoricoDivida);
+}
+
+// Passo 1 — abre sugestão
+function openSugestaoDivida() {
+  const nome = _dividaFlowComp?.nome || _dividaFlowComp?.apelido || '';
+  document.getElementById('sugestao-nome-comp').textContent = `"${nome}"`;
+  openModal('modal-divida-sugestao');
+}
+
+// Passo 2 — abre form da nova dívida
+function openDividaNova() {
+  const comp = _dividaFlowComp;
+  document.getElementById('dn-nome').value           = comp?.apelido || comp?.nome || '';
+  document.getElementById('dn-credor').value         = '';
+  document.getElementById('dn-valor-total').value    = comp?.valor_base > 0 ? comp.valor_base : '';
+  document.getElementById('dn-juros').value          = '';
+  document.getElementById('dn-data-inicio').value    = comp?.iniciado_em || new Date().toISOString().slice(0, 10);
+  document.getElementById('dn-data-vencimento').value = comp?.terminado_em || '';
+  document.getElementById('dn-valor-pago').value     = '';
+  openModal('modal-divida-nova');
+}
+
+// Passo 2 — salva a dívida
+async function saveDividaNova(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-salvar-divida-nova');
+
+  const nome            = document.getElementById('dn-nome').value.trim();
+  const credor          = document.getElementById('dn-credor').value.trim() || null;
+  const valor_total     = parseFloat(document.getElementById('dn-valor-total').value);
+  const jurosRaw        = document.getElementById('dn-juros').value;
+  const juros_percentual = jurosRaw ? parseFloat(jurosRaw) : null;
+  const data_inicio     = document.getElementById('dn-data-inicio').value;
+  const data_vencimento = document.getElementById('dn-data-vencimento').value || null;
+
+  if (!nome)                                        { showToast('Informe o nome da dívida', 'error'); return; }
+  if (!valor_total || isNaN(valor_total) || valor_total <= 0) { showToast('Informe um valor total válido', 'error'); return; }
+  if (!data_inicio)                                  { showToast('Informe a data de início', 'error'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Salvando…';
+
+  const user = await getCurrentUser();
+  const { data, error } = await supabase.from('dividas').insert({
+    user_id: user.id,
+    nome,
+    credor,
+    valor_total,
+    valor_pago: 0,
+    juros_percentual,
+    data_inicio,
+    data_vencimento,
+    status: 'Ativa',
+    conta_id: _dividaFlowComp?.conta_id || null,
+  }).select().single();
+
+  btn.disabled = false;
+  btn.textContent = 'Salvar dívida';
+
+  if (error) { showToast('Erro ao criar dívida: ' + error.message, 'error', 8000); return; }
+
+  _dividaCriada = data.id;
+  closeModal('modal-divida-nova');
+  openDividaHistorico();
+}
+
+// Passo 3 — abre modal de histórico
+function openDividaHistorico() {
+  document.getElementById('dn-valor-pago').value = '';
+  openModal('modal-divida-historico');
+}
+
+// Passo 3 — salva valor_pago inicial
+async function salvarHistoricoDivida() {
+  const valorRaw = document.getElementById('dn-valor-pago').value;
+  const valor    = parseFloat(valorRaw);
+
+  if (!valorRaw || isNaN(valor) || valor < 0) {
+    showToast('Informe um valor válido (ou clique em "Deixar para depois")', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btn-historico-salvar');
+  btn.disabled = true;
+  btn.textContent = 'Salvando…';
+
+  const { error } = await supabase
+    .from('dividas')
+    .update({ valor_pago: valor })
+    .eq('id', _dividaCriada);
+
+  btn.disabled = false;
+  btn.textContent = 'Atualizar';
+
+  if (error) { showToast('Erro ao atualizar histórico: ' + error.message, 'error', 8000); return; }
+
+  closeModal('modal-divida-historico');
+  _dividaCriada   = null;
+  _dividaFlowComp = null;
+  showToast('Dívida criada e histórico atualizado!', 'success');
 }

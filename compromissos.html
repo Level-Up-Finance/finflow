@@ -437,6 +437,97 @@
     </div>
   </div>
 
+  <!-- Modal: Sugestão de criar dívida -->
+  <div class="modal-backdrop hidden" id="modal-divida-sugestao" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title">Criar dívida vinculada?</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-divida-sugestao" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--color-text-secondary); font-size: var(--fs-sm); line-height: 1.6;">
+          O compromisso <strong id="sugestao-nome-comp"></strong> foi criado na categoria <strong>Dívidas</strong>.<br><br>
+          Deseja criar uma dívida vinculada para acompanhar o progresso de pagamento?
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-sugestao-nao">Não, obrigado</button>
+        <button type="button" class="btn btn-primary" id="btn-sugestao-sim">Sim, criar dívida</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Nova dívida (a partir de compromisso) -->
+  <div class="modal-backdrop hidden" id="modal-divida-nova" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h2 class="modal-title">Nova dívida</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-divida-nova" aria-label="Fechar">×</button>
+      </div>
+      <form id="form-divida-nova">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group form-group-flex">
+              <label class="form-label" for="dn-nome">Nome da dívida *</label>
+              <input class="form-input" id="dn-nome" type="text" placeholder="Ex: Financiamento carro" required>
+            </div>
+            <div class="form-group form-group-flex">
+              <label class="form-label" for="dn-credor">Credor</label>
+              <input class="form-input" id="dn-credor" type="text" placeholder="Ex: Banco Itaú">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group form-group-flex">
+              <label class="form-label" for="dn-valor-total">Valor total da dívida *</label>
+              <input class="form-input" id="dn-valor-total" type="number" step="0.01" min="0.01" placeholder="0,00" required>
+            </div>
+            <div class="form-group form-group-flex">
+              <label class="form-label" for="dn-juros">Juros ao mês (%)</label>
+              <input class="form-input" id="dn-juros" type="number" step="0.01" min="0" placeholder="0,00">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group form-group-flex">
+              <label class="form-label" for="dn-data-inicio">Data de início *</label>
+              <input class="form-input" id="dn-data-inicio" type="date" required>
+            </div>
+            <div class="form-group form-group-flex">
+              <label class="form-label" for="dn-data-vencimento">Data de vencimento</label>
+              <input class="form-input" id="dn-data-vencimento" type="date">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" data-close-modal="modal-divida-nova">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-salvar-divida-nova">Salvar dívida</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Atualizar histórico da dívida -->
+  <div class="modal-backdrop hidden" id="modal-divida-historico" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title">Atualizar histórico</h2>
+        <button type="button" class="modal-close" id="btn-historico-fechar" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--color-text-secondary); font-size: var(--fs-sm); line-height: 1.6; margin-bottom: var(--space-4);">
+          Esta dívida já tem algum valor pago até hoje? Se sim, informe o total já pago para refletir a situação atual.
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="dn-valor-pago">Total já pago até hoje</label>
+          <input class="form-input" id="dn-valor-pago" type="number" step="0.01" min="0" placeholder="0,00">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-historico-depois">Deixar para depois</button>
+        <button type="button" class="btn btn-primary" id="btn-historico-salvar">Atualizar</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast-container" class="toast-container"></div>
   <script type="module" src="src/js/pages/compromissos.js"></script>
 </body>
