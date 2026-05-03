@@ -6,6 +6,7 @@
 // =============================================================
 
 const PREFIX = 'finflow:cols:';
+let _docListenerAttached = false;
 
 /**
  * @param {object} opts
@@ -104,10 +105,13 @@ export function initColVisibility({ storageKey, tableClass, columns, toolbarEl }
   // Cliques dentro do dropdown não fecham
   dropdown.addEventListener('click', (e) => e.stopPropagation());
 
-  // Clique fora fecha
-  document.addEventListener('click', () => {
-    dropdown.classList.remove('col-vis-dropdown--open');
-  });
+  // Clique fora fecha (listener único por página)
+  if (!_docListenerAttached) {
+    _docListenerAttached = true;
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.col-vis-dropdown').forEach((d) => d.classList.remove('col-vis-dropdown--open'));
+    });
+  }
 
   wrap.appendChild(btn);
   wrap.appendChild(dropdown);

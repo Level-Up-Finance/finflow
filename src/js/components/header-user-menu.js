@@ -10,23 +10,11 @@
 // =============================================================
 import { supabase } from '../lib/supabase.js';
 import { getCurrentUser, logout } from '../lib/auth.js';
+import { escapeHtml, getInitials } from '../lib/utils.js';
 
 let cachedProfile = null;
 let dropdownOpen = false;
-
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[c]));
-}
-
-function getInitials(name, email) {
-  const src = (name || email || '?').trim();
-  if (!src) return '?';
-  const parts = src.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  return src.slice(0, 2).toUpperCase();
-}
+let docListenersAttached = false;
 
 export async function mountHeaderUserMenu() {
   const header = document.querySelector('.app-header.header');
@@ -125,21 +113,25 @@ function bindEvents(host) {
 
   logoutBtn?.addEventListener('click', () => logout());
 
-  // Fecha quando clica fora
-  document.addEventListener('click', (e) => {
-    if (!dropdownOpen) return;
-    if (host.contains(e.target)) return;
-    dropdownOpen = false;
-    dropdown.classList.add('hidden');
-    trigger?.setAttribute('aria-expanded', 'false');
-  });
+  // Fecha quando clica fora e no Esc — apenas uma vez por página
+  if (!docListenersAttached) {
+    docListenersAttached = true;
 
-  // Fecha no Esc
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && dropdownOpen) {
+    document.addEventListener('click', (e) => {
+      if (!dropdownOpen) return;
+      const menuHost = document.getElementById('header-user-menu');
+      if (menuHost?.contains(e.target)) return;
       dropdownOpen = false;
-      dropdown.classList.add('hidden');
-      trigger?.setAttribute('aria-expanded', 'false');
-    }
-  });
+      menuHost?.querySelector('#hum-dropdown')?.classList.add('hidden');
+      menuHost?.querySelector('#hum-trigger')?.setAttribute('aria-expanded', 'false');
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape' || !dropdownOpen) return;
+      dropdownOpen = false;
+      const menuHost = document.getElementById('header-user-menu');
+      menuHost?.querySelector('#hum-dropdown')?.classList.add('hidden');
+      menuHost?.querySelector('#hum-trigger')?.setAttribute('aria-expanded', 'false');
+    });
+  }
 }

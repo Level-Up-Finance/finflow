@@ -40,8 +40,10 @@ export function openModal(modalId, data) {
 
 /**
  * Fecha o modal e limpa o form interno.
+ * @param {string} modalId
+ * @param {Element} [triggerEl]  Elemento que abriu o modal — recebe foco ao fechar
  */
-export function closeModal(modalId) {
+export function closeModal(modalId, triggerEl) {
   const modal = document.getElementById(modalId);
   if (!modal) return;
 
@@ -55,6 +57,8 @@ export function closeModal(modalId) {
     modal.removeEventListener('click', listeners.overlayListener);
     listenerMap.delete(modal);
   }
+
+  triggerEl?.focus();
 }
 
 /**

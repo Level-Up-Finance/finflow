@@ -174,14 +174,15 @@ async function handleForgotPassword(event) {
 // Init
 // -----------------------------
 document.addEventListener('DOMContentLoaded', async () => {
-  if (!isSupabaseConfigured()) {
+  try {
+    if (!isSupabaseConfigured()) {
+      showToast('Configure Supabase em src/js/lib/config.js', 'warning', 8000);
+      return;
+    }
+    await redirectIfAuthenticated();
+  } finally {
     document.body.style.visibility = 'visible';
-    showToast('Configure Supabase em src/js/lib/config.js', 'warning', 8000);
-    return;
   }
-
-  await redirectIfAuthenticated();
-  document.body.style.visibility = 'visible';
 
   // Toggle de modo (login / signup / forgot)
   document.querySelectorAll('[data-action]').forEach((el) => {

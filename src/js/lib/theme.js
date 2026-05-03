@@ -59,8 +59,6 @@ export function applyTheme(pref) {
   } else {
     document.documentElement.removeAttribute('data-theme');
   }
-  // Debug: confirma a aplicação. Apaga depois que o tema estiver verificado.
-  console.log('[theme]', pref, '→ effective:', effective, '· html.data-theme:', document.documentElement.getAttribute('data-theme'));
 }
 
 // Configura listener pra mudar tema quando OS muda (só em modo "auto")

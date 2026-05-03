@@ -197,27 +197,7 @@ function bindModalEvents(backdrop, tutorial, pageId, state) {
     setTimeout(() => backdrop.remove(), 280);
   }
 
-  function goToSection(index) {
-    if (index < 0 || index >= state.total) return;
-    state.current = index;
-    const isLast = index === state.total - 1;
-
-    // Re-render body + nav only (não fecha o modal)
-    backdrop.querySelector('.tutorial-modal').innerHTML = buildModalHTML(tutorial, index, state.total).match(/<div class="tutorial-modal">([\s\S]*)<\/div>/)?.[0]
-      || backdrop.querySelector('.tutorial-modal').innerHTML;
-
-    // Simpler: replace the whole modal content
-    const modal = backdrop.querySelector('.tutorial-modal');
-    const temp = document.createElement('div');
-    temp.innerHTML = buildModalHTML(tutorial, index, state.total);
-    const newModal = temp.querySelector('.tutorial-modal');
-    modal.replaceWith(newModal);
-
-    bindInnerEvents(backdrop, tutorial, pageId, state);
-    newModal.classList.add('tutorial-section-animate');
-  }
-
-  bindInnerEvents(backdrop, tutorial, pageId, state);
+  bindInnerEvents(backdrop, tutorial, pageId, state, close);
 
   // Close on backdrop click
   backdrop.addEventListener('click', (e) => {
@@ -234,20 +214,7 @@ function bindModalEvents(backdrop, tutorial, pageId, state) {
   document.addEventListener('keydown', onKeyDown);
 }
 
-function bindInnerEvents(backdrop, tutorial, pageId, state) {
-  function markSeenIfChecked() {
-    const chk = backdrop.querySelector('#tutorial-dont-show-chk');
-    if (chk && chk.checked) {
-      localStorage.setItem(STORAGE_PREFIX + pageId, '1');
-    }
-  }
-
-  function close() {
-    markSeenIfChecked();
-    backdrop.classList.remove('tutorial-backdrop--visible');
-    setTimeout(() => backdrop.remove(), 280);
-  }
-
+function bindInnerEvents(backdrop, tutorial, pageId, state, close) {
   function goToSection(index) {
     if (index < 0 || index >= state.total) return;
     state.current = index;
@@ -260,7 +227,7 @@ function bindInnerEvents(backdrop, tutorial, pageId, state) {
     newModal.classList.add('tutorial-section-animate');
     setTimeout(() => newModal.classList.remove('tutorial-section-animate'), 300);
 
-    bindInnerEvents(backdrop, tutorial, pageId, state);
+    bindInnerEvents(backdrop, tutorial, pageId, state, close);
     const btn = newModal.querySelector('.tutorial-btn-next, .tutorial-btn-finish, .tutorial-btn-prev');
     if (btn) btn.focus();
   }

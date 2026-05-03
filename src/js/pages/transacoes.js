@@ -33,6 +33,8 @@ import {
   upsertRule,
   suggestSubcategoriaFromHistory,
 } from '../lib/regras-reconciliacao.js';
+import { escapeHtml, formatDateBR, showConfirm } from '../lib/utils.js';
+import { initColVisibility } from '../lib/col-visibility.js';
 import {
   isContaCartao,
   syncTransacaoFatura,
@@ -57,19 +59,17 @@ const MONTH_LABELS_LONG = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho'
 
 // Colunas visíveis — persistidas no localStorage
 const TRANS_COLUMNS = [
-  { id: 'planejada',    label: 'Planejada'            },
-  { id: 'id',           label: 'Identificador'         },
-  { id: 'banco',        label: 'Descrição'             },
-  { id: 'contato',      label: 'Cliente / Fornecedor'  },
-  { id: 'bloco',        label: 'Bloco'                 },
-  { id: 'categoria',    label: 'Categoria'             },
-  { id: 'subcategoria', label: 'Subcategoria'          },
-  { id: 'conta',        label: 'Conta'                 },
-  { id: 'valor',        label: 'Valor'                 },
-  { id: 'saldo',        label: 'Saldo'                 },
+  { key: 'planejada',    label: 'Planejada',           defaultVisible: true },
+  { key: 'id',           label: 'Identificador',       defaultVisible: true },
+  { key: 'banco',        label: 'Descrição',           defaultVisible: true },
+  { key: 'contato',      label: 'Cliente / Fornecedor',defaultVisible: true },
+  { key: 'bloco',        label: 'Bloco',               defaultVisible: true },
+  { key: 'categoria',    label: 'Categoria',           defaultVisible: true },
+  { key: 'subcategoria', label: 'Subcategoria',        defaultVisible: true },
+  { key: 'conta',        label: 'Conta',               defaultVisible: true },
+  { key: 'valor',        label: 'Valor',               defaultVisible: true },
+  { key: 'saldo',        label: 'Saldo',               defaultVisible: true },
 ];
-const LS_COL_KEY    = 'finflow_trans_cols_v1';
-let colVisibility   = Object.fromEntries(TRANS_COLUMNS.map((c) => [c.id, true]));
 
 // Seleção de linhas para exclusão em lote
 let selectedIds     = new Set();
@@ -295,7 +295,15 @@ function filterSubForModal(categoriaId, currentSubId = '') {
 // Filtros
 // -----------------------------
 function initFilters() {
-  loadColVisibility();
+  const colVisToolbar = document.getElementById('trans-col-vis');
+  if (colVisToolbar) {
+    initColVisibility({
+      storageKey: 'transacoes',
+      tableClass: 'trans-table',
+      columns: TRANS_COLUMNS,
+      toolbarEl: colVisToolbar,
+    });
+  }
   const today = new Date();
   const y = today.getFullYear();
   const m = today.getMonth();
@@ -371,39 +379,6 @@ function applyPeriodAndRender() {
   render();
 }
 
-// ── Visibilidade de colunas ────────────────────────────────────
-function loadColVisibility() {
-  try {
-    const stored = JSON.parse(localStorage.getItem(LS_COL_KEY) || '{}');
-    TRANS_COLUMNS.forEach(({ id }) => {
-      if (id in stored) colVisibility[id] = stored[id];
-    });
-  } catch (_) {}
-}
-
-function saveColVisibility() {
-  localStorage.setItem(LS_COL_KEY, JSON.stringify(colVisibility));
-}
-
-function applyColumnVisibility() {
-  const container = document.getElementById('trans-container');
-  if (!container) return;
-  TRANS_COLUMNS.forEach(({ id }) => {
-    container.classList.toggle(`hide-col-${id}`, colVisibility[id] === false);
-  });
-}
-
-function renderColSelectorDropdown() {
-  const dd = document.getElementById('col-selector-dropdown');
-  if (!dd) return;
-  dd.innerHTML = TRANS_COLUMNS.map(({ id, label }) => `
-    <label class="col-selector-item">
-      <input type="checkbox" class="col-selector-check" data-col="${id}"
-        ${colVisibility[id] !== false ? 'checked' : ''}>
-      <span>${label}</span>
-    </label>
-  `).join('');
-}
 
 // ── Seleção de linhas ──────────────────────────────────────────
 function updateSelectionBar() {
@@ -431,7 +406,7 @@ async function execBulkDelete() {
   const ids = [...selectedIds];
   if (!ids.length) return;
   const n = ids.length;
-  if (!window.confirm(`Excluir ${n} transaç${n > 1 ? 'ões' : 'ão'}?\n\nEsta ação não pode ser desfeita.`)) return;
+  if (!await showConfirm(`Excluir ${n} transaç${n > 1 ? 'ões' : 'ão'}?\n\nEsta ação não pode ser desfeita.`)) return;
 
   const { error } = await supabase.from('transacoes').delete().in('id', ids);
   if (error) { showToast('Erro ao excluir: ' + error.message, 'error', 8000); return; }
@@ -468,9 +443,6 @@ function render() {
     container.innerHTML = renderTableShell();
     shellRendered = true;
   }
-
-  applyColumnVisibility();
-  renderColSelectorDropdown();
 
   const dataTbody = document.getElementById('trans-data-tbody');
   dataTbody.innerHTML = renderDataRows(filtered);
@@ -542,16 +514,16 @@ function renderTableShell() {
       <thead>
         <tr>
           <th class="trans-th-data">Data</th>
-          <th class="trans-th-planejada" title="Data planejada do compromisso vinculado. 'Extrato' = importado sem compromisso.">Planejada</th>
-          <th class="trans-th-id" title="Identificador único fornecido pelo banco no extrato">Identificador</th>
-          <th class="trans-th-banco">Descrição</th>
-          <th class="trans-th-contato">Cliente / Fornecedor</th>
-          <th class="trans-th-bloco">Bloco</th>
-          <th class="trans-th-categoria">Categoria</th>
-          <th class="trans-th-subcategoria">Subcategoria</th>
-          <th class="trans-th-conta">Conta</th>
-          <th class="trans-th-valor">Valor</th>
-          <th class="trans-th-saldo">Saldo</th>
+          <th class="trans-th-planejada" data-col="planejada" title="Data planejada do compromisso vinculado. 'Extrato' = importado sem compromisso.">Planejada</th>
+          <th class="trans-th-id" data-col="id" title="Identificador único fornecido pelo banco no extrato">Identificador</th>
+          <th class="trans-th-banco" data-col="banco">Descrição</th>
+          <th class="trans-th-contato" data-col="contato">Cliente / Fornecedor</th>
+          <th class="trans-th-bloco" data-col="bloco">Bloco</th>
+          <th class="trans-th-categoria" data-col="categoria">Categoria</th>
+          <th class="trans-th-subcategoria" data-col="subcategoria">Subcategoria</th>
+          <th class="trans-th-conta" data-col="conta">Conta</th>
+          <th class="trans-th-valor" data-col="valor">Valor</th>
+          <th class="trans-th-saldo" data-col="saldo">Saldo</th>
           <th class="trans-th-actions" title="Selecionar tudo">
             <input type="checkbox" id="trans-select-all" title="Selecionar / desmarcar tudo">
           </th>
@@ -686,21 +658,21 @@ function renderDataRows(items) {
     return `
       <tr class="trans-row trans-row-${t.tipo === 'Receita' ? 'receita' : 'despesa'}${isImportado ? ' trans-row--importado' : ''}" data-id="${t.id}">
         <td class="trans-td-data tabular">${formatDateBR(t.data)}</td>
-        <td class="trans-td-planejada">${planejadaHtml}</td>
-        <td class="trans-td-id">${bancoIdHtml}</td>
-        <td class="trans-td-banco">${bancoDescHtml}</td>
-        <td class="trans-td-contato">${contatoHtml}</td>
-        <td class="trans-td-bloco">${blocoHtml}</td>
-        <td class="trans-td-categoria">${catHtml}</td>
-        <td class="trans-td-subcategoria">${subHtml}</td>
-        <td class="trans-td-conta">
+        <td class="trans-td-planejada" data-col="planejada">${planejadaHtml}</td>
+        <td class="trans-td-id" data-col="id">${bancoIdHtml}</td>
+        <td class="trans-td-banco" data-col="banco">${bancoDescHtml}</td>
+        <td class="trans-td-contato" data-col="contato">${contatoHtml}</td>
+        <td class="trans-td-bloco" data-col="bloco">${blocoHtml}</td>
+        <td class="trans-td-categoria" data-col="categoria">${catHtml}</td>
+        <td class="trans-td-subcategoria" data-col="subcategoria">${subHtml}</td>
+        <td class="trans-td-conta" data-col="conta">
           <div class="trans-conta-cell">
             <span>${escapeHtml(conta ? (conta.apelido || conta.nome) : '—')}</span>
             ${reconBadge}${parcialIcon}
           </div>
         </td>
-        <td class="trans-td-valor tabular ${tipoCls}">${sinal} ${formatCurrency(Number(t.valor || 0), t.moeda)}</td>
-        <td class="trans-td-saldo tabular" style="${saldoColor}">${saldoSinal} ${formatCurrency(Math.abs(saldoVal))}</td>
+        <td class="trans-td-valor tabular ${tipoCls}" data-col="valor">${sinal} ${formatCurrency(Number(t.valor || 0), t.moeda)}</td>
+        <td class="trans-td-saldo tabular" data-col="saldo" style="${saldoColor}">${saldoSinal} ${formatCurrency(Math.abs(saldoVal))}</td>
         <td class="trans-td-actions">
           <div class="trans-actions-col">
             <input type="checkbox" class="trans-row-check" data-id="${t.id}"
@@ -730,7 +702,7 @@ function renderDataRows(items) {
         &nbsp;
         <span class="trans-tipo-despesa">− ${formatCurrency(totalDespesas)}</span>
       </td>
-      <td class="trans-td-saldo tabular trans-footer-saldo" style="${saldoMesColor}">${saldoMesSinal} ${formatCurrency(Math.abs(saldoMes))}</td>
+      <td class="trans-td-saldo tabular trans-footer-saldo" data-col="saldo" style="${saldoMesColor}">${saldoMesSinal} ${formatCurrency(Math.abs(saldoMes))}</td>
       <td></td>
     </tr>`;
 
@@ -818,34 +790,6 @@ function bindEvents() {
   // Modal de criar regra (Fase 3)
   document.getElementById('btn-regra-confirm').addEventListener('click', onCreateRuleConfirm);
   document.getElementById('btn-regra-skip').addEventListener('click', onCreateRuleSkip);
-
-  // Seletor de colunas — toggle dropdown
-  document.getElementById('btn-col-selector').addEventListener('click', (e) => {
-    e.stopPropagation();
-    const dropdown = document.getElementById('col-selector-dropdown');
-    const btn      = document.getElementById('btn-col-selector');
-    const isOpen   = !dropdown.classList.contains('hidden');
-    dropdown.classList.toggle('hidden', isOpen);
-    btn.setAttribute('aria-expanded', String(!isOpen));
-  });
-
-  // Fechar dropdown ao clicar fora
-  document.addEventListener('click', (e) => {
-    const wrap = document.querySelector('.col-selector-wrap');
-    if (wrap && !wrap.contains(e.target)) {
-      document.getElementById('col-selector-dropdown')?.classList.add('hidden');
-      document.getElementById('btn-col-selector')?.setAttribute('aria-expanded', 'false');
-    }
-  });
-
-  // Delegação: checkboxes dentro do dropdown de colunas
-  document.getElementById('col-selector-dropdown').addEventListener('change', (e) => {
-    const cb = e.target.closest('input[type="checkbox"][data-col]');
-    if (!cb) return;
-    colVisibility[cb.dataset.col] = cb.checked;
-    saveColVisibility();
-    applyColumnVisibility();
-  });
 
   // Excluir selecionadas
   document.getElementById('btn-bulk-delete').addEventListener('click', execBulkDelete);
@@ -1350,12 +1294,6 @@ function todayInput() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function formatDateBR(iso) {
-  if (!iso) return '—';
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y}`;
-}
-
 function monthLabelBR(iso) {
   if (!iso) return '—';
   const [y, m] = iso.split('-');
@@ -1363,8 +1301,3 @@ function monthLabelBR(iso) {
   return `${meses[Number(m) - 1]}/${y}`;
 }
 
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, (m) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]
-  );
-}

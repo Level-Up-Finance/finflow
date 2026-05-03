@@ -17,6 +17,7 @@ import { showToast } from '../components/toast.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
 import { fetchExchangeRate, startCurrencyAutoRefresh } from '../lib/currency.js';
 import { initCurrencyWidget } from '../components/currency-widget.js';
+import { escapeHtml, isoMonth } from '../lib/utils.js';
 
 // -----------------------------
 // State
@@ -1000,12 +1001,14 @@ function render12MonthsView() {
           const valorBRL = convertToBRL(valorOrig, entry.moeda || 'BRL', entry);
           const inputValue = (valorBRL !== null ? valorBRL : valorOrig).toFixed(2);
           const canEdit = (entry.moeda === 'BRL') || valorBRL !== null;
+          const monthLabel = `${String(m.month + 1).padStart(2, '0')}/${m.year}`;
           return `<td class="text-right value-cell ${currentClass}">
             <input type="number" step="0.01" min="0"
               class="orcamento-cell-edit-12m"
               data-orcamento-id="${entry.id}"
               value="${inputValue}"
               ${editable && canEdit ? '' : 'readonly'}
+              aria-label="Valor planejado de ${escapeHtml(sub.apelido?.trim() || sub.nome)} em ${monthLabel} em BRL"
             />
           </td>`;
         }
@@ -1274,11 +1277,6 @@ function isActiveInMonth(sub, year, month) {
 // -----------------------------
 // Util
 // -----------------------------
-function isoMonth(year, month) {
-  // 'YYYY-MM-01' format pra mes_ano
-  return `${year}-${String(month + 1).padStart(2, '0')}-01`;
-}
-
 function displayName(entry) {
   const sub = entry.subcategorias;
   return sub?.apelido?.trim() || sub?.nome || '';
@@ -1328,8 +1326,3 @@ function renderProgressoCell(sub) {
   return '<span class="text-muted">—</span>';
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (m) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]
-  );
-}

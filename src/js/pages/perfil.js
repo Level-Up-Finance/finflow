@@ -8,6 +8,7 @@ import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
+import { escapeHtml, getInitials, showConfirm } from '../lib/utils.js';
 
 let cachedProfile = null;
 let userId = null;
@@ -209,7 +210,7 @@ async function removeFoto() {
     showToast('Você não tem foto ainda', 'info');
     return;
   }
-  if (!window.confirm('Remover a foto do seu perfil?')) return;
+  if (!await showConfirm('Remover a foto do seu perfil?', { okLabel: 'Remover' })) return;
 
   const { error } = await supabase
     .from('profiles')
@@ -227,18 +228,3 @@ async function removeFoto() {
 }
 
 // -----------------------------
-// Utils
-// -----------------------------
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[c]));
-}
-
-function getInitials(src) {
-  const t = (src || '?').trim();
-  if (!t) return '?';
-  const parts = t.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  return t.slice(0, 2).toUpperCase();
-}

@@ -7,6 +7,7 @@ import { initTutorial } from '../lib/tutorial.js';
 import { supabase }                     from '../lib/supabase.js';
 import { showToast }                    from '../components/toast.js';
 import { formatCurrency }               from '../lib/compromissos-config.js';
+import { escapeHtml } from '../lib/utils.js';
 
 // ── State ─────────────────────────────────────────────────────
 let cachedContatos      = [];
@@ -425,8 +426,3 @@ function avatarInitials(nome) {
   return (nome || '').split(' ').map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?';
 }
 
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]),
-  );
-}

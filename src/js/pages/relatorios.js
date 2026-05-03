@@ -9,6 +9,7 @@ import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
+import { escapeHtml, formatDateBR } from '../lib/utils.js';
 
 // -------------------------------------------------------
 // Estado
@@ -813,20 +814,33 @@ function exportCSV() {
   showToast('CSV exportado', 'success');
 }
 
-function exportExcel() {
+async function exportExcel() {
   const table = getActiveTable();
   if (!table) return;
-  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
-    xmlns:x="urn:schemas-microsoft-com:office:excel"
-    xmlns="http://www.w3.org/TR/REC-html40">
-    <head><meta charset="UTF-8">
-    <meta name=ProgId content=Excel.Sheet></head>
-    <body>${table.outerHTML}</body></html>`;
-  triggerDownload(
-    new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' }),
-    `finflow-${activeTab}-${toISODate(today)}.xls`,
-  );
-  showToast('Excel exportado', 'success');
+
+  const ok = await loadSheetJs();
+  if (!ok || !window.XLSX) {
+    showToast('Não foi possível carregar SheetJS para exportar XLSX', 'error', 6000);
+    return;
+  }
+
+  const wb = window.XLSX.utils.book_new();
+  const ws = window.XLSX.utils.table_to_sheet(table);
+  window.XLSX.utils.book_append_sheet(wb, ws, activeTab);
+  window.XLSX.writeFile(wb, `finflow-${activeTab}-${toISODate(today)}.xlsx`);
+  showToast('Excel (.xlsx) exportado', 'success');
+}
+
+async function loadSheetJs() {
+  if (window.XLSX) return true;
+  showToast('Carregando SheetJS…', 'info', 3000);
+  return new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s.onload  = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.head.appendChild(s);
+  });
 }
 
 function exportPDF() {
@@ -850,12 +864,6 @@ function toISODate(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function formatDateBR(iso) {
-  if (!iso) return '—';
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y}`;
-}
-
 function fmtAxisVal(val) {
   const abs  = Math.abs(val);
   const sign = val < 0 ? '-' : '';
@@ -864,8 +872,3 @@ function fmtAxisVal(val) {
   return `${sign}${abs.toFixed(0)}`;
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (m) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m],
-  );
-}

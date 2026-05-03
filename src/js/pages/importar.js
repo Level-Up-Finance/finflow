@@ -11,6 +11,7 @@ import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { loadRules, findRule } from '../lib/regras-reconciliacao.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
+import { escapeHtml } from '../lib/utils.js';
 
 // ── State ─────────────────────────────────────────────────────
 let rawRows      = [];   // todas as linhas parseadas (inclui header)
@@ -181,11 +182,12 @@ function parseCSV(text) {
 // ── Excel Parser (SheetJS via CDN) ───────────────────────────
 async function loadSheetJs() {
   if (window.XLSX) return true;
+  showToast('Carregando SheetJS para ler Excel…', 'info', 3000);
   return new Promise((resolve) => {
     const s = document.createElement('script');
     s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
     s.onload  = () => resolve(true);
-    s.onerror = () => resolve(false);
+    s.onerror = () => { showToast('Falha ao carregar SheetJS — verifique sua conexão', 'error', 6000); resolve(false); };
     document.head.appendChild(s);
   });
 }
@@ -755,9 +757,3 @@ function goToStep(n) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ── Utils ─────────────────────────────────────────────────────
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]),
-  );
-}

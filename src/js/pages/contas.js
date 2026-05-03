@@ -15,6 +15,7 @@ import { openModal, closeModal } from '../components/modal.js';
 import { ACCOUNT_TYPES, getType, typeIcon, typeColor, typePill } from '../lib/account-types.js';
 import { CURATED_BANKS, findBank, logoUrl, searchBanks } from '../lib/banks.js';
 import { initColVisibility } from '../lib/col-visibility.js';
+import { escapeHtml, formatDateBR, todayISO } from '../lib/utils.js';
 import { checkAndCloseFaturas } from '../lib/faturas-cartao.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
 
@@ -91,8 +92,11 @@ function renderTipoFilters() {
 // -----------------------------
 function renderPickers() {
   const tipoSelector = document.getElementById('tipo-selector');
+  tipoSelector.setAttribute('role', 'radiogroup');
+  tipoSelector.setAttribute('aria-label', 'Tipo de conta');
   tipoSelector.innerHTML = ACCOUNT_TYPES.map((t) => `
-    <button type="button" class="tipo-btn ${t.value === DEFAULT_TIPO ? 'active' : ''}" data-tipo="${t.value}">
+    <button type="button" class="tipo-btn ${t.value === DEFAULT_TIPO ? 'active' : ''}" data-tipo="${t.value}"
+      role="radio" aria-checked="${t.value === DEFAULT_TIPO ? 'true' : 'false'}">
       <span class="tipo-icon" style="color: ${t.color};">${t.icon}</span>
       <span class="tipo-label">${t.label}</span>
     </button>
@@ -152,8 +156,12 @@ function bindEvents() {
   document.getElementById('tipo-selector').addEventListener('click', (e) => {
     const btn = e.target.closest('.tipo-btn');
     if (!btn) return;
-    document.querySelectorAll('.tipo-btn').forEach((b) => b.classList.remove('active'));
+    document.querySelectorAll('.tipo-btn').forEach((b) => {
+      b.classList.remove('active');
+      b.setAttribute('aria-checked', 'false');
+    });
     btn.classList.add('active');
+    btn.setAttribute('aria-checked', 'true');
     document.getElementById('conta-tipo').value = btn.dataset.tipo;
     toggleCartaoFields();
     updatePreview();
@@ -469,7 +477,11 @@ function openContaModal(conta = null) {
   document.getElementById('conta-limite').value = conta?.limite ?? '';
   document.getElementById('conta-status').value = status;
 
-  document.querySelectorAll('.tipo-btn').forEach((b) => b.classList.toggle('active', b.dataset.tipo === tipo));
+  document.querySelectorAll('.tipo-btn').forEach((b) => {
+    const isActive = b.dataset.tipo === tipo;
+    b.classList.toggle('active', isActive);
+    b.setAttribute('aria-checked', String(isActive));
+  });
   document.querySelectorAll('.color-swatch').forEach((b) => b.classList.toggle('active', b.dataset.color === cor));
   document.querySelectorAll('#status-segmented .segmented-btn').forEach((b) => b.classList.toggle('active', b.dataset.status === status));
 
@@ -1102,7 +1114,7 @@ function renderContaCard(conta) {
   const comprometidoBadge = renderComprometidoBadge(conta);
 
   return `
-    <div class="conta-card-v2 ${isInactive ? 'inactive' : ''} ${conta.status === 'arquivada' ? 'arquivada' : ''}" data-id="${conta.id}">
+    <div class="conta-card-v2 ${isInactive ? 'inactive' : ''} ${conta.status === 'arquivada' ? 'arquivada' : ''}" data-id="${conta.id}" tabindex="0" role="button" aria-label="Ver detalhes de ${escapeHtml(display)}">
       <span class="ver-mais-hint">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/></svg>
         Ver detalhes
@@ -1133,6 +1145,13 @@ function bindCardClicks() {
     card.addEventListener('click', () => {
       const conta = cachedContas.find((c) => c.id === card.dataset.id);
       if (conta) openDetailsModal(conta);
+    });
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        const conta = cachedContas.find((c) => c.id === card.dataset.id);
+        if (conta) openDetailsModal(conta);
+      }
     });
   });
 }
@@ -1341,21 +1360,3 @@ async function deleteConta(id) {
   await loadContas();
 }
 
-// -----------------------------
-// Util
-// -----------------------------
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function formatDateBR(iso) {
-  if (!iso) return '—';
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y.slice(2)}`;
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (m) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]
-  );
-}

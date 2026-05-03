@@ -7,6 +7,8 @@ import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { fetchExchangeRate } from '../lib/currency.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
+import { isPaidStatus } from '../lib/transacao-pagamento-sync.js';
+import { escapeHtml, isoMonth } from '../lib/utils.js';
 
 const MONTH_LABELS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const DAY_LABELS   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
@@ -17,7 +19,6 @@ const SUPER_BLOCOS = [
   { id: 'custo_vida',   label: 'Custo de vida', grupos: ['custo_vida'],            accent: 'var(--color-secondary)' },
 ];
 
-const PAID_STATUSES = new Set(['Pago', 'Cartão', 'Transferido', 'Parcial']);
 
 const today      = new Date();
 const viewYear   = today.getFullYear();
@@ -182,7 +183,7 @@ const WIDGET_REGISTRY = [
           <div class="dash-shortcut-hint">Receitas e despesas planejadas</div>
         </div>
       </a>
-      <a href="compromissos.html" class="dash-shortcut">
+      <a href="/compromissos.html" class="dash-shortcut">
         <span class="dash-shortcut-icon" style="--shortcut-color: var(--color-secondary);">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
         </span>
@@ -191,7 +192,7 @@ const WIDGET_REGISTRY = [
           <div class="dash-shortcut-hint">Cadastrar receita ou despesa</div>
         </div>
       </a>
-      <a href="relatorios.html" class="dash-shortcut">
+      <a href="/relatorios.html" class="dash-shortcut">
         <span class="dash-shortcut-icon" style="--shortcut-color: var(--color-warning);">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>
         </span>
@@ -570,7 +571,7 @@ function renderKPIs() {
   // Real (pagamentos efetivados)
   let receitasRealBRL = 0, despesasRealBRL = 0;
   for (const p of cachedPagamentos) {
-    if (!PAID_STATUSES.has(p.status)) continue;
+    if (!isPaidStatus(p.status)) continue;
     const val = p.valor_real != null ? Number(p.valor_real) : Number(p.valor_previsto);
     const vBRL = convertToBRL(val || 0, p.moeda, p);
     if (vBRL === null) continue;
@@ -601,7 +602,7 @@ function renderKPIs() {
     const prevBRL = convertToBRL(Number(p.valor_previsto) || 0, p.moeda, p);
     if (prevBRL === null) continue;
     totalPrevistoBRL += prevBRL;
-    if (PAID_STATUSES.has(p.status)) {
+    if (isPaidStatus(p.status)) {
       const val = p.valor_real != null ? Number(p.valor_real) : Number(p.valor_previsto);
       const vBRL = convertToBRL(val || 0, p.moeda, p);
       if (vBRL !== null) realPagoBRL += vBRL;
@@ -740,7 +741,7 @@ function renderAtrasados() {
     <div class="dash-alert-header">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
       <span class="dash-alert-summary">${atrasados.length} pagamento${atrasados.length > 1 ? 's' : ''} em atraso — ${formatCurrency(totalBRL, 'BRL')} total</span>
-      <a href="pagamentos.html" class="dash-alert-link">Ver em Pagamentos →</a>
+      <a href="/pagamentos.html" class="dash-alert-link">Ver em Pagamentos →</a>
     </div>
     <div class="dash-alert-list">${atrasados.map(renderAtrasadoRow).join('')}</div>`;
 }
@@ -757,7 +758,7 @@ function renderAtrasadoRow(p) {
   const mes   = String(d.getMonth() + 1).padStart(2, '0');
   const diasAtraso = Math.round((hoje - d) / 86400000);
   return `
-    <a href="pagamentos.html" class="dash-venc-row">
+    <a href="/pagamentos.html" class="dash-venc-row">
       <div class="dash-venc-date dash-venc-date--atrasado">
         <span class="dash-venc-day">${dia}/${mes}</span>
         <span class="dash-atraso-badge">${diasAtraso}d</span>
@@ -921,7 +922,7 @@ function renderTopGastos() {
   // Agrupa despesas pagas por categoria
   const byCat = {};
   for (const p of cachedPagamentos) {
-    if (!PAID_STATUSES.has(p.status) || p.subcategorias?.tipo !== 'Despesa') continue;
+    if (!isPaidStatus(p.status) || p.subcategorias?.tipo !== 'Despesa') continue;
     const cat = p.subcategorias?.categorias;
     if (!cat) continue;
     const val = p.valor_real != null ? Number(p.valor_real) : Number(p.valor_previsto);
@@ -1027,11 +1028,3 @@ function renderTransacoesRecentes() {
 }
 
 // ── Utils ─────────────────────────────────────────────────────
-
-function isoMonth(year, month) {
-  return `${year}-${String(month + 1).padStart(2, '0')}-01`;
-}
-
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}

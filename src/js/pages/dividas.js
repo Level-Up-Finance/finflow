@@ -9,6 +9,7 @@ import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
 import { initColVisibility } from '../lib/col-visibility.js';
+import { escapeHtml } from '../lib/utils.js';
 
 // -----------------------------
 // Status config
@@ -788,7 +789,3 @@ function fmtPct(pct) {
   return pct.toFixed(1) === '100.0' ? '100%' : `${pct.toFixed(1)}%`;
 }
 
-// Utilitário — escapa HTML nas strings do usuário
-function escapeHtml(str) {
-  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}

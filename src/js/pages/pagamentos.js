@@ -21,6 +21,7 @@ import { fetchExchangeRate } from '../lib/currency.js';
 import { initCurrencyWidget } from '../components/currency-widget.js';
 import { findBank, logoUrl } from '../lib/banks.js';
 import { syncPagamentoToTransacao, isPaidStatus } from '../lib/transacao-pagamento-sync.js';
+import { escapeHtml, formatDateBR, isoMonth, showConfirm } from '../lib/utils.js';
 
 // -----------------------------
 // State
@@ -163,10 +164,11 @@ function navigate(delta) {
 // Preserva pagamentos com status diferente de "Agendado" OU com valor_real preenchido
 // (esses são "tocados" pelo usuário).
 async function regenerateBlocosForCurrentMonth() {
-  const ok = window.confirm(
+  const ok = await showConfirm(
     'Isso vai apagar os pagamentos do mês que ainda estão como "Agendado" sem valor real preenchido, ' +
     'e gerar de novo com a divisão de blocos atual.\n\nPagamentos já marcados como Pago/Cartão/etc ' +
-    'OU com valor real preenchido NÃO serão apagados.\n\nContinuar?'
+    'OU com valor real preenchido NÃO serão apagados.\n\nContinuar?',
+    { okLabel: 'Regenerar', danger: false }
   );
   if (!ok) return;
 
@@ -964,11 +966,6 @@ async function saveObservacao() {
   renderPagamentos(); // re-render pra atualizar indicador
 }
 
-function formatDateBR(iso) {
-  if (!iso) return '—';
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y.slice(2)}`;
-}
 
 // -----------------------------
 // Fluxo de pagamento parcial
@@ -1200,10 +1197,8 @@ async function saveValorReal(input) {
 // Torna visível qualquer falha (ex: migration 0022 não rodada)
 // -----------------------------
 function syncWithFeedback(pagamento, subcategoria) {
-  console.log('[sync transacao] iniciando…', { pagamentoId: pagamento?.id, status: pagamento?.status, sub: subcategoria?.nome });
   syncPagamentoToTransacao(pagamento, subcategoria)
     .then((result) => {
-      console.log('[sync transacao] resultado:', result);
       if (!result) {
         showToast('Sync sem resultado (verifique console)', 'warning', 8000);
         return;
@@ -1297,10 +1292,6 @@ function isActiveInMonth(sub, year, month) {
 // -----------------------------
 // Util
 // -----------------------------
-function isoMonth(year, month) {
-  return `${year}-${String(month + 1).padStart(2, '0')}-01`;
-}
-
 function isoDate(year, month, day) {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
@@ -1310,8 +1301,3 @@ function displayName(p) {
   return sub?.apelido?.trim() || sub?.nome || '—';
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (m) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]
-  );
-}

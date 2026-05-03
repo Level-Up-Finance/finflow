@@ -32,6 +32,7 @@ import {
 import { findBank, logoUrl } from '../lib/banks.js';
 import { initColVisibility } from '../lib/col-visibility.js';
 import { typeIcon as accountTypeIcon, typeColor as accountTypeColor } from '../lib/account-types.js';
+import { escapeHtml, formatDateBR, todayISO, getInitials } from '../lib/utils.js';
 
 // -----------------------------
 // State
@@ -512,14 +513,20 @@ function bindEvents() {
 
   // Select de projeto: "__new__" abre prompt pra criar inline
   document.getElementById('comp-projeto').addEventListener('change', async (e) => {
-    if (e.target.value !== '__new__') return;
-    e.target.value = ''; // reset enquanto cria
+    if (e.target.value !== '__new__') {
+      e.target.dataset.lastGood = e.target.value;
+      return;
+    }
+    const prev = e.target.dataset.lastGood || '';
+    e.target.value = '';
     const nome = window.prompt('Nome do novo projeto de investimento:');
-    if (!nome || !nome.trim()) return;
+    if (!nome || !nome.trim()) { e.target.value = prev; return; }
     const novo = await criarProjeto(nome.trim());
     if (novo) {
       renderProjetoOptions();
       e.target.value = novo.id;
+    } else {
+      e.target.value = prev;
     }
   });
 
@@ -532,14 +539,20 @@ function bindEvents() {
 
   // Select de contato: "__new__" abre prompt pra criar inline
   document.getElementById('comp-contato')?.addEventListener('change', async (e) => {
-    if (e.target.value !== '__new__') return;
-    e.target.value = ''; // reset enquanto cria
+    if (e.target.value !== '__new__') {
+      e.target.dataset.lastGood = e.target.value;
+      return;
+    }
+    const prev = e.target.dataset.lastGood || '';
+    e.target.value = '';
     const nome = window.prompt('Nome do novo contato (cliente/fornecedor):');
-    if (!nome || !nome.trim()) return;
+    if (!nome || !nome.trim()) { e.target.value = prev; return; }
     const novo = await criarContato(nome.trim());
     if (novo) {
       renderContatoOptions();
       e.target.value = novo.id;
+    } else {
+      e.target.value = prev;
     }
   });
 
@@ -692,7 +705,7 @@ function buildVinculoPopoverContent(type, id) {
         ${meta ? `<div class="vp-row"><span>Meta</span><strong>${formatCurrency(meta)}</strong></div>` : ''}
         ${p.saldo_inicial ? `<div class="vp-row"><span>Saldo inicial</span><strong>${formatCurrency(Number(p.saldo_inicial))}</strong></div>` : ''}
       </div>
-      <a class="vp-link" href="investimentos.html">Ver investimentos →</a>`;
+      <a class="vp-link" href="/investimentos.html">Ver investimentos →</a>`;
   }
 
   if (type === 'divida') {
@@ -715,7 +728,7 @@ function buildVinculoPopoverContent(type, id) {
         ${d          ? `<div class="vp-row"><span>Pago</span><strong style="color:var(--color-success)">${formatCurrency(pago)} (${pct.toFixed(0)}%)</strong></div>` : ''}
         ${d          ? `<div class="vp-row"><span>Restante</span><strong style="color:var(--color-danger)">${formatCurrency(restante)}</strong></div>` : ''}
       </div>
-      <a class="vp-link" href="dividas.html">Ver dívidas →</a>`;
+      <a class="vp-link" href="/dividas.html">Ver dívidas →</a>`;
   }
 
   return null;
@@ -1574,7 +1587,7 @@ function renderContaInline(conta) {
   const display = conta.apelido?.trim() || conta.nome;
   const bank = findBank(conta.nome);
   const fallbackColor = conta.icone_cor || '#6B7280';
-  const initialsValue = initials(display);
+  const initialsValue = getInitials(display);
 
   if (bank) {
     return `<span style="display:inline-flex;align-items:center;gap:6px;">
@@ -2371,16 +2384,6 @@ function renderNextDueCell(c) {
 // -----------------------------
 // Util
 // -----------------------------
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function formatDateBR(iso) {
-  if (!iso) return '—';
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y.slice(2)}`;
-}
-
 function formatDateTimeBR(ts) {
   if (!ts) return '—';
   const d = new Date(ts);
@@ -2393,16 +2396,4 @@ function formatDateTimeBR(ts) {
   return `${dd}/${mm}/${yy} ${hh}:${mi}`;
 }
 
-function initials(name) {
-  if (!name) return '?';
-  const parts = String(name).trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (m) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]
-  );
-}
 

@@ -14,6 +14,7 @@ import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
 import { initColVisibility } from '../lib/col-visibility.js';
+import { escapeHtml, formatDateBR, isoMonth, showConfirm } from '../lib/utils.js';
 
 let cachedProjetos = [];
 let cachedSubcategorias = []; // só as do grupo investimentos
@@ -954,7 +955,7 @@ function openDetailsModal(id) {
 async function arquivarProjeto() {
   const p = cachedProjetos.find((x) => x.id === detailsId);
   if (!p) return;
-  if (!window.confirm(`Arquivar "${p.nome}"? Ele some da listagem ativa, mas os dados ficam preservados. Você pode reativar depois.`)) return;
+  if (!await showConfirm(`Arquivar "${escapeHtml(p.nome)}"? Ele some da listagem ativa, mas os dados ficam preservados. Você pode reativar depois.`, { okLabel: 'Arquivar', danger: false })) return;
 
   const { error } = await supabase
     .from('projetos_investimento')
@@ -973,28 +974,13 @@ async function arquivarProjeto() {
 // -----------------------------
 // Utils
 // -----------------------------
-function isoMonth(year, month) {
-  return `${year}-${String(month + 1).padStart(2, '0')}-01`;
-}
-
 function parseNum(raw) {
   if (raw === '' || raw === null || raw === undefined) return null;
   const n = Number(raw);
   return isNaN(n) ? null : n;
 }
 
-function formatDateBR(iso) {
-  if (!iso) return '—';
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y}`;
-}
-
 function fmtPct(pct) {
   return pct.toFixed(1) === '100.0' ? '100%' : `${pct.toFixed(1)}%`;
 }
 
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[c]));
-}

@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { getTheme, setTheme } from '../lib/theme.js';
 import { CURRENCIES } from '../lib/currencies.js';
+import { escapeHtml } from '../lib/utils.js';
 
 // -----------------------------
 // State
@@ -1042,7 +1043,7 @@ function buildVinculoPopoverContent(type, id) {
         ${meta ? `<div class="vp-row"><span>Meta</span><strong>${fmtCurrency(meta)}</strong></div>` : ''}
         ${p.saldo_inicial ? `<div class="vp-row"><span>Saldo inicial</span><strong>${fmtCurrency(Number(p.saldo_inicial))}</strong></div>` : ''}
       </div>
-      <a class="vp-link" href="investimentos.html">Ver investimentos →</a>`;
+      <a class="vp-link" href="/investimentos.html">Ver investimentos →</a>`;
   }
   if (type === 'divida') {
     const d       = cachedDividas.find((x) => x.id === id);
@@ -1064,7 +1065,7 @@ function buildVinculoPopoverContent(type, id) {
         ${d         ? `<div class="vp-row"><span>Pago</span><strong style="color:var(--color-success)">${fmtCurrency(pago)} (${pct.toFixed(0)}%)</strong></div>` : ''}
         ${d         ? `<div class="vp-row"><span>Restante</span><strong style="color:var(--color-danger)">${fmtCurrency(restante)}</strong></div>` : ''}
       </div>
-      <a class="vp-link" href="dividas.html">Ver dívidas →</a>`;
+      <a class="vp-link" href="/dividas.html">Ver dívidas →</a>`;
   }
   return null;
 }
@@ -1073,11 +1074,3 @@ function fmtCurrency(val, moeda = 'BRL') {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: moeda }).format(Number(val) || 0);
 }
 
-// -----------------------------
-// Utilities
-// -----------------------------
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, (m) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]
-  );
-}
