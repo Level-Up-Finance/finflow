@@ -6,6 +6,7 @@
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
+import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { loadRules, findRule } from '../lib/regras-reconciliacao.js';
@@ -41,6 +42,7 @@ let colMap = {
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('importar');
+  initTutorial('importar');
   await loadData();
   bindStep1Events();
 });

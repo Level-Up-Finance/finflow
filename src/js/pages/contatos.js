@@ -3,6 +3,7 @@
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { initSidebar }                  from '../components/sidebar.js';
+import { initTutorial } from '../lib/tutorial.js';
 import { supabase }                     from '../lib/supabase.js';
 import { showToast }                    from '../components/toast.js';
 import { formatCurrency }               from '../lib/compromissos-config.js';
@@ -26,6 +27,7 @@ const TIPO_COLORS = { cliente: '#3b82f6', fornecedor: '#8b5cf6', ambos: '#64748b
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('contatos');
+  initTutorial('contatos');
   await loadData();
   bindEvents();
   renderList();

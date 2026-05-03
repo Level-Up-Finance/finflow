@@ -3,6 +3,7 @@
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
+import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { fetchExchangeRate } from '../lib/currency.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
@@ -464,6 +465,7 @@ function initDragDrop(canvas) {
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('dashboard');
+  initTutorial('dashboard');
 
   await loadAll();
   renderGreeting();

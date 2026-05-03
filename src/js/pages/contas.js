@@ -7,6 +7,7 @@
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
+import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { CURRENCIES, getMoedaPadrao, getUserCurrencies } from '../lib/currencies.js';
@@ -47,6 +48,7 @@ let colVisEl = null;
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('contas');
+  initTutorial('contas');
   renderTipoFilters();
   renderPickers();
   bindEvents();

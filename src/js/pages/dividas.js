@@ -3,6 +3,7 @@
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
+import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
@@ -62,6 +63,7 @@ today.setHours(0, 0, 0, 0);
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('dividas');
+  initTutorial('dividas');
   bindEvents();
 
   colVisEl = initColVisibility({

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academia · FinFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/variables.css">
+  <link rel="stylesheet" href="src/css/global.css">
+  <link rel="stylesheet" href="src/css/components.css">
+  <link rel="stylesheet" href="src/css/layout.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-sidebar" id="sidebar-container"></div>
+
+    <header class="app-header header">
+      <div class="header-left">
+        <h2 class="header-title">Academia</h2>
+      </div>
+    </header>
+
+    <main class="app-main main">
+
+      <!-- Hero -->
+      <div class="academia-hero">
+        <div class="academia-hero-inner">
+          <div class="academia-hero-icon">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          </div>
+          <div>
+            <h1 class="academia-hero-title">Academia FinFlow</h1>
+            <p class="academia-hero-sub">Tutoriais completos de cada tela, como ela funciona e como se conecta com o restante do sistema.</p>
+          </div>
+        </div>
+        <div class="academia-search-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="academia-search" class="academia-search-input" placeholder="Buscar tutorial…" autocomplete="off">
+        </div>
+      </div>
+
+      <!-- Category filters -->
+      <div class="academia-filters" id="academia-filters">
+        <button class="academia-filter-btn active" data-cat="all" type="button">Todos</button>
+        <button class="academia-filter-btn" data-cat="visao-geral"  type="button">Visão Geral</button>
+        <button class="academia-filter-btn" data-cat="cadastros"    type="button">Cadastros</button>
+        <button class="academia-filter-btn" data-cat="operacional"  type="button">Operacional</button>
+        <button class="academia-filter-btn" data-cat="analise"      type="button">Análise</button>
+        <button class="academia-filter-btn" data-cat="configuracao" type="button">Configuração</button>
+      </div>
+
+      <!-- Two-panel layout: card grid + detail -->
+      <div class="academia-layout" id="academia-layout">
+
+        <!-- Card grid -->
+        <div class="academia-grid" id="academia-grid">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Detail panel -->
+        <div class="academia-detail hidden" id="academia-detail">
+          <div class="academia-detail-inner" id="academia-detail-inner">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script type="module" src="src/js/pages/academia.js"></script>
+</body>
+</html>

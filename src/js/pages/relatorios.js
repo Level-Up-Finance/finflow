@@ -5,6 +5,7 @@
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
+import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
@@ -31,6 +32,7 @@ const PAID_STATUSES     = new Set(['Pago','Cartão','Transferido','Parcial']);
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('relatorios');
+  initTutorial('relatorios');
   initFilters();
   bindEvents();
   await loadAndRender();

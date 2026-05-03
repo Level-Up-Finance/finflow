@@ -3,6 +3,7 @@
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
+import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { getTheme, setTheme } from '../lib/theme.js';
@@ -50,6 +51,7 @@ const ICON_EYE   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('configuracoes');
+  initTutorial('configuracoes');
   await loadAll();
   renderTree();
   updateStickyThTop();
