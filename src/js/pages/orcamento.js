@@ -29,6 +29,8 @@ let cachedOrcamento = []; // entries do orcamento_geral pro mês visível (com s
 let cachedCategorias = []; // pra ordenar blocos
 let cachedSubcategorias = []; // pra auto-gerar entradas
 let cachedProjetos = [];   // pra mostrar badge de projeto nas linhas de investimento
+let cachedDividas = [];    // { id, valor_total, valor_pago } pra coluna Progresso
+let realizadoByProjetoOrc = new Map(); // projeto_id → realizado (BRL) pra coluna Progresso
 
 // Câmbio
 const ALL_FOREIGN_CURRENCIES = ['USD', 'EUR', 'GBP']; // sempre exibidas no widget
@@ -78,6 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadCategorias();
   await loadSubcategorias();
   await loadProjetos();
+  await Promise.all([loadDividas(), loadRealizadoProjetos()]);
   await loadMonth();
 
   // Auto-refresh das cotações a cada 5 min
@@ -152,6 +155,31 @@ async function loadProjetos() {
 
 function getProjetoOrcamento(id) {
   return cachedProjetos.find((p) => p.id === id) || null;
+}
+
+async function loadDividas() {
+  const { data } = await supabase.from('dividas').select('id, nome, valor_total, valor_pago');
+  cachedDividas = data || [];
+}
+
+async function loadRealizadoProjetos() {
+  const { data } = await supabase
+    .from('pagamentos')
+    .select('subcategoria_id, valor_real')
+    .in('status', ['Pago', 'Cartão']);
+  realizadoByProjetoOrc = new Map();
+  const subToProj = new Map(
+    cachedSubcategorias.filter((s) => s.projeto_id).map((s) => [s.id, s.projeto_id])
+  );
+  for (const p of (data || [])) {
+    const projId = subToProj.get(p.subcategoria_id);
+    if (!projId) continue;
+    realizadoByProjetoOrc.set(projId, (realizadoByProjetoOrc.get(projId) || 0) + (Number(p.valor_real) || 0));
+  }
+  for (const proj of cachedProjetos) {
+    const si = Number(proj.saldo_inicial) || 0;
+    if (si > 0) realizadoByProjetoOrc.set(proj.id, (realizadoByProjetoOrc.get(proj.id) || 0) + si);
+  }
 }
 
 async function loadSubcategorias() {
@@ -499,8 +527,9 @@ function renderOrcamento() {
         <thead>
           <tr>
             <th>Subcategoria</th>
-            <th>Tipo</th>
-            <th>Projeto</th>
+            <th class="text-center">Progresso</th>
+            <th data-col="tipo">Tipo</th>
+            <th>Vínculo</th>
             <th>Período</th>
             <th class="text-right">Valor base</th>
             <th class="text-right">Valor planejado</th>
@@ -520,7 +549,7 @@ function renderOrcamento() {
 function renderSuperBlocoHeader(bloco) {
   return `
     <tr class="super-bloco-header" style="--bloco-accent: ${bloco.accent};">
-      <td colspan="6">
+      <td colspan="7">
         <div class="super-bloco-header-content">
           <div class="super-bloco-label">${escapeHtml(bloco.label)}</div>
           ${bloco.subtitle ? `<div class="super-bloco-subtitle">${escapeHtml(bloco.subtitle)}</div>` : ''}
@@ -536,7 +565,7 @@ function renderContribuicaoRow(valorBRL) {
   const cls  = valorBRL > 0 ? 'dre-positive' : (valorBRL < 0 ? 'dre-negative' : 'dre-zero');
   return `
     <tr class="contribuicao-row">
-      <td colspan="5" class="text-right">
+      <td colspan="6" class="text-right">
         <span class="contribuicao-label">Contribuição</span>
         <span class="contribuicao-hint">o que sobra pra Sonhos e Custo de vida</span>
       </td>
@@ -566,7 +595,7 @@ function renderCategoriaSection(cat, entries) {
 
   return `
     <tr class="categoria-section-header" style="--cat-color: ${cat.cor};">
-      <td colspan="6">
+      <td colspan="7">
         <span class="cat-dot" style="background: ${cat.cor};"></span>
         ${escapeHtml(cat.nome)}
         <span class="cat-count">${entries.length} ${entries.length === 1 ? 'item' : 'itens'}</span>
@@ -574,7 +603,7 @@ function renderCategoriaSection(cat, entries) {
     </tr>
     ${rows}
     <tr class="orcamento-categoria-total" style="--cat-color: ${cat.cor};">
-      <td colspan="5" class="text-right">Subtotal ${escapeHtml(cat.nome)}</td>
+      <td colspan="6" class="text-right">Subtotal ${escapeHtml(cat.nome)}</td>
       <td class="text-right ${totalClass}">${totalDisplay}</td>
     </tr>
   `;
@@ -628,17 +657,28 @@ function renderEntryRow(entry) {
     }
   }
 
-  // Célula do projeto de investimento (se houver)
-  const projeto = sub?.projeto_id ? getProjetoOrcamento(sub.projeto_id) : null;
-  const projetoCell = projeto
-    ? `<span class="projeto-badge" style="--projeto-cor: ${projeto.cor};" title="Projeto: ${escapeHtml(projeto.nome)}">${escapeHtml(projeto.nome)}</span>`
-    : '<span class="text-muted">—</span>';
+  // Célula de vínculo (projeto ou dívida)
+  let vinculoCell;
+  if (sub?.projeto_id) {
+    const proj = getProjetoOrcamento(sub.projeto_id);
+    vinculoCell = proj
+      ? `<span class="vinculo-badge vinculo-badge--projeto" style="--vinculo-cor: ${proj.cor};">${escapeHtml(proj.nome)}</span>`
+      : '<span class="text-muted">—</span>';
+  } else if (sub?.divida_id) {
+    const div = cachedDividas.find((d) => d.id === sub.divida_id);
+    vinculoCell = div
+      ? `<span class="vinculo-badge vinculo-badge--divida">${escapeHtml(div.nome)}</span>`
+      : '<span class="text-muted">—</span>';
+  } else {
+    vinculoCell = '<span class="text-muted">—</span>';
+  }
 
   return `
     <tr class="compromisso-row orcamento-row tipo-${tipo === 'Receita' ? 'receita' : 'despesa'} ${isModified ? 'modified' : ''}" data-id="${entry.id}" data-tipo="${tipo}" data-moeda="${moeda}">
       <td>${escapeHtml(display)}</td>
-      <td><span style="color: ${tipoColor}; font-weight: var(--fw-semibold); font-size: var(--fs-xs);">${tipoSymbol} ${tipo}</span></td>
-      <td>${projetoCell}</td>
+      <td class="orc-progresso-td">${renderProgressoCell(sub)}</td>
+      <td data-col="tipo"><span style="color: ${tipoColor}; font-weight: var(--fw-semibold); font-size: var(--fs-xs);">${tipoSymbol} ${tipo}</span></td>
+      <td>${vinculoCell}</td>
       <td>${sub?.periodo || '—'}</td>
       <td class="text-right tabular orcamento-base-value">${baseDisplay}</td>
       <td class="text-right value-cell">
@@ -973,18 +1013,21 @@ function render12MonthsView() {
       }).join('');
 
       const display = sub.apelido?.trim() || sub.nome;
-      const projeto = sub.projeto_id ? getProjetoOrcamento(sub.projeto_id) : null;
-      const projetoBadgeBelow = projeto
-        ? `<div class="sub-projeto-row"><span class="projeto-badge" style="--projeto-cor: ${projeto.cor};" title="Projeto: ${escapeHtml(projeto.nome)}">${escapeHtml(projeto.nome)}</span></div>`
-        : '';
+      let vinculoBadgeBelow = '';
+      if (sub.projeto_id) {
+        const proj = getProjetoOrcamento(sub.projeto_id);
+        if (proj) vinculoBadgeBelow = `<div class="sub-projeto-row"><span class="vinculo-badge vinculo-badge--projeto" style="--vinculo-cor: ${proj.cor};">${escapeHtml(proj.nome)}</span></div>`;
+      } else if (sub.divida_id) {
+        const div = cachedDividas.find((d) => d.id === sub.divida_id);
+        if (div) vinculoBadgeBelow = `<div class="sub-projeto-row"><span class="vinculo-badge vinculo-badge--divida">${escapeHtml(div.nome)}</span></div>`;
+      }
       out.push(`
         <tr class="compromisso-row tipo-${sub.tipo === 'Receita' ? 'receita' : 'despesa'}" style="--cat-color: ${cat.cor};" data-tipo="${sub.tipo}">
           <td class="sticky-col">
             <div class="sub-name-row">
-              ${sub.tipo === 'Receita' ? '<span class="receita-tag" title="Esta linha é uma Receita">+ Receita</span>' : ''}
               <span class="sub-name-text">${escapeHtml(display)}</span>
             </div>
-            ${projetoBadgeBelow}
+            ${vinculoBadgeBelow}
           </td>
           ${cells}
         </tr>
@@ -1239,6 +1282,50 @@ function isoMonth(year, month) {
 function displayName(entry) {
   const sub = entry.subcategorias;
   return sub?.apelido?.trim() || sub?.nome || '';
+}
+
+function fmtPct(pct) {
+  return pct.toFixed(1) === '100.0' ? '100%' : `${pct.toFixed(1)}%`;
+}
+
+function renderProgressoDonut(pct, color) {
+  const r = 36, stroke = 12;
+  const circ = 2 * Math.PI * r;
+  const dash = Math.min(pct, 100) / 100 * circ;
+  return `
+    <div class="invest-donut-wrapper invest-donut-sm orc-progresso-donut">
+      <svg viewBox="0 0 100 100" class="invest-donut" aria-hidden="true">
+        <circle cx="50" cy="50" r="${r}" fill="none" stroke="var(--color-surface-alt)" stroke-width="${stroke}"/>
+        <circle cx="50" cy="50" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}"
+          stroke-dasharray="${dash.toFixed(2)} ${circ.toFixed(2)}"
+          stroke-linecap="round"
+          transform="rotate(-90 50 50)"/>
+      </svg>
+      <div class="invest-donut-center">
+        <span class="invest-donut-pct${pct > 100 ? ' invest-donut-pct--over' : ''}">${fmtPct(pct)}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderProgressoCell(sub) {
+  if (sub?.projeto_id) {
+    const proj = getProjetoOrcamento(sub.projeto_id);
+    const meta = Number(proj?.meta_valor) || 0;
+    if (meta <= 0) return '<span class="text-muted orc-sem-alvo">sem alvo</span>';
+    const realizado = realizadoByProjetoOrc.get(sub.projeto_id) || 0;
+    const pct = (realizado / meta) * 100;
+    return renderProgressoDonut(pct, proj?.cor || 'var(--color-primary)');
+  }
+  if (sub?.divida_id) {
+    const div = cachedDividas.find((d) => d.id === sub.divida_id);
+    const total = Number(div?.valor_total) || 0;
+    if (total <= 0) return '<span class="text-muted orc-sem-alvo">sem alvo</span>';
+    const pago = Number(div?.valor_pago) || 0;
+    const pct = (pago / total) * 100;
+    return renderProgressoDonut(pct, 'var(--color-danger)');
+  }
+  return '<span class="text-muted">—</span>';
 }
 
 function escapeHtml(s) {

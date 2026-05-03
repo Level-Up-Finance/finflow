@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
+import { initColVisibility } from '../lib/col-visibility.js';
 
 // -----------------------------
 // Status config
@@ -18,6 +19,27 @@ const STATUS_CONFIG = {
   'Quitada':    { label: 'Quitada',    color: 'var(--color-success)', bg: 'var(--color-success-bg)' },
 };
 
+const BLOCOS = [
+  {
+    id: 'em_progresso',
+    label: 'Em progresso',
+    filter: (d) => d.status !== 'Quitada' && Number(d.valor_pago) > 0,
+    emptyMsg: 'Nenhuma dívida em andamento.',
+  },
+  {
+    id: 'por_comecar',
+    label: 'Por começar',
+    filter: (d) => d.status !== 'Quitada' && Number(d.valor_pago) === 0,
+    emptyMsg: 'Nenhuma dívida aguardando início.',
+  },
+  {
+    id: 'terminado',
+    label: 'Terminado',
+    filter: (d) => d.status === 'Quitada',
+    emptyMsg: 'Nenhuma dívida quitada ainda.',
+  },
+];
+
 // -----------------------------
 // State
 // -----------------------------
@@ -26,7 +48,12 @@ let cachedContas  = [];
 let editingId     = null;
 let pagandoId     = null;
 let pendingDeleteId = null;
-let filterStatus  = 'todas';
+let viewMode      = 'cards'; // 'cards' | 'table' | 'gantt'
+let ganttZoom     = '1ano';  // '1ano' | '3anos' | '5anos'
+let colVisEl      = null;
+
+const today = new Date();
+today.setHours(0, 0, 0, 0);
 
 // -----------------------------
 // Init
@@ -35,6 +62,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('dividas');
   bindEvents();
+
+  colVisEl = initColVisibility({
+    storageKey: 'dividas',
+    tableClass:  'divida-tabela',
+    columns: [
+      { key: 'credor',     label: 'Credor',      defaultVisible: true  },
+      { key: 'status',     label: 'Status',       defaultVisible: true  },
+      { key: 'total',      label: 'Total',        defaultVisible: true  },
+      { key: 'pago',       label: 'Pago',         defaultVisible: true  },
+      { key: 'restante',   label: 'Restante',     defaultVisible: true  },
+      { key: 'pct',          label: '% Pago',       defaultVisible: true  },
+      { key: 'pct-restante', label: '% Restante',  defaultVisible: true  },
+      { key: 'vencimento',   label: 'Vencimento',  defaultVisible: true  },
+      { key: 'inicio',     label: 'Início',       defaultVisible: false },
+      { key: 'juros',      label: 'Juros',        defaultVisible: false },
+      { key: 'conta',      label: 'Conta',        defaultVisible: false },
+    ],
+    toolbarEl: document.querySelector('.toolbar'),
+  });
+
   await loadAll();
 });
 
@@ -56,77 +103,86 @@ async function loadAll() {
   cachedContas  = contRes.data || [];
 
   populateContaSelect('div-conta');
-  renderKPIs();
-  renderDividas();
+  renderWidgets();
+  render();
+}
+
+
+// -----------------------------
+// KPI widgets
+// -----------------------------
+function renderWidgets() {
+  const totalGeral    = cachedDividas.reduce((s, d) => s + Number(d.valor_total), 0);
+  const totalPago     = cachedDividas.reduce((s, d) => s + Number(d.valor_pago),  0);
+  const totalRestante = Math.max(0, totalGeral - totalPago);
+
+  const pctPago     = totalGeral > 0 ? Math.min(100, (totalPago     / totalGeral) * 100) : 0;
+  const pctRestante = totalGeral > 0 ? Math.min(100, (totalRestante / totalGeral) * 100) : 0;
+
+  // Widget 1 — quanto falta pagar
+  document.getElementById('kpi-aberto-value').textContent = formatCurrency(totalRestante);
+  document.getElementById('kpi-aberto-sub').textContent   = `${fmtPct(pctRestante)} do total ainda em aberto`;
+  document.getElementById('kpi-aberto-chart').innerHTML   = renderDonutSVG(pctRestante, 'var(--color-danger)', 'lg');
+
+  // Widget 2 — quanto já foi pago
+  document.getElementById('kpi-pago-value').textContent = formatCurrency(totalPago);
+  document.getElementById('kpi-pago-sub').textContent   = `${fmtPct(pctPago)} do total já pago`;
+  document.getElementById('kpi-pago-chart').innerHTML   = renderDonutSVG(pctPago, 'var(--color-success)', 'lg');
 }
 
 // -----------------------------
-// KPIs
+// Render (roteador de views)
 // -----------------------------
-function renderKPIs() {
-  const ativas = cachedDividas.filter((d) => d.status !== 'Quitada');
+function render() {
+  if (colVisEl) colVisEl.classList.toggle('hidden', viewMode !== 'table');
 
-  const totalDivida  = ativas.reduce((s, d) => s + Number(d.valor_total), 0);
-  const totalPago    = cachedDividas.reduce((s, d) => s + Number(d.valor_pago), 0);
-  const totalRestante = ativas.reduce((s, d) => s + Math.max(0, Number(d.valor_total) - Number(d.valor_pago)), 0);
-
-  const container = document.getElementById('div-kpis');
-  container.innerHTML = `
-    <div class="div-kpi">
-      <span class="div-kpi-label">Total em dívidas ativas</span>
-      <span class="div-kpi-value">${formatCurrency(totalDivida)}</span>
-      <span class="div-kpi-hint">${ativas.length} dívida${ativas.length !== 1 ? 's' : ''} ativa${ativas.length !== 1 ? 's' : ''}</span>
-    </div>
-    <div class="div-kpi">
-      <span class="div-kpi-label">Total pago</span>
-      <span class="div-kpi-value div-kpi-value--success">${formatCurrency(totalPago)}</span>
-      <span class="div-kpi-hint">Em todas as dívidas</span>
-    </div>
-    <div class="div-kpi">
-      <span class="div-kpi-label">Total restante</span>
-      <span class="div-kpi-value div-kpi-value--danger">${formatCurrency(totalRestante)}</span>
-      <span class="div-kpi-hint">Nas dívidas ativas</span>
-    </div>
-  `;
-}
-
-// -----------------------------
-// Cards
-// -----------------------------
-function renderDividas() {
-  const container  = document.getElementById('div-cards');
+  const container  = document.getElementById('div-container');
   const emptyState = document.getElementById('empty-state');
 
-  const filtered = filterStatus === 'todas'
-    ? cachedDividas
-    : cachedDividas.filter((d) => d.status === filterStatus);
-
-  // Update filter pills count
-  document.querySelectorAll('#status-filters .filter-pill').forEach((btn) => {
-    const s = btn.dataset.status;
-    const count = s === 'todas'
-      ? cachedDividas.length
-      : cachedDividas.filter((d) => d.status === s).length;
-    btn.textContent = s === 'todas' ? `Todas (${count})` : `${STATUS_CONFIG[s]?.label ?? s} (${count})`;
-  });
-
-  if (filtered.length === 0) {
+  if (cachedDividas.length === 0) {
     container.innerHTML = '';
     emptyState.classList.remove('hidden');
-    const title = document.getElementById('empty-title');
-    const msg   = document.getElementById('empty-message');
-    if (filterStatus === 'todas') {
-      title.textContent = 'Nenhuma dívida cadastrada';
-      msg.textContent   = 'Cadastre sua primeira dívida para acompanhar o progresso de pagamento.';
-    } else {
-      title.textContent = `Nenhuma dívida com status "${STATUS_CONFIG[filterStatus]?.label ?? filterStatus}"`;
-      msg.textContent   = 'Tente outro filtro ou cadastre uma nova dívida.';
-    }
+    document.getElementById('empty-title').textContent = 'Nenhuma dívida cadastrada';
+    document.getElementById('empty-message').textContent = 'Cadastre sua primeira dívida para acompanhar o progresso de pagamento.';
     return;
   }
-
   emptyState.classList.add('hidden');
-  container.innerHTML = filtered.map(renderCard).join('');
+
+  let html = '';
+  for (const bloco of BLOCOS) {
+    const items = cachedDividas.filter(bloco.filter);
+    let content;
+    if (items.length === 0) {
+      content = `<p class="bloco-empty">${bloco.emptyMsg}</p>`;
+    } else if (viewMode === 'table') {
+      content = renderTable(items);
+    } else if (viewMode === 'gantt') {
+      content = renderGantt(items);
+    } else {
+      content = `<div class="div-cards">${items.map(renderCard).join('')}</div>`;
+    }
+    html += `
+      <div class="bloco-section">
+        <div class="bloco-section-header">
+          <span class="bloco-section-label">${bloco.label}</span>
+          <span class="bloco-section-count">${items.length}</span>
+        </div>
+        ${content}
+      </div>`;
+  }
+
+  container.innerHTML = html;
+  bindRowClicks();
+}
+
+// Bind click nos rows de tabela/gantt para abrir modal de edição
+function bindRowClicks() {
+  document.querySelectorAll('.divida-tabela-row').forEach((el) => {
+    el.addEventListener('click', () => openModalDivida(el.dataset.id));
+  });
+  document.querySelectorAll('.gantt-row[data-id]').forEach((el) => {
+    el.addEventListener('click', () => openModalDivida(el.dataset.id));
+  });
 }
 
 function renderCard(d) {
@@ -171,11 +227,15 @@ function renderCard(d) {
         ${d.credor ? `<span class="div-card-credor">${d.credor}</span>` : ''}
       </div>
 
-      <div class="div-card-progress-wrap">
-        <div class="div-card-progress-bar">
-          <div class="div-card-progress-fill ${quitada ? 'div-card-progress-fill--quitada' : ''}" style="width: ${pct.toFixed(1)}%;"></div>
+      <div class="div-card-charts">
+        <div class="div-card-chart-item">
+          ${renderDonutSVG(pct, 'var(--color-success)', 'sm')}
+          <span class="div-card-chart-label">Pago</span>
         </div>
-        <span class="div-card-progress-pct">${pct.toFixed(0)}%</span>
+        <div class="div-card-chart-item">
+          ${renderDonutSVG(Math.max(0, 100 - pct), quitada ? 'var(--color-success)' : 'var(--color-danger)', 'sm')}
+          <span class="div-card-chart-label">Restante</span>
+        </div>
       </div>
 
       <div class="div-card-values">
@@ -240,28 +300,31 @@ function bindEvents() {
   // Pagamento
   document.getElementById('form-pagamento').addEventListener('submit', registrarPagamento);
 
-  // Filtros
-  document.getElementById('status-filters').addEventListener('click', (e) => {
-    const btn = e.target.closest('.filter-pill');
+  // View toggle
+  document.getElementById('view-toggle').addEventListener('click', (e) => {
+    const btn = e.target.closest('.view-toggle-btn');
     if (!btn) return;
-    document.querySelectorAll('#status-filters .filter-pill').forEach((b) => b.classList.remove('active'));
+    document.querySelectorAll('#view-toggle .view-toggle-btn').forEach((b) => b.classList.remove('active'));
     btn.classList.add('active');
-    filterStatus = btn.dataset.status;
-    renderDividas();
+    viewMode = btn.dataset.view;
+    render();
   });
 
-  // Cards: delegação de eventos
-  document.getElementById('div-cards').addEventListener('click', (e) => {
+  // Delegação: botões pagar/editar nos cards
+  document.getElementById('div-container').addEventListener('click', (e) => {
     const btnPagar  = e.target.closest('.div-btn-pagar');
     const btnEditar = e.target.closest('.div-btn-editar');
     if (btnPagar)  openModalPagamento(btnPagar.dataset.id);
     if (btnEditar) openModalDivida(btnEditar.dataset.id);
   });
 
-  // data-close-modal buttons (header X e cancelar)
+  // Zoom do Gantt — delegado em document (sobrevive a re-renders)
   document.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-close-modal]');
-    if (btn) closeModal(btn.dataset.closeModal);
+    const zoomBtn = e.target.closest('[data-gantt-zoom]');
+    if (zoomBtn) { ganttZoom = zoomBtn.dataset.ganttZoom; if (viewMode === 'gantt') render(); }
+
+    const closeBtn = e.target.closest('[data-close-modal]');
+    if (closeBtn) closeModal(closeBtn.dataset.closeModal);
   });
 }
 
@@ -414,4 +477,255 @@ function populateContaSelect(selectId) {
   sel.innerHTML = '<option value="">Nenhuma</option>' +
     cachedContas.map((c) => `<option value="${c.id}">${c.apelido || c.nome}</option>`).join('');
   if (current) sel.value = current;
+}
+
+// =============================================================
+// View: Tabela
+// =============================================================
+function renderTable(dividas) {
+  const fmtDate = (iso) => {
+    if (!iso) return '—';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  };
+
+  const rows = dividas.map((d) => {
+    const st      = STATUS_CONFIG[d.status] || STATUS_CONFIG['Ativa'];
+    const total   = Number(d.valor_total);
+    const pago    = Number(d.valor_pago);
+    const restante = Math.max(0, total - pago);
+    const pct     = total > 0 ? Math.min(100, (pago / total) * 100) : 0;
+    const quitada = d.status === 'Quitada';
+    const cor     = st.color;
+    const conta   = cachedContas.find((c) => c.id === d.conta_id);
+
+    const vencInfo = (() => {
+      if (!d.data_vencimento || quitada) return fmtDate(d.data_vencimento);
+      const vencDate = new Date(d.data_vencimento + 'T00:00:00');
+      const diff = Math.round((vencDate - today) / 86400000);
+      if (diff < 0)       return `<span style="color:var(--color-danger);font-weight:600;">Vencida há ${Math.abs(diff)}d</span>`;
+      if (diff === 0)     return `<span style="color:var(--color-danger);font-weight:600;">Vence hoje</span>`;
+      if (diff <= 30)     return `<span style="color:var(--color-warning);font-weight:600;">Em ${diff}d</span>`;
+      return fmtDate(d.data_vencimento);
+    })();
+
+    const pctCell = `
+      <span class="divida-tabela-pct" style="--divida-cor:${cor};">
+        <span class="divida-tabela-pct-bar"><span class="divida-tabela-pct-fill" style="width:${pct.toFixed(1)}%;"></span></span>
+        <span class="divida-tabela-pct-text">${pct.toFixed(0)}%</span>
+      </span>`;
+
+    const pctRestanteCell = `
+      <span class="divida-tabela-pct" style="--divida-cor:${quitada ? 'var(--color-success)' : 'var(--color-danger)'};">
+        <span class="divida-tabela-pct-bar"><span class="divida-tabela-pct-fill" style="width:${Math.max(0, 100 - pct).toFixed(1)}%;"></span></span>
+        <span class="divida-tabela-pct-text">${Math.max(0, 100 - pct).toFixed(0)}%</span>
+      </span>`;
+
+    return `
+      <tr class="divida-tabela-row" data-id="${d.id}">
+        <td>
+          <span class="divida-tabela-nome">
+            <span class="divida-tabela-dot" style="background:${cor};"></span>
+            ${escapeHtml(d.nome)}
+          </span>
+        </td>
+        <td data-col="credor" class="text-muted-if-empty">${d.credor ? escapeHtml(d.credor) : '<span class="text-muted">—</span>'}</td>
+        <td data-col="status"><span class="div-card-badge" style="color:${st.color};background:${st.bg};">${st.label}</span></td>
+        <td data-col="total"   class="text-right tabular">${formatCurrency(total)}</td>
+        <td data-col="pago"    class="text-right tabular" style="color:var(--color-success);">${formatCurrency(pago)}</td>
+        <td data-col="restante" class="text-right tabular${quitada ? '' : ' text-bold'}" style="${quitada ? '' : 'color:var(--color-danger);'}">${formatCurrency(restante)}</td>
+        <td data-col="pct">${pctCell}</td>
+        <td data-col="pct-restante">${pctRestanteCell}</td>
+        <td data-col="vencimento" class="tabular">${vencInfo}</td>
+        <td data-col="inicio"   class="tabular">${fmtDate(d.data_inicio)}</td>
+        <td data-col="juros"    class="tabular">${d.juros_percentual ? `${Number(d.juros_percentual).toFixed(2)}% a.m.` : '<span class="text-muted">—</span>'}</td>
+        <td data-col="conta">${conta ? escapeHtml(conta.apelido || conta.nome) : '<span class="text-muted">—</span>'}</td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <div class="divida-tabela-wrapper">
+      <table class="divida-tabela">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th data-col="credor">Credor</th>
+            <th data-col="status">Status</th>
+            <th data-col="total"    class="text-right">Total</th>
+            <th data-col="pago"     class="text-right">Pago</th>
+            <th data-col="restante" class="text-right">Restante</th>
+            <th data-col="pct">% Pago</th>
+            <th data-col="pct-restante">% Restante</th>
+            <th data-col="vencimento">Vencimento</th>
+            <th data-col="inicio">Início</th>
+            <th data-col="juros">Juros</th>
+            <th data-col="conta">Conta</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// =============================================================
+// View: Gantt
+// =============================================================
+function getGanttRange(zoom) {
+  const now = new Date(today);
+  const MES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+  if (zoom === '1ano') {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end   = new Date(now.getFullYear(), now.getMonth() + 12, 0);
+    const cols  = Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      return { label: MES[d.getMonth()], sublabel: String(d.getFullYear()).slice(2), isCurrent: i === 0 };
+    });
+    return { start, end, cols };
+  }
+
+  if (zoom === '3anos') {
+    // quarterly (12 quarters)
+    const start = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+    const end   = new Date(start.getFullYear() + 3, start.getMonth(), 0);
+    const cols  = Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(start.getFullYear(), start.getMonth() + i * 3, 1);
+      const q = Math.floor(d.getMonth() / 3) + 1;
+      const isCurrentQ = d.getFullYear() === now.getFullYear() && q === Math.floor(now.getMonth() / 3) + 1;
+      return { label: `Q${q}`, sublabel: String(d.getFullYear()).slice(2), isCurrent: isCurrentQ };
+    });
+    return { start, end, cols };
+  }
+
+  // 5anos
+  const start = new Date(now.getFullYear(), 0, 1);
+  const end   = new Date(now.getFullYear() + 5, 0, 0);
+  const cols  = Array.from({ length: 5 }, (_, i) => ({
+    label: String(now.getFullYear() + i),
+    isCurrent: i === 0,
+  }));
+  return { start, end, cols };
+}
+
+function renderGantt(dividas) {
+  const { start: rangeStart, end: rangeEnd, cols } = getGanttRange(ganttZoom);
+  const rangeMs = rangeEnd - rangeStart;
+
+  const zoomBtns = [
+    { id: '1ano',  label: '1 ano'  },
+    { id: '3anos', label: '3 anos' },
+    { id: '5anos', label: '5 anos' },
+  ].map((z) =>
+    `<button class="timeline-zoom-btn ${ganttZoom === z.id ? 'active' : ''}" data-gantt-zoom="${z.id}" type="button">${z.label}</button>`
+  ).join('');
+
+  const colHeaders = cols.map((c) =>
+    `<div class="timeline-month ${c.isCurrent ? 'timeline-month-current' : ''}">${c.label}${c.sublabel ? `<span class="timeline-month-year">${c.sublabel}</span>` : ''}</div>`
+  ).join('');
+
+  const todayPct = Math.min(100, Math.max(0, ((today - rangeStart) / rangeMs) * 100));
+  const todayLine = (today >= rangeStart && today <= rangeEnd)
+    ? `<div class="timeline-today" style="left:calc(220px + (100% - 220px) * ${todayPct / 100});" title="Hoje"></div>`
+    : '';
+
+  const bars = dividas.map((d) => {
+    const st     = STATUS_CONFIG[d.status] || STATUS_CONFIG['Ativa'];
+    const cor    = st.color;
+    const dStart = d.data_inicio  ? new Date(d.data_inicio  + 'T00:00:00') : rangeStart;
+    const dEnd   = d.data_vencimento ? new Date(d.data_vencimento + 'T23:59:59') : rangeEnd;
+
+    const barStart  = dStart < rangeStart ? rangeStart : dStart;
+    const barEnd    = dEnd   > rangeEnd   ? rangeEnd   : dEnd;
+
+    const total   = Number(d.valor_total);
+    const pago    = Number(d.valor_pago);
+    const fillPct = total > 0 ? Math.min(100, (pago / total) * 100) : 0;
+
+    if (barStart > rangeEnd || barEnd < rangeStart) {
+      return `
+        <div class="gantt-row timeline-row" data-id="${d.id}">
+          <div class="timeline-row-label">
+            <span class="timeline-row-dot" style="background:${cor};"></span>
+            <span class="timeline-row-name">${escapeHtml(d.nome)}</span>
+          </div>
+          <div class="timeline-row-track">
+            <span class="timeline-row-empty">Fora do período visível</span>
+          </div>
+        </div>`;
+    }
+
+    const leftPct  = Math.max(0, ((barStart - rangeStart) / rangeMs) * 100);
+    const widthPct = Math.max(1.5, ((barEnd - barStart) / rangeMs) * 100);
+
+    const fillBar = `<span class="timeline-bar-fill" style="width:${fillPct}%;background:${cor};"></span>`;
+    const pctLeft = Math.min(fillPct, 82).toFixed(1);
+    const tooltip = `${d.nome} · ${formatCurrency(pago)} pago de ${formatCurrency(total)} (${fillPct.toFixed(0)}%)`;
+
+    return `
+      <div class="gantt-row timeline-row" data-id="${d.id}">
+        <div class="timeline-row-label">
+          <span class="timeline-row-dot" style="background:${cor};"></span>
+          <span class="timeline-row-name">${escapeHtml(d.nome)}</span>
+        </div>
+        <div class="timeline-row-track">
+          <div class="timeline-bar" style="left:${leftPct}%;width:${widthPct}%;--projeto-cor:${cor};" title="${escapeHtml(tooltip)}">
+            ${fillBar}
+            <span class="timeline-bar-pct" style="left:${pctLeft}%;">${fillPct.toFixed(0)}%</span>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="timeline-toolbar">
+      <span class="timeline-toolbar-label">Escala:</span>
+      <div class="timeline-zoom-group">${zoomBtns}</div>
+    </div>
+    <div class="timeline-wrapper" style="--timeline-cols:${cols.length};">
+      <div class="timeline-header">
+        <div class="timeline-row-label timeline-row-label-header">Dívida</div>
+        <div class="timeline-months">${colHeaders}</div>
+      </div>
+      <div class="timeline-body">
+        ${bars || '<div class="empty-state"><p class="empty-state-message">Nenhuma dívida no período visível.</p></div>'}
+        ${todayLine}
+      </div>
+    </div>
+  `;
+}
+
+// =============================================================
+// Donut SVG (idêntico ao de investimentos)
+// =============================================================
+function renderDonutSVG(pct, color = 'var(--color-primary)', size = 'md') {
+  const radius = 36;
+  const stroke = 12;
+  const circumference = 2 * Math.PI * radius;
+  const dash = (pct / 100) * circumference;
+  return `
+    <div class="invest-donut-wrapper invest-donut-${size}">
+      <svg viewBox="0 0 100 100" class="invest-donut" aria-hidden="true">
+        <circle cx="50" cy="50" r="${radius}" fill="none" stroke="var(--color-surface-alt)" stroke-width="${stroke}"/>
+        <circle cx="50" cy="50" r="${radius}" fill="none" stroke="${color}" stroke-width="${stroke}"
+          stroke-dasharray="${dash.toFixed(2)} ${circumference.toFixed(2)}"
+          stroke-linecap="round"
+          transform="rotate(-90 50 50)"/>
+      </svg>
+      <div class="invest-donut-center">
+        <span class="invest-donut-pct${pct > 100 ? ' invest-donut-pct--over' : ''}">${fmtPct(pct)}</span>
+      </div>
+    </div>
+  `;
+}
+
+// Formata porcentagem: 1 decimal exceto quando exato 100%
+function fmtPct(pct) {
+  return pct.toFixed(1) === '100.0' ? '100%' : `${pct.toFixed(1)}%`;
+}
+
+// Utilitário — escapa HTML nas strings do usuário
+function escapeHtml(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }

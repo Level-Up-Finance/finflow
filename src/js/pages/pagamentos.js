@@ -808,6 +808,49 @@ async function quickPay(id) {
   Object.assign(p, update);
   showToast('Marcado como pago', 'success');
   renderPagamentos();
+
+  // Propaga valor pago para a dívida vinculada (fire-and-forget)
+  const dividaId = p.subcategorias?.divida_id;
+  if (dividaId) propagateDivida(dividaId);
+}
+
+// -----------------------------
+// Propaga valor pago para dívida vinculada
+// Recalcula do zero somando todos os pagamentos Pago/Cartão/Transferido/Parcial
+// das subcategorias atreladas à dívida — idempotente e livre de delta bugs.
+// -----------------------------
+async function propagateDivida(dividaId) {
+  if (!dividaId) return;
+
+  const { data: subs } = await supabase
+    .from('subcategorias')
+    .select('id')
+    .eq('divida_id', dividaId);
+
+  if (!subs?.length) return;
+
+  const { data: pags } = await supabase
+    .from('pagamentos')
+    .select('valor_real')
+    .in('subcategoria_id', subs.map((s) => s.id))
+    .in('status', ['Pago', 'Transferido', 'Cartão', 'Parcial']);
+
+  const totalPago = (pags || []).reduce((s, p) => s + (Number(p.valor_real) || 0), 0);
+
+  const { data: divida } = await supabase
+    .from('dividas')
+    .select('valor_total, status')
+    .eq('id', dividaId)
+    .single();
+
+  if (!divida) return;
+
+  const updates = { valor_pago: totalPago };
+  if (divida.status !== 'Quitada' && totalPago >= Number(divida.valor_total)) {
+    updates.status = 'Quitada';
+  }
+
+  await supabase.from('dividas').update(updates).eq('id', dividaId);
 }
 
 // -----------------------------
@@ -930,6 +973,10 @@ async function saveStatus(select) {
   if (cur) select.classList.add(cur.cls);
   // Re-render pra recalcular saldo do bloco
   renderPagamentos();
+
+  // Propaga para dívida vinculada (qualquer mudança de status pode alterar o total)
+  const dividaId = pag.subcategorias?.divida_id;
+  if (dividaId) propagateDivida(dividaId);
 }
 
 async function saveValorReal(input) {
@@ -991,6 +1038,13 @@ async function saveValorReal(input) {
 
   // Re-render pra recalcular saldo
   renderPagamentos();
+
+  // Se o pagamento já está pago, recalcula a dívida vinculada
+  const PAID = ['Pago', 'Transferido', 'Cartão', 'Parcial'];
+  if (PAID.includes(pag.status)) {
+    const dividaId = pag.subcategorias?.divida_id;
+    if (dividaId) propagateDivida(dividaId);
+  }
 }
 
 // -----------------------------

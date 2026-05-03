@@ -29,6 +29,7 @@ import {
   CATEGORIAS_DEFAULT,
 } from '../lib/compromissos-config.js';
 import { findBank, logoUrl } from '../lib/banks.js';
+import { initColVisibility } from '../lib/col-visibility.js';
 import { typeIcon as accountTypeIcon, typeColor as accountTypeColor } from '../lib/account-types.js';
 
 // -----------------------------
@@ -38,17 +39,15 @@ let cachedCompromissos = [];   // subcategorias do usuário
 let cachedCategorias = [];     // categorias parent do usuário
 let cachedContas = [];         // bancos/cartões
 let cachedProjetos = [];       // projetos de investimento do usuário
+let cachedDividas = [];        // dívidas do usuário (para vínculo)
 let cachedProxValores = new Map(); // subcategoria_id → {valor_previsto, moeda, mes_ano} (próximo mês com valor)
 let editingId = null;
 let detailsCompromisso = null;
 let pendingAction = null;
 let filterStatus = 'todas';
 let filterCategorias = new Set(['all']);
-
-// Fluxo dívida vinculada
-let _dividaFlowComp = null;   // compromisso recém-criado
-let _dividaCriada   = null;   // id da dívida criada no fluxo
 let viewMode = 'table'; // 'table' | 'dre' | 'calendar'
+let colVisEl = null;   // wrapper do seletor de colunas
 
 // Estado do calendário
 const todayDate = new Date();
@@ -68,10 +67,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadContas();
   await loadCategorias();      // carrega + seed se vazio
   await loadProjetos();
+  await loadDividas();
   renderCategoriaFilters();
   renderTipoSelector();
   renderModalDropdowns();
   bindEvents();
+
+  colVisEl = initColVisibility({
+    storageKey: 'compromissos',
+    tableClass:  'compromissos-grouped-table',
+    columns: [
+      { key: 'tipo',       label: 'Tipo',         defaultVisible: false },
+      { key: 'projeto',    label: 'Vínculo',       defaultVisible: true  },
+      { key: 'conta',      label: 'Banco/Cartão',  defaultVisible: false },
+      { key: 'pagamento',  label: 'Pagamento',     defaultVisible: false },
+      { key: 'vencimento', label: 'Vencimento',    defaultVisible: true  },
+      { key: 'proximo',    label: 'Próximo',       defaultVisible: true  },
+      { key: 'termina',    label: 'Termina em',    defaultVisible: false },
+      { key: 'periodo',    label: 'Período',       defaultVisible: true  },
+      { key: 'valor',      label: 'Valor',         defaultVisible: true  },
+      { key: 'descricao',  label: 'Descrição',     defaultVisible: false },
+      { key: 'status',     label: 'Status',        defaultVisible: true  },
+    ],
+    toolbarEl: document.querySelector('.toolbar'),
+  });
+
   await loadCompromissos();
 });
 
@@ -114,6 +134,53 @@ async function criarProjeto(nome) {
   cachedProjetos.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   showToast(`Projeto "${data.nome}" criado`, 'success');
   return data;
+}
+
+// -----------------------------
+// Load dívidas (para vínculo no select)
+// -----------------------------
+async function loadDividas() {
+  const { data, error } = await supabase
+    .from('dividas')
+    .select('id, nome, credor, status, valor_total, valor_pago')
+    .order('nome');
+  if (error) {
+    if (!/relation.*dividas/i.test(error.message)) {
+      console.warn('[loadDividas]', error);
+    }
+    cachedDividas = [];
+    return;
+  }
+  cachedDividas = data || [];
+}
+
+function getDivida(id) {
+  return cachedDividas.find((d) => d.id === id) || null;
+}
+
+function renderDividaOptions() {
+  const sel = document.getElementById('comp-divida');
+  if (!sel) return;
+  const opts = ['<option value="">Selecione uma dívida…</option>'];
+  for (const d of cachedDividas.filter((x) => x.status !== 'Quitada')) {
+    const label = d.credor ? `${d.nome} (${d.credor})` : d.nome;
+    opts.push(`<option value="${d.id}">${escapeHtml(label)}</option>`);
+  }
+  opts.push('<option value="__new__">+ Criar nova dívida…</option>');
+  sel.innerHTML = opts.join('');
+}
+
+function toggleDividaField() {
+  const catId = document.getElementById('comp-categoria').value;
+  const cat = cachedCategorias.find((c) => c.id === catId);
+  const isDivida = cat?.grupo === 'dividas' || /dívida|divida/i.test(cat?.nome || '');
+  const field = document.getElementById('divida-field');
+  if (!field) return;
+  field.classList.toggle('hidden', !isDivida);
+  if (!isDivida) {
+    const sel = document.getElementById('comp-divida');
+    if (sel) sel.value = '';
+  }
 }
 
 // -----------------------------
@@ -273,6 +340,8 @@ function renderModalDropdowns() {
 
   // Projetos (só relevante quando categoria é do grupo Investimentos)
   renderProjetoOptions();
+  // Dívidas (só relevante quando categoria é do grupo Dívidas)
+  renderDividaOptions();
 }
 
 function renderProjetoOptions() {
@@ -307,10 +376,6 @@ function toggleProjetoField() {
 function bindEvents() {
   document.getElementById('btn-novo-compromisso').addEventListener('click', () => openCompromissoModal());
   document.querySelector('[data-trigger-novo]')?.addEventListener('click', () => openCompromissoModal());
-  bindDividaFlow();
-
-  // Botão de gerenciar categorias
-  document.getElementById('btn-gerenciar-categorias').addEventListener('click', openCategoriasModal);
 
   // View toggle (Tabela / DRE)
   document.getElementById('view-toggle').addEventListener('click', (e) => {
@@ -362,8 +427,11 @@ function bindEvents() {
   // Período → mostra/esconde dia mês ou dia semana
   document.getElementById('comp-periodo').addEventListener('change', toggleVencimentoFields);
 
-  // Categoria muda → mostra/esconde campo de projeto
-  document.getElementById('comp-categoria').addEventListener('change', toggleProjetoField);
+  // Categoria muda → mostra/esconde campos de projeto e dívida
+  document.getElementById('comp-categoria').addEventListener('change', () => {
+    toggleProjetoField();
+    toggleDividaField();
+  });
 
   // Select de projeto: "__new__" abre prompt pra criar inline
   document.getElementById('comp-projeto').addEventListener('change', async (e) => {
@@ -375,6 +443,13 @@ function bindEvents() {
     if (novo) {
       renderProjetoOptions();
       e.target.value = novo.id;
+    }
+  });
+
+  // Select de dívida: "__new__" mantém placeholder; a criação real acontece no save
+  document.getElementById('comp-divida')?.addEventListener('change', (e) => {
+    if (e.target.value === '__new__') {
+      // Deixa "__new__" selecionado — no save auto-criamos a dívida com os dados do compromisso
     }
   });
 
@@ -455,20 +530,99 @@ function bindEvents() {
     } else if (type === 'delete') {
       await deleteCompromisso(id);
       closeModal('modal-details');
-    } else if (type === 'delete-categoria') {
-      await deleteCategoria(id);
     }
     pendingAction = null;
   });
 
-  // Categorias modal: adicionar nova
-  document.getElementById('btn-add-categoria').addEventListener('click', addCategoria);
+  // Popover de vínculo — cria elemento uma vez no DOM
+  const pop = document.createElement('div');
+  pop.id = 'vinculo-popover';
+  pop.className = 'vinculo-popover hidden';
+  document.body.appendChild(pop);
+  pop.addEventListener('mouseleave', hideVinculoPopover);
 
-  // Atualizar wrapper de cor do form "nova categoria"
-  document.getElementById('cat-nova-cor').addEventListener('input', (e) => {
-    const wrapper = document.getElementById('cat-nova-cor-wrapper');
-    if (wrapper) wrapper.style.background = e.target.value;
+  // Delegação: mostra/oculta popover ao passar mouse em badges
+  document.addEventListener('mouseover', (e) => {
+    const badge = e.target.closest('.vinculo-badge');
+    if (badge) showVinculoPopover(badge);
   });
+  document.addEventListener('mouseout', (e) => {
+    const badge = e.target.closest('.vinculo-badge');
+    if (!badge) return;
+    if (!e.relatedTarget?.closest('#vinculo-popover') && !e.relatedTarget?.closest('.vinculo-badge')) {
+      hideVinculoPopover();
+    }
+  });
+}
+
+// -----------------------------
+// Popover de vínculo (dívida / projeto)
+// -----------------------------
+function showVinculoPopover(badge) {
+  const pop = document.getElementById('vinculo-popover');
+  if (!pop) return;
+  const html = buildVinculoPopoverContent(badge.dataset.vinculoType, badge.dataset.vinculoId);
+  if (!html) return;
+
+  pop.innerHTML = html;
+  pop.classList.remove('hidden');
+
+  const rect = badge.getBoundingClientRect();
+  pop.style.top  = `${rect.bottom + 8 + window.scrollY}px`;
+  pop.style.left = `${rect.left   + window.scrollX}px`;
+
+  // Ajusta se sair da viewport à direita
+  const pr = pop.getBoundingClientRect();
+  if (pr.right > window.innerWidth - 12) {
+    pop.style.left = `${rect.right - pr.width + window.scrollX}px`;
+  }
+}
+
+function hideVinculoPopover() {
+  document.getElementById('vinculo-popover')?.classList.add('hidden');
+}
+
+function buildVinculoPopoverContent(type, id) {
+  if (type === 'projeto') {
+    const p = getProjeto(id);
+    if (!p) return null;
+    const meta = Number(p.meta_valor) || 0;
+    return `
+      <div class="vp-header">
+        <span class="vp-type-label vp-type-projeto">Investimento</span>
+        <strong class="vp-title">${escapeHtml(p.nome)}</strong>
+      </div>
+      <div class="vp-body">
+        ${meta ? `<div class="vp-row"><span>Meta</span><strong>${formatCurrency(meta)}</strong></div>` : ''}
+        ${p.saldo_inicial ? `<div class="vp-row"><span>Saldo inicial</span><strong>${formatCurrency(Number(p.saldo_inicial))}</strong></div>` : ''}
+      </div>
+      <a class="vp-link" href="investimentos.html">Ver investimentos →</a>`;
+  }
+
+  if (type === 'divida') {
+    const d = getDivida(id);
+    const total    = d ? Number(d.valor_total) : 0;
+    const pago     = d ? Number(d.valor_pago)  : 0;
+    const restante = Math.max(0, total - pago);
+    const pct      = total > 0 ? Math.min(100, (pago / total) * 100) : 0;
+    const stCors   = { Ativa: 'var(--color-primary)', Atrasada: 'var(--color-danger)', Negociando: 'var(--color-warning)', Quitada: 'var(--color-success)' };
+    const stCor    = stCors[d?.status] || 'var(--color-primary)';
+    return `
+      <div class="vp-header">
+        <span class="vp-type-label vp-type-divida">Dívida</span>
+        <strong class="vp-title">${d ? escapeHtml(d.nome) : '—'}</strong>
+      </div>
+      <div class="vp-body">
+        ${d?.credor  ? `<div class="vp-row"><span>Credor</span><strong>${escapeHtml(d.credor)}</strong></div>` : ''}
+        ${d?.status  ? `<div class="vp-row"><span>Status</span><strong style="color:${stCor}">${d.status}</strong></div>` : ''}
+        ${total      ? `<div class="vp-row"><span>Total</span><strong>${formatCurrency(total)}</strong></div>` : ''}
+        ${d          ? `<div class="vp-row"><span>Pago</span><strong style="color:var(--color-success)">${formatCurrency(pago)} (${pct.toFixed(0)}%)</strong></div>` : ''}
+        ${d          ? `<div class="vp-row"><span>Restante</span><strong style="color:var(--color-danger)">${formatCurrency(restante)}</strong></div>` : ''}
+      </div>
+      <a class="vp-link" href="dividas.html">Ver dívidas →</a>`;
+  }
+
+  return null;
 }
 
 function syncCategoriaFilterUI() {
@@ -625,6 +779,7 @@ function openCompromissoModal(c = null) {
   document.getElementById('comp-tipo').value = tipo;
   document.getElementById('comp-categoria').value = c?.categoria_id || '';
   document.getElementById('comp-projeto').value = c?.projeto_id || '';
+  document.getElementById('comp-divida').value  = c?.divida_id  || '';
   document.getElementById('comp-conta').value = c?.conta_id || '';
   document.getElementById('comp-tipo-pagamento').value = c?.tipo_pagamento || '';
   document.getElementById('comp-periodo').value = c?.periodo || 'Mensal';
@@ -653,6 +808,7 @@ function openCompromissoModal(c = null) {
   toggleValorVariavelFields();
   toggleRendaPrincipalRow();
   toggleProjetoField();
+  toggleDividaField();
   if (c?.valor_variavel) {
     populateValoresMensaisGrid(c);
   } else {
@@ -1011,6 +1167,9 @@ function renderCompromissos() {
   const container = document.getElementById('compromissos-container');
   const emptyState = document.getElementById('empty-state');
 
+  // Botão de colunas só visível na view de tabela
+  if (colVisEl) colVisEl.classList.toggle('hidden', viewMode !== 'table');
+
   // Counters
   const counts = {
     todas:     cachedCompromissos.length,
@@ -1100,17 +1259,17 @@ function renderGroupedTable(items) {
         <thead>
           <tr>
             <th>Compromisso</th>
-            <th>Tipo</th>
-            <th>Projeto</th>
-            <th>Banco/Cartão</th>
-            <th>Pagamento</th>
-            <th>Vencimento</th>
-            <th>Próximo</th>
-            <th>Termina em</th>
-            <th>Período</th>
-            <th class="text-right">Valor</th>
-            <th>Descrição</th>
-            <th>Status</th>
+            <th data-col="tipo">Tipo</th>
+            <th data-col="projeto">Vínculo</th>
+            <th data-col="conta">Banco/Cartão</th>
+            <th data-col="pagamento">Pagamento</th>
+            <th data-col="vencimento">Vencimento</th>
+            <th data-col="proximo">Próximo</th>
+            <th data-col="termina">Termina em</th>
+            <th data-col="periodo">Período</th>
+            <th data-col="valor" class="text-right">Valor</th>
+            <th data-col="descricao">Descrição</th>
+            <th data-col="status">Status</th>
           </tr>
         </thead>
         <tbody>${sections.join('')}</tbody>
@@ -1123,7 +1282,7 @@ function renderCategoriaSection(cat, items) {
   const rows = items.map((c) => renderRow(c, cat)).join('');
   return `
     <tr class="categoria-section-header" style="--cat-color: ${cat.cor};">
-      <td colspan="12">
+      <td colspan="99">
         <span class="cat-dot" style="background: ${cat.cor};"></span>
         ${escapeHtml(cat.nome)}
         <span class="cat-count">${items.length} ${items.length === 1 ? 'item' : 'itens'}</span>
@@ -1152,9 +1311,15 @@ function renderRow(c, categoria) {
   }
 
   const projeto = c.projeto_id ? getProjeto(c.projeto_id) : null;
-  const projetoCell = projeto
-    ? `<span class="projeto-badge" style="--projeto-cor: ${projeto.cor};" title="Projeto de investimento: ${escapeHtml(projeto.nome)}">${escapeHtml(projeto.nome)}</span>`
-    : '<span class="text-muted">—</span>';
+  let vinculoCell;
+  if (projeto) {
+    vinculoCell = `<span class="vinculo-badge vinculo-badge--projeto" data-vinculo-type="projeto" data-vinculo-id="${projeto.id}" style="--vinculo-cor:${projeto.cor};">${escapeHtml(projeto.nome)}</span>`;
+  } else if (c.divida_id) {
+    const div = getDivida(c.divida_id);
+    vinculoCell = `<span class="vinculo-badge vinculo-badge--divida" data-vinculo-type="divida" data-vinculo-id="${c.divida_id}">${escapeHtml(div?.nome ?? '—')}</span>`;
+  } else {
+    vinculoCell = '<span class="text-muted">—</span>';
+  }
 
   return `
     <tr class="compromisso-row ${isInactive ? 'inactive' : ''} ${c.status === 'arquivada' ? 'arquivada' : ''}" style="--cat-color: ${catColor};" data-id="${c.id}">
@@ -1167,17 +1332,17 @@ function renderRow(c, categoria) {
           </div>
         </div>
       </td>
-      <td>${tipoPill(c.tipo)}</td>
-      <td>${projetoCell}</td>
-      <td>${conta ? renderContaInline(conta) : '<span class="text-muted">—</span>'}</td>
-      <td>${c.tipo_pagamento || '<span class="text-muted">—</span>'}</td>
-      <td class="tabular">${venc}</td>
-      <td>${renderNextDueCell(c)}</td>
-      <td class="tabular">${renderTerminaEmCell(c)}</td>
-      <td>${c.periodo}</td>
-      <td class="text-right tabular text-bold">${renderValorCell(c)}</td>
-      <td>${renderDescricaoCell(c)}</td>
-      <td><span class="status-pill status-${c.status}">${statusLabel}</span></td>
+      <td data-col="tipo">${tipoPill(c.tipo)}</td>
+      <td data-col="projeto">${vinculoCell}</td>
+      <td data-col="conta">${conta ? renderContaInline(conta) : '<span class="text-muted">—</span>'}</td>
+      <td data-col="pagamento">${c.tipo_pagamento || '<span class="text-muted">—</span>'}</td>
+      <td data-col="vencimento" class="tabular">${venc}</td>
+      <td data-col="proximo">${renderNextDueCell(c)}</td>
+      <td data-col="termina" class="tabular">${renderTerminaEmCell(c)}</td>
+      <td data-col="periodo">${c.periodo}</td>
+      <td data-col="valor" class="text-right tabular text-bold">${renderValorCell(c)}</td>
+      <td data-col="descricao">${renderDescricaoCell(c)}</td>
+      <td data-col="status"><span class="status-pill status-${c.status}">${statusLabel}</span></td>
     </tr>
   `;
 }
@@ -1692,6 +1857,8 @@ async function saveCompromisso(event) {
   const cat            = cachedCategorias.find((c) => c.id === categoria_id);
   const projetoRaw     = document.getElementById('comp-projeto')?.value || '';
   const projeto_id     = (cat?.grupo === 'investimentos' && projetoRaw && projetoRaw !== '__new__') ? projetoRaw : null;
+  const isDividasCat   = cat?.grupo === 'dividas' || /dívida|divida/i.test(cat?.nome || '');
+  const dividaRaw      = isDividasCat ? (document.getElementById('comp-divida')?.value || '') : '';
   const conta_id       = document.getElementById('comp-conta').value || null;
   const tipo_pagamento = document.getElementById('comp-tipo-pagamento').value || null;
   const periodo        = document.getElementById('comp-periodo').value;
@@ -1711,6 +1878,7 @@ async function saveCompromisso(event) {
   if (!nome) { showToast('Informe o nome do compromisso', 'error'); return; }
   if (!categoria_id) { showToast('Escolha uma categoria', 'error'); return; }
   if (!iniciado_em) { showToast('Informe a data de início', 'error'); return; }
+  if (isDividasCat && !dividaRaw) { showToast('Vincule uma dívida existente ou crie uma nova', 'error'); return; }
   if (!valorVariavel && (valorBaseRaw === '' || isNaN(Number(valorBaseRaw)))) {
     showToast('Informe um valor válido', 'error'); return;
   }
@@ -1744,6 +1912,7 @@ async function saveCompromisso(event) {
     valor_variavel: valorVariavel,
     eh_renda_principal: ehRendaPrincipal,
     projeto_id,
+    divida_id: null, // preenchido após resolver __new__ abaixo
   };
 
   const originalLabel = button.textContent;
@@ -1752,12 +1921,34 @@ async function saveCompromisso(event) {
 
   try {
     let response;
+    let subcategoriaMsg = null; // mensagem do popup informativo (só em criação)
     if (editingId) {
       response = await supabase.from('subcategorias').update(payload).eq('id', editingId).select().single();
     } else {
       const user = await getCurrentUser();
       if (!user) throw new Error('Sessão expirada. Faça login novamente.');
-      response = await supabase.from('subcategorias').insert({ ...payload, user_id: user.id }).select().single();
+
+      // Verifica se já existe subcategoria com mesmo nome na mesma categoria
+      const nomeNorm = (payload.nome || '').trim().toLowerCase();
+      const existing = cachedCompromissos.find(
+        (c) => (c.nome || '').trim().toLowerCase() === nomeNorm && c.categoria_id === payload.categoria_id
+      );
+
+      if (existing) {
+        const isFull = Number(existing.valor_base) > 0 || existing.valor_variavel === true;
+        if (!isFull) {
+          // Shell criada em configurações → converte em compromisso completo
+          response = await supabase.from('subcategorias').update({ ...payload }).eq('id', existing.id).select().single();
+          subcategoriaMsg = 'Esta subcategoria já existia em Configurações. O compromisso foi vinculado a ela.';
+        } else {
+          // Compromisso completo já existe — avisa mas cria mesmo assim
+          response = await supabase.from('subcategorias').insert({ ...payload, user_id: user.id }).select().single();
+          subcategoriaMsg = 'Já existe um compromisso com esse nome nessa categoria. Um novo foi criado mesmo assim.';
+        }
+      } else {
+        response = await supabase.from('subcategorias').insert({ ...payload, user_id: user.id }).select().single();
+        subcategoriaMsg = 'Uma nova subcategoria foi criada junto com este compromisso.';
+      }
     }
     if (response.error) throw response.error;
 
@@ -1774,22 +1965,39 @@ async function saveCompromisso(event) {
       await saveValoresMensaisToOrcamento(response.data.id, moeda, items);
     }
 
-    showToast(editingId ? 'Compromisso atualizado' : 'Compromisso criado', 'success');
+    // Resolve divida_id: se "__new__", auto-cria dívida com dados do compromisso
+    let resolvedDividaId = (isDividasCat && dividaRaw && dividaRaw !== '__new__') ? dividaRaw : null;
+    if (isDividasCat && dividaRaw === '__new__') {
+      const user = await getCurrentUser();
+      const { data: novaDivida, error: divErr } = await supabase.from('dividas').insert({
+        user_id:      user.id,
+        nome:         payload.apelido || payload.nome,
+        valor_total:  payload.valor_base || 0,
+        valor_pago:   0,
+        data_inicio:  payload.iniciado_em,
+        data_vencimento: payload.terminado_em || null,
+        conta_id:     payload.conta_id || null,
+        status:       'Ativa',
+      }).select('id').single();
+      if (divErr) {
+        showToast('Compromisso salvo, mas erro ao criar dívida: ' + divErr.message, 'warning', 8000);
+      } else {
+        resolvedDividaId = novaDivida.id;
+        cachedDividas.push({ id: novaDivida.id, nome: payload.apelido || payload.nome, status: 'Ativa' });
+      }
+    }
 
-    // Fluxo dívida: só para novos compromissos do grupo 'dividas'
-    const foiInsert = !editingId;
-    const novaData  = response.data;
+    // Atualiza divida_id no registro recém-salvo
+    if (resolvedDividaId && response.data?.id) {
+      await supabase.from('subcategorias').update({ divida_id: resolvedDividaId }).eq('id', response.data.id);
+    }
+
+    showToast(editingId ? 'Compromisso atualizado' : 'Compromisso criado', 'success');
+    if (subcategoriaMsg) showInfoPopup('Subcategoria', subcategoriaMsg);
 
     closeModal('modal-compromisso');
     editingId = null;
     await loadCompromissos();
-
-    const isDividasCat = cat?.grupo === 'dividas'
-      || /dívida|divida/i.test(cat?.nome || '');
-    if (foiInsert && isDividasCat && novaData) {
-      _dividaFlowComp = { ...novaData, cat };
-      openSugestaoDivida();
-    }
   } catch (err) {
     console.error('[saveCompromisso]', err);
     let msg = err?.message || err?.hint || err?.details || JSON.stringify(err);
@@ -1825,27 +2033,37 @@ async function deleteCompromisso(id) {
 }
 
 // =============================================================
-// Gerenciar Categorias (modal)
+// Popup informativo de subcategoria (fecha apenas com OK)
 // =============================================================
-function openCategoriasModal() {
-  renderCategoriasList();
-  openModal('modal-categorias');
+function showInfoPopup(title, message) {
+  let dialog = document.getElementById('subcategoria-info-dialog');
+  if (!dialog) {
+    dialog = document.createElement('div');
+    dialog.id = 'subcategoria-info-dialog';
+    dialog.className = 'modal-backdrop';
+    dialog.innerHTML = `
+      <div class="modal modal-sm">
+        <div class="modal-header">
+          <h2 class="modal-title" id="info-dialog-title"></h2>
+        </div>
+        <div class="modal-body">
+          <p id="info-dialog-msg" style="color: var(--color-text-secondary);"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" id="btn-info-dialog-ok">Entendi</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(dialog);
+    dialog.querySelector('#btn-info-dialog-ok').addEventListener('click', () => {
+      dialog.classList.add('hidden');
+    });
+  }
+  dialog.querySelector('#info-dialog-title').textContent = title;
+  dialog.querySelector('#info-dialog-msg').textContent = message;
+  dialog.classList.remove('hidden');
 }
 
-const CATEGORIA_GRUPOS = [
-  { value: 'receitas',      label: 'Receitas (Contribuição)' },
-  { value: 'dividas',       label: 'Dívidas (Contribuição)' },
-  { value: 'investimentos', label: 'Investimentos (Sonhos)' },
-  { value: 'custo_vida',    label: 'Custo de vida' },
-];
-
-function renderGrupoSelect(catId, currentGrupo) {
-  const cur = currentGrupo || 'custo_vida';
-  const options = CATEGORIA_GRUPOS.map((g) =>
-    `<option value="${g.value}" ${cur === g.value ? 'selected' : ''}>${g.label}</option>`
-  ).join('');
-  return `<select class="select" data-cat-grupo="${catId}" style="font-size: var(--fs-xs); padding: 4px 8px; max-width: 200px;">${options}</select>`;
-}
 
 // Definição dos super-blocos (mesma usada no orçamento, mas duplicada aqui pra
 // não criar dependência cruzada entre páginas). Mantém em sync se mudar.
@@ -1854,219 +2072,6 @@ const SUPER_BLOCOS_LIST = [
   { id: 'sonhos',       label: 'Sonhos',       grupos: ['investimentos'],             accent: 'var(--color-primary)' },
   { id: 'custo_vida',   label: 'Custo de vida', grupos: ['custo_vida'],               accent: 'var(--color-secondary)' },
 ];
-
-function renderCategoriaRow(cat) {
-  const usedBy = cachedCompromissos.filter((c) => c.categoria_id === cat.id).length;
-  const usageLabel = `${usedBy} compromisso${usedBy === 1 ? '' : 's'}`;
-  const grupoSelect = renderGrupoSelect(cat.id, cat.grupo);
-
-  if (cat.is_default) {
-    return `
-      <div class="categoria-row" data-id="${cat.id}" style="display:flex; align-items:center; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: var(--space-2); background: var(--color-surface-alt);">
-        <span style="display:inline-block; width: 28px; height: 28px; border-radius: 50%; background: ${cat.cor}; flex-shrink: 0; border: 2px solid var(--color-surface); box-shadow: 0 0 0 1px var(--color-border);"></span>
-        <span style="flex: 1; font-weight: var(--fw-semibold); color: var(--color-text-main); padding: var(--space-2) 0;">${escapeHtml(cat.nome)}</span>
-        ${grupoSelect}
-        <span style="font-size: var(--fs-xs); color: var(--color-text-muted); white-space: nowrap;">${usageLabel}</span>
-        <span class="badge badge-neutral" style="font-size:10px;">default</span>
-        <button class="btn btn-primary btn-sm" data-cat-save="${cat.id}" type="button" disabled style="flex-shrink: 0;">Salvar</button>
-      </div>
-    `;
-  }
-
-  return `
-    <div class="categoria-row" data-id="${cat.id}" style="display:flex; align-items:center; gap: var(--space-3); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: var(--space-2);">
-      <div data-cat-color-wrapper="${cat.id}" style="width: 28px; height: 28px; border-radius: 50%; background: ${cat.cor}; cursor: pointer; flex-shrink: 0; border: 2px solid var(--color-surface); box-shadow: 0 0 0 1px var(--color-border); position: relative; overflow: hidden;" title="Mudar cor">
-        <input type="color" data-cat-color="${cat.id}" value="${cat.cor}" style="position: absolute; inset: -10px; width: calc(100% + 20px); height: calc(100% + 20px); opacity: 0; cursor: pointer; border: none;">
-      </div>
-      <input type="text" class="input" data-cat-nome="${cat.id}" value="${escapeHtml(cat.nome)}" maxlength="50" style="flex: 1; padding: var(--space-2) var(--space-3); font-size: var(--fs-sm);">
-      ${grupoSelect}
-      <span style="font-size: var(--fs-xs); color: var(--color-text-muted); white-space: nowrap;">${usageLabel}</span>
-      <button class="btn btn-primary btn-sm" data-cat-save="${cat.id}" type="button" disabled style="flex-shrink: 0;">Salvar</button>
-      <button class="btn-icon danger" data-cat-delete="${cat.id}" type="button" title="Excluir">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-      </button>
-    </div>
-  `;
-}
-
-function renderCategoriasList() {
-  const list = document.getElementById('categorias-list');
-  if (cachedCategorias.length === 0) {
-    list.innerHTML = '<p style="color: var(--color-text-muted); text-align: center; padding: var(--space-4);">Nenhuma categoria ainda.</p>';
-    return;
-  }
-
-  // Agrupa por super-bloco
-  const sectionsHtml = SUPER_BLOCOS_LIST.map((bloco) => {
-    const cats = cachedCategorias.filter((c) => bloco.grupos.includes(c.grupo || 'custo_vida'));
-    if (cats.length === 0) return '';
-    const rowsHtml = cats.map(renderCategoriaRow).join('');
-    return `
-      <div class="categorias-bloco-section" style="--bloco-accent: ${bloco.accent};">
-        <h3 class="categorias-bloco-title">${escapeHtml(bloco.label)}</h3>
-        ${rowsHtml}
-      </div>
-    `;
-  }).join('');
-
-  list.innerHTML = sectionsHtml;
-  bindCategoriaRowEvents();
-}
-
-function bindCategoriaRowEvents() {
-  const list = document.getElementById('categorias-list');
-
-  // Detectar mudanças → habilitar botão Salvar (lida com defaults: sem nome/cor inputs)
-  const updateSaveButton = (id) => {
-    const cat = cachedCategorias.find((c) => c.id === id);
-    if (!cat) return;
-    const nomeInput  = list.querySelector(`[data-cat-nome="${id}"]`);
-    const corInput   = list.querySelector(`[data-cat-color="${id}"]`);
-    const grupoInput = list.querySelector(`[data-cat-grupo="${id}"]`);
-    const saveBtn    = list.querySelector(`[data-cat-save="${id}"]`);
-    if (!saveBtn) return;
-
-    const newNome  = nomeInput ? nomeInput.value.trim() : cat.nome;
-    const newCor   = corInput ? corInput.value.toLowerCase() : (cat.cor || '').toLowerCase();
-    const newGrupo = grupoInput ? grupoInput.value : (cat.grupo || 'custo_vida');
-    const oldCor   = (cat.cor || '').toLowerCase();
-    const oldGrupo = cat.grupo || 'custo_vida';
-    const changed = (newNome !== cat.nome) || (newCor !== oldCor) || (newGrupo !== oldGrupo);
-    saveBtn.disabled = !changed || !newNome;
-  };
-
-  list.querySelectorAll('[data-cat-nome]').forEach((input) => {
-    input.addEventListener('input', () => updateSaveButton(input.dataset.catNome));
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const saveBtn = list.querySelector(`[data-cat-save="${input.dataset.catNome}"]`);
-        if (saveBtn && !saveBtn.disabled) saveBtn.click();
-      }
-    });
-  });
-  list.querySelectorAll('[data-cat-color]').forEach((input) => {
-    const handler = () => {
-      const id = input.dataset.catColor;
-      const wrapper = list.querySelector(`[data-cat-color-wrapper="${id}"]`);
-      if (wrapper) wrapper.style.background = input.value;
-      updateSaveButton(id);
-    };
-    input.addEventListener('input', handler);
-    input.addEventListener('change', handler);
-  });
-  list.querySelectorAll('[data-cat-grupo]').forEach((sel) => {
-    sel.addEventListener('change', () => updateSaveButton(sel.dataset.catGrupo));
-  });
-
-  // Salvar
-  list.querySelectorAll('[data-cat-save]').forEach((btn) => {
-    btn.addEventListener('click', () => updateCategoria(btn.dataset.catSave));
-  });
-
-  // Excluir
-  list.querySelectorAll('[data-cat-delete]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.catDelete;
-      const cat = cachedCategorias.find((c) => c.id === id);
-      const usedBy = cachedCompromissos.filter((c) => c.categoria_id === id).length;
-      if (usedBy > 0) {
-        showToast(`Não é possível excluir: ${usedBy} compromisso${usedBy === 1 ? ' usa' : 's usam'} essa categoria.`, 'error', 8000);
-        return;
-      }
-      pendingAction = { type: 'delete-categoria', id };
-      showConfirm(
-        'Excluir categoria?',
-        `Excluir <strong>${escapeHtml(cat.nome)}</strong>? Esta ação não pode ser desfeita.`,
-        'Excluir'
-      );
-    });
-  });
-}
-
-async function updateCategoria(id) {
-  const list = document.getElementById('categorias-list');
-  const nomeInput  = list.querySelector(`[data-cat-nome="${id}"]`);
-  const corInput   = list.querySelector(`[data-cat-color="${id}"]`);
-  const grupoInput = list.querySelector(`[data-cat-grupo="${id}"]`);
-  const saveBtn    = list.querySelector(`[data-cat-save="${id}"]`);
-  const cat = cachedCategorias.find((c) => c.id === id);
-  if (!cat || !saveBtn) return;
-
-  // Defaults não têm nome/cor inputs — preserva valores atuais
-  const novoNome  = nomeInput  ? nomeInput.value.trim()  : cat.nome;
-  const novaCor   = corInput   ? corInput.value          : cat.cor;
-  const novoGrupo = grupoInput ? grupoInput.value        : (cat.grupo || 'custo_vida');
-
-  if (!novoNome) {
-    showToast('Nome da categoria não pode ficar vazio', 'error');
-    return;
-  }
-
-  const labelOriginal = saveBtn.textContent;
-  saveBtn.disabled = true;
-  saveBtn.innerHTML = '<span class="spinner"></span>';
-
-  const { error } = await supabase
-    .from('categorias')
-    .update({ nome: novoNome, cor: novaCor, grupo: novoGrupo })
-    .eq('id', id);
-
-  if (error) {
-    console.error('[updateCategoria]', error);
-    showToast('Erro ao atualizar: ' + error.message, 'error', 8000);
-    saveBtn.disabled = false;
-    saveBtn.textContent = labelOriginal;
-    return;
-  }
-
-  showToast('Categoria atualizada', 'success');
-  await loadCategorias();
-  renderCategoriaFilters();
-  renderCategoriasList();
-  renderCompromissos(); // atualiza badges na tabela principal
-}
-
-async function addCategoria() {
-  const nome = document.getElementById('cat-nova-nome').value.trim();
-  const cor = document.getElementById('cat-nova-cor').value;
-  if (!nome) {
-    showToast('Informe o nome da categoria', 'error');
-    return;
-  }
-  const user = await getCurrentUser();
-  if (!user) return;
-
-  const ordem = cachedCategorias.length;
-  const { error } = await supabase.from('categorias').insert({
-    user_id: user.id,
-    nome,
-    cor,
-    ordem,
-    is_default: false,
-  });
-  if (error) {
-    showToast('Erro ao criar categoria: ' + error.message, 'error', 8000);
-    return;
-  }
-  showToast('Categoria criada', 'success');
-  document.getElementById('cat-nova-nome').value = '';
-  await loadCategorias();
-  renderCategoriaFilters();
-  renderCategoriasList();
-}
-
-async function deleteCategoria(id) {
-  const { error } = await supabase.from('categorias').delete().eq('id', id);
-  if (error) {
-    showToast('Erro ao excluir categoria: ' + error.message, 'error', 8000);
-    return;
-  }
-  showToast('Categoria excluída', 'success');
-  await loadCategorias();
-  renderCategoriaFilters();
-  renderCategoriasList();
-}
 
 // -----------------------------
 // Próximo vencimento — cálculo + render
@@ -2214,138 +2219,3 @@ function escapeHtml(s) {
   );
 }
 
-// =============================================================
-// Fluxo: dívida vinculada ao compromisso
-// =============================================================
-
-function bindDividaFlow() {
-  // Passo 1 — sugestão
-  document.getElementById('btn-sugestao-nao').addEventListener('click', () => {
-    closeModal('modal-divida-sugestao');
-    _dividaFlowComp = null;
-  });
-  document.getElementById('btn-sugestao-sim').addEventListener('click', () => {
-    closeModal('modal-divida-sugestao');
-    openDividaNova();
-  });
-  document.querySelector('[data-close-modal="modal-divida-sugestao"]')
-    ?.addEventListener('click', () => { _dividaFlowComp = null; });
-
-  // Passo 2 — formulário da dívida
-  document.getElementById('form-divida-nova').addEventListener('submit', saveDividaNova);
-  document.querySelector('[data-close-modal="modal-divida-nova"]')
-    ?.addEventListener('click', () => { _dividaFlowComp = null; });
-
-  // Passo 3 — histórico
-  document.getElementById('btn-historico-depois').addEventListener('click', () => {
-    closeModal('modal-divida-historico');
-    _dividaCriada = null;
-    showToast('Dívida criada. Você pode atualizar o histórico na página Dívidas.', 'success', 5000);
-  });
-  document.getElementById('btn-historico-fechar').addEventListener('click', () => {
-    closeModal('modal-divida-historico');
-    _dividaCriada = null;
-    showToast('Dívida criada. Você pode atualizar o histórico na página Dívidas.', 'success', 5000);
-  });
-  document.getElementById('btn-historico-salvar').addEventListener('click', salvarHistoricoDivida);
-}
-
-// Passo 1 — abre sugestão
-function openSugestaoDivida() {
-  const nome = _dividaFlowComp?.nome || _dividaFlowComp?.apelido || '';
-  document.getElementById('sugestao-nome-comp').textContent = `"${nome}"`;
-  openModal('modal-divida-sugestao');
-}
-
-// Passo 2 — abre form da nova dívida
-function openDividaNova() {
-  const comp = _dividaFlowComp;
-  document.getElementById('dn-nome').value           = comp?.apelido || comp?.nome || '';
-  document.getElementById('dn-credor').value         = '';
-  document.getElementById('dn-valor-total').value    = comp?.valor_base > 0 ? comp.valor_base : '';
-  document.getElementById('dn-juros').value          = '';
-  document.getElementById('dn-data-inicio').value    = comp?.iniciado_em || new Date().toISOString().slice(0, 10);
-  document.getElementById('dn-data-vencimento').value = comp?.terminado_em || '';
-  document.getElementById('dn-valor-pago').value     = '';
-  openModal('modal-divida-nova');
-}
-
-// Passo 2 — salva a dívida
-async function saveDividaNova(e) {
-  e.preventDefault();
-  const btn = document.getElementById('btn-salvar-divida-nova');
-
-  const nome            = document.getElementById('dn-nome').value.trim();
-  const credor          = document.getElementById('dn-credor').value.trim() || null;
-  const valor_total     = parseFloat(document.getElementById('dn-valor-total').value);
-  const jurosRaw        = document.getElementById('dn-juros').value;
-  const juros_percentual = jurosRaw ? parseFloat(jurosRaw) : null;
-  const data_inicio     = document.getElementById('dn-data-inicio').value;
-  const data_vencimento = document.getElementById('dn-data-vencimento').value || null;
-
-  if (!nome)                                        { showToast('Informe o nome da dívida', 'error'); return; }
-  if (!valor_total || isNaN(valor_total) || valor_total <= 0) { showToast('Informe um valor total válido', 'error'); return; }
-  if (!data_inicio)                                  { showToast('Informe a data de início', 'error'); return; }
-
-  btn.disabled = true;
-  btn.textContent = 'Salvando…';
-
-  const user = await getCurrentUser();
-  const { data, error } = await supabase.from('dividas').insert({
-    user_id: user.id,
-    nome,
-    credor,
-    valor_total,
-    valor_pago: 0,
-    juros_percentual,
-    data_inicio,
-    data_vencimento,
-    status: 'Ativa',
-    conta_id: _dividaFlowComp?.conta_id || null,
-  }).select().single();
-
-  btn.disabled = false;
-  btn.textContent = 'Salvar dívida';
-
-  if (error) { showToast('Erro ao criar dívida: ' + error.message, 'error', 8000); return; }
-
-  _dividaCriada = data.id;
-  closeModal('modal-divida-nova');
-  openDividaHistorico();
-}
-
-// Passo 3 — abre modal de histórico
-function openDividaHistorico() {
-  document.getElementById('dn-valor-pago').value = '';
-  openModal('modal-divida-historico');
-}
-
-// Passo 3 — salva valor_pago inicial
-async function salvarHistoricoDivida() {
-  const valorRaw = document.getElementById('dn-valor-pago').value;
-  const valor    = parseFloat(valorRaw);
-
-  if (!valorRaw || isNaN(valor) || valor < 0) {
-    showToast('Informe um valor válido (ou clique em "Deixar para depois")', 'error');
-    return;
-  }
-
-  const btn = document.getElementById('btn-historico-salvar');
-  btn.disabled = true;
-  btn.textContent = 'Salvando…';
-
-  const { error } = await supabase
-    .from('dividas')
-    .update({ valor_pago: valor })
-    .eq('id', _dividaCriada);
-
-  btn.disabled = false;
-  btn.textContent = 'Atualizar';
-
-  if (error) { showToast('Erro ao atualizar histórico: ' + error.message, 'error', 8000); return; }
-
-  closeModal('modal-divida-historico');
-  _dividaCriada   = null;
-  _dividaFlowComp = null;
-  showToast('Dívida criada e histórico atualizado!', 'success');
-}

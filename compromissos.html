@@ -32,15 +32,9 @@
           <h1 class="page-title">Compromissos</h1>
           <p class="page-description">Suas entradas e saídas recorrentes. Organizadas em Categorias e Subcategorias.</p>
         </div>
-        <div style="display: flex; gap: var(--space-2);">
-          <button class="btn btn-ghost" id="btn-gerenciar-categorias" type="button" title="Gerenciar Categorias">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            Categorias
-          </button>
-          <button class="btn btn-primary" id="btn-novo-compromisso" type="button">
-            <span style="font-size: 1.25em; line-height: 0.8;">+</span> Novo compromisso
-          </button>
-        </div>
+        <button class="btn btn-primary" id="btn-novo-compromisso" type="button">
+          <span style="font-size: 1.25em; line-height: 0.8;">+</span> Novo compromisso
+        </button>
       </div>
 
       <!-- View toggle -->
@@ -226,6 +220,13 @@
           <p class="field-hint">Agrupa este compromisso a uma meta (Casa própria, Aposentadoria, etc).</p>
         </div>
 
+        <!-- Dívida vinculada (só pra categoria do grupo Dívidas) -->
+        <div class="field hidden" id="divida-field">
+          <label class="field-label" for="comp-divida">Dívida vinculada <span class="required">*</span></label>
+          <select id="comp-divida" name="divida_id" class="select"></select>
+          <p class="field-hint">Selecione uma dívida existente ou crie uma nova para acompanhar o progresso de pagamento.</p>
+        </div>
+
         <!-- Comportamento (variável / renda principal) -->
         <div class="field">
           <div class="checkbox-row">
@@ -358,50 +359,6 @@
   </div>
 
   <!-- ============================================================
-       MODAL: Gerenciar categorias
-       ============================================================ -->
-  <div class="modal-backdrop hidden" id="modal-categorias" role="dialog" aria-modal="true">
-    <div class="modal modal-lg">
-      <div class="modal-header">
-        <h2 class="modal-title">Gerenciar Categorias</h2>
-        <button type="button" class="modal-close" data-close-modal="modal-categorias" aria-label="Fechar">×</button>
-      </div>
-      <div class="modal-body">
-        <p style="color: var(--color-text-secondary); margin-bottom: var(--space-4); font-size: var(--fs-sm);">
-          Categorias são os grupos de organização dos seus compromissos. As 3 padrões (Receitas, Dívidas, Investimentos) são fixas. Você pode adicionar, editar ou remover categorias customizadas.
-        </p>
-
-        <!-- Form pra adicionar nova -->
-        <div style="display: flex; gap: var(--space-3); align-items: flex-end; margin-bottom: var(--space-6);">
-          <div class="field" style="flex: 1;">
-            <label class="field-label" for="cat-nova-nome">Nome da nova categoria</label>
-            <input type="text" id="cat-nova-nome" class="input" maxlength="50" placeholder="Ex: Lazer, Saúde, Imóveis…">
-          </div>
-          <div style="flex-shrink: 0;">
-            <label class="field-label" for="cat-nova-cor">Cor</label>
-            <div id="cat-nova-cor-wrapper" style="width: 42px; height: 42px; border-radius: var(--radius-md); background: #6D5EF5; cursor: pointer; border: 1px solid var(--color-border); position: relative; overflow: hidden;">
-              <input type="color" id="cat-nova-cor" value="#6D5EF5" style="position: absolute; inset: -10px; width: calc(100% + 20px); height: calc(100% + 20px); opacity: 0; cursor: pointer; border: none;">
-            </div>
-          </div>
-          <button type="button" class="btn btn-primary" id="btn-add-categoria" style="flex-shrink: 0;">
-            <span style="font-size: 1.25em; line-height: 0.8;">+</span> Adicionar
-          </button>
-        </div>
-
-        <h3 style="font-family: var(--font-display); font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 var(--space-3);">
-          Suas categorias
-        </h3>
-
-        <!-- Lista de categorias existentes -->
-        <div id="categorias-list"></div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" data-close-modal="modal-categorias">Pronto</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================================================
        MODAL: Compromissos do dia (clicado no calendário)
        ============================================================ -->
   <div class="modal-backdrop hidden" id="modal-day" role="dialog" aria-modal="true">
@@ -433,97 +390,6 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-ghost" data-close-modal="modal-confirmar">Cancelar</button>
         <button type="button" class="btn btn-danger" id="btn-confirmar-acao">Confirmar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Sugestão de criar dívida -->
-  <div class="modal-backdrop hidden" id="modal-divida-sugestao" role="dialog" aria-modal="true">
-    <div class="modal modal-sm">
-      <div class="modal-header">
-        <h2 class="modal-title">Criar dívida vinculada?</h2>
-        <button type="button" class="modal-close" data-close-modal="modal-divida-sugestao" aria-label="Fechar">×</button>
-      </div>
-      <div class="modal-body">
-        <p style="color: var(--color-text-secondary); font-size: var(--fs-sm); line-height: 1.6;">
-          O compromisso <strong id="sugestao-nome-comp"></strong> foi criado na categoria <strong>Dívidas</strong>.<br><br>
-          Deseja criar uma dívida vinculada para acompanhar o progresso de pagamento?
-        </p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-ghost" id="btn-sugestao-nao">Não, obrigado</button>
-        <button type="button" class="btn btn-primary" id="btn-sugestao-sim">Sim, criar dívida</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Nova dívida (a partir de compromisso) -->
-  <div class="modal-backdrop hidden" id="modal-divida-nova" role="dialog" aria-modal="true">
-    <div class="modal modal-md">
-      <div class="modal-header">
-        <h2 class="modal-title">Nova dívida</h2>
-        <button type="button" class="modal-close" data-close-modal="modal-divida-nova" aria-label="Fechar">×</button>
-      </div>
-      <form id="form-divida-nova">
-        <div class="modal-body">
-          <div class="form-row">
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="dn-nome">Nome da dívida *</label>
-              <input class="form-input" id="dn-nome" type="text" placeholder="Ex: Financiamento carro" required>
-            </div>
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="dn-credor">Credor</label>
-              <input class="form-input" id="dn-credor" type="text" placeholder="Ex: Banco Itaú">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="dn-valor-total">Valor total da dívida *</label>
-              <input class="form-input" id="dn-valor-total" type="number" step="0.01" min="0.01" placeholder="0,00" required>
-            </div>
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="dn-juros">Juros ao mês (%)</label>
-              <input class="form-input" id="dn-juros" type="number" step="0.01" min="0" placeholder="0,00">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="dn-data-inicio">Data de início *</label>
-              <input class="form-input" id="dn-data-inicio" type="date" required>
-            </div>
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="dn-data-vencimento">Data de vencimento</label>
-              <input class="form-input" id="dn-data-vencimento" type="date">
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-ghost" data-close-modal="modal-divida-nova">Cancelar</button>
-          <button type="submit" class="btn btn-primary" id="btn-salvar-divida-nova">Salvar dívida</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal: Atualizar histórico da dívida -->
-  <div class="modal-backdrop hidden" id="modal-divida-historico" role="dialog" aria-modal="true">
-    <div class="modal modal-sm">
-      <div class="modal-header">
-        <h2 class="modal-title">Atualizar histórico</h2>
-        <button type="button" class="modal-close" id="btn-historico-fechar" aria-label="Fechar">×</button>
-      </div>
-      <div class="modal-body">
-        <p style="color: var(--color-text-secondary); font-size: var(--fs-sm); line-height: 1.6; margin-bottom: var(--space-4);">
-          Esta dívida já tem algum valor pago até hoje? Se sim, informe o total já pago para refletir a situação atual.
-        </p>
-        <div class="form-group">
-          <label class="form-label" for="dn-valor-pago">Total já pago até hoje</label>
-          <input class="form-input" id="dn-valor-pago" type="number" step="0.01" min="0" placeholder="0,00">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-ghost" id="btn-historico-depois">Deixar para depois</button>
-        <button type="button" class="btn btn-primary" id="btn-historico-salvar">Atualizar</button>
       </div>
     </div>
   </div>

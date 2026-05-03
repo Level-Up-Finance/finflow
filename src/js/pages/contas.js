@@ -12,6 +12,7 @@ import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { ACCOUNT_TYPES, getType, typeIcon, typeColor, typePill } from '../lib/account-types.js';
 import { CURATED_BANKS, findBank, logoUrl, searchBanks } from '../lib/banks.js';
+import { initColVisibility } from '../lib/col-visibility.js';
 
 // -----------------------------
 // Constants & state
@@ -33,6 +34,7 @@ let filterStatus = 'todas';
 let filterTipos = new Set(['all']);
 let userManuallyChangedColor = false;
 let viewMode = 'cards';         // 'cards' | 'table'
+let colVisEl = null;
 
 // -----------------------------
 // Init
@@ -43,6 +45,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderTipoFilters();
   renderPickers();
   bindEvents();
+
+  colVisEl = initColVisibility({
+    storageKey: 'contas',
+    tableClass:  'contas-table',
+    columns: [
+      { key: 'tipo',        label: 'Tipo',              defaultVisible: true  },
+      { key: 'status',      label: 'Status',            defaultVisible: true  },
+      { key: 'desde',       label: 'Desde',             defaultVisible: false },
+      { key: 'descricao',   label: 'Descrição',         defaultVisible: false },
+      { key: 'fec-fatura',  label: 'Fechamento fatura', defaultVisible: false },
+      { key: 'venc-fatura', label: 'Vencimento fatura', defaultVisible: false },
+    ],
+    toolbarEl: document.querySelector('.toolbar'),
+  });
+
   await loadContas();
 });
 
@@ -573,6 +590,8 @@ function renderContas() {
     return;
   }
 
+  if (colVisEl) colVisEl.classList.toggle('hidden', viewMode !== 'table');
+
   if (viewMode === 'table') {
     container.innerHTML = renderContasTable(filtered);
     bindRowClicks();
@@ -594,10 +613,12 @@ function renderContasTable(contas) {
         <thead>
           <tr>
             <th>Conta</th>
-            <th>Tipo</th>
-            <th>Status</th>
-            <th>Desde</th>
-            <th>Descrição</th>
+            <th data-col="tipo">Tipo</th>
+            <th data-col="status">Status</th>
+            <th data-col="desde">Desde</th>
+            <th data-col="descricao">Descrição</th>
+            <th data-col="fec-fatura">Fec. fatura</th>
+            <th data-col="venc-fatura">Venc. fatura</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -623,10 +644,12 @@ function renderContaRow(conta) {
           </div>
         </div>
       </td>
-      <td>${typePill(conta.tipo)}</td>
-      <td><span class="status-pill status-${conta.status}">${statusLabel}</span></td>
-      <td class="tabular">${conta.desde ? formatDateBR(conta.desde) : '—'}</td>
-      <td class="conta-row-desc">${conta.descricao ? escapeHtml(conta.descricao) : '<span style="color: var(--color-text-muted);">—</span>'}</td>
+      <td data-col="tipo">${typePill(conta.tipo)}</td>
+      <td data-col="status"><span class="status-pill status-${conta.status}">${statusLabel}</span></td>
+      <td data-col="desde" class="tabular">${conta.desde ? formatDateBR(conta.desde) : '—'}</td>
+      <td data-col="descricao" class="conta-row-desc">${conta.descricao ? escapeHtml(conta.descricao) : '<span style="color: var(--color-text-muted);">—</span>'}</td>
+      <td data-col="fec-fatura" class="tabular">${conta.fec_fatura ? `Dia ${conta.fec_fatura}` : '—'}</td>
+      <td data-col="venc-fatura" class="tabular">${conta.vencimento ? `Dia ${conta.vencimento}` : '—'}</td>
     </tr>
   `;
 }

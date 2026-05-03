@@ -12,6 +12,7 @@ import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
+import { initColVisibility } from '../lib/col-visibility.js';
 
 let cachedProjetos = [];
 let cachedSubcategorias = []; // só as do grupo investimentos
@@ -19,8 +20,8 @@ let cachedPagamentos = [];    // pagos/cartão das subs de investimento
 let cachedOrcamento = [];     // mês corrente — pra "previsto neste mês"
 let editingId = null;
 let detailsId = null;
-let filterStatus = 'todos';
 let viewMode = 'cards'; // 'cards' | 'table' | 'timeline'
+let colVisEl = null;
 let timelineZoom = 'mes'; // 'mes' | 'ano' | '5anos' | '10anos'
 
 const today = new Date();
@@ -34,11 +35,48 @@ const STATUS_LABELS = {
   arquivado: 'Arquivado',
 };
 
+const BLOCOS = [
+  {
+    id: 'em_progresso',
+    label: 'Em progresso',
+    filter: (p) => p.status === 'ativo' && calcRealizado(p.id) > 0,
+    emptyMsg: 'Nenhum projeto em andamento.',
+  },
+  {
+    id: 'por_comecar',
+    label: 'Por começar',
+    filter: (p) => (p.status === 'ativo' || p.status === 'pausado') && calcRealizado(p.id) === 0,
+    emptyMsg: 'Nenhum projeto sem início ainda.',
+  },
+  {
+    id: 'terminado',
+    label: 'Terminado',
+    filter: (p) => p.status === 'concluido' || p.status === 'arquivado',
+    emptyMsg: 'Nenhum projeto concluído ainda.',
+  },
+];
+
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('investimentos');
   bindEvents();
   await loadAll();
+
+  colVisEl = initColVisibility({
+    storageKey: 'investimentos',
+    tableClass:  'projetos-tabela',
+    columns: [
+      { key: 'status',         label: 'Status',           defaultVisible: true  },
+      { key: 'realizado',      label: 'Realizado',        defaultVisible: true  },
+      { key: 'previsto-mes',   label: 'Previsto este mês', defaultVisible: false },
+      { key: 'meta',           label: 'Meta',             defaultVisible: true  },
+      { key: 'pct-meta',       label: '% Meta',           defaultVisible: true  },
+      { key: 'termino',        label: 'Término',          defaultVisible: false },
+      { key: 'compromissos',   label: 'Compromissos',     defaultVisible: false },
+    ],
+    toolbarEl: document.querySelector('.toolbar'),
+  });
+
   render();
 });
 
@@ -93,14 +131,6 @@ function bindEvents() {
 
   document.getElementById('form-projeto').addEventListener('submit', saveProjeto);
 
-  document.getElementById('invest-filters').addEventListener('click', (e) => {
-    const btn = e.target.closest('.filter-pill');
-    if (!btn) return;
-    document.querySelectorAll('#invest-filters .filter-pill').forEach((p) => p.classList.remove('active'));
-    btn.classList.add('active');
-    filterStatus = btn.dataset.filterStatus;
-    render();
-  });
 
   document.getElementById('btn-editar-projeto').addEventListener('click', () => {
     const proj = cachedProjetos.find((p) => p.id === detailsId);
@@ -137,12 +167,7 @@ function render() {
   // KPIs (Widget 1: total universal · Widget 2: projetos com meta)
   renderWidgets(counts);
 
-  // Filtra projetos
-  const filtered = filterStatus === 'todos'
-    ? cachedProjetos
-    : cachedProjetos.filter((p) => p.status === filterStatus);
-
-  const container = document.getElementById('projetos-container');
+  const container  = document.getElementById('projetos-container');
   const emptyState = document.getElementById('empty-state');
 
   if (cachedProjetos.length === 0) {
@@ -152,19 +177,32 @@ function render() {
   }
   emptyState.classList.add('hidden');
 
-  if (filtered.length === 0) {
-    container.innerHTML = '<div class="empty-state"><p class="empty-state-message">Nenhum projeto com esse filtro.</p></div>';
-    return;
+  if (colVisEl) colVisEl.classList.toggle('hidden', viewMode !== 'table');
+
+  let html = '';
+  for (const bloco of BLOCOS) {
+    const items = cachedProjetos.filter(bloco.filter);
+    let content;
+    if (items.length === 0) {
+      content = `<p class="bloco-empty">${bloco.emptyMsg}</p>`;
+    } else if (viewMode === 'table') {
+      content = renderTable(items);
+    } else if (viewMode === 'timeline') {
+      content = renderTimeline(items);
+    } else {
+      content = `<div class="projetos-grid">${items.map(renderCard).join('')}</div>`;
+    }
+    html += `
+      <div class="bloco-section">
+        <div class="bloco-section-header">
+          <span class="bloco-section-label">${bloco.label}</span>
+          <span class="bloco-section-count">${items.length}</span>
+        </div>
+        ${content}
+      </div>`;
   }
 
-  // Roteia pra view ativa
-  if (viewMode === 'table') {
-    container.innerHTML = renderTable(filtered);
-  } else if (viewMode === 'timeline') {
-    container.innerHTML = renderTimeline(filtered);
-  } else {
-    container.innerHTML = `<div class="projetos-grid">${filtered.map(renderCard).join('')}</div>`;
-  }
+  container.innerHTML = html;
   bindCardClicks();
 }
 
@@ -408,7 +446,7 @@ function renderDonutSVG(pct, color = 'var(--color-primary)', size = 'md') {
           transform="rotate(-90 50 50)"/>
       </svg>
       <div class="invest-donut-center">
-        <span class="invest-donut-pct">${pct.toFixed(1)}%</span>
+        <span class="invest-donut-pct${pct > 100 ? ' invest-donut-pct--over' : ''}">${fmtPct(pct)}</span>
       </div>
     </div>
   `;
@@ -440,13 +478,13 @@ function renderTable(projetos) {
             ${escapeHtml(p.nome)}
           </span>
         </td>
-        <td><span class="projeto-card-status status-${p.status}">${STATUS_LABELS[p.status] || p.status}</span></td>
-        <td class="text-right tabular text-bold">${formatCurrency(realizado, 'BRL')}</td>
-        <td class="text-right tabular">${formatCurrency(previstoMes, 'BRL')}</td>
-        <td class="text-right tabular">${metaCell}</td>
-        <td>${pctCell}</td>
-        <td class="tabular">${termino}</td>
-        <td class="text-right tabular">${subsCount}</td>
+        <td data-col="status"><span class="projeto-card-status status-${p.status}">${STATUS_LABELS[p.status] || p.status}</span></td>
+        <td data-col="realizado" class="text-right tabular text-bold">${formatCurrency(realizado, 'BRL')}</td>
+        <td data-col="previsto-mes" class="text-right tabular">${formatCurrency(previstoMes, 'BRL')}</td>
+        <td data-col="meta" class="text-right tabular">${metaCell}</td>
+        <td data-col="pct-meta">${pctCell}</td>
+        <td data-col="termino" class="tabular">${termino}</td>
+        <td data-col="compromissos" class="text-right tabular">${subsCount}</td>
       </tr>
     `;
   }).join('');
@@ -457,13 +495,13 @@ function renderTable(projetos) {
         <thead>
           <tr>
             <th>Projeto</th>
-            <th>Status</th>
-            <th class="text-right">Realizado</th>
-            <th class="text-right">Previsto este mês</th>
-            <th class="text-right">Meta</th>
-            <th>% Meta</th>
-            <th>Término</th>
-            <th class="text-right">Compromissos</th>
+            <th data-col="status">Status</th>
+            <th data-col="realizado" class="text-right">Realizado</th>
+            <th data-col="previsto-mes" class="text-right">Previsto este mês</th>
+            <th data-col="meta" class="text-right">Meta</th>
+            <th data-col="pct-meta">% Meta</th>
+            <th data-col="termino">Término</th>
+            <th data-col="compromissos" class="text-right">Compromissos</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -571,12 +609,16 @@ function renderTimeline(projetos) {
     const projEnd = p.data_alvo ? new Date(p.data_alvo + 'T23:59:59') : rangeEnd;
     const clampedEnd = projEnd > rangeEnd ? rangeEnd : projEnd;
 
+    const realizado = calcRealizado(p.id);
+    const meta = Number(p.meta_valor) || 0;
+    const fillPct = meta > 0 ? Math.min(100, (realizado / meta) * 100) : 0;
+
     if (projStart > rangeEnd || clampedEnd < rangeStart) {
       return `
         <div class="timeline-row" data-id="${p.id}">
           <div class="timeline-row-label">
             <span class="timeline-row-dot" style="background: ${p.cor};"></span>
-            ${escapeHtml(p.nome)}
+            <span class="timeline-row-name">${escapeHtml(p.nome)}</span>
           </div>
           <div class="timeline-row-track">
             <div class="timeline-row-empty">Fora do range visível</div>
@@ -588,25 +630,24 @@ function renderTimeline(projetos) {
     const leftPct = Math.max(0, ((projStart - rangeStart) / rangeMs) * 100);
     const widthPct = Math.max(1.5, ((clampedEnd - projStart) / rangeMs) * 100);
 
-    const realizado = calcRealizado(p.id);
-    const meta = Number(p.meta_valor) || 0;
-    const fillPct = meta > 0 ? Math.min(100, (realizado / meta) * 100) : 0;
     const fillBar = meta > 0
       ? `<span class="timeline-bar-fill" style="width: ${fillPct}%; background: ${p.cor};"></span>`
       : '';
 
+    const pctLeft  = meta > 0 ? Math.min(fillPct, 82).toFixed(1) : '4';
+    const pctLabel = meta > 0 ? `${fillPct.toFixed(0)}%` : '—';
     const tooltipText = `${p.nome} · ${formatCurrency(realizado, 'BRL')}${meta > 0 ? ` / ${formatCurrency(meta, 'BRL')} (${fillPct.toFixed(0)}%)` : ''}`;
 
     return `
       <div class="timeline-row" data-id="${p.id}">
         <div class="timeline-row-label">
           <span class="timeline-row-dot" style="background: ${p.cor};"></span>
-          ${escapeHtml(p.nome)}
+          <span class="timeline-row-name">${escapeHtml(p.nome)}</span>
         </div>
         <div class="timeline-row-track">
           <div class="timeline-bar" style="left: ${leftPct}%; width: ${widthPct}%; --projeto-cor: ${p.cor};" title="${escapeHtml(tooltipText)}">
             ${fillBar}
-            <span class="timeline-bar-text">${escapeHtml(p.nome)}</span>
+            <span class="timeline-bar-pct" style="left:${pctLeft}%;">${pctLabel}</span>
           </div>
         </div>
       </div>
@@ -880,6 +921,10 @@ function formatDateBR(iso) {
   if (!iso) return '—';
   const [y, m, d] = iso.split('-');
   return `${d}/${m}/${y}`;
+}
+
+function fmtPct(pct) {
+  return pct.toFixed(1) === '100.0' ? '100%' : `${pct.toFixed(1)}%`;
 }
 
 function escapeHtml(s) {

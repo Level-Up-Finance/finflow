@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurações · FinFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/variables.css">
+  <link rel="stylesheet" href="src/css/global.css">
+  <link rel="stylesheet" href="src/css/components.css">
+  <link rel="stylesheet" href="src/css/layout.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-sidebar" id="sidebar-container"></div>
+
+    <header class="app-header header">
+      <div class="header-left">
+        <h2 class="header-title">Configurações</h2>
+      </div>
+    </header>
+
+    <main class="app-main main cfg-main">
+      <div class="cfg-layout">
+        <!-- Toolbar: ocupa só a coluna direita, na primeira linha (acima do conteúdo). Sticky. -->
+        <div class="cfg-panel-toolbar" id="cfg-panel-toolbar">
+          <p class="cfg-panel-desc">Categorias organizam seus compromissos, investimentos e dívidas. Subcategorias podem ser vinculadas a um projeto, dívida ou compromisso específico.</p>
+          <div class="cfg-dropdown" id="dropdown-novo">
+            <button class="btn btn-primary" id="btn-novo-cfg" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="cfg-dropdown-menu hidden" id="dropdown-novo-menu">
+              <button class="cfg-dropdown-item" data-action="nova-categoria" type="button">Nova categoria</button>
+              <button class="cfg-dropdown-item" data-action="nova-subcategoria" type="button">Nova subcategoria</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Side nav -->
+        <nav class="cfg-sidenav" aria-label="Configurações">
+          <button class="cfg-sidenav-item active" data-tab="categorias" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            Categorias
+          </button>
+          <button class="cfg-sidenav-item" data-tab="aparencia" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            Aparência
+          </button>
+        </nav>
+
+        <!-- Content area -->
+        <div class="cfg-content">
+      <!-- Panel: Categorias -->
+      <div class="cfg-panel" id="cfg-panel-categorias" role="region">
+        <!-- Loading -->
+        <div id="cfg-loading" class="loading-overlay" style="position:relative; min-height:120px;">
+          <span class="spinner"></span>
+        </div>
+
+        <!-- Tabela de categorias -->
+        <div id="cfg-tree" class="hidden"></div>
+      </div>
+
+      <!-- Panel: Aparência -->
+      <div class="cfg-panel hidden" id="cfg-panel-aparencia" role="region">
+        <p class="cfg-panel-desc">Escolha como o FinFlow aparece pra você.</p>
+
+        <div class="cfg-theme-options">
+          <button class="cfg-theme-btn" data-theme="claro" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            Claro
+          </button>
+          <button class="cfg-theme-btn" data-theme="escuro" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            Escuro
+          </button>
+          <button class="cfg-theme-btn" data-theme="auto" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+            Automático
+          </button>
+        </div>
+      </div>
+        </div><!-- /.cfg-content -->
+      </div><!-- /.cfg-layout -->
+    </main>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Nova / Editar Categoria
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-categoria" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-categoria-title">Nova categoria</h2>
+        <button type="button" class="modal-close" id="btn-close-modal-categoria" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label class="field-label" for="cat-nome">Nome</label>
+          <input type="text" id="cat-nome" class="input" maxlength="50" placeholder="Ex: Lazer, Saúde…">
+        </div>
+        <div class="field-group" style="grid-template-columns: 1fr auto;">
+          <div class="field">
+            <label class="field-label" for="cat-grupo">Bloco</label>
+            <select id="cat-grupo" class="select">
+              <option value="receitas">Contribuição — Receitas</option>
+              <option value="dividas">Contribuição — Dívidas</option>
+              <option value="investimentos">Sonhos — Investimentos</option>
+              <option value="custo_vida" selected>Custo de vida</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="cat-cor">Cor</label>
+            <div id="cat-cor-wrapper" style="width:42px;height:42px;border-radius:var(--radius-md);background:#6D5EF5;cursor:pointer;border:1px solid var(--color-border);position:relative;overflow:hidden;">
+              <input type="color" id="cat-cor" value="#6D5EF5" style="position:absolute;inset:-10px;width:calc(100% + 20px);height:calc(100% + 20px);opacity:0;cursor:pointer;border:none;">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-cancel-categoria">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-save-categoria">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Nova / Editar Subcategoria
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-subcategoria" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-subcategoria-title">Nova subcategoria</h2>
+        <button type="button" class="modal-close" id="btn-close-modal-subcategoria" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="field hidden" id="sub-categoria-field">
+          <label class="field-label" for="sub-categoria-select">Categoria <span class="required">*</span></label>
+          <select id="sub-categoria-select" class="select"></select>
+        </div>
+        <div class="field">
+          <label class="field-label" for="sub-nome">Nome <span class="required">*</span></label>
+          <input type="text" id="sub-nome" class="input" maxlength="80" placeholder="Nome da subcategoria">
+          <p class="field-hint" id="sub-categoria-hint"></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-cancel-subcategoria">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-save-subcategoria">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Confirmar exclusão
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-cfg-confirmar" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title" id="cfg-confirm-title">Confirmar</h2>
+        <button type="button" class="modal-close" id="btn-close-cfg-confirmar" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <p id="cfg-confirm-msg"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-cfg-confirmar-cancel">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btn-cfg-confirmar-ok">Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script type="module" src="src/js/pages/configuracoes.js"></script>
+</body>
+</html>

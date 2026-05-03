@@ -36,22 +36,40 @@
       </div>
 
       <!-- KPI widgets -->
-      <section class="div-kpis" id="div-kpis">
-        <div class="div-kpi div-kpi-skeleton">Carregando…</div>
-        <div class="div-kpi div-kpi-skeleton">Carregando…</div>
-        <div class="div-kpi div-kpi-skeleton">Carregando…</div>
-      </section>
-
-      <!-- Filtros -->
-      <div class="page-controls">
-        <div class="filter-pills" id="status-filters">
-          <button class="filter-pill active" data-status="todas" type="button">Todas</button>
-          <button class="filter-pill" data-status="Ativa" type="button">Ativas</button>
-          <button class="filter-pill" data-status="Atrasada" type="button">Atrasadas</button>
-          <button class="filter-pill" data-status="Negociando" type="button">Negociando</button>
-          <button class="filter-pill" data-status="Quitada" type="button">Quitadas</button>
+      <div class="invest-kpis-row" id="div-widgets">
+        <div class="invest-kpi" id="kpi-aberto">
+          <div class="invest-kpi-content">
+            <div class="invest-kpi-label">Total em aberto</div>
+            <div class="invest-kpi-value" id="kpi-aberto-value">—</div>
+            <div class="invest-kpi-sub" id="kpi-aberto-sub">Carregando…</div>
+          </div>
+          <div class="invest-kpi-chart" id="kpi-aberto-chart"></div>
+        </div>
+        <div class="invest-kpi" id="kpi-pago">
+          <div class="invest-kpi-content">
+            <div class="invest-kpi-label">Total pago</div>
+            <div class="invest-kpi-value invest-kpi-value-sub" id="kpi-pago-value">—</div>
+            <div class="invest-kpi-sub" id="kpi-pago-sub">Carregando…</div>
+          </div>
+          <div class="invest-kpi-chart" id="kpi-pago-chart"></div>
         </div>
       </div>
+
+      <!-- Toolbar: view toggle -->
+      <div class="toolbar">
+        <div class="view-toggle" id="view-toggle">
+          <button class="view-toggle-btn active" data-view="cards" type="button" title="Cards" aria-label="Cards">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+          </button>
+          <button class="view-toggle-btn" data-view="table" type="button" title="Tabela" aria-label="Tabela">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+          </button>
+          <button class="view-toggle-btn" data-view="gantt" type="button" title="Gantt" aria-label="Gantt">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+          </button>
+        </div>
+      </div>
+
 
       <!-- Empty state -->
       <div id="empty-state" class="empty-state hidden">
@@ -63,8 +81,8 @@
         <button class="btn btn-primary" type="button" data-trigger-nova>+ Nova dívida</button>
       </div>
 
-      <!-- Cards -->
-      <div class="div-cards" id="div-cards"></div>
+      <!-- Conteúdo dinâmico (cards / table / gantt) -->
+      <div id="div-container"></div>
     </main>
   </div>
 
