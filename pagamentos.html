@@ -116,6 +116,52 @@
     </div>
   </div>
 
+  <!-- ============================================================
+       MODAL: Pagamento parcial — confirmar criação do restante
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-parcial-confirm" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title">Pagamento parcial registrado</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-parcial-confirm" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin: 0; line-height: 1.6;">
+          Deseja criar um novo compromisso para o valor restante de
+          <strong id="parcial-restante-valor" style="color: var(--color-warning);">—</strong>?
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-parcial-nao">Não, obrigado</button>
+        <button type="button" class="btn btn-primary" id="btn-parcial-sim">Criar compromisso</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Novo compromisso do restante parcial
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-parcial-novo-comp" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h2 class="modal-title">Novo compromisso — restante</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-parcial-novo-comp" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="field-hint" style="margin-bottom: var(--space-4);">Todos os campos abaixo são copiados do compromisso original. Preencha apenas a data de início.</p>
+        <div class="pag-details-grid" id="pns-summary"></div>
+        <div class="field" style="margin-top: var(--space-5);">
+          <label class="field-label" for="pns-data-inicio">Data de início <span class="required">*</span></label>
+          <input type="date" id="pns-data-inicio" class="input">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-parcial-novo-comp">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-pns-criar">Criar compromisso</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast-container" class="toast-container"></div>
   <script type="module" src="src/js/pages/pagamentos.js"></script>
 </body>

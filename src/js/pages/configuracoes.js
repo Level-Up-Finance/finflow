@@ -6,6 +6,7 @@ import { initSidebar } from '../components/sidebar.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { getTheme, setTheme } from '../lib/theme.js';
+import { CURRENCIES } from '../lib/currencies.js';
 
 // -----------------------------
 // State
@@ -14,12 +15,21 @@ let cachedCategorias    = [];
 let cachedSubcategorias = [];
 let cachedProjetos      = [];
 let cachedDividas       = [];
+let cachedContatos      = [];
 
 // Modal state
 let editingCatId  = null; // null = nova, string = editar existente
 let editingSubId  = null; // null = nova, string = editar existente
+let editingContatoId = null; // null = novo, string = editar existente
 let newSubCatId   = null; // categoria_id pra nova subcategoria
-let pendingDelete = null; // { type: 'cat'|'sub', id }
+let pendingDelete = null; // { type: 'cat'|'sub'|'contato', id }
+let activeTab     = 'categorias'; // categorias | contatos | aparencia
+
+const TIPO_CONTATO_LABELS = {
+  cliente:    'Cliente',
+  fornecedor: 'Fornecedor',
+  ambos:      'Ambos',
+};
 
 const SUPER_BLOCOS = [
   { id: 'contribuicao', label: 'Contribuição', grupos: ['receitas', 'dividas'],  accent: 'var(--color-success)' },
@@ -28,10 +38,11 @@ const SUPER_BLOCOS = [
 ];
 
 // SVG icons inline
-const ICON_LINK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
-const ICON_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+const ICON_LINK  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
+const ICON_EDIT  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
 const ICON_TRASH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
-const ICON_PLUS = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+const ICON_PLUS  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+const ICON_EYE   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
 
 // -----------------------------
 // Init
@@ -45,9 +56,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   bindTabEvents();
   bindDropdownEvents();
   bindModalEvents();
+  bindContatoEvents();
   bindThemeEvents();
+  bindIdiomaEvents();
   initVinculoPopover();
   window.addEventListener('resize', updateStickyThTop);
+  loadProfileSettings();  // async, non-blocking
 });
 
 // -----------------------------
@@ -64,17 +78,30 @@ function updateStickyThTop() {
 // Loaders
 // -----------------------------
 async function loadAll() {
-  const [cats, subs, projs, divs] = await Promise.all([
+  const [cats, subs, projs, divs, conts] = await Promise.all([
     supabase.from('categorias').select('*').order('ordem'),
     supabase.from('subcategorias').select('*').neq('status', 'arquivada'),
     supabase.from('projetos_investimento').select('id, nome, cor, meta_valor, saldo_inicial').order('nome'),
     supabase.from('dividas').select('id, nome, valor_total, valor_pago, credor, status').order('nome'),
+    supabase.from('contatos').select('*').neq('status', 'arquivado').order('nome'),
   ]);
 
   cachedCategorias    = cats.data  || [];
   cachedSubcategorias = subs.data  || [];
   cachedProjetos      = projs.data || [];
   cachedDividas       = divs.data  || [];
+
+  // Contatos pode falhar se a migration 0023 não tiver sido rodada
+  if (conts.error) {
+    if (/relation.*contatos|column.*contatos/i.test(conts.error.message)) {
+      console.warn('[loadAll] Tabela contatos não existe — rode a migration 0023');
+    } else {
+      console.warn('[loadAll] Erro carregando contatos:', conts.error);
+    }
+    cachedContatos = [];
+  } else {
+    cachedContatos = conts.data || [];
+  }
 
   document.getElementById('cfg-loading').classList.add('hidden');
   document.getElementById('cfg-tree').classList.remove('hidden');
@@ -402,14 +429,35 @@ async function execDelete() {
       return;
     }
     ({ error } = await supabase.from('categorias').delete().eq('id', id));
+  } else if (type === 'contato') {
+    // Block deletion if linked to any compromisso or transaction
+    const [{ count: compCount }, { count: txCount }] = await Promise.all([
+      supabase.from('subcategorias').select('id', { count: 'exact', head: true }).eq('contato_id', id),
+      supabase.from('transacoes').select('id', { count: 'exact', head: true }).eq('contato_id', id),
+    ]);
+    const total = (compCount || 0) + (txCount || 0);
+    if (total > 0) {
+      const parts = [];
+      if (compCount) parts.push(`${compCount} compromisso${compCount > 1 ? 's' : ''}`);
+      if (txCount)   parts.push(`${txCount} transação${txCount > 1 ? 'ões' : ''}`);
+      showToast(`Não é possível excluir: contato vinculado a ${parts.join(' e ')}.`, 'error', 8000);
+      return;
+    }
+    ({ error } = await supabase.from('contatos').delete().eq('id', id));
   } else {
     ({ error } = await supabase.from('subcategorias').delete().eq('id', id));
   }
 
   if (error) { showToast('Erro ao excluir: ' + error.message, 'error', 8000); return; }
 
-  showToast(type === 'cat' ? 'Categoria excluída' : 'Subcategoria excluída', 'success');
-  await reloadAll();
+  const labels = { cat: 'Categoria excluída', sub: 'Subcategoria excluída', contato: 'Contato excluído' };
+  showToast(labels[type] || 'Excluído', 'success');
+
+  if (type === 'contato') {
+    await reloadContatos();
+  } else {
+    await reloadAll();
+  }
 }
 
 // -----------------------------
@@ -481,15 +529,437 @@ function bindTabEvents() {
   document.querySelectorAll('.cfg-sidenav-item').forEach((item) => {
     item.addEventListener('click', () => {
       const target = item.dataset.tab;
+      activeTab = target;
+
       document.querySelectorAll('.cfg-sidenav-item').forEach((t) => {
         t.classList.toggle('active', t === item);
       });
       document.querySelectorAll('.cfg-panel').forEach((p) => {
         p.classList.toggle('hidden', p.id !== `cfg-panel-${target}`);
       });
-      if (toolbar) toolbar.classList.toggle('hidden', target !== 'categorias');
+
+      // Toolbar: só aparece em Categorias e Contatos
+      if (toolbar) toolbar.classList.toggle('hidden', target === 'aparencia' || target === 'sistema');
+
+      // Lazy-init Sistema panel
+      if (target === 'sistema') renderSistemaPanel();
+      // Troca o conteúdo interno do toolbar conforme a aba
+      document.querySelectorAll('.cfg-toolbar-content').forEach((c) => {
+        c.classList.toggle('hidden', c.id !== `cfg-toolbar-${target}`);
+      });
+
+      // Render lazy de Contatos quando entra na aba pela primeira vez
+      if (target === 'contatos') renderContatos();
+
       updateStickyThTop();
     });
+  });
+}
+
+// -----------------------------
+// Contatos — render + CRUD
+// -----------------------------
+function renderContatos() {
+  const loading = document.getElementById('cfg-contatos-loading');
+  const list    = document.getElementById('cfg-contatos-list');
+  if (!list) return;
+
+  loading.classList.add('hidden');
+  list.classList.remove('hidden');
+
+  if (cachedContatos.length === 0) {
+    list.innerHTML = `
+      <div class="cfg-empty-cats" style="text-align:center; padding: var(--space-8) 0;">
+        Nenhum contato cadastrado ainda. Use o botão <strong>Novo contato</strong> acima para começar.
+      </div>`;
+    return;
+  }
+
+  const rows = cachedContatos.map((c) => {
+    const tipoLabel = TIPO_CONTATO_LABELS[c.tipo] || c.tipo;
+    const tipoClass = `ct-tipo-${c.tipo}`;
+    const dadosExtras = [];
+    if (c.email)     dadosExtras.push(escapeHtml(c.email));
+    if (c.telefone)  dadosExtras.push(escapeHtml(c.telefone));
+    if (c.documento) dadosExtras.push(escapeHtml(c.documento));
+    const extras = dadosExtras.length ? `<div class="ct-extras">${dadosExtras.join(' · ')}</div>` : '';
+
+    const nomeExtratoHtml = c.nome_extrato
+      ? `<div class="ct-nome-extrato">${escapeHtml(c.nome_extrato)}</div>`
+      : '';
+
+    return `
+      <tr class="ct-row" data-id="${c.id}">
+        <td class="ct-td-nome">
+          <div class="ct-nome">${escapeHtml(c.nome)}</div>
+          ${nomeExtratoHtml}
+          ${extras}
+        </td>
+        <td class="ct-td-tipo"><span class="ct-tipo-pill ${tipoClass}">${tipoLabel}</span></td>
+        <td class="ct-td-actions">
+          <button class="btn-icon" data-view-contato="${c.id}" title="Visualizar">${ICON_EYE}</button>
+        </td>
+      </tr>`;
+  }).join('');
+
+  list.innerHTML = `
+    <table class="ct-table">
+      <thead>
+        <tr>
+          <th class="ct-th-nome">Nome</th>
+          <th class="ct-th-tipo">Tipo</th>
+          <th class="ct-th-actions"></th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+  list.querySelectorAll('[data-view-contato]').forEach((btn) => {
+    btn.addEventListener('click', () => openContatoView(btn.dataset.viewContato));
+  });
+}
+
+function openContatoModal(contatoId = null) {
+  editingContatoId = contatoId;
+  const c = contatoId ? cachedContatos.find((x) => x.id === contatoId) : null;
+
+  document.getElementById('modal-contato-title').textContent = c ? 'Editar contato' : 'Novo contato';
+  document.getElementById('ct-nome').value           = c?.nome            || '';
+  document.getElementById('ct-nome-extrato').value   = c?.nome_extrato    || '';
+  document.getElementById('ct-tipo').value           = c?.tipo            || 'ambos';
+  document.getElementById('ct-email').value          = c?.email           || '';
+  document.getElementById('ct-telefone').value       = c?.telefone        || '';
+  document.getElementById('ct-documento').value      = c?.documento       || '';
+  document.getElementById('ct-endereco').value       = c?.endereco        || '';
+  document.getElementById('ct-observacao').value     = c?.observacao      || '';
+
+  document.getElementById('btn-deletar-contato').classList.toggle('hidden', !contatoId);
+
+  document.getElementById('modal-contato').classList.remove('hidden');
+  document.getElementById('ct-nome').focus();
+}
+
+function closeContatoModal() {
+  document.getElementById('modal-contato').classList.add('hidden');
+  editingContatoId = null;
+}
+
+// ── Contact view card ─────────────────────────────────────────
+const CV_TIPO_COLORS = { cliente: '#22c55e', fornecedor: '#6d5ef5', ambos: '#64748b' };
+
+function openContatoView(contatoId) {
+  const c = cachedContatos.find((x) => x.id === contatoId);
+  if (!c) return;
+
+  // Header
+  const initials = (c.nome || '').split(' ').map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?';
+  const avatarEl = document.getElementById('cv-avatar');
+  avatarEl.textContent    = initials;
+  avatarEl.style.background = CV_TIPO_COLORS[c.tipo] || '#64748b';
+
+  document.getElementById('cv-nome').textContent = c.nome;
+  const tipoBadge = document.getElementById('cv-tipo-badge');
+  tipoBadge.textContent = TIPO_CONTATO_LABELS[c.tipo] || c.tipo;
+  tipoBadge.className   = `ct-tipo-pill ct-tipo-${c.tipo}`;
+
+  // Fields
+  setCvField('cv-nome-extrato', c.nome_extrato);
+  setCvField('cv-email',        c.email);
+  setCvField('cv-telefone',     c.telefone);
+  setCvField('cv-documento',    c.documento);
+  setCvField('cv-endereco',     c.endereco);
+  setCvField('cv-observacao',   c.observacao);
+
+  // Footer buttons carry the id
+  document.getElementById('cv-btn-editar').dataset.id  = contatoId;
+  document.getElementById('cv-btn-deletar').dataset.id = contatoId;
+
+  switchCvTab('dados');
+  loadCvBancoHistory(contatoId);
+
+  document.getElementById('modal-contato-view').classList.remove('hidden');
+}
+
+function setCvField(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (value) {
+    el.textContent = value;
+    el.classList.remove('cv-field-empty');
+  } else {
+    el.textContent = '—';
+    el.classList.add('cv-field-empty');
+  }
+}
+
+function closeContatoView() {
+  document.getElementById('modal-contato-view').classList.add('hidden');
+}
+
+function switchCvTab(tab) {
+  document.querySelectorAll('.cv-tab').forEach((t) => t.classList.toggle('is-active', t.dataset.cvTab === tab));
+  document.getElementById('cv-panel-dados').classList.toggle('hidden',  tab !== 'dados');
+  document.getElementById('cv-panel-banco').classList.toggle('hidden',  tab !== 'banco');
+}
+
+async function loadCvBancoHistory(contatoId) {
+  const list = document.getElementById('cv-banco-list');
+  list.innerHTML = '<div class="cv-loading">Carregando…</div>';
+
+  const { data, error } = await supabase
+    .from('contato_banco_descs')
+    .select('id, banco_desc, last_subcategoria_id, created_at')
+    .eq('contato_id', contatoId)
+    .order('created_at', { ascending: false });
+
+  if (error && /relation.*contato_banco_descs/i.test(error.message)) {
+    list.innerHTML = '<div class="cv-empty">Execute a migration 0030_contato_banco_descs.sql no Supabase.</div>';
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    list.innerHTML = `<div class="cv-empty">
+      <p>Nenhum padrão aprendido ainda.</p>
+      <p style="font-size:var(--fs-xs); color:var(--color-text-muted); margin-top:var(--space-1);">Os padrões são registrados ao salvar transações importadas vinculadas a este contato.</p>
+    </div>`;
+    return;
+  }
+
+  // Fetch subcategoria names for any mapped entries
+  const subIds = [...new Set(data.filter((r) => r.last_subcategoria_id).map((r) => r.last_subcategoria_id))];
+  const subMap = new Map();
+  if (subIds.length) {
+    const { data: subs } = await supabase.from('subcategorias').select('id, nome, apelido').in('id', subIds);
+    (subs || []).forEach((s) => subMap.set(s.id, s));
+  }
+
+  list.innerHTML = `<div class="cv-banco-list">` + data.map((row) => {
+    const sub      = row.last_subcategoria_id ? subMap.get(row.last_subcategoria_id) : null;
+    const subLabel = sub
+      ? escapeHtml(sub.apelido || sub.nome)
+      : `<span style="color:var(--color-text-muted)">—</span>`;
+    const date = new Date(row.created_at).toLocaleDateString('pt-BR');
+    return `<div class="cv-banco-item">
+      <div class="cv-banco-desc" title="${escapeHtml(row.banco_desc)}">${escapeHtml(row.banco_desc)}</div>
+      <div class="cv-banco-sub">${subLabel}</div>
+      <div class="cv-banco-date">${date}</div>
+      <button class="btn-icon" data-del-banco="${row.id}" data-contato="${contatoId}" title="Remover mapeamento">${ICON_TRASH}</button>
+    </div>`;
+  }).join('') + `</div>`;
+
+  list.querySelectorAll('[data-del-banco]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const { error: delErr } = await supabase.from('contato_banco_descs').delete().eq('id', btn.dataset.delBanco);
+      if (delErr) { showToast('Erro: ' + delErr.message, 'error'); return; }
+      showToast('Mapeamento removido.', 'success');
+      loadCvBancoHistory(btn.dataset.contato);
+    });
+  });
+}
+
+async function saveContato() {
+  const nome         = document.getElementById('ct-nome').value.trim();
+  const nome_extrato = document.getElementById('ct-nome-extrato').value.trim() || null;
+  const tipo         = document.getElementById('ct-tipo').value;
+  const email        = document.getElementById('ct-email').value.trim() || null;
+  const telefone     = document.getElementById('ct-telefone').value.trim() || null;
+  const documento    = document.getElementById('ct-documento').value.trim() || null;
+  const endereco     = document.getElementById('ct-endereco').value.trim() || null;
+  const observacao   = document.getElementById('ct-observacao').value.trim() || null;
+
+  if (!nome) { showToast('Informe o nome do contato', 'error'); return; }
+
+  const btn = document.getElementById('btn-save-contato');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  const user = await getCurrentUser();
+  if (!user) { btn.disabled = false; btn.textContent = original; return; }
+
+  let error;
+  if (editingContatoId) {
+    ({ error } = await supabase.from('contatos')
+      .update({ nome, nome_extrato, tipo, email, telefone, documento, endereco, observacao })
+      .eq('id', editingContatoId));
+  } else {
+    ({ error } = await supabase.from('contatos').insert({
+      user_id: user.id, nome, nome_extrato, tipo, email, telefone, documento, endereco, observacao,
+    }));
+  }
+
+  btn.disabled = false;
+  btn.textContent = original;
+
+  if (error) {
+    let msg = error.message;
+    if (/relation.*contatos|column.*contatos/i.test(msg)) {
+      msg = 'Tabela contatos não existe — rode a migration 0023 no Supabase.';
+    }
+    showToast('Erro: ' + msg, 'error', 8000);
+    return;
+  }
+
+  showToast(editingContatoId ? 'Contato atualizado' : 'Contato criado', 'success');
+  closeContatoModal();
+  await reloadContatos();
+}
+
+async function reloadContatos() {
+  const { data, error } = await supabase
+    .from('contatos').select('*')
+    .neq('status', 'arquivado').order('nome');
+  if (!error) cachedContatos = data || [];
+  renderContatos();
+}
+
+function confirmDeleteContato(id) {
+  pendingDelete = { type: 'contato', id };
+  const c = cachedContatos.find((x) => x.id === id);
+  document.getElementById('cfg-confirm-title').textContent = 'Excluir contato?';
+  document.getElementById('cfg-confirm-msg').innerHTML =
+    `Excluir <strong>${escapeHtml(c?.nome || '')}</strong>? O contato será removido dos compromissos, dívidas, projetos e transações vinculados (os registros são preservados).`;
+  document.getElementById('modal-cfg-confirmar').classList.remove('hidden');
+}
+
+function bindContatoEvents() {
+  // Edit modal
+  document.getElementById('btn-novo-contato').addEventListener('click', () => openContatoModal());
+  document.getElementById('btn-close-modal-contato').addEventListener('click', closeContatoModal);
+  document.getElementById('btn-cancel-contato').addEventListener('click', closeContatoModal);
+  document.getElementById('btn-save-contato').addEventListener('click', saveContato);
+  document.getElementById('btn-deletar-contato').addEventListener('click', () => {
+    if (!editingContatoId) return;
+    closeContatoModal();
+    confirmDeleteContato(editingContatoId);
+  });
+  document.getElementById('modal-contato').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeContatoModal();
+  });
+  document.getElementById('ct-nome').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') saveContato();
+  });
+
+  // View card
+  document.getElementById('btn-close-contato-view').addEventListener('click', closeContatoView);
+  document.getElementById('modal-contato-view').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeContatoView();
+  });
+  document.querySelectorAll('.cv-tab').forEach((tab) => {
+    tab.addEventListener('click', () => switchCvTab(tab.dataset.cvTab));
+  });
+  document.getElementById('cv-btn-editar').addEventListener('click', (e) => {
+    closeContatoView();
+    openContatoModal(e.currentTarget.dataset.id);
+  });
+  document.getElementById('cv-btn-deletar').addEventListener('click', (e) => {
+    closeContatoView();
+    confirmDeleteContato(e.currentTarget.dataset.id);
+  });
+}
+
+// -----------------------------
+// Profile settings (idioma, moeda_padrao, moedas_widget)
+// -----------------------------
+async function loadProfileSettings() {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('idioma, moeda_padrao, moedas_widget')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (!data) return;
+    if (data.idioma)        localStorage.setItem('finflow.idioma',         data.idioma);
+    if (data.moeda_padrao)  localStorage.setItem('finflow.moeda_padrao',   data.moeda_padrao);
+    if (data.moedas_widget) localStorage.setItem('finflow.moedas_widget',  JSON.stringify(data.moedas_widget));
+    // Refresh idioma buttons if aparência tab is visible
+    syncIdiomaButtons();
+  } catch { }
+}
+
+async function saveProfileSettings(updates) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { error } = await supabase.from('profiles').update(updates).eq('id', user.id);
+    if (error) console.warn('[profile] save error:', error.message);
+  } catch (err) {
+    console.warn('[profile] save failed:', err?.message);
+  }
+}
+
+// -----------------------------
+// Idioma
+// -----------------------------
+function syncIdiomaButtons() {
+  const current = localStorage.getItem('finflow.idioma') || 'auto';
+  document.querySelectorAll('.cfg-idioma-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.idioma === current);
+  });
+}
+
+function bindIdiomaEvents() {
+  syncIdiomaButtons();
+  document.querySelectorAll('.cfg-idioma-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const idioma = btn.dataset.idioma;
+      localStorage.setItem('finflow.idioma', idioma);
+      syncIdiomaButtons();
+      await saveProfileSettings({ idioma });
+      showToast('Idioma salvo. Será aplicado quando as traduções estiverem disponíveis.', 'info', 5000);
+    });
+  });
+}
+
+// -----------------------------
+// Sistema (moedas)
+// -----------------------------
+let sistemaPanelRendered = false;
+
+function renderSistemaPanel() {
+  if (sistemaPanelRendered) return;
+  sistemaPanelRendered = true;
+
+  const moedaPadrao = localStorage.getItem('finflow.moeda_padrao') || 'BRL';
+  const moedasRaw   = localStorage.getItem('finflow.moedas_widget');
+  const moedasAtivas = moedasRaw ? JSON.parse(moedasRaw) : ['BRL', 'USD', 'EUR', 'GBP'];
+
+  // Populate moeda_padrao select
+  const selPadrao = document.getElementById('cfg-moeda-padrao');
+  selPadrao.innerHTML = CURRENCIES
+    .map((c) => `<option value="${c.code}" ${c.code === moedaPadrao ? 'selected' : ''}>${c.code} — ${c.label}</option>`)
+    .join('');
+
+  // Populate moedas checkboxes
+  const grid = document.getElementById('cfg-moedas-grid');
+  grid.innerHTML = CURRENCIES.map((c) => `
+    <label class="cfg-moeda-item">
+      <input type="checkbox" class="cfg-moeda-check" value="${c.code}"
+             ${moedasAtivas.includes(c.code) ? 'checked' : ''}>
+      <span class="cfg-moeda-code">${c.code}</span>
+      <span class="cfg-moeda-label">${c.label}</span>
+    </label>`).join('');
+
+  document.getElementById('btn-save-sistema').addEventListener('click', async () => {
+    const newPadrao  = document.getElementById('cfg-moeda-padrao').value;
+    const newMoedas  = Array.from(document.querySelectorAll('.cfg-moeda-check:checked')).map((cb) => cb.value);
+
+    // Moeda principal sempre inclusa na lista
+    if (!newMoedas.includes(newPadrao)) newMoedas.unshift(newPadrao);
+
+    localStorage.setItem('finflow.moeda_padrao',  newPadrao);
+    localStorage.setItem('finflow.moedas_widget', JSON.stringify(newMoedas));
+    await saveProfileSettings({ moeda_padrao: newPadrao, moedas_widget: newMoedas });
+    showToast('Configurações salvas.', 'success');
+  });
+
+  // When moeda_padrao changes, auto-check it in the grid
+  selPadrao.addEventListener('change', () => {
+    const v = selPadrao.value;
+    const cb = document.querySelector(`.cfg-moeda-check[value="${v}"]`);
+    if (cb) cb.checked = true;
   });
 }
 

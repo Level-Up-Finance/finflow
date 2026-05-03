@@ -9,10 +9,13 @@ import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
+import { CURRENCIES, getMoedaPadrao, getUserCurrencies } from '../lib/currencies.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { ACCOUNT_TYPES, getType, typeIcon, typeColor, typePill } from '../lib/account-types.js';
 import { CURATED_BANKS, findBank, logoUrl, searchBanks } from '../lib/banks.js';
 import { initColVisibility } from '../lib/col-visibility.js';
+import { checkAndCloseFaturas } from '../lib/faturas-cartao.js';
+import { formatCurrency } from '../lib/compromissos-config.js';
 
 // -----------------------------
 // Constants & state
@@ -27,6 +30,8 @@ const DEFAULT_TIPO = 'Corrente';
 const DEFAULT_COLOR = '#6D5EF5';
 
 let cachedContas = [];
+let cachedFaturasAbertas = new Map(); // conta_id → valor_total acumulado das faturas abertas
+let cachedCompromissosContas = new Map(); // conta_id → { comprometido, count }
 let editingId = null;
 let detailsConta = null;        // conta sendo exibida no modal de detalhes
 let pendingAction = null;       // { type, id, label }
@@ -50,12 +55,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     storageKey: 'contas',
     tableClass:  'contas-table',
     columns: [
-      { key: 'tipo',        label: 'Tipo',              defaultVisible: true  },
-      { key: 'status',      label: 'Status',            defaultVisible: true  },
-      { key: 'desde',       label: 'Desde',             defaultVisible: false },
-      { key: 'descricao',   label: 'Descrição',         defaultVisible: false },
-      { key: 'fec-fatura',  label: 'Fechamento fatura', defaultVisible: false },
-      { key: 'venc-fatura', label: 'Vencimento fatura', defaultVisible: false },
+      { key: 'tipo',          label: 'Tipo',              defaultVisible: true  },
+      { key: 'status',        label: 'Status',            defaultVisible: true  },
+      { key: 'comprometido',  label: 'Comprometido',      defaultVisible: true  },
+      { key: 'desde',         label: 'Desde',             defaultVisible: true  },
+      { key: 'fechada-em',    label: 'Fechada em',        defaultVisible: false },
+      { key: 'descricao',     label: 'Descrição',         defaultVisible: false },
+      { key: 'fec-fatura',    label: 'Fechamento fatura', defaultVisible: false },
+      { key: 'venc-fatura',   label: 'Vencimento fatura', defaultVisible: false },
     ],
     toolbarEl: document.querySelector('.toolbar'),
   });
@@ -435,10 +442,29 @@ function openContaModal(conta = null) {
   document.getElementById('conta-tipo').value = tipo;
   document.getElementById('conta-cor').value = cor;
   document.getElementById('conta-descricao').value = conta?.descricao || '';
+
+  // Populate moeda select with user's configured currencies + any current value
+  const userCurrencies = getUserCurrencies();
+  const currentMoeda   = conta?.moeda || getMoedaPadrao();
+  const allCodes = [...new Set([...userCurrencies, currentMoeda])];
+  const moedaSel = document.getElementById('conta-moeda');
+  moedaSel.innerHTML = allCodes.map((code) => {
+    const cur = CURRENCIES.find((c) => c.code === code);
+    const label = cur ? `${code} — ${cur.label}` : code;
+    return `<option value="${code}" ${code === currentMoeda ? 'selected' : ''}>${label}</option>`;
+  }).join('');
+  // Add "Outra…" group for currencies not in user list
+  const otherCurrencies = CURRENCIES.filter((c) => !allCodes.includes(c.code));
+  if (otherCurrencies.length) {
+    moedaSel.innerHTML += `<optgroup label="Outras">`
+      + otherCurrencies.map((c) => `<option value="${c.code}">${c.code} — ${c.label}</option>`).join('')
+      + `</optgroup>`;
+  }
   document.getElementById('conta-desde').value = conta?.desde || todayISO();
   document.getElementById('conta-fechada-em').value = conta?.fechada_em || '';
   document.getElementById('conta-fec-fatura').value = conta?.fec_fatura || '';
   document.getElementById('conta-vencimento').value = conta?.vencimento || '';
+  document.getElementById('conta-limite').value = conta?.limite ?? '';
   document.getElementById('conta-status').value = status;
 
   document.querySelectorAll('.tipo-btn').forEach((b) => b.classList.toggle('active', b.dataset.tipo === tipo));
@@ -490,6 +516,7 @@ function openDetailsModal(conta) {
   if (isCartao) {
     fields.push({ label: 'Fechamento da fatura', value: conta.fec_fatura ? `Dia ${conta.fec_fatura}` : null });
     fields.push({ label: 'Vencimento da fatura', value: conta.vencimento ? `Dia ${conta.vencimento}` : null });
+    fields.push({ label: 'Limite total', value: conta.limite != null ? formatCurrency(Number(conta.limite)) : null });
   }
   fields.push({ label: 'Descrição', value: conta.descricao, full: true });
   fields.push({ label: 'Cadastrada em', value: formatDateBR(conta.created_at?.slice(0, 10)) });
@@ -512,7 +539,279 @@ function openDetailsModal(conta) {
     btnDeletar.classList.add('hidden');
   }
 
+  // Comprometimento de limite (apenas para cartão de crédito)
+  const limiteSection = document.getElementById('cartao-limite-section');
+  if (isCartao) {
+    limiteSection.classList.remove('hidden');
+    loadAndRenderCompromissosLimite(conta).catch((e) => console.warn('[loadAndRenderCompromissosLimite]', e));
+  } else {
+    limiteSection.classList.add('hidden');
+  }
+
+  // Faturas (apenas para cartão de crédito)
+  const faturasSection = document.getElementById('cartao-faturas-section');
+  if (isCartao) {
+    faturasSection.classList.remove('hidden');
+    loadAndRenderFaturas(conta).catch((e) => console.warn('[loadAndRenderFaturas]', e));
+  } else {
+    faturasSection.classList.add('hidden');
+  }
+
   openModal('modal-details');
+}
+
+// -----------------------------
+// Comprometimento de limite — compromissos vinculados ao cartão
+// -----------------------------
+async function loadAndRenderCompromissosLimite(conta) {
+  const resumoEl = document.getElementById('cartao-limite-resumo');
+  const listaEl  = document.getElementById('cartao-limite-lista');
+  resumoEl.innerHTML = '<div class="loading-overlay" style="position:relative;min-height:48px;"><span class="spinner"></span></div>';
+  listaEl.innerHTML  = '';
+
+  const { data, error } = await supabase
+    .from('subcategorias')
+    .select('id, nome, apelido, tipo, periodo, vencimento_dia, valor_base, moeda, valor_variavel, status')
+    .eq('conta_id', conta.id)
+    .eq('status', 'ativa')
+    .order('nome');
+
+  if (error) {
+    resumoEl.innerHTML = `<p class="cartao-faturas-empty">Erro ao carregar compromissos: ${escapeHtml(error.message)}</p>`;
+    return;
+  }
+
+  const compromissos = data || [];
+  const limite       = Number(conta.limite) || 0;
+  const comprometido = compromissos
+    .filter((c) => !c.valor_variavel)
+    .reduce((sum, c) => sum + (Number(c.valor_base) || 0), 0);
+
+  // Resumo / barra
+  if (!limite) {
+    resumoEl.innerHTML = `
+      <div class="clc-resumo clc-resumo--sem-limite">
+        <span>Comprometido com compromissos ativos:</span>
+        <strong>${formatCurrency(comprometido)}</strong>
+        <span class="clc-hint">Configure o limite total em <em>Editar</em> para ver o percentual.</span>
+      </div>`;
+  } else {
+    const disponivel = Math.max(0, limite - comprometido);
+    const pct        = Math.min(100, (comprometido / limite) * 100);
+    const barColor   = pct >= 90 ? 'var(--color-danger)' : pct >= 70 ? 'var(--color-warning)' : 'var(--color-success)';
+    resumoEl.innerHTML = `
+      <div class="clc-resumo">
+        <div class="clc-resumo-valores">
+          <div class="clc-val-item">
+            <span class="clc-val-label">Limite total</span>
+            <strong class="clc-val-num">${formatCurrency(limite)}</strong>
+          </div>
+          <div class="clc-val-item clc-val-item--comprometido">
+            <span class="clc-val-label">Comprometido</span>
+            <strong class="clc-val-num" style="color:${barColor}">${formatCurrency(comprometido)} <span class="clc-pct">${pct.toFixed(0)}%</span></strong>
+          </div>
+          <div class="clc-val-item">
+            <span class="clc-val-label">Disponível</span>
+            <strong class="clc-val-num">${formatCurrency(disponivel)}</strong>
+          </div>
+        </div>
+        <div class="clc-bar-track">
+          <div class="clc-bar-fill" style="width:${pct.toFixed(1)}%;background:${barColor};"></div>
+        </div>
+      </div>`;
+  }
+
+  // Lista de compromissos
+  if (compromissos.length === 0) {
+    listaEl.innerHTML = '<p class="cartao-faturas-empty">Nenhum compromisso ativo vinculado a este cartão.</p>';
+    return;
+  }
+
+  const PERIODOS_LABEL = { Mensal: 'Mensal', Semanal: 'Semanal', Quinzenal: 'Quinzenal', Anual: 'Anual', 'Único': 'Único' };
+  listaEl.innerHTML = `
+    <table class="clc-table">
+      <thead>
+        <tr>
+          <th>Compromisso</th>
+          <th>Tipo</th>
+          <th>Período</th>
+          <th class="text-right">Valor</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${compromissos.map((c) => {
+          const display = c.apelido?.trim() || c.nome;
+          const valorStr = c.valor_variavel
+            ? '<span style="color:var(--color-text-muted);font-style:italic;">varia</span>'
+            : formatCurrency(Number(c.valor_base), c.moeda);
+          const vencLabel = c.vencimento_dia ? `· dia ${c.vencimento_dia}` : '';
+          return `
+            <tr>
+              <td>${escapeHtml(display)}</td>
+              <td><span class="tipo-label-inline tipo-${c.tipo?.toLowerCase()}">${escapeHtml(c.tipo || '—')}</span></td>
+              <td>${escapeHtml(PERIODOS_LABEL[c.periodo] || c.periodo || '—')} ${escapeHtml(vencLabel)}</td>
+              <td class="text-right tabular">${valorStr}</td>
+            </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+// -----------------------------
+// Faturas de cartão de crédito (Fase 4) — visualização
+// -----------------------------
+async function loadAndRenderFaturas(conta) {
+  const aberta = document.getElementById('cartao-fatura-aberta');
+  const hist   = document.getElementById('cartao-faturas-historico');
+  aberta.innerHTML = '<div class="loading-overlay" style="position:relative; min-height:60px;"><span class="spinner"></span></div>';
+  hist.innerHTML   = '';
+
+  // 1. Carrega todas as faturas desse cartão
+  const { data: faturas, error } = await supabase
+    .from('faturas_cartao')
+    .select('*')
+    .eq('conta_id', conta.id)
+    .order('data_vencimento', { ascending: false });
+
+  if (error) {
+    if (/relation.*faturas_cartao/i.test(error.message)) {
+      aberta.innerHTML = '<p class="cartao-faturas-empty">Tabela de faturas ainda não existe — rode a migration 0025 no Supabase.</p>';
+    } else {
+      aberta.innerHTML = `<p class="cartao-faturas-empty">Erro: ${escapeHtml(error.message)}</p>`;
+    }
+    return;
+  }
+
+  if (!faturas || faturas.length === 0) {
+    aberta.innerHTML = '<p class="cartao-faturas-empty">Sem faturas registradas. Crie transações com este cartão pra começar.</p>';
+    return;
+  }
+
+  // 2. Para faturas fechadas (com subcategoria_id), busca o pagamento + transação real
+  const subcategoriaIds = faturas.filter((f) => f.subcategoria_id).map((f) => f.subcategoria_id);
+  let pagamentos = [];
+  let transacoes = [];
+  if (subcategoriaIds.length > 0) {
+    const { data: pags } = await supabase
+      .from('pagamentos')
+      .select('id, subcategoria_id, mes_ano, status, valor_real, valor_previsto')
+      .in('subcategoria_id', subcategoriaIds);
+    pagamentos = pags || [];
+
+    const pagIds = pagamentos.map((p) => p.id);
+    if (pagIds.length > 0) {
+      const { data: txs } = await supabase
+        .from('transacoes')
+        .select('id, pagamento_id, data, valor')
+        .in('pagamento_id', pagIds);
+      transacoes = txs || [];
+    }
+  }
+
+  // 3. Separa fatura aberta (única) das fechadas
+  const abertas  = faturas.filter((f) => f.status === 'aberta');
+  const fechadas = faturas.filter((f) => f.status === 'fechada');
+
+  // 4. Renderiza
+  renderFaturaAberta(abertas, conta);
+  renderFaturasHistorico(fechadas, pagamentos, transacoes);
+}
+
+function renderFaturaAberta(abertas, conta) {
+  const host = document.getElementById('cartao-fatura-aberta');
+  if (abertas.length === 0) {
+    host.innerHTML = '<p class="cartao-faturas-empty">Sem fatura aberta no momento.</p>';
+    return;
+  }
+
+  // Pode haver mais de uma aberta (mês atual + próximo, dependendo de quando a transação foi feita)
+  host.innerHTML = abertas.map((f) => {
+    const diasFechar = diasAteISO(f.data_fechamento);
+    const labelFechar = diasFechar > 0 ? `em ${diasFechar} dia${diasFechar > 1 ? 's' : ''}` : (diasFechar === 0 ? 'hoje' : `há ${-diasFechar} dia${-diasFechar > 1 ? 's' : ''}`);
+    return `
+      <div class="cartao-fatura-aberta-card">
+        <div class="cartao-fatura-aberta-header">
+          <span class="cartao-fatura-mes">${labelMesReferencia(f.mes_referencia)}</span>
+          <span class="cartao-fatura-status status-aberta">Aberta</span>
+        </div>
+        <div class="cartao-fatura-aberta-valor">${formatCurrency(Number(f.valor_total))}</div>
+        <div class="cartao-fatura-aberta-info">
+          <div><span class="cf-label">Fechamento</span><span class="cf-value">${formatDateBR(f.data_fechamento)} <span class="cf-sub">(${labelFechar})</span></span></div>
+          <div><span class="cf-label">Vencimento</span><span class="cf-value">${formatDateBR(f.data_vencimento)}</span></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderFaturasHistorico(fechadas, pagamentos, transacoes) {
+  const host = document.getElementById('cartao-faturas-historico');
+  if (fechadas.length === 0) {
+    host.innerHTML = '';
+    return;
+  }
+
+  const PAID = ['Pago', 'Cartão', 'Transferido', 'Parcial'];
+
+  const rows = fechadas.map((f) => {
+    // Encontra o pagamento da fatura: mesma subcategoria_id e mes_ano = primeiro dia do mes do vencimento
+    const mesAnoVencimento = f.data_vencimento.slice(0, 7) + '-01';
+    const pag = pagamentos.find((p) => p.subcategoria_id === f.subcategoria_id && p.mes_ano === mesAnoVencimento);
+    const tr  = pag ? transacoes.find((t) => t.pagamento_id === pag.id) : null;
+
+    let statusHtml;
+    let dataRealHtml;
+    if (pag && PAID.includes(pag.status)) {
+      statusHtml = `<span class="cartao-fatura-status status-paga">Paga</span>`;
+      dataRealHtml = tr ? formatDateBR(tr.data) : `<span class="cartao-fatura-pendente">${pag.status}</span>`;
+    } else if (pag) {
+      statusHtml = `<span class="cartao-fatura-status status-pendente">${pag.status}</span>`;
+      dataRealHtml = '<span class="cartao-fatura-pendente">—</span>';
+    } else {
+      statusHtml = `<span class="cartao-fatura-status status-pendente">Sem pagamento</span>`;
+      dataRealHtml = '<span class="cartao-fatura-pendente">—</span>';
+    }
+
+    return `
+      <tr>
+        <td class="cf-td-mes">${labelMesReferencia(f.mes_referencia)}</td>
+        <td class="cf-td-valor tabular">${formatCurrency(Number(f.valor_total))}</td>
+        <td class="cf-td-data tabular">${formatDateBR(f.data_vencimento)}</td>
+        <td class="cf-td-data tabular">${dataRealHtml}</td>
+        <td class="cf-td-status">${statusHtml}</td>
+      </tr>`;
+  }).join('');
+
+  host.innerHTML = `
+    <h4 class="cartao-faturas-subtitle">Histórico</h4>
+    <table class="cartao-faturas-tabela">
+      <thead>
+        <tr>
+          <th>Mês</th>
+          <th>Valor</th>
+          <th>Vencimento</th>
+          <th>Data real</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// -----------------------------
+// Helpers (faturas)
+// -----------------------------
+function diasAteISO(iso) {
+  if (!iso) return 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(iso + 'T00:00:00');
+  return Math.round((target - today) / 86400000);
+}
+
+function labelMesReferencia(mesRef) {
+  const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  const [y, m] = mesRef.split('-').map(Number);
+  return `${meses[m - 1]}/${y}`;
 }
 
 // -----------------------------
@@ -528,9 +827,58 @@ function showConfirm(title, msgHtml, confirmLabel = 'Confirmar') {
 // -----------------------------
 // Load / Render
 // -----------------------------
+
+/**
+ * Carrega faturas abertas com saldo > 0 para contas de cartão.
+ * Popula cachedFaturasAbertas: Map<conta_id, valor_total_acumulado>.
+ */
+async function loadFaturasAbertas(contaIds) {
+  cachedFaturasAbertas = new Map();
+  if (!contaIds.length) return;
+  const { data, error } = await supabase
+    .from('faturas_cartao')
+    .select('conta_id, valor_total')
+    .in('conta_id', contaIds)
+    .eq('status', 'aberta')
+    .gt('valor_total', 0);
+  if (error) {
+    if (!/relation.*faturas_cartao/i.test(error.message)) {
+      console.warn('[loadFaturasAbertas]', error);
+    }
+    return;
+  }
+  for (const f of (data || [])) {
+    const prev = cachedFaturasAbertas.get(f.conta_id) || 0;
+    cachedFaturasAbertas.set(f.conta_id, prev + Number(f.valor_total || 0));
+  }
+}
+
+async function loadCompromissosContas(contaIds) {
+  cachedCompromissosContas = new Map();
+  if (!contaIds.length) return;
+  const { data, error } = await supabase
+    .from('subcategorias')
+    .select('conta_id, valor_base')
+    .in('conta_id', contaIds)
+    .eq('status', 'ativa');
+  if (error) { console.warn('[loadCompromissosContas]', error); return; }
+  for (const s of (data || [])) {
+    const prev = cachedCompromissosContas.get(s.conta_id) || { comprometido: 0, count: 0 };
+    cachedCompromissosContas.set(s.conta_id, {
+      comprometido: prev.comprometido + Number(s.valor_base || 0),
+      count: prev.count + 1,
+    });
+  }
+}
+
 async function loadContas() {
   const container = document.getElementById('contas-container');
   container.innerHTML = '<div class="loading-overlay"><span class="spinner"></span>Carregando contas…</div>';
+
+  // On-demand: fecha faturas vencidas (Fase 4) — fire-and-forget
+  checkAndCloseFaturas()
+    .then((n) => { if (n > 0) showToast(`${n} fatura${n > 1 ? 's' : ''} de cartão fechada${n > 1 ? 's' : ''} — confira em Pagamentos`, 'success', 5000); })
+    .catch((e) => console.warn('[checkAndCloseFaturas]', e));
 
   const { data, error } = await supabase
     .from('contas')
@@ -545,6 +893,16 @@ async function loadContas() {
   }
 
   cachedContas = data || [];
+
+  // Carrega dados dos cartões antes de renderizar
+  const cartaoIds = cachedContas
+    .filter((c) => c.tipo === 'Cartão de Crédito')
+    .map((c) => c.id);
+  await Promise.all([
+    loadFaturasAbertas(cartaoIds),
+    loadCompromissosContas(cartaoIds),
+  ]);
+
   renderContas();
 }
 
@@ -596,17 +954,66 @@ function renderContas() {
     container.innerHTML = renderContasTable(filtered);
     bindRowClicks();
   } else {
-    container.innerHTML = `<div class="contas-grid">${filtered.map(renderContaCard).join('')}</div>`;
+    container.innerHTML = renderContasCards(filtered);
     bindCardClicks();
   }
   attachImageErrorHandlers(container);
 }
 
 // -----------------------------
-// Render table view
+// Helpers de agrupamento
+// -----------------------------
+function groupContas(contas) {
+  return {
+    cartoes: contas.filter((c) => c.tipo === 'Cartão de Crédito'),
+    outras:  contas.filter((c) => c.tipo !== 'Cartão de Crédito'),
+  };
+}
+
+function renderSectionHeader(title, count) {
+  return `
+    <div class="section-header">
+      <h2 class="section-title">${title}</h2>
+      <span class="section-count">${count}</span>
+      <div class="section-divider"></div>
+    </div>`;
+}
+
+// -----------------------------
+// Render cards view (com grupos)
+// -----------------------------
+function renderContasCards(contas) {
+  const { cartoes, outras } = groupContas(contas);
+  let html = '';
+
+  if (cartoes.length > 0) {
+    html += renderSectionHeader('Cartões de Crédito', cartoes.length);
+    html += `<div class="contas-grid">${cartoes.map(renderContaCard).join('')}</div>`;
+  }
+  if (outras.length > 0) {
+    html += renderSectionHeader('Contas', outras.length);
+    html += `<div class="contas-grid">${outras.map(renderContaCard).join('')}</div>`;
+  }
+  return html;
+}
+
+// -----------------------------
+// Render table view (com grupos)
 // -----------------------------
 function renderContasTable(contas) {
-  const rows = contas.map(renderContaRow).join('');
+  const COLSPAN = 9;
+  const { cartoes, outras } = groupContas(contas);
+
+  let rows = '';
+  if (cartoes.length > 0) {
+    rows += `<tr class="conta-group-row"><td colspan="${COLSPAN}">Cartões de Crédito <span class="conta-group-count">${cartoes.length}</span></td></tr>`;
+    rows += cartoes.map(renderContaRow).join('');
+  }
+  if (outras.length > 0) {
+    rows += `<tr class="conta-group-row"><td colspan="${COLSPAN}">Contas <span class="conta-group-count">${outras.length}</span></td></tr>`;
+    rows += outras.map(renderContaRow).join('');
+  }
+
   return `
     <div class="contas-table-wrapper">
       <table class="contas-table">
@@ -615,7 +1022,9 @@ function renderContasTable(contas) {
             <th>Conta</th>
             <th data-col="tipo">Tipo</th>
             <th data-col="status">Status</th>
+            <th data-col="comprometido">Comprometido</th>
             <th data-col="desde">Desde</th>
+            <th data-col="fechada-em">Fechada em</th>
             <th data-col="descricao">Descrição</th>
             <th data-col="fec-fatura">Fec. fatura</th>
             <th data-col="venc-fatura">Venc. fatura</th>
@@ -646,7 +1055,9 @@ function renderContaRow(conta) {
       </td>
       <td data-col="tipo">${typePill(conta.tipo)}</td>
       <td data-col="status"><span class="status-pill status-${conta.status}">${statusLabel}</span></td>
+      <td data-col="comprometido">${renderComprometidoCell(conta)}</td>
       <td data-col="desde" class="tabular">${conta.desde ? formatDateBR(conta.desde) : '—'}</td>
+      <td data-col="fechada-em" class="tabular">${conta.fechada_em ? formatDateBR(conta.fechada_em) : '—'}</td>
       <td data-col="descricao" class="conta-row-desc">${conta.descricao ? escapeHtml(conta.descricao) : '<span style="color: var(--color-text-muted);">—</span>'}</td>
       <td data-col="fec-fatura" class="tabular">${conta.fec_fatura ? `Dia ${conta.fec_fatura}` : '—'}</td>
       <td data-col="venc-fatura" class="tabular">${conta.vencimento ? `Dia ${conta.vencimento}` : '—'}</td>
@@ -678,6 +1089,16 @@ function renderContaCard(conta) {
     if (conta.vencimento) dates.push(`<span><strong>Venc.:</strong> dia ${conta.vencimento}</span>`);
   }
 
+  const faturaAbertaValor = cachedFaturasAbertas.get(conta.id);
+  const faturaBadge = faturaAbertaValor
+    ? `<div class="conta-fatura-badge">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+        Fatura aberta: ${formatCurrency(faturaAbertaValor)}
+       </div>`
+    : '';
+
+  const comprometidoBadge = renderComprometidoBadge(conta);
+
   return `
     <div class="conta-card-v2 ${isInactive ? 'inactive' : ''} ${conta.status === 'arquivada' ? 'arquivada' : ''}" data-id="${conta.id}">
       <span class="ver-mais-hint">
@@ -698,6 +1119,8 @@ function renderContaCard(conta) {
         </div>
         ${conta.descricao ? `<p class="conta-card-desc">${escapeHtml(conta.descricao)}</p>` : ''}
         ${dates.length ? `<div class="conta-card-dates">${dates.join('')}</div>` : ''}
+        ${faturaBadge}
+        ${comprometidoBadge}
       </div>
     </div>
   `;
@@ -710,6 +1133,49 @@ function bindCardClicks() {
       if (conta) openDetailsModal(conta);
     });
   });
+}
+
+// -----------------------------
+// Comprometido helpers
+// -----------------------------
+function comprometidoBarColor(pct) {
+  return pct >= 90 ? 'var(--color-danger)' : pct >= 70 ? 'var(--color-warning)' : 'var(--color-success)';
+}
+
+function renderComprometidoBadge(conta) {
+  if (conta.tipo !== 'Cartão de Crédito') return '';
+  const data = cachedCompromissosContas.get(conta.id);
+  if (!data || data.comprometido === 0) return '';
+  const { comprometido, count } = data;
+  const label = `${count} compromisso${count > 1 ? 's' : ''}: ${formatCurrency(comprometido)}`;
+  if (conta.limite) {
+    const pct = Math.min(100, Math.round((comprometido / conta.limite) * 100));
+    return `
+      <div class="conta-comprometido-badge">
+        <div class="ccb-row">
+          <span class="ccb-label">${label}</span>
+          <span class="ccb-pct">${pct}%</span>
+        </div>
+        <div class="ccb-bar-track"><div class="ccb-bar-fill" style="width:${pct}%; background:${comprometidoBarColor(pct)};"></div></div>
+      </div>`;
+  }
+  return `<div class="conta-comprometido-badge"><span class="ccb-label">${label}</span></div>`;
+}
+
+function renderComprometidoCell(conta) {
+  if (conta.tipo !== 'Cartão de Crédito') return '<span style="color:var(--color-text-muted);">—</span>';
+  const data = cachedCompromissosContas.get(conta.id);
+  if (!data || data.comprometido === 0) return '<span style="color:var(--color-text-muted);">—</span>';
+  const { comprometido } = data;
+  if (conta.limite) {
+    const pct = Math.min(100, Math.round((comprometido / conta.limite) * 100));
+    return `
+      <div class="ccb-table-cell">
+        <span class="ccb-table-val">${formatCurrency(comprometido)} <span class="ccb-table-pct">${pct}%</span></span>
+        <div class="ccb-bar-track" style="margin-top:4px;"><div class="ccb-bar-fill" style="width:${pct}%; background:${comprometidoBarColor(pct)};"></div></div>
+      </div>`;
+  }
+  return `<span>${formatCurrency(comprometido)}</span>`;
 }
 
 // -----------------------------
@@ -798,6 +1264,10 @@ async function saveConta(event) {
     }
   }
 
+  const moeda = document.getElementById('conta-moeda').value || 'BRL';
+  const limiteRaw = document.getElementById('conta-limite').value;
+  const limite = (tipo === 'Cartão de Crédito' && limiteRaw !== '') ? Number(limiteRaw) : null;
+
   const payload = {
     nome,
     apelido,
@@ -808,7 +1278,9 @@ async function saveConta(event) {
     fechada_em,
     fec_fatura: tipo === 'Cartão de Crédito' ? Number(fec_fatura_raw) : null,
     vencimento: tipo === 'Cartão de Crédito' ? Number(vencimento_raw) : null,
+    limite,
     status,
+    moeda,
   };
 
   const originalLabel = button.textContent;

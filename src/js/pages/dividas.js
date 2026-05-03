@@ -43,9 +43,10 @@ const BLOCOS = [
 // -----------------------------
 // State
 // -----------------------------
-let cachedDividas = [];
-let cachedContas  = [];
-let editingId     = null;
+let cachedDividas  = [];
+let cachedContas   = [];
+let cachedContatos = [];
+let editingId      = null;
 let pagandoId     = null;
 let pendingDeleteId = null;
 let viewMode      = 'cards'; // 'cards' | 'table' | 'gantt'
@@ -89,9 +90,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Load
 // -----------------------------
 async function loadAll() {
-  const [divRes, contRes] = await Promise.all([
+  const [divRes, contRes, contatosRes] = await Promise.all([
     supabase.from('dividas').select('*').order('created_at', { ascending: false }),
     supabase.from('contas').select('id, nome, apelido').order('nome'),
+    supabase.from('contatos').select('id, nome, tipo, status').neq('status', 'arquivado').order('nome'),
   ]);
 
   if (divRes.error) {
@@ -99,12 +101,55 @@ async function loadAll() {
     return;
   }
 
+  if (contatosRes.error) {
+    if (!/relation.*contatos|column.*contatos/i.test(contatosRes.error.message)) {
+      console.warn('[loadContatos]', contatosRes.error);
+    }
+    cachedContatos = [];
+  } else {
+    cachedContatos = contatosRes.data || [];
+  }
+
   cachedDividas = divRes.data || [];
   cachedContas  = contRes.data || [];
 
   populateContaSelect('div-conta');
+  populateContatoSelect();
   renderWidgets();
   render();
+}
+
+function populateContatoSelect() {
+  const sel = document.getElementById('div-contato');
+  if (!sel) return;
+  const opts = ['<option value="">— Sem contato —</option>'];
+  for (const c of cachedContatos) {
+    opts.push(`<option value="${c.id}">${escapeHtml(c.nome)}</option>`);
+  }
+  opts.push('<option value="__new__">+ Criar novo contato…</option>');
+  sel.innerHTML = opts.join('');
+}
+
+async function criarContatoInline(nome) {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from('contatos')
+    .insert({ user_id: user.id, nome, tipo: 'fornecedor' })
+    .select()
+    .single();
+  if (error) {
+    let msg = error.message;
+    if (/relation.*contatos|column.*contatos/i.test(msg)) {
+      msg = 'Tabela contatos não existe — rode a migration 0023 no Supabase.';
+    }
+    showToast('Erro ao criar contato: ' + msg, 'error', 8000);
+    return null;
+  }
+  cachedContatos.push(data);
+  cachedContatos.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  showToast(`Contato "${data.nome}" criado`, 'success');
+  return data;
 }
 
 
@@ -318,6 +363,19 @@ function bindEvents() {
     if (btnEditar) openModalDivida(btnEditar.dataset.id);
   });
 
+  // Select de contato: "__new__" abre prompt pra criar inline
+  document.getElementById('div-contato')?.addEventListener('change', async (e) => {
+    if (e.target.value !== '__new__') return;
+    e.target.value = '';
+    const nome = window.prompt('Nome do novo contato (cliente/fornecedor):');
+    if (!nome || !nome.trim()) return;
+    const novo = await criarContatoInline(nome.trim());
+    if (novo) {
+      populateContatoSelect();
+      e.target.value = novo.id;
+    }
+  });
+
   // Zoom do Gantt — delegado em document (sobrevive a re-renders)
   document.addEventListener('click', (e) => {
     const zoomBtn = e.target.closest('[data-gantt-zoom]');
@@ -347,6 +405,7 @@ function openModalDivida(id) {
   document.getElementById('div-data-vencimento').value = d?.data_vencimento  ?? '';
   document.getElementById('div-status').value          = d?.status           ?? 'Ativa';
   document.getElementById('div-conta').value           = d?.conta_id         ?? '';
+  document.getElementById('div-contato').value         = d?.contato_id       ?? '';
   document.getElementById('div-observacao').value      = d?.observacao       ?? '';
 
   openModal('modal-divida');
@@ -368,6 +427,8 @@ async function saveDivida(e) {
   const data_vencimento = document.getElementById('div-data-vencimento').value || null;
   const status          = document.getElementById('div-status').value;
   const conta_id        = document.getElementById('div-conta').value || null;
+  const contatoRaw      = document.getElementById('div-contato')?.value || '';
+  const contato_id      = (contatoRaw && contatoRaw !== '__new__') ? contatoRaw : null;
   const observacao      = document.getElementById('div-observacao').value.trim() || null;
 
   if (!nome)              { showToast('Informe o nome da dívida', 'error'); return; }
@@ -380,7 +441,7 @@ async function saveDivida(e) {
   btn.textContent = 'Salvando…';
 
   const user = await getCurrentUser();
-  const payload = { nome, credor, valor_total, juros_percentual, data_inicio, data_vencimento, status, conta_id, observacao, user_id: user.id };
+  const payload = { nome, credor, valor_total, juros_percentual, data_inicio, data_vencimento, status, conta_id, contato_id, observacao, user_id: user.id };
 
   let error;
   if (editingId) {

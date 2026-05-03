@@ -105,6 +105,20 @@
 
       <div class="modal-body">
         <div class="details-grid" id="details-grid"></div>
+
+        <!-- Comprometimento de limite (apenas para cartão de crédito) -->
+        <div class="cartao-faturas-section hidden" id="cartao-limite-section">
+          <h3 class="cartao-faturas-title">Comprometimento do limite</h3>
+          <div id="cartao-limite-resumo"></div>
+          <div id="cartao-limite-lista"></div>
+        </div>
+
+        <!-- Faturas (apenas para cartão de crédito) -->
+        <div class="cartao-faturas-section hidden" id="cartao-faturas-section">
+          <h3 class="cartao-faturas-title">Faturas</h3>
+          <div id="cartao-fatura-aberta"></div>
+          <div id="cartao-faturas-historico"></div>
+        </div>
       </div>
 
       <div class="modal-footer" style="justify-content: space-between;">
@@ -163,7 +177,7 @@
           <input type="hidden" name="tipo" id="conta-tipo" value="Corrente">
         </div>
 
-        <!-- Cartão de Crédito: fechamento + vencimento -->
+        <!-- Cartão de Crédito: fechamento + vencimento + limite -->
         <div class="field hidden" id="cartao-fields">
           <label class="field-label">Faturamento</label>
           <div class="field-group">
@@ -176,6 +190,11 @@
               <input type="number" min="1" max="31" id="conta-vencimento" name="vencimento" class="input" placeholder="Dia 1–31">
             </div>
           </div>
+          <div class="field" style="margin-top: var(--space-4);">
+            <label class="field-label" for="conta-limite">Limite total</label>
+            <input type="number" step="0.01" min="0" id="conta-limite" name="limite" class="input" placeholder="Ex: 5000,00">
+            <p class="field-hint">Limite de crédito disponível neste cartão. Usado para calcular o comprometimento nos Compromissos.</p>
+          </div>
         </div>
 
         <!-- Cor -->
@@ -186,6 +205,13 @@
           </label>
           <div class="color-picker" id="color-picker"></div>
           <input type="hidden" name="icone_cor" id="conta-cor" value="#6D5EF5">
+        </div>
+
+        <!-- Moeda -->
+        <div class="field">
+          <label class="field-label" for="conta-moeda">Moeda <span class="required">*</span></label>
+          <select id="conta-moeda" name="moeda" class="input"></select>
+          <p class="field-hint">Moeda principal desta conta. Gerencia as moedas disponíveis em Configurações → Sistema.</p>
         </div>
 
         <!-- Descrição -->

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contatos · FinFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/variables.css">
+  <link rel="stylesheet" href="src/css/global.css">
+  <link rel="stylesheet" href="src/css/components.css">
+  <link rel="stylesheet" href="src/css/layout.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-sidebar" id="sidebar-container"></div>
+
+    <header class="app-header header">
+      <div class="header-left">
+        <h2 class="header-title">Contatos</h2>
+      </div>
+    </header>
+
+    <main class="app-main main">
+      <div class="page-header">
+        <div class="page-header-content">
+          <p class="page-eyebrow">Cadastro</p>
+          <h1 class="page-title">Contatos</h1>
+          <p class="page-description">Clientes e fornecedores. Histórico de reconhecimento automático por extrato bancário.</p>
+        </div>
+        <button class="btn btn-primary" id="btn-novo-contato" type="button">
+          <span style="font-size: 1.25em; line-height: 0.8;">+</span> Novo contato
+        </button>
+      </div>
+
+      <!-- Split: list + detail -->
+      <div class="ctp-split">
+
+        <!-- ── Left: contacts list ── -->
+        <div class="ctp-list-panel">
+          <div class="ctp-list-toolbar">
+            <input type="search" class="form-input" id="ct-search" placeholder="Buscar…" autocomplete="off">
+            <div class="ctp-tipo-filters">
+              <button class="filter-pill active" data-tipo-filter="all"        type="button">Todos</button>
+              <button class="filter-pill"        data-tipo-filter="cliente"    type="button">Clientes</button>
+              <button class="filter-pill"        data-tipo-filter="fornecedor" type="button">Fornecedores</button>
+            </div>
+          </div>
+          <div id="ct-list" class="ctp-list"></div>
+        </div>
+
+        <!-- ── Right: detail panel ── -->
+        <div class="ctp-detail">
+
+          <!-- Empty state -->
+          <div id="ct-detail-empty" class="ctp-detail-empty">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <p>Selecione um contato para ver os detalhes</p>
+          </div>
+
+          <!-- Contact detail -->
+          <div id="ct-detail-content" class="hidden">
+
+            <div class="ctp-detail-header">
+              <div class="ctp-detail-avatar" id="ct-detail-avatar"></div>
+              <div class="ctp-detail-header-info">
+                <div class="ctp-detail-name" id="ct-detail-name"></div>
+                <div class="ctp-detail-header-meta">
+                  <span class="ctp-tipo-badge" id="ct-detail-tipo"></span>
+                  <span class="ctp-status-badge hidden" id="ct-detail-status-badge">Arquivado</span>
+                </div>
+              </div>
+              <div class="ctp-detail-actions">
+                <button class="btn btn-ghost btn-sm" id="btn-arquivar-contato" type="button">Arquivar</button>
+                <button class="btn btn-primary btn-sm" id="btn-editar-contato" type="button">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                  Editar
+                </button>
+              </div>
+            </div>
+
+            <div class="ctp-tabs">
+              <button class="ctp-tab is-active" data-tab="dados"       type="button">Dados</button>
+              <button class="ctp-tab"            data-tab="banco"       type="button">Reconhecimento</button>
+              <button class="ctp-tab"            data-tab="transacoes"  type="button">Transações</button>
+            </div>
+
+            <!-- Dados -->
+            <div class="ctp-tab-panel" data-tab="dados">
+              <div class="ctp-dados-grid" id="ct-dados-content"></div>
+            </div>
+
+            <!-- Reconhecimento bancário -->
+            <div class="ctp-tab-panel hidden" data-tab="banco">
+              <p class="field-hint" style="margin-bottom: var(--space-4);">Padrões de texto do extrato bancário aprendidos automaticamente. Usados para pré-preencher contato e subcategoria ao importar extratos.</p>
+              <div id="ct-banco-content"></div>
+            </div>
+
+            <!-- Transações -->
+            <div class="ctp-tab-panel hidden" data-tab="transacoes">
+              <div id="ct-trans-content"></div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ── Modal: Novo / Editar contato ── -->
+  <div class="modal-backdrop hidden" id="modal-contato" role="dialog" aria-modal="true">
+    <form class="modal" id="form-contato" novalidate>
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-contato-title">Novo contato</h2>
+        <button type="button" class="modal-close" id="btn-close-modal-contato" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group form-group-flex">
+            <label class="form-label" for="ct-nome">Nome <span class="required">*</span></label>
+            <input type="text" class="form-input" id="ct-nome" required maxlength="120" placeholder="Nome do contato">
+          </div>
+          <div class="form-group form-group-flex">
+            <label class="form-label" for="ct-tipo">Tipo</label>
+            <select class="form-input" id="ct-tipo">
+              <option value="ambos">Cliente e Fornecedor</option>
+              <option value="cliente">Cliente</option>
+              <option value="fornecedor">Fornecedor</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="ct-nome-extrato">Nome no extrato</label>
+          <input type="text" class="form-input" id="ct-nome-extrato" maxlength="120" placeholder="Como aparece no extrato bancário">
+          <p class="field-hint">Usado para reconhecimento por correspondência de texto.</p>
+        </div>
+        <div class="form-row">
+          <div class="form-group form-group-flex">
+            <label class="form-label" for="ct-email">E-mail</label>
+            <input type="email" class="form-input" id="ct-email" maxlength="200">
+          </div>
+          <div class="form-group form-group-flex">
+            <label class="form-label" for="ct-telefone">Telefone</label>
+            <input type="text" class="form-input" id="ct-telefone" maxlength="30">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="ct-documento">Documento (CPF/CNPJ)</label>
+          <input type="text" class="form-input" id="ct-documento" maxlength="30">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="ct-observacao">Observação</label>
+          <textarea class="form-input" id="ct-observacao" rows="3" maxlength="500"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn btn-danger hidden" id="btn-deletar-contato">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Excluir
+        </button>
+        <div style="display:flex; gap:var(--space-2);">
+          <button type="button" class="btn btn-ghost" id="btn-cancel-contato">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-contato">Salvar</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- ── Modal: Confirmar exclusão ── -->
+  <div class="modal-backdrop hidden" id="modal-confirmar" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title">Excluir contato?</h2>
+        <button type="button" class="modal-close" id="btn-close-confirmar" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <p id="modal-confirmar-msg" style="color:var(--color-text-secondary); line-height:1.6;"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-cancel-confirmar">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btn-confirm-delete">Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script type="module" src="src/js/pages/contatos.js"></script>
+</body>
+</html>

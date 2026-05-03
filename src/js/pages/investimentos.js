@@ -18,6 +18,7 @@ let cachedProjetos = [];
 let cachedSubcategorias = []; // só as do grupo investimentos
 let cachedPagamentos = [];    // pagos/cartão das subs de investimento
 let cachedOrcamento = [];     // mês corrente — pra "previsto neste mês"
+let cachedContatos = [];      // clientes/fornecedores do usuário
 let editingId = null;
 let detailsId = null;
 let viewMode = 'cards'; // 'cards' | 'table' | 'timeline'
@@ -89,7 +90,7 @@ async function loadAll() {
 
   const mesAno = isoMonth(viewYear, viewMonth);
 
-  const [projetos, subcats, pagamentos, orcamento] = await Promise.all([
+  const [projetos, subcats, pagamentos, orcamento, contatos] = await Promise.all([
     supabase.from('projetos_investimento').select('*').order('nome'),
     // Subs com categoria pra cruzar com grupo='investimentos'
     supabase.from('subcategorias').select('*, categorias(grupo, cor, nome)').eq('status', 'ativa'),
@@ -101,6 +102,7 @@ async function loadAll() {
     supabase.from('orcamento_geral')
       .select('*, subcategorias(projeto_id, categorias(grupo))')
       .eq('mes_ano', mesAno),
+    supabase.from('contatos').select('id, nome, tipo, status').neq('status', 'arquivado').order('nome'),
   ]);
 
   if (projetos.error) {
@@ -116,7 +118,50 @@ async function loadAll() {
   cachedSubcategorias = (subcats.data || []).filter((s) => s.categorias?.grupo === 'investimentos');
   cachedPagamentos = (pagamentos.data || []).filter((p) => p.subcategorias?.categorias?.grupo === 'investimentos');
   cachedOrcamento = (orcamento.data || []).filter((e) => e.subcategorias?.categorias?.grupo === 'investimentos');
+
+  if (contatos.error) {
+    if (!/relation.*contatos|column.*contatos/i.test(contatos.error.message)) {
+      console.warn('[loadContatos]', contatos.error);
+    }
+    cachedContatos = [];
+  } else {
+    cachedContatos = contatos.data || [];
+  }
 }
+
+function populateContatoSelect() {
+  const sel = document.getElementById('proj-contato');
+  if (!sel) return;
+  const opts = ['<option value="">— Sem contato —</option>'];
+  for (const c of cachedContatos) {
+    opts.push(`<option value="${c.id}">${escapeHtml(c.nome)}</option>`);
+  }
+  opts.push('<option value="__new__">+ Criar novo contato…</option>');
+  sel.innerHTML = opts.join('');
+}
+
+async function criarContatoInline(nome) {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from('contatos')
+    .insert({ user_id: user.id, nome, tipo: 'fornecedor' })
+    .select()
+    .single();
+  if (error) {
+    let msg = error.message;
+    if (/relation.*contatos|column.*contatos/i.test(msg)) {
+      msg = 'Tabela contatos não existe — rode a migration 0023 no Supabase.';
+    }
+    showToast('Erro ao criar contato: ' + msg, 'error', 8000);
+    return null;
+  }
+  cachedContatos.push(data);
+  cachedContatos.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  showToast(`Contato "${data.nome}" criado`, 'success');
+  return data;
+}
+
 
 // -----------------------------
 // Bind events
@@ -130,6 +175,19 @@ function bindEvents() {
   });
 
   document.getElementById('form-projeto').addEventListener('submit', saveProjeto);
+
+  // Select de contato: "__new__" abre prompt pra criar inline
+  document.getElementById('proj-contato')?.addEventListener('change', async (e) => {
+    if (e.target.value !== '__new__') return;
+    e.target.value = '';
+    const nome = window.prompt('Nome do novo contato (cliente/fornecedor):');
+    if (!nome || !nome.trim()) return;
+    const novo = await criarContatoInline(nome.trim());
+    if (novo) {
+      populateContatoSelect();
+      e.target.value = novo.id;
+    }
+  });
 
 
   document.getElementById('btn-editar-projeto').addEventListener('click', () => {
@@ -732,6 +790,9 @@ function openProjetoModal(p = null) {
   document.getElementById('proj-data-alvo').value     = p?.data_alvo || '';
   document.getElementById('proj-saldo-inicial').value = p?.saldo_inicial ?? '';
 
+  populateContatoSelect();
+  document.getElementById('proj-contato').value       = p?.contato_id || '';
+
   openModal('modal-projeto');
 }
 
@@ -742,6 +803,8 @@ async function saveProjeto(event) {
   const nome = document.getElementById('proj-nome').value.trim();
   if (!nome) { showToast('Informe o nome do projeto', 'error'); return; }
 
+  const contatoRaw = document.getElementById('proj-contato')?.value || '';
+
   const payload = {
     nome,
     descricao:   document.getElementById('proj-descricao').value.trim() || null,
@@ -750,6 +813,7 @@ async function saveProjeto(event) {
     meta_valor:  parseNum(document.getElementById('proj-meta-valor').value),
     data_alvo:   document.getElementById('proj-data-alvo').value || null,
     saldo_inicial: parseNum(document.getElementById('proj-saldo-inicial').value) || 0,
+    contato_id:  (contatoRaw && contatoRaw !== '__new__') ? contatoRaw : null,
   };
 
   const labelOriginal = btn.textContent;

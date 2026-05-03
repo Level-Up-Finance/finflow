@@ -19,6 +19,7 @@ import { formatCurrency } from '../lib/compromissos-config.js';
 import { fetchExchangeRate } from '../lib/currency.js';
 import { initCurrencyWidget } from '../components/currency-widget.js';
 import { findBank, logoUrl } from '../lib/banks.js';
+import { syncPagamentoToTransacao, isPaidStatus } from '../lib/transacao-pagamento-sync.js';
 
 // -----------------------------
 // State
@@ -33,6 +34,7 @@ let cachedContas = [];        // pra display de banco
 let cachedPagamentos = [];    // entries do mês visível com subcategoria + categoria aninhadas
 let detailsPagamento = null;  // pagamento exibido no modal de detalhes
 let filterStatus = 'todos';   // 'todos' | 'pendentes' | 'atrasados' | 'pagos' | 'cancelados'
+let parcialState  = null;     // { pag, restanteOrig, restanteBRL } — preenchido ao abrir modais de parcial
 
 const ratesMap = new Map();   // 'USD' → 5.15
 
@@ -104,6 +106,14 @@ function bindEvents() {
 
   // Salvar observação no modal de detalhes
   document.getElementById('btn-salvar-observacao').addEventListener('click', saveObservacao);
+
+  // Modais de pagamento parcial
+  document.getElementById('btn-parcial-nao').addEventListener('click', () => {
+    closeModal('modal-parcial-confirm');
+    parcialState = null;
+  });
+  document.getElementById('btn-parcial-sim').addEventListener('click', openParcialNovoComp);
+  document.getElementById('btn-pns-criar').addEventListener('click', criarCompromissoParcial);
 
   // Filtros
   document.getElementById('status-filters').addEventListener('click', (e) => {
@@ -696,6 +706,11 @@ function renderPagamentoRow(p, catColor) {
     ? '<span class="atrasado-indicator">atrasado</span>'
     : '';
 
+  // Indicador "restante de parcial"
+  const parcialBadge = sub?.is_parcial
+    ? '<span class="parcial-indicator" title="Compromisso criado de pagamento parcial">½ rest.</span>'
+    : '';
+
   // Quick-pay button (só ativo pra status Agendado, mas sempre ocupa espaço pra não shiftar layout)
   const isAgendado = p.status === 'Agendado';
   const quickPayBtn = `<button class="btn-quick-pay ${isAgendado ? '' : 'is-hidden'}" data-quick-pay="${p.id}" title="Marcar como pago (status=Pago, valor real = previsto)" type="button" ${isAgendado ? '' : 'tabindex="-1" aria-hidden="true"'}>
@@ -708,6 +723,7 @@ function renderPagamentoRow(p, catColor) {
         <div style="display: flex; align-items: center; gap: var(--space-2); min-width: 0;">
           <span style="color: ${tipoColor}; font-weight: var(--fw-bold); font-size: var(--fs-sm);">${tipoSymbol}</span>
           <span style="font-weight: var(--fw-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(display)}</span>
+          ${parcialBadge}
           ${atrasadoBadge}
           ${obsIcon}
         </div>
@@ -812,6 +828,9 @@ async function quickPay(id) {
   // Propaga valor pago para a dívida vinculada (fire-and-forget)
   const dividaId = p.subcategorias?.divida_id;
   if (dividaId) propagateDivida(dividaId);
+
+  // Sync transação vinculada (com feedback se falhar)
+  syncWithFeedback(p, p.subcategorias);
 }
 
 // -----------------------------
@@ -949,6 +968,123 @@ function formatDateBR(iso) {
   return `${d}/${m}/${y.slice(2)}`;
 }
 
+// -----------------------------
+// Fluxo de pagamento parcial
+// -----------------------------
+
+// Verifica se há restante significativo e abre o modal de confirmação.
+// Chamado por saveStatus (status → Parcial) e por saveValorReal (status já Parcial).
+function checkParcialAndSuggest(pag) {
+  if (pag.valor_real == null) return;
+  const prevBRL  = convertToBRL(Number(pag.valor_previsto ?? 0), pag.moeda);
+  const realBRL  = convertToBRL(Number(pag.valor_real), pag.moeda);
+  if (prevBRL === null || realBRL === null) return;
+  const restanteBRL = prevBRL - realBRL;
+  if (restanteBRL < 0.01) return;
+
+  parcialState = {
+    pag,
+    restanteOrig: Number(pag.valor_previsto) - Number(pag.valor_real),
+    restanteBRL,
+  };
+
+  document.getElementById('parcial-restante-valor').textContent = formatCurrency(restanteBRL, 'BRL');
+  openModal('modal-parcial-confirm');
+}
+
+// Passa do modal de confirmação para o modal com o pré-preenchimento.
+function openParcialNovoComp() {
+  closeModal('modal-parcial-confirm');
+  if (!parcialState) return;
+
+  const { restanteBRL, pag } = parcialState;
+  const sub   = pag.subcategorias;
+  const conta = cachedContas.find((c) => c.id === sub?.conta_id);
+
+  const fields = [
+    { label: 'Nome',            value: sub?.apelido?.trim() || sub?.nome || '—' },
+    { label: 'Valor restante',  value: formatCurrency(restanteBRL, 'BRL') },
+    { label: 'Categoria',       value: sub?.categorias?.nome || '—' },
+    { label: 'Tipo',            value: sub?.tipo || '—' },
+    { label: 'Período',         value: sub?.periodo || '—' },
+    { label: 'Conta',           value: conta ? (conta.apelido?.trim() || conta.nome) : '—' },
+    { label: 'Tipo pagamento',  value: sub?.tipo_pagamento || '—' },
+  ];
+
+  document.getElementById('pns-summary').innerHTML = fields.map((f) => `
+    <div class="details-field">
+      <span class="details-field-label">${escapeHtml(f.label)}</span>
+      <span class="details-field-value">${escapeHtml(String(f.value))}</span>
+    </div>`).join('');
+
+  // Sugere o dia seguinte ao vencimento como data de início
+  const base = pag.data_vencimento ? new Date(pag.data_vencimento + 'T00:00:00') : new Date();
+  base.setDate(base.getDate() + 1);
+  document.getElementById('pns-data-inicio').value =
+    `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-${String(base.getDate()).padStart(2, '0')}`;
+
+  openModal('modal-parcial-novo-comp');
+}
+
+// Cria a subcategoria/compromisso com is_parcial = true.
+async function criarCompromissoParcial() {
+  if (!parcialState) return;
+  const dataInicio = document.getElementById('pns-data-inicio').value;
+  if (!dataInicio) { showToast('Informe a data de início', 'error'); return; }
+
+  const { pag, restanteOrig } = parcialState;
+  const sub  = pag.subcategorias;
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  const btn      = document.getElementById('btn-pns-criar');
+  const original = btn.textContent;
+  btn.disabled   = true;
+  btn.innerHTML  = '<span class="spinner"></span>';
+
+  const { data, error } = await supabase
+    .from('subcategorias')
+    .insert({
+      user_id:        user.id,
+      nome:           sub.nome,
+      apelido:        sub.apelido || null,
+      tipo:           sub.tipo,
+      categoria_id:   sub.categoria_id,
+      conta_id:       sub.conta_id       || null,
+      tipo_pagamento: sub.tipo_pagamento || null,
+      periodo:        sub.periodo,
+      vencimento_dia: sub.vencimento_dia || null,
+      dia_semana:     sub.dia_semana     ?? null,
+      valor_base:     restanteOrig,
+      moeda:          sub.moeda,
+      iniciado_em:    dataInicio,
+      terminado_em:   null,
+      projeto_id:     sub.projeto_id  || null,
+      divida_id:      sub.divida_id   || null,
+      contato_id:     sub.contato_id  || null,
+      is_parcial:     true,
+      status:         'ativa',
+      valor_variavel: false,
+      descricao:      sub.descricao   || null,
+    })
+    .select()
+    .single();
+
+  btn.disabled  = false;
+  btn.textContent = original;
+
+  if (error) {
+    let msg = error.message;
+    if (/column.*is_parcial/i.test(msg)) msg = 'Coluna is_parcial não existe — rode a migration 0027 no Supabase.';
+    showToast('Erro ao criar compromisso: ' + msg, 'error', 8000);
+    return;
+  }
+
+  showToast(`Compromisso "${data.apelido?.trim() || data.nome}" criado com o valor restante`, 'success');
+  closeModal('modal-parcial-novo-comp');
+  parcialState = null;
+}
+
 async function saveStatus(select) {
   const id = select.dataset.pagamentoId;
   const newStatus = select.value;
@@ -977,6 +1113,12 @@ async function saveStatus(select) {
   // Propaga para dívida vinculada (qualquer mudança de status pode alterar o total)
   const dividaId = pag.subcategorias?.divida_id;
   if (dividaId) propagateDivida(dividaId);
+
+  // Sync transação vinculada (com feedback se falhar)
+  syncWithFeedback(pag, pag.subcategorias);
+
+  // Se ficou Parcial, oferece criar compromisso pro restante
+  if (newStatus === 'Parcial') checkParcialAndSuggest(pag);
 }
 
 async function saveValorReal(input) {
@@ -1040,11 +1182,52 @@ async function saveValorReal(input) {
   renderPagamentos();
 
   // Se o pagamento já está pago, recalcula a dívida vinculada
-  const PAID = ['Pago', 'Transferido', 'Cartão', 'Parcial'];
-  if (PAID.includes(pag.status)) {
+  // e atualiza valor da transação vinculada
+  if (isPaidStatus(pag.status)) {
     const dividaId = pag.subcategorias?.divida_id;
     if (dividaId) propagateDivida(dividaId);
+    syncWithFeedback(pag, pag.subcategorias);
   }
+
+  // Se ficou Parcial, oferece criar compromisso pro restante
+  if (pag.status === 'Parcial') checkParcialAndSuggest(pag);
+}
+
+// -----------------------------
+// Wrapper de sync com toast em erro/sucesso
+// Torna visível qualquer falha (ex: migration 0022 não rodada)
+// -----------------------------
+function syncWithFeedback(pagamento, subcategoria) {
+  console.log('[sync transacao] iniciando…', { pagamentoId: pagamento?.id, status: pagamento?.status, sub: subcategoria?.nome });
+  syncPagamentoToTransacao(pagamento, subcategoria)
+    .then((result) => {
+      console.log('[sync transacao] resultado:', result);
+      if (!result) {
+        showToast('Sync sem resultado (verifique console)', 'warning', 8000);
+        return;
+      }
+      if (result.action === 'error') {
+        let msg = result.reason || 'erro desconhecido';
+        if (/pagamento_id|column.*does not exist/i.test(msg)) {
+          msg = 'Coluna pagamento_id não existe — rode a migration 0022 no Supabase.';
+        } else if (/relation.*transacoes/i.test(msg)) {
+          msg = 'Tabela transacoes não existe — rode a migration 0021 no Supabase.';
+        }
+        showToast('Sync transação falhou: ' + msg, 'error', 12000);
+      } else if (result.action === 'created') {
+        showToast('Transação criada na página Transações', 'success', 4000);
+      } else if (result.action === 'updated') {
+        showToast('Transação vinculada atualizada', 'success', 3000);
+      } else if (result.action === 'unlinked') {
+        showToast('Transação desvinculada (status voltou pra agendado)', 'info', 3000);
+      } else if (result.action === 'skipped') {
+        showToast('Sync pulado: ' + (result.reason || ''), 'warning', 5000);
+      }
+    })
+    .catch((e) => {
+      console.error('[sync transacao] exception:', e);
+      showToast('Sync transação falhou: ' + (e?.message || e), 'error', 12000);
+    });
 }
 
 // -----------------------------

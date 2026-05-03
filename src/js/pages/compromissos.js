@@ -40,6 +40,7 @@ let cachedCategorias = [];     // categorias parent do usuário
 let cachedContas = [];         // bancos/cartões
 let cachedProjetos = [];       // projetos de investimento do usuário
 let cachedDividas = [];        // dívidas do usuário (para vínculo)
+let cachedContatos = [];       // clientes/fornecedores do usuário
 let cachedProxValores = new Map(); // subcategoria_id → {valor_previsto, moeda, mes_ano} (próximo mês com valor)
 let editingId = null;
 let detailsCompromisso = null;
@@ -68,6 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadCategorias();      // carrega + seed se vazio
   await loadProjetos();
   await loadDividas();
+  await loadContatos();
   renderCategoriaFilters();
   renderTipoSelector();
   renderModalDropdowns();
@@ -77,7 +79,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     storageKey: 'compromissos',
     tableClass:  'compromissos-grouped-table',
     columns: [
-      { key: 'tipo',       label: 'Tipo',         defaultVisible: false },
+      { key: 'categoria',  label: 'Categoria',     defaultVisible: false },
+      { key: 'tipo',       label: 'Tipo',          defaultVisible: false },
       { key: 'projeto',    label: 'Vínculo',       defaultVisible: true  },
       { key: 'conta',      label: 'Banco/Cartão',  defaultVisible: false },
       { key: 'pagamento',  label: 'Pagamento',     defaultVisible: false },
@@ -184,18 +187,81 @@ function toggleDividaField() {
 }
 
 // -----------------------------
+// Load contatos (clientes/fornecedores)
+// -----------------------------
+async function loadContatos() {
+  const { data, error } = await supabase
+    .from('contatos')
+    .select('id, nome, tipo, status')
+    .neq('status', 'arquivado')
+    .order('nome');
+  if (error) {
+    if (!/relation.*contatos|column.*contatos/i.test(error.message)) {
+      console.warn('[loadContatos]', error);
+    }
+    cachedContatos = [];
+    return;
+  }
+  cachedContatos = data || [];
+}
+
+function getContato(id) {
+  return cachedContatos.find((c) => c.id === id) || null;
+}
+
+async function criarContato(nome) {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from('contatos')
+    .insert({ user_id: user.id, nome, tipo: 'ambos' })
+    .select()
+    .single();
+  if (error) {
+    let msg = error.message;
+    if (/relation.*contatos|column.*contatos/i.test(msg)) {
+      msg = 'Tabela contatos não existe — rode a migration 0023 no Supabase.';
+    }
+    showToast('Erro ao criar contato: ' + msg, 'error', 8000);
+    return null;
+  }
+  cachedContatos.push(data);
+  cachedContatos.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  showToast(`Contato "${data.nome}" criado`, 'success');
+  return data;
+}
+
+function renderContatoOptions() {
+  const sel = document.getElementById('comp-contato');
+  if (!sel) return;
+  const opts = ['<option value="">— Sem contato —</option>'];
+  for (const c of cachedContatos) {
+    opts.push(`<option value="${c.id}">${escapeHtml(c.nome)}</option>`);
+  }
+  opts.push('<option value="__new__">+ Criar novo contato…</option>');
+  sel.innerHTML = opts.join('');
+}
+
+// -----------------------------
 // Load contas (pro select opcional)
 // -----------------------------
 async function loadContas() {
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('contas')
-    .select('id, nome, apelido, tipo, icone_cor, status')
+    .select('id, nome, apelido, tipo, icone_cor, status, limite')
     .neq('status', 'arquivada')
     .order('nome');
-  if (error) {
-    console.error('[loadContas]', error);
-    return;
+
+  // Fallback: if 'limite' column doesn't exist yet (migration 0035 not applied)
+  if (error && /column.*limite|limite.*column/i.test(error.message)) {
+    ({ data, error } = await supabase
+      .from('contas')
+      .select('id, nome, apelido, tipo, icone_cor, status')
+      .neq('status', 'arquivada')
+      .order('nome'));
   }
+
+  if (error) { console.error('[loadContas]', error); return; }
   cachedContas = data || [];
 }
 
@@ -304,12 +370,15 @@ function renderModalDropdowns() {
   selCat.innerHTML = '<option value="">— Escolha uma categoria —</option>' + optgroupHtml;
 
   // Banco/Cartão (opcional)
-  const selConta = document.getElementById('comp-conta');
-  selConta.innerHTML = '<option value="">— Sem banco (preencher depois) —</option>' +
+  const contaOptions = '<option value="">— Sem banco (preencher depois) —</option>' +
     cachedContas.map((c) => {
       const display = c.apelido?.trim() || c.nome;
       return `<option value="${c.id}">${escapeHtml(display)} (${c.tipo})</option>`;
     }).join('');
+  const selConta = document.getElementById('comp-conta');
+  selConta.innerHTML = contaOptions;
+  const selContaDest = document.getElementById('comp-conta-destino');
+  if (selContaDest) selContaDest.innerHTML = contaOptions;
 
   // Tipo de pagamento
   const selTipoPag = document.getElementById('comp-tipo-pagamento');
@@ -342,6 +411,8 @@ function renderModalDropdowns() {
   renderProjetoOptions();
   // Dívidas (só relevante quando categoria é do grupo Dívidas)
   renderDividaOptions();
+  // Contatos (sempre visível)
+  renderContatoOptions();
 }
 
 function renderProjetoOptions() {
@@ -422,7 +493,11 @@ function bindEvents() {
     btn.classList.add('active');
     document.getElementById('comp-tipo').value = btn.dataset.tipo;
     toggleRendaPrincipalRow();
+    toggleTransferFields();
   });
+
+  // Conta origin → limit info
+  document.getElementById('comp-conta').addEventListener('change', (e) => updateLimiteInfo(e.target.value));
 
   // Período → mostra/esconde dia mês ou dia semana
   document.getElementById('comp-periodo').addEventListener('change', toggleVencimentoFields);
@@ -450,6 +525,19 @@ function bindEvents() {
   document.getElementById('comp-divida')?.addEventListener('change', (e) => {
     if (e.target.value === '__new__') {
       // Deixa "__new__" selecionado — no save auto-criamos a dívida com os dados do compromisso
+    }
+  });
+
+  // Select de contato: "__new__" abre prompt pra criar inline
+  document.getElementById('comp-contato')?.addEventListener('change', async (e) => {
+    if (e.target.value !== '__new__') return;
+    e.target.value = ''; // reset enquanto cria
+    const nome = window.prompt('Nome do novo contato (cliente/fornecedor):');
+    if (!nome || !nome.trim()) return;
+    const novo = await criarContato(nome.trim());
+    if (novo) {
+      renderContatoOptions();
+      e.target.value = novo.id;
     }
   });
 
@@ -492,6 +580,12 @@ function bindEvents() {
     if (!detailsCompromisso) return;
     closeModal('modal-details');
     openCompromissoModal(detailsCompromisso);
+  });
+
+  document.getElementById('btn-duplicar').addEventListener('click', () => {
+    if (!detailsCompromisso) return;
+    closeModal('modal-details');
+    duplicateCompromisso(detailsCompromisso);
   });
 
   document.getElementById('btn-atualizar-valor').addEventListener('click', () => {
@@ -663,6 +757,55 @@ function toggleRendaPrincipalRow() {
   if (!isReceita) document.getElementById('comp-renda-principal').checked = false;
 }
 
+// Show/hide transfer-specific fields and relabel the origin conta
+function toggleTransferFields() {
+  const tipo = document.getElementById('comp-tipo').value;
+  const isTransfer = tipo === 'Transferência';
+  const destField = document.getElementById('comp-conta-destino-field');
+  const oriLabel  = document.getElementById('comp-conta-label');
+  const oriHint   = document.getElementById('comp-conta-hint');
+  if (destField) destField.classList.toggle('hidden', !isTransfer);
+  if (oriLabel) oriLabel.textContent = isTransfer ? 'De (origem)' : 'Banco / Cartão (opcional)';
+  if (oriHint)  oriHint.textContent  = isTransfer
+    ? 'Conta de onde o dinheiro sai.'
+    : 'Pode deixar em branco e preencher depois.';
+}
+
+// Shows committed credit limit when a Cartão de Crédito is selected
+function updateLimiteInfo(contaId) {
+  const el = document.getElementById('comp-conta-limite-info');
+  if (!el) return;
+  if (!contaId) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+  const conta = getConta(contaId);
+  if (!conta || conta.tipo !== 'Cartão de Crédito') { el.classList.add('hidden'); el.innerHTML = ''; return; }
+
+  const limite = Number(conta.limite) || 0;
+  const comprometido = cachedCompromissos
+    .filter((c) => c.conta_id === contaId && c.status === 'ativa' && !c.valor_variavel)
+    .reduce((sum, c) => sum + (Number(c.valor_base) || 0), 0);
+
+  if (!limite) {
+    el.classList.remove('hidden');
+    el.innerHTML = `<span class="limite-info-row"><span class="limite-info-label">Comprometido</span><strong>${formatCurrency(comprometido)}</strong> <span class="limite-info-hint">(limite não configurado)</span></span>`;
+    return;
+  }
+
+  const disponivel = Math.max(0, limite - comprometido);
+  const pct = Math.min(100, (comprometido / limite) * 100);
+  const pctColor = pct >= 90 ? 'var(--color-danger)' : pct >= 70 ? 'var(--color-warning)' : 'var(--color-success)';
+  el.classList.remove('hidden');
+  el.innerHTML = `
+    <div class="limite-info-row">
+      <span class="limite-info-label">Limite</span><strong>${formatCurrency(limite)}</strong>
+      <span class="limite-info-sep">·</span>
+      <span class="limite-info-label">Comprometido</span><strong style="color:${pctColor}">${formatCurrency(comprometido)} (${pct.toFixed(0)}%)</strong>
+      <span class="limite-info-sep">·</span>
+      <span class="limite-info-label">Disponível</span><strong>${formatCurrency(disponivel)}</strong>
+    </div>
+    <div class="limite-info-bar" style="--pct:${pct.toFixed(1)}%;--bar-color:${pctColor};"></div>
+  `;
+}
+
 // Renderiza grid com 12 meses futuros, pré-preenchendo com valores existentes
 async function populateValoresMensaisGrid(c) {
   const grid = document.getElementById('valores-mensais-grid');
@@ -780,6 +923,7 @@ function openCompromissoModal(c = null) {
   document.getElementById('comp-categoria').value = c?.categoria_id || '';
   document.getElementById('comp-projeto').value = c?.projeto_id || '';
   document.getElementById('comp-divida').value  = c?.divida_id  || '';
+  document.getElementById('comp-contato').value = c?.contato_id || '';
   document.getElementById('comp-conta').value = c?.conta_id || '';
   document.getElementById('comp-tipo-pagamento').value = c?.tipo_pagamento || '';
   document.getElementById('comp-periodo').value = c?.periodo || 'Mensal';
@@ -804,11 +948,16 @@ function openCompromissoModal(c = null) {
   document.querySelectorAll('.tipo-btn').forEach((b) => b.classList.toggle('active', b.dataset.tipo === tipo));
   document.querySelectorAll('#status-segmented .segmented-btn').forEach((b) => b.classList.toggle('active', b.dataset.status === status));
 
+  const contaDestinoEl = document.getElementById('comp-conta-destino');
+  if (contaDestinoEl) contaDestinoEl.value = c?.conta_destino_id || '';
+
   toggleVencimentoFields();
   toggleValorVariavelFields();
   toggleRendaPrincipalRow();
   toggleProjetoField();
   toggleDividaField();
+  toggleTransferFields();
+  updateLimiteInfo(c?.conta_id || '');
   if (c?.valor_variavel) {
     populateValoresMensaisGrid(c);
   } else {
@@ -816,6 +965,17 @@ function openCompromissoModal(c = null) {
   }
 
   openModal('modal-compromisso');
+}
+
+// Opens the create modal pre-filled with an existing compromisso's data (no editingId)
+function duplicateCompromisso(c) {
+  openCompromissoModal(c);
+  editingId = null;
+  document.getElementById('modal-compromisso-title').textContent = 'Duplicar compromisso';
+  document.getElementById('btn-salvar-compromisso').textContent = 'Criar cópia';
+  // Clear motivo field (not relevant for new record)
+  document.getElementById('motivo-field').classList.add('hidden');
+  document.getElementById('comp-motivo').value = '';
 }
 
 // -----------------------------
@@ -1259,6 +1419,7 @@ function renderGroupedTable(items) {
         <thead>
           <tr>
             <th>Compromisso</th>
+            <th data-col="categoria">Categoria</th>
             <th data-col="tipo">Tipo</th>
             <th data-col="projeto">Vínculo</th>
             <th data-col="conta">Banco/Cartão</th>
@@ -1330,11 +1491,17 @@ function renderRow(c, categoria) {
             <span class="conta-row-name-display">${escapeHtml(display)}</span>
             ${officialDifferent ? `<span class="conta-row-name-official">${escapeHtml(c.nome)}</span>` : ''}
           </div>
+          ${c.is_parcial ? '<span class="parcial-indicator" title="Criado de pagamento parcial — representa o valor restante">½ rest.</span>' : ''}
         </div>
+      </td>
+      <td data-col="categoria">
+        ${categoria
+          ? `<span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:${catColor};flex-shrink:0;"></span>${escapeHtml(categoria.nome)}</span>`
+          : '<span class="text-muted">—</span>'}
       </td>
       <td data-col="tipo">${tipoPill(c.tipo)}</td>
       <td data-col="projeto">${vinculoCell}</td>
-      <td data-col="conta">${conta ? renderContaInline(conta) : '<span class="text-muted">—</span>'}</td>
+      <td data-col="conta">${renderContaTransferCell(c, conta)}</td>
       <td data-col="pagamento">${c.tipo_pagamento || '<span class="text-muted">—</span>'}</td>
       <td data-col="vencimento" class="tabular">${venc}</td>
       <td data-col="proximo">${renderNextDueCell(c)}</td>
@@ -1417,6 +1584,19 @@ function renderContaInline(conta) {
     <span style="width:18px;height:18px;border-radius:50%;background:${fallbackColor};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:bold;flex-shrink:0;">${escapeHtml(initialsValue)}</span>
     <span>${escapeHtml(display)}</span>
   </span>`;
+}
+
+function renderContaTransferCell(c, contaOrigem) {
+  if (c.tipo === 'Transferência' && c.conta_destino_id) {
+    const destino = getConta(c.conta_destino_id);
+    const oriHtml  = contaOrigem ? renderContaInline(contaOrigem) : '<span class="text-muted">—</span>';
+    const destHtml = destino     ? renderContaInline(destino)      : '<span class="text-muted">—</span>';
+    return `<span style="display:inline-flex;flex-direction:column;gap:2px;font-size:var(--fs-xs);">
+      <span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:var(--color-text-muted);font-size:10px;">De</span>${oriHtml}</span>
+      <span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:var(--color-text-muted);font-size:10px;">→</span>${destHtml}</span>
+    </span>`;
+  }
+  return contaOrigem ? renderContaInline(contaOrigem) : '<span class="text-muted">—</span>';
 }
 
 function bindRowClicks() {
@@ -1859,7 +2039,10 @@ async function saveCompromisso(event) {
   const projeto_id     = (cat?.grupo === 'investimentos' && projetoRaw && projetoRaw !== '__new__') ? projetoRaw : null;
   const isDividasCat   = cat?.grupo === 'dividas' || /dívida|divida/i.test(cat?.nome || '');
   const dividaRaw      = isDividasCat ? (document.getElementById('comp-divida')?.value || '') : '';
-  const conta_id       = document.getElementById('comp-conta').value || null;
+  const contatoRaw     = document.getElementById('comp-contato')?.value || '';
+  const contato_id     = (contatoRaw && contatoRaw !== '__new__') ? contatoRaw : null;
+  const conta_id          = document.getElementById('comp-conta').value || null;
+  const conta_destino_id  = document.getElementById('comp-conta-destino')?.value || null;
   const tipo_pagamento = document.getElementById('comp-tipo-pagamento').value || null;
   const periodo        = document.getElementById('comp-periodo').value;
   const vencimentoRaw  = document.getElementById('comp-vencimento-dia').value;
@@ -1899,6 +2082,7 @@ async function saveCompromisso(event) {
     tipo,
     categoria_id,
     conta_id,
+    conta_destino_id: tipo === 'Transferência' ? conta_destino_id : null,
     tipo_pagamento,
     periodo,
     vencimento_dia: (usaDiaSemana || ehUnico) ? null : Number(vencimentoRaw),
@@ -1913,6 +2097,7 @@ async function saveCompromisso(event) {
     eh_renda_principal: ehRendaPrincipal,
     projeto_id,
     divida_id: null, // preenchido após resolver __new__ abaixo
+    contato_id,
   };
 
   const originalLabel = button.textContent;

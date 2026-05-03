@@ -27,17 +27,164 @@
         <div class="page-header-content">
           <p class="page-eyebrow">Análise</p>
           <h1 class="page-title">Relatórios</h1>
-          <p class="page-description">Comparativo previsto vs real, fluxo de caixa, exportação CSV e impressão.</p>
+          <p class="page-description">Fluxo de caixa, previsto vs real, gastos por categoria. Exporte em CSV, Excel ou imprima em PDF.</p>
+        </div>
+        <div class="relat-export-btns">
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-export-csv" title="Exportar tabela em CSV">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>
+            CSV
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-export-excel" title="Exportar tabela em Excel (.xls)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 9 6 6m0-6-6 6"/></svg>
+            Excel
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-export-pdf" title="Imprimir / salvar como PDF">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+            PDF
+          </button>
         </div>
       </div>
 
-      <div class="empty-state">
-        <div class="empty-state-icon">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>
+      <!-- ===== Barra de filtros ===== -->
+      <div class="relat-filterbar">
+        <div class="filter-pills relat-mode-pills" id="relat-mode-pills">
+          <button class="filter-pill active" data-mode="mes" type="button">Mês</button>
+          <button class="filter-pill" data-mode="ano" type="button">Ano</button>
+          <button class="filter-pill" data-mode="periodo" type="button">Período</button>
+          <button class="filter-pill" data-mode="todos" type="button">Todos</button>
         </div>
-        <h2 class="empty-state-title">Em construção</h2>
-        <p class="empty-state-message">Esta tela será implementada na <strong>Fase 9</strong> do roadmap.</p>
+
+        <div class="relat-controls">
+          <div class="relat-date-wrap">
+            <div class="relat-date-group" id="relat-input-mes">
+              <select class="input input-sm" id="relat-mes-month"></select>
+              <select class="input input-sm" id="relat-mes-year"></select>
+            </div>
+            <div class="relat-date-group hidden" id="relat-input-ano">
+              <select class="input input-sm" id="relat-ano"></select>
+            </div>
+            <div class="relat-date-group hidden" id="relat-input-periodo">
+              <input type="date" class="input input-sm" id="relat-dt-inicio">
+              <span class="relat-date-sep">até</span>
+              <input type="date" class="input input-sm" id="relat-dt-fim">
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-primary btn-sm" id="btn-relat-aplicar">Aplicar</button>
+          <span class="relat-period-label" id="relat-period-label"></span>
+        </div>
       </div>
+
+      <!-- ===== Tabs ===== -->
+      <div class="relat-tabs" id="relat-tabs">
+        <button class="relat-tab active" data-tab="fluxo" type="button">Fluxo de Caixa</button>
+        <button class="relat-tab" data-tab="previsto" type="button">Previsto vs Real</button>
+        <button class="relat-tab" data-tab="categorias" type="button">Categorias</button>
+      </div>
+
+      <!-- Loading -->
+      <div id="relat-loading" class="relat-loading hidden">
+        <span class="spinner"></span> Carregando relatório…
+      </div>
+
+      <!-- ===================================================
+           PANEL: Fluxo de Caixa
+           =================================================== -->
+      <div id="panel-fluxo" class="relat-panel">
+        <div class="relat-kpis" id="fluxo-kpis"></div>
+
+        <div class="relat-card">
+          <h3 class="relat-card-title">Receitas vs Despesas ao longo do tempo</h3>
+          <div class="relat-chart-area" id="fluxo-chart"></div>
+        </div>
+
+        <div class="relat-card">
+          <h3 class="relat-card-title">Detalhe por período</h3>
+          <div class="table-wrapper">
+            <table class="table" id="fluxo-table">
+              <thead>
+                <tr>
+                  <th>Período</th>
+                  <th class="relat-th-num">Receitas</th>
+                  <th class="relat-th-num">Despesas</th>
+                  <th class="relat-th-num">Saldo do período</th>
+                  <th class="relat-th-num">Saldo acumulado</th>
+                </tr>
+              </thead>
+              <tbody id="fluxo-tbody"></tbody>
+              <tfoot id="fluxo-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================
+           PANEL: Previsto vs Real
+           =================================================== -->
+      <div id="panel-previsto" class="relat-panel hidden">
+        <div class="relat-kpis" id="previsto-kpis"></div>
+
+        <div class="relat-card">
+          <h3 class="relat-card-title">Previsto vs Realizado por categoria</h3>
+          <div class="relat-chart-area" id="previsto-chart"></div>
+        </div>
+
+        <div class="relat-card">
+          <h3 class="relat-card-title">Detalhe por categoria</h3>
+          <div class="table-wrapper">
+            <table class="table" id="previsto-table">
+              <thead>
+                <tr>
+                  <th>Categoria</th>
+                  <th class="relat-th-num">Previsto</th>
+                  <th class="relat-th-num">Realizado</th>
+                  <th class="relat-th-num">Desvio</th>
+                  <th class="relat-th-num">Execução</th>
+                </tr>
+              </thead>
+              <tbody id="previsto-tbody"></tbody>
+              <tfoot id="previsto-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================
+           PANEL: Categorias
+           =================================================== -->
+      <div id="panel-categorias" class="relat-panel hidden">
+        <div class="relat-kpis" id="cat-kpis"></div>
+
+        <div class="relat-two-col">
+          <div class="relat-card" style="margin-bottom:0">
+            <h3 class="relat-card-title">Distribuição por categoria</h3>
+            <div class="relat-chart-area" id="cat-donut"></div>
+          </div>
+          <div class="relat-card" style="margin-bottom:0">
+            <h3 class="relat-card-title">Top 10 subcategorias</h3>
+            <div id="cat-hbars"></div>
+          </div>
+        </div>
+
+        <div class="relat-card">
+          <h3 class="relat-card-title">Detalhe por categoria e subcategoria</h3>
+          <div class="table-wrapper">
+            <table class="table" id="cat-table">
+              <thead>
+                <tr>
+                  <th>Categoria / Subcategoria</th>
+                  <th class="relat-th-num">Total (R$)</th>
+                  <th class="relat-th-num">% do total</th>
+                  <th class="relat-th-num">Transações</th>
+                </tr>
+              </thead>
+              <tbody id="cat-tbody"></tbody>
+              <tfoot id="cat-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 

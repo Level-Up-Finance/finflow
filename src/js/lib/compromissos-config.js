@@ -10,18 +10,21 @@
 
 // ---------- Tipo (Receita / Despesa) ----------
 const TIPO_ICONS = {
-  Receita: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>`,
-  Despesa: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>`,
+  Receita:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>`,
+  Despesa:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>`,
+  Transferência: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>`,
 };
 
 const TIPO_COLORS = {
-  Receita: '#10B981', // verde
-  Despesa: '#EF4444', // vermelho
+  Receita:       '#10B981', // verde
+  Despesa:       '#EF4444', // vermelho
+  Transferência: '#6366F1', // índigo
 };
 
 export const TIPOS = [
-  { value: 'Receita', label: 'Receita', icon: TIPO_ICONS.Receita, color: TIPO_COLORS.Receita },
-  { value: 'Despesa', label: 'Despesa', icon: TIPO_ICONS.Despesa, color: TIPO_COLORS.Despesa },
+  { value: 'Receita',       label: 'Receita',       icon: TIPO_ICONS.Receita,       color: TIPO_COLORS.Receita       },
+  { value: 'Despesa',       label: 'Despesa',       icon: TIPO_ICONS.Despesa,       color: TIPO_COLORS.Despesa       },
+  { value: 'Transferência', label: 'Transferência', icon: TIPO_ICONS.Transferência, color: TIPO_COLORS.Transferência },
 ];
 
 const TIPO_BY_VALUE = Object.fromEntries(TIPOS.map((t) => [t.value, t]));

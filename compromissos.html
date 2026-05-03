@@ -135,6 +135,10 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             Atualizar valor
           </button>
+          <button type="button" class="btn btn-ghost" id="btn-duplicar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            Duplicar
+          </button>
           <button type="button" class="btn btn-primary" id="btn-editar">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
             Editar
@@ -181,11 +185,19 @@
           <p class="field-hint">Os compromissos ficam agrupados pela categoria. Use o ícone de engrenagem no topo da página pra criar/editar categorias.</p>
         </div>
 
-        <!-- Banco/Cartão (opcional) -->
-        <div class="field">
-          <label class="field-label" for="comp-conta">Banco / Cartão (opcional)</label>
+        <!-- Banco/Cartão -->
+        <div class="field" id="comp-conta-field">
+          <label class="field-label" for="comp-conta" id="comp-conta-label">Banco / Cartão (opcional)</label>
           <select id="comp-conta" name="conta_id" class="select"></select>
-          <p class="field-hint">Pode deixar em branco e preencher depois.</p>
+          <div id="comp-conta-limite-info" class="limite-info hidden"></div>
+          <p class="field-hint" id="comp-conta-hint">Pode deixar em branco e preencher depois.</p>
+        </div>
+
+        <!-- Conta destino (Transferência) -->
+        <div class="field hidden" id="comp-conta-destino-field">
+          <label class="field-label" for="comp-conta-destino">Para (destino) <span class="required">*</span></label>
+          <select id="comp-conta-destino" name="conta_destino_id" class="select"></select>
+          <p class="field-hint">Conta que vai receber o valor transferido.</p>
         </div>
 
         <!-- Tipo de pagamento -->
@@ -211,6 +223,13 @@
               <select id="comp-dia-semana" name="dia_semana" class="select"></select>
             </div>
           </div>
+        </div>
+
+        <!-- Cliente / Fornecedor (sempre visível) -->
+        <div class="field" id="contato-field">
+          <label class="field-label" for="comp-contato">Cliente / Fornecedor</label>
+          <select id="comp-contato" name="contato_id" class="select"></select>
+          <p class="field-hint">Identifica com quem este compromisso se relaciona (opcional). Cadastre novos contatos em Configurações.</p>
         </div>
 
         <!-- Projeto de investimento (só pra categoria do grupo Investimentos) -->

@@ -175,11 +175,13 @@ async function handleForgotPassword(event) {
 // -----------------------------
 document.addEventListener('DOMContentLoaded', async () => {
   if (!isSupabaseConfigured()) {
+    document.body.style.visibility = 'visible';
     showToast('Configure Supabase em src/js/lib/config.js', 'warning', 8000);
     return;
   }
 
   await redirectIfAuthenticated();
+  document.body.style.visibility = 'visible';
 
   // Toggle de modo (login / signup / forgot)
   document.querySelectorAll('[data-action]').forEach((el) => {

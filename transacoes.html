@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transações · FinFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/variables.css">
+  <link rel="stylesheet" href="src/css/global.css">
+  <link rel="stylesheet" href="src/css/components.css">
+  <link rel="stylesheet" href="src/css/layout.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-sidebar" id="sidebar-container"></div>
+
+    <header class="app-header header">
+      <div class="header-left">
+        <h2 class="header-title">Transações</h2>
+      </div>
+    </header>
+
+    <main class="app-main main">
+      <div class="page-header">
+        <div class="page-header-content">
+          <p class="page-eyebrow">Diário</p>
+          <h1 class="page-title">Transações</h1>
+          <p class="page-description">Registro real do dinheiro que entrou e saiu — diferente do orçamento (planejado) e dos pagamentos (status mensal).</p>
+        </div>
+        <div class="page-header-actions">
+          <a href="/importar.html" class="btn btn-ghost">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            Importar extrato
+          </a>
+          <button class="btn btn-primary" id="btn-nova-transacao" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+            Nova transação
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI strip compacto -->
+      <div class="trans-kpis" id="trans-widgets">
+        <div class="trans-kpi">
+          <span class="trans-kpi-label">Receitas</span>
+          <span class="trans-kpi-value trans-kpi-receita" id="kpi-receitas-value">—</span>
+          <span class="trans-kpi-sub" id="kpi-receitas-sub"></span>
+        </div>
+        <div class="trans-kpi">
+          <span class="trans-kpi-label">Despesas</span>
+          <span class="trans-kpi-value trans-kpi-despesa" id="kpi-despesas-value">—</span>
+          <span class="trans-kpi-sub" id="kpi-despesas-sub"></span>
+        </div>
+        <div class="trans-kpi">
+          <span class="trans-kpi-label">Saldo</span>
+          <span class="trans-kpi-value" id="kpi-saldo-value">—</span>
+          <span class="trans-kpi-sub" id="kpi-saldo-sub"></span>
+        </div>
+        <div class="trans-kpi">
+          <span class="trans-kpi-label">Transações</span>
+          <span class="trans-kpi-value" id="kpi-count-value">—</span>
+          <span class="trans-kpi-sub" id="kpi-count-sub"></span>
+        </div>
+      </div>
+
+      <!-- Barra de filtros -->
+      <div class="trans-filterbar">
+        <div class="filter-pills" id="trans-mode-pills">
+          <button class="filter-pill active" data-mode="mes" type="button">Mês</button>
+          <button class="filter-pill" data-mode="ano" type="button">Ano</button>
+          <button class="filter-pill" data-mode="periodo" type="button">Período</button>
+          <button class="filter-pill" data-mode="todos" type="button">Todos</button>
+        </div>
+
+        <div class="trans-date-wrap">
+          <div class="trans-date-group" id="trans-input-mes">
+            <select class="input input-sm" id="filter-mes-month"></select>
+            <select class="input input-sm" id="filter-mes-year"></select>
+          </div>
+          <div class="trans-date-group hidden" id="trans-input-ano">
+            <select class="input input-sm" id="filter-ano"></select>
+          </div>
+          <div class="trans-date-group hidden" id="trans-input-periodo">
+            <input type="date" class="input input-sm" id="filter-dt-inicio">
+            <span class="trans-date-sep">até</span>
+            <input type="date" class="input input-sm" id="filter-dt-fim">
+          </div>
+          <button type="button" class="btn btn-primary btn-sm hidden" id="btn-trans-aplicar">Aplicar</button>
+        </div>
+
+        <div class="trans-filter-divider"></div>
+
+        <select id="filter-conta" class="input input-sm">
+          <option value="">Todas as contas</option>
+        </select>
+        <select id="filter-tipo" class="input input-sm">
+          <option value="">Todos os tipos</option>
+          <option value="Receita">Receita</option>
+          <option value="Despesa">Despesa</option>
+        </select>
+        <input type="search" id="filter-busca" class="input input-sm trans-filter-busca" placeholder="Buscar…">
+        <button type="button" id="filter-pendentes" class="btn btn-ghost btn-sm trans-filter-pending">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Pendentes
+          <span id="filter-pendentes-count" class="trans-pending-count hidden">0</span>
+        </button>
+
+        <div class="col-selector-wrap">
+          <button type="button" id="btn-col-selector" class="btn btn-ghost btn-sm" aria-haspopup="true" aria-expanded="false">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="9" y2="18"/></svg>
+            Colunas
+          </button>
+          <div id="col-selector-dropdown" class="col-selector-dropdown hidden" role="menu"></div>
+        </div>
+      </div>
+
+      <!-- Barra de seleção em massa -->
+      <div id="trans-selection-bar" class="trans-selection-bar hidden">
+        <span id="trans-selection-count" class="trans-selection-count">0 selecionadas</span>
+        <button type="button" id="btn-bulk-delete" class="btn btn-danger btn-sm">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          <span class="bulk-delete-label">Excluir 0</span>
+        </button>
+        <button type="button" id="btn-selection-clear" class="btn btn-ghost btn-sm" style="color: var(--color-text-secondary);">Cancelar</button>
+      </div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="empty-state hidden">
+        <div class="empty-state-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/></svg>
+        </div>
+        <h2 class="empty-state-title" id="empty-title">Nenhuma transação ainda</h2>
+        <p class="empty-state-message" id="empty-message">Registre a primeira transação para começar seu diário financeiro.</p>
+        <button class="btn btn-primary" type="button" data-trigger-nova>+ Nova transação</button>
+      </div>
+
+      <!-- Loading -->
+      <div id="trans-loading" class="loading-overlay" style="position:relative; min-height:120px;">
+        <span class="spinner"></span>
+      </div>
+
+      <!-- Tabela -->
+      <div id="trans-container" class="hidden"></div>
+    </main>
+  </div>
+
+  <!-- Modal: Nova / Editar transação -->
+  <div class="modal-backdrop hidden" id="modal-transacao" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-transacao-title">Nova transação</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-transacao" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="form-transacao">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group form-group-flex">
+              <label class="form-label" for="trans-data">Data <span class="required">*</span></label>
+              <input class="form-input" id="trans-data" type="date" required>
+            </div>
+            <div class="form-group form-group-flex">
+              <label class="form-label" for="trans-tipo">Tipo <span class="required">*</span></label>
+              <select class="form-input" id="trans-tipo" required>
+                <option value="Despesa">Despesa</option>
+                <option value="Receita">Receita</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group form-group-flex">
+              <label class="form-label" for="trans-valor">Valor <span class="required">*</span></label>
+              <input class="form-input" id="trans-valor" type="number" step="0.01" min="0.01" placeholder="0,00" required>
+            </div>
+            <div class="form-group form-group-flex">
+              <label class="form-label" for="trans-moeda">Moeda</label>
+              <select class="form-input" id="trans-moeda">
+                <option value="BRL">BRL</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="trans-conta">Conta <span class="required">*</span></label>
+            <select class="form-input" id="trans-conta" required>
+              <option value="">Selecione…</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group form-group-flex">
+              <label class="form-label" for="trans-bloco">Bloco</label>
+              <select class="form-input" id="trans-bloco">
+                <option value="">— Todos —</option>
+                <option value="contribuicao">Contribuição</option>
+                <option value="sonhos">Sonhos</option>
+                <option value="custo_vida">Custo de vida</option>
+              </select>
+            </div>
+            <div class="form-group form-group-flex">
+              <label class="form-label" for="trans-categoria">Categoria</label>
+              <select class="form-input" id="trans-categoria">
+                <option value="">— Todas —</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="trans-subcategoria">Subcategoria</label>
+            <select class="form-input" id="trans-subcategoria">
+              <option value="">— Sem vínculo —</option>
+            </select>
+            <p class="field-hint">Selecione Bloco e Categoria para filtrar. Vincula a um compromisso recorrente.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="trans-contato">Cliente / Fornecedor</label>
+            <select class="form-input" id="trans-contato">
+              <option value="">— Sem contato —</option>
+            </select>
+            <p class="field-hint">Identifica com quem a transação foi feita. Cadastre novos em Configurações ou crie inline na tabela.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="trans-descricao">Descrição</label>
+            <textarea class="form-input form-textarea" id="trans-descricao" rows="2" maxlength="300" placeholder="Anotação livre sobre a transação…"></textarea>
+          </div>
+
+          <!-- Reconciliação — exibido apenas ao editar -->
+          <div class="form-group hidden" id="trans-recon-group">
+            <div class="trans-recon-toggle">
+              <label class="trans-recon-label" for="trans-recon-check">
+                <input type="checkbox" id="trans-recon-check">
+                <span>Marcar como reconciliada</span>
+              </label>
+              <p class="field-hint" style="margin-left: 22px;">Confirma que a transação foi verificada no extrato bancário.</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="justify-content: space-between;">
+          <button type="button" class="btn btn-danger hidden" id="btn-deletar-transacao">Excluir</button>
+          <div style="display:flex; gap: var(--space-2);">
+            <button type="button" class="btn btn-ghost" data-close-modal="modal-transacao">Cancelar</button>
+            <button type="submit" class="btn btn-primary" id="btn-salvar-transacao">Salvar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Sync com Pagamento (Fase 2) -->
+  <div class="modal-backdrop hidden" id="modal-sync-pagamento" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h2 class="modal-title" id="sync-title">Pagamento encontrado</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-sync-pagamento" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p id="sync-message" style="color: var(--color-text-main); font-size: var(--fs-sm); line-height: 1.5; margin-bottom: var(--space-3);">—</p>
+        <div id="sync-details" class="sync-details"></div>
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn btn-ghost" id="btn-sync-skip">Manter independente</button>
+        <button type="button" class="btn btn-primary" id="btn-sync-confirm">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Criar regra de auto-reconciliação (Fase 3) -->
+  <div class="modal-backdrop hidden" id="modal-criar-regra" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h2 class="modal-title">Criar regra de auto-reconciliação?</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-criar-regra" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p id="regra-message" style="color: var(--color-text-main); font-size: var(--fs-sm); line-height: 1.5; margin-bottom: var(--space-3);">—</p>
+        <p style="color: var(--color-text-secondary); font-size: var(--fs-xs); line-height: 1.4;">A partir de agora, toda nova transação com esse contato vai ser automaticamente categorizada com essa subcategoria. Você pode mudar manualmente em qualquer transação.</p>
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn btn-ghost" id="btn-regra-skip">Não, manter manual</button>
+        <button type="button" class="btn btn-primary" id="btn-regra-confirm">Sim, criar regra</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Confirmar exclusão -->
+  <div class="modal-backdrop hidden" id="modal-confirmar" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title">Excluir transação</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-confirmar" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--color-text-secondary); font-size: var(--fs-sm);">Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-confirmar">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btn-confirmar-excluir">Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script type="module" src="src/js/pages/transacoes.js"></script>
+</body>
+</html>

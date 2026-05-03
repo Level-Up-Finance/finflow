@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Importar Extrato · FinFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/variables.css">
+  <link rel="stylesheet" href="src/css/global.css">
+  <link rel="stylesheet" href="src/css/components.css">
+  <link rel="stylesheet" href="src/css/layout.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-sidebar" id="sidebar-container"></div>
+
+    <header class="app-header header">
+      <div class="header-left">
+        <h2 class="header-title">Importar Extrato</h2>
+      </div>
+    </header>
+
+    <main class="app-main main">
+      <div class="page-header">
+        <div class="page-header-content">
+          <p class="page-eyebrow">Extrato</p>
+          <h1 class="page-title">Importar transações</h1>
+          <p class="page-description">Importe CSV ou Excel do seu banco. As transações entram como <strong>não reconciliadas</strong> e precisam ser confirmadas em Transações.</p>
+        </div>
+      </div>
+
+      <!-- Step indicator -->
+      <div class="import-steps">
+        <div class="import-step is-active" data-step="1">
+          <div class="import-step-num">1</div>
+          <div class="import-step-label">Arquivo</div>
+        </div>
+        <div class="import-step-line"></div>
+        <div class="import-step" data-step="2">
+          <div class="import-step-num">2</div>
+          <div class="import-step-label">Colunas</div>
+        </div>
+        <div class="import-step-line"></div>
+        <div class="import-step" data-step="3">
+          <div class="import-step-num">3</div>
+          <div class="import-step-label">Confirmar</div>
+        </div>
+      </div>
+
+      <!-- ── Step 1: Arquivo + Conta ── -->
+      <div class="import-panel" id="step-1">
+        <div class="import-panel-body">
+
+          <div class="import-dropzone" id="import-dropzone" tabindex="0" role="button" aria-label="Arraste ou clique para selecionar arquivo">
+            <input type="file" id="import-file" accept=".csv,.txt,.xlsx,.xls,.ods" class="import-file-input">
+            <div class="import-dropzone-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+            </div>
+            <p class="import-dropzone-title">Arraste o arquivo aqui ou clique para selecionar</p>
+            <p class="import-dropzone-hint">CSV · Excel (.xlsx, .xls) · Tamanho máximo recomendado: 5 MB</p>
+          </div>
+
+          <div id="import-file-status" class="import-file-status hidden">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span id="import-filename">—</span>
+            <span id="import-row-count" class="import-row-count">—</span>
+          </div>
+
+          <div class="form-group" style="max-width: 360px; margin-top: var(--space-5);">
+            <label class="form-label" for="import-conta">Conta bancária <span class="required">*</span></label>
+            <select id="import-conta" class="form-input">
+              <option value="">Selecione a conta…</option>
+            </select>
+            <p class="field-hint">Todas as transações importadas serão vinculadas a esta conta.</p>
+          </div>
+        </div>
+
+        <div class="import-panel-footer">
+          <a href="/transacoes.html" class="btn btn-ghost">Cancelar</a>
+          <button type="button" id="step1-next" class="btn btn-primary" disabled>
+            Próximo
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Step 2: Mapeamento de colunas ── -->
+      <div class="import-panel hidden" id="step-2">
+        <div class="import-panel-body">
+
+          <div class="import-section">
+            <h3 class="import-section-title">Prévia do arquivo</h3>
+            <p class="import-section-hint">Primeiras linhas do arquivo. Verifique se a linha de cabeçalho está correta.</p>
+            <div class="import-skip-row">
+              <label class="form-label" for="step2-skip" style="white-space:nowrap">Pular linhas iniciais:</label>
+              <input type="number" id="step2-skip" class="input input-sm" value="0" min="0" max="20" style="width:70px">
+              <span class="field-hint" style="margin:0">Use quando o arquivo tem linhas de cabeçalho do banco antes dos dados.</span>
+            </div>
+            <div class="table-wrapper" style="margin-top: var(--space-3);">
+              <table class="table import-raw-preview" id="step2-raw-preview"></table>
+            </div>
+          </div>
+
+          <div class="import-section">
+            <h3 class="import-section-title">Mapeamento de colunas</h3>
+            <div class="import-col-grid">
+              <div class="form-group">
+                <label class="form-label" for="step2-col-date">Coluna de Data <span class="required">*</span></label>
+                <select id="step2-col-date" class="form-input"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="step2-col-desc">Coluna de Descrição <span class="required">*</span></label>
+                <select id="step2-col-desc" class="form-input"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="step2-col-id">Coluna de Identificador</label>
+                <select id="step2-col-id" class="form-input"></select>
+                <p class="field-hint">ID único do banco — usado para evitar importar a mesma transação duas vezes.</p>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="step2-date-fmt">Formato de data</label>
+                <select id="step2-date-fmt" class="form-input">
+                  <option value="auto">Auto-detectar</option>
+                  <option value="dmy">DD/MM/AAAA (padrão brasileiro)</option>
+                  <option value="mdy">MM/DD/AAAA (americano)</option>
+                  <option value="iso">AAAA-MM-DD (ISO)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="import-section">
+            <h3 class="import-section-title">Valores</h3>
+            <div class="import-radio-group">
+              <label class="import-radio-label">
+                <input type="radio" name="valor-modo" id="modo-single" value="single" checked>
+                <span>Coluna única de valor (positivo = Receita, negativo = Despesa)</span>
+              </label>
+              <label class="import-radio-label">
+                <input type="radio" name="valor-modo" id="modo-debitcredit" value="debitcredit">
+                <span>Colunas separadas: Débito e Crédito</span>
+              </label>
+            </div>
+
+            <div id="step2-single-fields" class="import-col-grid" style="margin-top: var(--space-4);">
+              <div class="form-group">
+                <label class="form-label" for="step2-col-valor">Coluna de Valor <span class="required">*</span></label>
+                <select id="step2-col-valor" class="form-input"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="step2-tipo-fixed">Tipo das transações</label>
+                <select id="step2-tipo-fixed" class="form-input">
+                  <option value="">Pelo sinal do valor (+/−)</option>
+                  <option value="Despesa">Todas Despesa</option>
+                  <option value="Receita">Todas Receita</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="step2-dc-fields" class="import-col-grid hidden" style="margin-top: var(--space-4);">
+              <div class="form-group">
+                <label class="form-label" for="step2-col-debito">Coluna de Débito (saída)</label>
+                <select id="step2-col-debito" class="form-input"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="step2-col-credito">Coluna de Crédito (entrada)</label>
+                <select id="step2-col-credito" class="form-input"></select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="import-panel-footer">
+          <button type="button" id="step2-back" class="btn btn-ghost">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Voltar
+          </button>
+          <button type="button" id="step2-next" class="btn btn-primary">
+            Ver prévia
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Step 3: Prévia + Importar ── -->
+      <div class="import-panel hidden" id="step-3">
+        <div class="import-panel-body">
+          <div class="import-preview-header">
+            <p id="step3-count" class="import-preview-count">— transações encontradas</p>
+            <p class="import-preview-hint">Desmarque linhas que não devem ser importadas. Ajuste a subcategoria quando necessário.</p>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="table import-preview-table">
+              <thead>
+                <tr>
+                  <th style="width:36px"><input type="checkbox" id="step3-select-all" checked title="Selecionar/Desselecionar tudo"></th>
+                  <th style="width:100px">Data</th>
+                  <th style="width:90px">Identificador</th>
+                  <th>Descrição</th>
+                  <th style="min-width:160px">Contato</th>
+                  <th style="width:110px">Tipo</th>
+                  <th style="width:130px" class="text-right">Valor</th>
+                  <th style="min-width:200px">Subcategoria</th>
+                </tr>
+              </thead>
+              <tbody id="step3-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="import-panel-footer">
+          <button type="button" id="step3-back" class="btn btn-ghost">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Voltar
+          </button>
+          <button type="button" id="step3-import" class="btn btn-primary" disabled>Importar 0 transações</button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script type="module" src="src/js/pages/importar.js"></script>
+</body>
+</html>
