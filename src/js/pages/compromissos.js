@@ -1453,19 +1453,21 @@ function renderCompromissos() {
   // Botão de colunas só visível na view de tabela
   if (colVisEl) colVisEl.classList.toggle('hidden', viewMode !== 'table');
 
-  // Counters
+  // Counters — inclui categorias com compromisso direto
+  const catDiretas = cachedCategorias.filter((c) => Number(c.valor_base) > 0);
+  const catStatus  = (c) => c.status || 'ativa'; // categorias sem status definido são 'ativa'
   const counts = {
-    todas:     cachedCompromissos.length,
-    ativa:     cachedCompromissos.filter((c) => c.status === 'ativa').length,
-    inativa:   cachedCompromissos.filter((c) => c.status === 'inativa').length,
-    arquivada: cachedCompromissos.filter((c) => c.status === 'arquivada').length,
+    todas:     cachedCompromissos.length + catDiretas.length,
+    ativa:     cachedCompromissos.filter((c) => c.status === 'ativa').length     + catDiretas.filter((c) => catStatus(c) === 'ativa').length,
+    inativa:   cachedCompromissos.filter((c) => c.status === 'inativa').length   + catDiretas.filter((c) => catStatus(c) === 'inativa').length,
+    arquivada: cachedCompromissos.filter((c) => c.status === 'arquivada').length + catDiretas.filter((c) => catStatus(c) === 'arquivada').length,
   };
   Object.entries(counts).forEach(([k, v]) => {
     const el = document.querySelector(`[data-count-status="${k}"]`);
     if (el) el.textContent = v;
   });
 
-  if (cachedCompromissos.length === 0) {
+  if (cachedCompromissos.length === 0 && catDiretas.length === 0) {
     container.innerHTML = '';
     emptyState.classList.remove('hidden');
     return;
@@ -1481,7 +1483,15 @@ function renderCompromissos() {
     filtered = filtered.filter((c) => filterCategorias.has(c.categoria_id));
   }
 
-  if (filtered.length === 0 && viewMode === 'table') {
+  // Verifica se há alguma categoria direta visível com os filtros atuais
+  const hasVisibleDirect = cachedCategorias.some((cat) => {
+    if (!Number(cat.valor_base) > 0) return false;
+    if (filterStatus !== 'todas' && catStatus(cat) !== filterStatus) return false;
+    if (!filterCategorias.has('all') && !filterCategorias.has(cat.id)) return false;
+    return true;
+  });
+
+  if (filtered.length === 0 && !hasVisibleDirect && viewMode === 'table') {
     container.innerHTML = '<div class="empty-state"><p class="empty-state-message">Nenhum compromisso com os filtros selecionados.</p></div>';
     return;
   }
@@ -1529,9 +1539,11 @@ function renderGroupedTable(items) {
     const blocoRows = [];
     for (const cat of cats) {
       const arr = byCategoria.get(cat.id) || [];
-      const hasDirect = Number(cat.valor_base) > 0;
-      if (arr.length === 0 && !hasDirect) continue;
-      blocoRows.push(renderCategoriaSection(cat, arr));
+      const catDirectVisible = Number(cat.valor_base) > 0 &&
+        (filterStatus === 'todas' || (cat.status || 'ativa') === filterStatus) &&
+        (filterCategorias.has('all') || filterCategorias.has(cat.id));
+      if (arr.length === 0 && !catDirectVisible) continue;
+      blocoRows.push(renderCategoriaSection(cat, arr, catDirectVisible));
     }
     if (blocoRows.length === 0) continue;
     sections.push(renderBlocoHeader(bloco));
@@ -1578,11 +1590,10 @@ function renderBlocoHeader(bloco) {
   `;
 }
 
-function renderCategoriaSection(cat, items) {
-  const hasDirect = Number(cat.valor_base) > 0;
-  const catDirectRow = hasDirect ? renderCatDirectRow(cat) : '';
+function renderCategoriaSection(cat, items, showDirect = false) {
+  const catDirectRow = showDirect ? renderCatDirectRow(cat) : '';
   const rows = items.map((c) => renderRow(c, cat)).join('');
-  const total = items.length + (hasDirect ? 1 : 0);
+  const total = items.length + (showDirect ? 1 : 0);
   return `
     <tr class="categoria-section-header" style="--cat-color: ${cat.cor};">
       <td colspan="99">
