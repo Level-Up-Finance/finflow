@@ -937,22 +937,47 @@ async function saveValoresMensaisToOrcamento(subcategoriaId, moeda, items, categ
   const user = await getCurrentUser();
   if (!user) return;
 
+  if (categoriaId) {
+    // Índice parcial não suporta ON CONFLICT — usa DELETE + INSERT
+    const mesAnos = items.map((it) => it.mes_ano);
+    const { error: delErr } = await supabase
+      .from('orcamento_geral')
+      .delete()
+      .eq('categoria_id', categoriaId)
+      .in('mes_ano', mesAnos);
+    if (delErr) { console.error('[saveValoresMensais delete]', delErr); }
+
+    const rows = items.map((it) => ({
+      user_id: user.id,
+      categoria_id: categoriaId,
+      mes_ano: it.mes_ano,
+      valor_previsto: it.valor_previsto,
+      moeda,
+      updated_at: new Date().toISOString(),
+    }));
+    const { error } = await supabase.from('orcamento_geral').insert(rows);
+    if (error) {
+      console.error('[saveValoresMensaisToOrcamento cat]', error);
+      showToast('Erro ao salvar valores mensais: ' + error.message, 'error', 8000);
+    }
+    return;
+  }
+
   const rows = items.map((it) => ({
     user_id: user.id,
-    ...(categoriaId ? { categoria_id: categoriaId } : { subcategoria_id: subcategoriaId }),
+    subcategoria_id: subcategoriaId,
     mes_ano: it.mes_ano,
     valor_previsto: it.valor_previsto,
     moeda,
     updated_at: new Date().toISOString(),
   }));
 
-  const conflictKey = categoriaId ? 'user_id,categoria_id,mes_ano' : 'user_id,subcategoria_id,mes_ano';
   const { error } = await supabase
     .from('orcamento_geral')
-    .upsert(rows, { onConflict: conflictKey });
+    .upsert(rows, { onConflict: 'user_id,subcategoria_id,mes_ano' });
 
   if (error) {
-    console.error('[saveValoresMensaisToOrcamento]', error);
+    console.error('[saveValoresMensaisToOrcamento sub]', error);
     showToast('Erro ao salvar valores mensais: ' + error.message, 'error', 8000);
   }
 }
