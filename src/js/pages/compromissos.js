@@ -1092,6 +1092,7 @@ function openCatDirectModal(cat) {
   document.querySelectorAll('.tipo-btn').forEach((b) => b.classList.toggle('active', b.dataset.tipo === tipo));
   document.querySelectorAll('#status-segmented .segmented-btn').forEach((b) => b.classList.toggle('active', b.dataset.status === status));
 
+  document.getElementById('comp-valor-variavel').checked = false;
   toggleVencimentoFields();
   toggleValorVariavelFields();
   toggleDividaField();
