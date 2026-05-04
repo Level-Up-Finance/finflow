@@ -7,6 +7,15 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-05-cat-click-modal',
+    version: '0.1.8',
+    date: '05/05/2026',
+    title: 'Atalho de categoria para novo compromisso',
+    items: [
+      { type: 'improvement', text: 'Clicar em uma categoria sem subcategorias abre diretamente o modal de novo compromisso com a categoria já pré-selecionada' },
+    ],
+  },
+  {
     id: '2026-05-05-tabela-plana',
     version: '0.1.7',
     date: '05/05/2026',
