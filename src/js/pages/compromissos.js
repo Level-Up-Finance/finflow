@@ -1513,6 +1513,7 @@ function getDisplayValor(c, proxKey = null) {
 // -----------------------------
 
 function isRowConfigured(row) {
+  if (row._type === 'cat') return false;
   return Number(row.valor_base) > 0 || row.valor_variavel === true;
 }
 
@@ -1531,7 +1532,7 @@ function buildUnifiedRows() {
     for (const cat of cats) {
       const subs = (subsByCat.get(cat.id) || []).sort(compareByVencimento);
       // Categoria aparece como linha se tem compromisso direto OU se não tem subcategorias
-      if (Number(cat.valor_base) > 0 || subs.length === 0) {
+      if (subs.length === 0) {
         rows.push({ _type: 'cat', _catId: cat.id, _catObj: cat, ...cat });
       }
       for (const sub of subs) {
@@ -1806,8 +1807,10 @@ function bindRowClicks() {
   document.querySelectorAll('.contas-table tbody tr[data-id], .contas-table tbody tr[data-cat-id]').forEach((row) => {
     row.addEventListener('click', () => {
       if (row.dataset.catId) {
-        const cat = cachedCategorias.find((x) => x.id === row.dataset.catId);
-        if (cat) openCatDirectModal(cat);
+        openCompromissoModal(null);
+        document.getElementById('comp-categoria').value = row.dataset.catId;
+        toggleDividaField();
+        toggleProjetoField();
         return;
       }
       const c = cachedCompromissos.find((x) => x.id === row.dataset.id);
