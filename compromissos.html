@@ -51,18 +51,24 @@
 
       <!-- Filtros -->
       <div id="filters-wrapper">
-        <div class="filter-pills" id="status-filters">
+        <div class="filter-pills" id="config-filters">
+          <button class="filter-pill active" data-config="todas" type="button">Todas</button>
+          <button class="filter-pill" data-config="configurado" type="button">Configurados</button>
+          <button class="filter-pill" data-config="sem-compromisso" type="button">Sem compromisso</button>
+        </div>
+
+        <div class="filter-pills" id="status-filters" style="margin-top: -8px;">
           <button class="filter-pill active" data-status="todas" type="button">
-            Todas <span class="filter-count" data-count-status="todas">0</span>
+            Todos <span class="filter-count" data-count-status="todas">0</span>
           </button>
           <button class="filter-pill" data-status="ativa" type="button">
-            Ativas <span class="filter-count" data-count-status="ativa">0</span>
+            Ativos <span class="filter-count" data-count-status="ativa">0</span>
           </button>
           <button class="filter-pill" data-status="inativa" type="button">
-            Inativas <span class="filter-count" data-count-status="inativa">0</span>
+            Inativos <span class="filter-count" data-count-status="inativa">0</span>
           </button>
           <button class="filter-pill" data-status="arquivada" type="button">
-            Arquivadas <span class="filter-count" data-count-status="arquivada">0</span>
+            Arquivados <span class="filter-count" data-count-status="arquivada">0</span>
           </button>
         </div>
 

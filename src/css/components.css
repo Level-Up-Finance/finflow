@@ -2044,6 +2044,14 @@
   background: color-mix(in srgb, var(--cat-color, var(--color-primary)) 10%, var(--color-surface));
 }
 
+/* Linha sem compromisso configurado — visual mais discreto */
+.compromissos-grouped-table tbody tr.row-unconfigured {
+  opacity: 0.55;
+}
+.compromissos-grouped-table tbody tr.row-unconfigured:hover {
+  opacity: 0.8;
+}
+
 /* ============================================================
    DRE VIEW (Compromissos agrupados por Categoria)
    ============================================================ */

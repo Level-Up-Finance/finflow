@@ -51,7 +51,8 @@ let detailsCompromisso = null;
 let pendingAction = null;
 let filterStatus = 'todas';
 let filterCategorias = new Set(['all']);
-let viewMode = 'table'; // 'table' | 'dre' | 'calendar'
+let viewMode     = 'table'; // 'table' | 'dre' | 'calendar'
+let filterConfig = 'todas'; // 'todas' | 'configurado' | 'sem-compromisso'
 let colVisEl = null;   // wrapper do seletor de colunas
 
 // Estado do calendário
@@ -84,18 +85,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     storageKey: 'compromissos',
     tableClass:  'compromissos-grouped-table',
     columns: [
-      { key: 'categoria',  label: 'Categoria',     defaultVisible: false },
-      { key: 'tipo',       label: 'Tipo',          defaultVisible: false },
-      { key: 'projeto',    label: 'Vínculo',       defaultVisible: true  },
-      { key: 'conta',      label: 'Banco/Cartão',  defaultVisible: false },
-      { key: 'pagamento',  label: 'Pagamento',     defaultVisible: false },
-      { key: 'vencimento', label: 'Vencimento',    defaultVisible: true  },
-      { key: 'proximo',    label: 'Próximo',       defaultVisible: true  },
-      { key: 'termina',    label: 'Termina em',    defaultVisible: false },
-      { key: 'periodo',    label: 'Período',       defaultVisible: true  },
-      { key: 'valor',      label: 'Valor',         defaultVisible: true  },
-      { key: 'descricao',  label: 'Descrição',     defaultVisible: false },
-      { key: 'status',     label: 'Status',        defaultVisible: true  },
+      { key: 'subcategoria', label: 'Subcategoria', defaultVisible: true  },
+      { key: 'tipo',         label: 'Tipo',         defaultVisible: false },
+      { key: 'projeto',      label: 'Vínculo',      defaultVisible: true  },
+      { key: 'conta',        label: 'Banco/Cartão', defaultVisible: false },
+      { key: 'pagamento',    label: 'Pagamento',    defaultVisible: false },
+      { key: 'vencimento',   label: 'Vencimento',   defaultVisible: true  },
+      { key: 'proximo',      label: 'Próximo',      defaultVisible: true  },
+      { key: 'termina',      label: 'Termina em',   defaultVisible: false },
+      { key: 'periodo',      label: 'Período',      defaultVisible: true  },
+      { key: 'valor',        label: 'Valor',        defaultVisible: true  },
+      { key: 'descricao',    label: 'Descrição',    defaultVisible: false },
+      { key: 'status',       label: 'Status',       defaultVisible: true  },
     ],
     toolbarEl: document.querySelector('.toolbar'),
   });
@@ -502,6 +503,16 @@ function bindEvents() {
     document.querySelectorAll('#status-filters .filter-pill').forEach((p) => p.classList.remove('active'));
     btn.classList.add('active');
     filterStatus = btn.dataset.status;
+    renderCompromissos();
+  });
+
+  // Filtro: configurado / sem compromisso
+  document.getElementById('config-filters').addEventListener('click', (e) => {
+    const btn = e.target.closest('.filter-pill');
+    if (!btn) return;
+    document.querySelectorAll('#config-filters .filter-pill').forEach((p) => p.classList.remove('active'));
+    btn.classList.add('active');
+    filterConfig = btn.dataset.config;
     renderCompromissos();
   });
 
@@ -1446,28 +1457,66 @@ function getDisplayValor(c) {
   return { valor: Number(c.valor_base) || 0, moeda: c.moeda, isVariavel: false, mesAno: null };
 }
 
+// -----------------------------
+// Render: dados unificados (categoria + subcategoria)
+// -----------------------------
+
+function isRowConfigured(row) {
+  if (row._type === 'sub') return Number(row.valor_base) > 0 || row.valor_variavel === true;
+  return Number(row.valor_base) > 0;
+}
+
+function buildUnifiedRows() {
+  const rows = [];
+  const subsByCat = new Map();
+  cachedCategorias.forEach((c) => subsByCat.set(c.id, []));
+  const orphanSubs = [];
+  cachedCompromissos.forEach((sub) => {
+    if (subsByCat.has(sub.categoria_id)) subsByCat.get(sub.categoria_id).push(sub);
+    else orphanSubs.push(sub);
+  });
+
+  for (const bloco of SUPER_BLOCOS_LIST) {
+    const cats = cachedCategorias.filter((c) => bloco.grupos.includes(c.grupo || 'custo_vida'));
+    for (const cat of cats) {
+      const subs = (subsByCat.get(cat.id) || []).sort(compareByVencimento);
+      // Categoria aparece como linha se tem compromisso direto OU se não tem subcategorias
+      if (Number(cat.valor_base) > 0 || subs.length === 0) {
+        rows.push({ _type: 'cat', _catId: cat.id, _catObj: cat, ...cat });
+      }
+      for (const sub of subs) {
+        rows.push({ _type: 'sub', _catId: sub.categoria_id, _catObj: cat, ...sub });
+      }
+    }
+  }
+  for (const sub of orphanSubs.sort(compareByVencimento)) {
+    rows.push({ _type: 'sub', _catId: sub.categoria_id, _catObj: null, ...sub });
+  }
+  return rows;
+}
+
 function renderCompromissos() {
   const container = document.getElementById('compromissos-container');
   const emptyState = document.getElementById('empty-state');
 
-  // Botão de colunas só visível na view de tabela
   if (colVisEl) colVisEl.classList.toggle('hidden', viewMode !== 'table');
 
-  // Counters — inclui categorias com compromisso direto
-  const catDiretas = cachedCategorias.filter((c) => Number(c.valor_base) > 0);
-  const catStatus  = (c) => c.status || 'ativa'; // categorias sem status definido são 'ativa'
+  const allRows = buildUnifiedRows();
+
+  // Contadores — apenas itens configurados contam para ativa/inativa/arquivada
+  const configured = allRows.filter(isRowConfigured);
   const counts = {
-    todas:     cachedCompromissos.length + catDiretas.length,
-    ativa:     cachedCompromissos.filter((c) => c.status === 'ativa').length     + catDiretas.filter((c) => catStatus(c) === 'ativa').length,
-    inativa:   cachedCompromissos.filter((c) => c.status === 'inativa').length   + catDiretas.filter((c) => catStatus(c) === 'inativa').length,
-    arquivada: cachedCompromissos.filter((c) => c.status === 'arquivada').length + catDiretas.filter((c) => catStatus(c) === 'arquivada').length,
+    todas:     allRows.length,
+    ativa:     configured.filter((r) => (r.status || 'ativa') === 'ativa').length,
+    inativa:   configured.filter((r) => r.status === 'inativa').length,
+    arquivada: configured.filter((r) => r.status === 'arquivada').length,
   };
   Object.entries(counts).forEach(([k, v]) => {
     const el = document.querySelector(`[data-count-status="${k}"]`);
     if (el) el.textContent = v;
   });
 
-  if (cachedCompromissos.length === 0 && catDiretas.length === 0) {
+  if (allRows.length === 0) {
     container.innerHTML = '';
     emptyState.classList.remove('hidden');
     return;
@@ -1475,94 +1524,54 @@ function renderCompromissos() {
   emptyState.classList.add('hidden');
 
   // Filtros
-  let filtered = cachedCompromissos;
+  let filtered = allRows;
+
+  if (filterConfig === 'configurado') {
+    filtered = filtered.filter(isRowConfigured);
+  } else if (filterConfig === 'sem-compromisso') {
+    filtered = filtered.filter((r) => !isRowConfigured(r));
+  }
+
   if (filterStatus !== 'todas') {
-    filtered = filtered.filter((c) => c.status === filterStatus);
+    filtered = filtered.filter((r) => {
+      if (!isRowConfigured(r)) return false;
+      return (r.status || 'ativa') === filterStatus;
+    });
   }
+
   if (!filterCategorias.has('all')) {
-    filtered = filtered.filter((c) => filterCategorias.has(c.categoria_id));
-  }
-
-  // Verifica se há alguma categoria direta visível com os filtros atuais
-  const hasVisibleDirect = cachedCategorias.some((cat) => {
-    if (!Number(cat.valor_base) > 0) return false;
-    if (filterStatus !== 'todas' && catStatus(cat) !== filterStatus) return false;
-    if (!filterCategorias.has('all') && !filterCategorias.has(cat.id)) return false;
-    return true;
-  });
-
-  if (filtered.length === 0 && !hasVisibleDirect && viewMode === 'table') {
-    container.innerHTML = '<div class="empty-state"><p class="empty-state-message">Nenhum compromisso com os filtros selecionados.</p></div>';
-    return;
+    filtered = filtered.filter((r) => filterCategorias.has(r._catId));
   }
 
   if (viewMode === 'calendar') {
-    container.innerHTML = renderCalendar(filtered, calendarYear, calendarMonth);
-    bindCalendarClicks(filtered);
+    const calItems = filtered.filter((r) => r._type === 'sub' && isRowConfigured(r));
+    container.innerHTML = renderCalendar(calItems, calendarYear, calendarMonth);
+    bindCalendarClicks(calItems);
+  } else if (viewMode === 'dre') {
+    const dreItems = filtered.filter((r) => r._type === 'sub' && isRowConfigured(r));
+    container.innerHTML = renderDre(dreItems);
   } else {
-    container.innerHTML = renderGroupedTable(filtered);
+    container.innerHTML = renderFlatTable(filtered);
     bindRowClicks();
   }
 }
 
 // -----------------------------
-// Render: Table
+// Render: Tabela plana (flat)
 // -----------------------------
-/**
- * Tabela agrupada por categoria. Cada bloco tem:
- *   - row de cabeçalho com nome da categoria + cor
- *   - rows dos compromissos da categoria (alfabético) com leve tint
- */
-function renderGroupedTable(items) {
-  // Agrupa por categoria_id
-  const byCategoria = new Map();
-  cachedCategorias.forEach((cat) => byCategoria.set(cat.id, []));
-  const orphans = [];
-  items.forEach((c) => {
-    if (byCategoria.has(c.categoria_id)) {
-      byCategoria.get(c.categoria_id).push(c);
-    } else {
-      orphans.push(c);
-    }
-  });
 
-  // Sort each group por dia de vencimento
-  for (const arr of byCategoria.values()) {
-    arr.sort(compareByVencimento);
+function renderFlatTable(rows) {
+  if (rows.length === 0) {
+    return '<div class="empty-state"><p class="empty-state-message">Nenhum item com os filtros selecionados.</p></div>';
   }
-  orphans.sort(compareByVencimento);
-
-  // Render: agrupa por super-bloco → categoria
-  const sections = [];
-  for (const bloco of SUPER_BLOCOS_LIST) {
-    const cats = cachedCategorias.filter((cat) => bloco.grupos.includes(cat.grupo || 'custo_vida'));
-    const blocoRows = [];
-    for (const cat of cats) {
-      const arr = byCategoria.get(cat.id) || [];
-      const catDirectVisible = Number(cat.valor_base) > 0 &&
-        (filterStatus === 'todas' || (cat.status || 'ativa') === filterStatus) &&
-        (filterCategorias.has('all') || filterCategorias.has(cat.id));
-      if (arr.length === 0 && !catDirectVisible) continue;
-      blocoRows.push(renderCategoriaSection(cat, arr, catDirectVisible));
-    }
-    if (blocoRows.length === 0) continue;
-    sections.push(renderBlocoHeader(bloco));
-    sections.push(...blocoRows);
-  }
-  if (orphans.length > 0) {
-    sections.push(renderCategoriaSection(
-      { id: null, nome: 'Sem categoria', cor: '#9CA3AF' },
-      orphans
-    ));
-  }
-
   return `
     <div class="contas-table-wrapper">
       <table class="contas-table compromissos-grouped-table">
         <thead>
           <tr>
             <th>Compromisso</th>
-            <th data-col="categoria">Categoria</th>
+            <th>Categoria</th>
+            <th data-col="subcategoria">Subcategoria</th>
             <th data-col="tipo">Tipo</th>
             <th data-col="projeto">Vínculo</th>
             <th data-col="conta">Banco/Cartão</th>
@@ -1576,144 +1585,86 @@ function renderGroupedTable(items) {
             <th data-col="status">Status</th>
           </tr>
         </thead>
-        <tbody>${sections.join('')}</tbody>
+        <tbody>${rows.map(renderUnifiedRow).join('')}</tbody>
       </table>
     </div>
   `;
 }
 
-function renderBlocoHeader(bloco) {
-  return `
-    <tr class="comp-bloco-header" style="--bloco-accent: ${bloco.accent};">
-      <td colspan="99">${escapeHtml(bloco.label)}</td>
-    </tr>
-  `;
-}
+function renderUnifiedRow(row) {
+  const isSub      = row._type === 'sub';
+  const cat        = row._catObj;
+  const catColor   = cat?.cor || '#9CA3AF';
+  const configured = isRowConfigured(row);
+  const isInactive = configured && row.status && row.status !== 'ativa';
+  const statusLabel = { ativa: 'Ativa', inativa: 'Inativa', arquivada: 'Arquivada' }[row.status] || '—';
 
-function renderCategoriaSection(cat, items, showDirect = false) {
-  const catDirectRow = showDirect ? renderCatDirectRow(cat) : '';
-  const rows = items.map((c) => renderRow(c, cat)).join('');
-  const total = items.length + (showDirect ? 1 : 0);
-  return `
-    <tr class="categoria-section-header" style="--cat-color: ${cat.cor};">
-      <td colspan="99">
-        <span class="cat-dot" style="background: ${cat.cor};"></span>
+  // Coluna "Compromisso"
+  const compDisplay = isSub ? displayName(row) : row.nome;
+  const officialDiff = isSub && row.apelido?.trim() && row.apelido !== row.nome;
+
+  // Coluna "Categoria"
+  const catCell = cat
+    ? `<span style="display:inline-flex;align-items:center;gap:4px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:${catColor};flex-shrink:0;"></span>
         ${escapeHtml(cat.nome)}
-        <span class="cat-count">${total} ${total === 1 ? 'item' : 'itens'}</span>
-      </td>
-    </tr>
-    ${catDirectRow}
-    ${rows}
-  `;
-}
-
-function renderCatDirectRow(cat) {
-  const isInactive = cat.status && cat.status !== 'ativa';
-  const statusLabel = { ativa: 'Ativa', inativa: 'Inativa', arquivada: 'Arquivada' }[cat.status] || 'Ativa';
-  const conta = getConta(cat.conta_id);
-
-  let venc = '—';
-  const usaDiaSemana = cat.periodo === 'Semanal' || cat.periodo === 'Quinzenal';
-  if (usaDiaSemana && cat.dia_semana != null) {
-    venc = diaSemanaLabel(cat.dia_semana);
-  } else if (cat.vencimento_dia) {
-    venc = `Dia ${cat.vencimento_dia}`;
-  }
-
-  let vinculoCell;
-  if (cat.divida_id) {
-    const div = getDivida(cat.divida_id);
-    vinculoCell = `<span class="vinculo-badge vinculo-badge--divida" data-vinculo-type="divida" data-vinculo-id="${cat.divida_id}">${escapeHtml(div?.nome ?? '—')}</span>`;
-  } else {
-    vinculoCell = '<span class="text-muted">—</span>';
-  }
-
-  const contaCell = conta
-    ? `<span class="conta-badge">${escapeHtml(conta.apelido?.trim() || conta.nome)}</span>`
+       </span>`
     : '<span class="text-muted">—</span>';
 
-  return `
-    <tr class="compromisso-row ${isInactive ? 'inactive' : ''}" style="--cat-color: ${cat.cor};" data-cat-id="${cat.id}">
-      <td>
-        <div class="comp-name-cell">
-          <div class="comp-name">${escapeHtml(cat.nome)}</div>
-        </div>
-      </td>
-      <td data-col="categoria"><span class="text-muted">—</span></td>
-      <td data-col="tipo">${tipoPill(cat.tipo || '—')}</td>
-      <td data-col="projeto">${vinculoCell}</td>
-      <td data-col="conta">${contaCell}</td>
-      <td data-col="pagamento">${cat.tipo_pagamento ? escapeHtml(cat.tipo_pagamento) : '<span class="text-muted">—</span>'}</td>
-      <td data-col="vencimento">${venc}</td>
-      <td data-col="proximo"><span class="text-muted">—</span></td>
-      <td data-col="termina">${cat.terminado_em ? formatDateBR(cat.terminado_em) : '—'}</td>
-      <td data-col="periodo">${cat.periodo ? escapeHtml(cat.periodo) : '<span class="text-muted">—</span>'}</td>
-      <td data-col="valor" class="text-right">${formatCurrency(cat.valor_base, cat.moeda || 'BRL')}</td>
-      <td data-col="descricao">${cat.descricao ? escapeHtml(cat.descricao) : '<span class="text-muted">—</span>'}</td>
-      <td data-col="status"><span class="status-pill status-${cat.status || 'ativa'}">${statusLabel}</span></td>
-    </tr>
-  `;
-}
+  // Coluna "Subcategoria"
+  const subCell = isSub
+    ? `<span>${escapeHtml(displayName(row))}</span>`
+    : '<span class="text-muted">—</span>';
 
-function renderRow(c, categoria) {
-  const isInactive = c.status !== 'ativa';
-  const display = displayName(c);
-  const officialDifferent = c.apelido && c.apelido.trim() && c.apelido !== c.nome;
-  const conta = getConta(c.conta_id);
-  const statusLabel = { ativa: 'Ativa', inativa: 'Inativa', arquivada: 'Arquivada' }[c.status];
-  const catColor = categoria?.cor || '#9CA3AF';
-
-  // Vencimento
-  let venc = '—';
-  if (c.periodo === 'Semanal' || c.periodo === 'Quinzenal') {
-    venc = c.dia_semana !== null && c.dia_semana !== undefined
-      ? diaSemanaLabel(c.dia_semana)
-      : '—';
-  } else if (c.vencimento_dia) {
-    venc = `Dia ${c.vencimento_dia}`;
-  }
-
-  const projeto = c.projeto_id ? getProjeto(c.projeto_id) : null;
+  // Vínculo
   let vinculoCell;
-  if (projeto) {
-    vinculoCell = `<span class="vinculo-badge vinculo-badge--projeto" data-vinculo-type="projeto" data-vinculo-id="${projeto.id}" style="--vinculo-cor:${projeto.cor};">${escapeHtml(projeto.nome)}</span>`;
-  } else if (c.divida_id) {
-    const div = getDivida(c.divida_id);
-    vinculoCell = `<span class="vinculo-badge vinculo-badge--divida" data-vinculo-type="divida" data-vinculo-id="${c.divida_id}">${escapeHtml(div?.nome ?? '—')}</span>`;
+  if (isSub && row.projeto_id) {
+    const proj = getProjeto(row.projeto_id);
+    vinculoCell = `<span class="vinculo-badge vinculo-badge--projeto" data-vinculo-type="projeto" data-vinculo-id="${row.projeto_id}" style="--vinculo-cor:${proj?.cor};">${escapeHtml(proj?.nome ?? '—')}</span>`;
+  } else if (row.divida_id) {
+    const div = getDivida(row.divida_id);
+    vinculoCell = `<span class="vinculo-badge vinculo-badge--divida" data-vinculo-type="divida" data-vinculo-id="${row.divida_id}">${escapeHtml(div?.nome ?? '—')}</span>`;
   } else {
     vinculoCell = '<span class="text-muted">—</span>';
   }
 
+  const dataAttr = isSub ? `data-id="${row.id}"` : `data-cat-id="${cat?.id}"`;
+
   return `
-    <tr class="compromisso-row ${isInactive ? 'inactive' : ''} ${c.status === 'arquivada' ? 'arquivada' : ''}" style="--cat-color: ${catColor};" data-id="${c.id}">
+    <tr class="compromisso-row ${isInactive ? 'inactive' : ''} ${row.status === 'arquivada' ? 'arquivada' : ''} ${!configured ? 'row-unconfigured' : ''}"
+        style="--cat-color: ${catColor};" ${dataAttr}>
       <td>
         <div class="conta-row-name">
-          ${renderTipoIcon(c.tipo, 'sm')}
+          ${configured ? renderTipoIcon(row.tipo, 'sm') : '<span style="width:20px;flex-shrink:0;"></span>'}
           <div class="conta-row-name-text">
-            <span class="conta-row-name-display">${escapeHtml(display)}</span>
-            ${officialDifferent ? `<span class="conta-row-name-official">${escapeHtml(c.nome)}</span>` : ''}
+            <span class="conta-row-name-display">${escapeHtml(compDisplay)}</span>
+            ${officialDiff ? `<span class="conta-row-name-official">${escapeHtml(row.nome)}</span>` : ''}
           </div>
-          ${c.is_parcial ? '<span class="parcial-indicator" title="Criado de pagamento parcial — representa o valor restante">½ rest.</span>' : ''}
+          ${isSub && row.is_parcial ? '<span class="parcial-indicator" title="Criado de pagamento parcial">½ rest.</span>' : ''}
         </div>
       </td>
-      <td data-col="categoria">
-        ${categoria
-          ? `<span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:${catColor};flex-shrink:0;"></span>${escapeHtml(categoria.nome)}</span>`
-          : '<span class="text-muted">—</span>'}
-      </td>
-      <td data-col="tipo">${tipoPill(c.tipo)}</td>
+      <td>${catCell}</td>
+      <td data-col="subcategoria">${subCell}</td>
+      <td data-col="tipo">${configured ? tipoPill(row.tipo || '—') : '<span class="text-muted">—</span>'}</td>
       <td data-col="projeto">${vinculoCell}</td>
-      <td data-col="conta">${renderContaTransferCell(c, conta)}</td>
-      <td data-col="pagamento">${c.tipo_pagamento || '<span class="text-muted">—</span>'}</td>
-      <td data-col="vencimento" class="tabular">${venc}</td>
-      <td data-col="proximo">${renderNextDueCell(c)}</td>
-      <td data-col="termina" class="tabular">${renderTerminaEmCell(c)}</td>
-      <td data-col="periodo">${c.periodo}</td>
-      <td data-col="valor" class="text-right tabular text-bold">${renderValorCell(c)}</td>
-      <td data-col="descricao">${renderDescricaoCell(c)}</td>
-      <td data-col="status"><span class="status-pill status-${c.status}">${statusLabel}</span></td>
+      <td data-col="conta">${configured && isSub ? renderContaTransferCell(row, getConta(row.conta_id)) : (getConta(row.conta_id) ? `<span class="conta-badge">${escapeHtml(getConta(row.conta_id)?.apelido?.trim() || getConta(row.conta_id)?.nome)}</span>` : '<span class="text-muted">—</span>')}</td>
+      <td data-col="pagamento">${row.tipo_pagamento || '<span class="text-muted">—</span>'}</td>
+      <td data-col="vencimento" class="tabular">${configured ? renderVencCell(row) : '<span class="text-muted">—</span>'}</td>
+      <td data-col="proximo">${configured && isSub ? renderNextDueCell(row) : '<span class="text-muted">—</span>'}</td>
+      <td data-col="termina" class="tabular">${renderTerminaEmCell(row)}</td>
+      <td data-col="periodo">${row.periodo || '<span class="text-muted">—</span>'}</td>
+      <td data-col="valor" class="text-right tabular text-bold">${configured ? (isSub ? renderValorCell(row) : formatCurrency(row.valor_base, row.moeda || 'BRL')) : '<span class="text-muted">—</span>'}</td>
+      <td data-col="descricao">${renderDescricaoCell(row)}</td>
+      <td data-col="status">${configured ? `<span class="status-pill status-${row.status || 'ativa'}">${statusLabel}</span>` : '<span class="text-muted">—</span>'}</td>
     </tr>
   `;
+}
+
+function renderVencCell(c) {
+  if (c.periodo === 'Semanal' || c.periodo === 'Quinzenal') {
+    return c.dia_semana != null ? diaSemanaLabel(c.dia_semana) : '—';
+  }
+  return c.vencimento_dia ? `Dia ${c.vencimento_dia}` : '—';
 }
 
 // Célula "Termina em" — mostra a data de fim ou "Em curso" se aberto
@@ -1802,7 +1753,7 @@ function renderContaTransferCell(c, contaOrigem) {
 }
 
 function bindRowClicks() {
-  document.querySelectorAll('.contas-table tbody tr').forEach((row) => {
+  document.querySelectorAll('.contas-table tbody tr[data-id], .contas-table tbody tr[data-cat-id]').forEach((row) => {
     row.addEventListener('click', () => {
       if (row.dataset.catId) {
         const cat = cachedCategorias.find((x) => x.id === row.dataset.catId);
