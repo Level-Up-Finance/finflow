@@ -7,14 +7,23 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-05-cat-modal-toggle',
+    version: '0.1.6',
+    date: '05/05/2026',
+    title: 'Compromisso direto em categoria — via modal',
+    items: [
+      { type: 'new',         text: 'Toggle "Nova subcategoria / Categoria existente" no modal de Novo Compromisso — selecione uma categoria já existente (ex: Jhow Silva) e defina valor, tipo, dívida e conta direto, sem criar subcategorias' },
+      { type: 'improvement', text: 'Categoria com compromisso direto aparece como linha normal na tabela, sem badge especial' },
+      { type: 'improvement', text: 'Clicar na linha abre o modal de edição no modo correto para alterar os dados' },
+    ],
+  },
+  {
     id: '2026-05-05-cat-valor-direto',
     version: '0.1.5',
     date: '05/05/2026',
     title: 'Compromissos diretos em categorias',
     items: [
       { type: 'new',         text: 'Categorias agora podem ter um valor de compromisso direto, sem precisar criar subcategorias — ideal para pagamentos únicos como salários e serviços por pessoa' },
-      { type: 'improvement', text: 'Botão "+ valor direto" no cabeçalho de cada categoria abre modal para definir valor, tipo e moeda' },
-      { type: 'improvement', text: 'Linha de valor direto aparece na tabela de Compromissos com estilo visual distinto das subcategorias' },
     ],
   },
   {
