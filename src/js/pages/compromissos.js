@@ -446,16 +446,9 @@ function setNivelMode(mode) {
   document.getElementById('comp-apelido-field').classList.toggle('hidden', isCategoria);
   document.getElementById('comp-categoria-field').classList.toggle('hidden', isCategoria);
   document.getElementById('comp-cat-existente-field').classList.toggle('hidden', !isCategoria);
-  const vvRow = document.getElementById('valor-variavel-row');
-  if (vvRow) vvRow.classList.toggle('hidden', isCategoria);
-
   if (!isCategoria) {
     const sel = document.getElementById('comp-cat-existente');
     if (sel) sel.value = '';
-  } else {
-    // Categorias não suportam valor variável — força modo fixo
-    const cb = document.getElementById('comp-valor-variavel');
-    if (cb) { cb.checked = false; toggleValorVariavelFields(); }
   }
 }
 
@@ -892,18 +885,20 @@ function updateLimiteInfo(contaId) {
 }
 
 // Renderiza grid com 12 meses futuros, pré-preenchendo com valores existentes
-async function populateValoresMensaisGrid(c) {
+async function populateValoresMensaisGrid(c, catId = null) {
   const grid = document.getElementById('valores-mensais-grid');
   const months = nextNMonths(12);
 
   let existingMap = new Map();
-  if (c?.id) {
+  const lookupId = catId || c?.id;
+  if (lookupId) {
     const startMesAno = months[0].mesAno;
     const endMesAno = months[months.length - 1].mesAno;
+    const col = catId ? 'categoria_id' : 'subcategoria_id';
     const { data, error } = await supabase
       .from('orcamento_geral')
       .select('mes_ano, valor_previsto')
-      .eq('subcategoria_id', c.id)
+      .eq(col, lookupId)
       .gte('mes_ano', startMesAno)
       .lte('mes_ano', endMesAno);
     if (!error) {
@@ -937,23 +932,24 @@ function collectValoresMensais() {
   return items;
 }
 
-async function saveValoresMensaisToOrcamento(subcategoriaId, moeda, items) {
+async function saveValoresMensaisToOrcamento(subcategoriaId, moeda, items, categoriaId = null) {
   if (items.length === 0) return;
   const user = await getCurrentUser();
   if (!user) return;
 
   const rows = items.map((it) => ({
     user_id: user.id,
-    subcategoria_id: subcategoriaId,
+    ...(categoriaId ? { categoria_id: categoriaId } : { subcategoria_id: subcategoriaId }),
     mes_ano: it.mes_ano,
     valor_previsto: it.valor_previsto,
     moeda,
     updated_at: new Date().toISOString(),
   }));
 
+  const conflictKey = categoriaId ? 'user_id,categoria_id,mes_ano' : 'user_id,subcategoria_id,mes_ano';
   const { error } = await supabase
     .from('orcamento_geral')
-    .upsert(rows, { onConflict: 'user_id,subcategoria_id,mes_ano' });
+    .upsert(rows, { onConflict: conflictKey });
 
   if (error) {
     console.error('[saveValoresMensaisToOrcamento]', error);
@@ -1098,9 +1094,16 @@ function openCatDirectModal(cat) {
   document.querySelectorAll('.tipo-btn').forEach((b) => b.classList.toggle('active', b.dataset.tipo === tipo));
   document.querySelectorAll('#status-segmented .segmented-btn').forEach((b) => b.classList.toggle('active', b.dataset.status === status));
 
-  document.getElementById('comp-valor-variavel').checked = false;
+  document.getElementById('comp-valor-variavel').checked = !!cat.valor_variavel;
+  const moedaVarElCat = document.getElementById('comp-moeda-var');
+  if (moedaVarElCat) moedaVarElCat.value = cat.moeda || 'BRL';
   toggleVencimentoFields();
   toggleValorVariavelFields();
+  if (cat.valor_variavel) {
+    populateValoresMensaisGrid(null, cat.id);
+  } else {
+    document.getElementById('valores-mensais-grid').innerHTML = '';
+  }
   toggleDividaField();
   toggleProjetoField();
   updateLimiteInfo(cat.conta_id || '');
@@ -1418,24 +1421,38 @@ async function loadCompromissos() {
 // compromisso com valor_variavel. Usado pra exibir "próximo valor" na lista.
 async function loadProxValores() {
   cachedProxValores.clear();
-  const variableIds = cachedCompromissos.filter((c) => c.valor_variavel).map((c) => c.id);
-  if (variableIds.length === 0) return;
-
   const today = new Date();
   const todayMesAno = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
 
-  const { data, error } = await supabase
-    .from('orcamento_geral')
-    .select('subcategoria_id, valor_previsto, moeda, mes_ano')
-    .in('subcategoria_id', variableIds)
-    .gte('mes_ano', todayMesAno)
-    .order('mes_ano', { ascending: true });
+  const variableSubIds = cachedCompromissos.filter((c) => c.valor_variavel).map((c) => c.id);
+  if (variableSubIds.length > 0) {
+    const { data, error } = await supabase
+      .from('orcamento_geral')
+      .select('subcategoria_id, valor_previsto, moeda, mes_ano')
+      .in('subcategoria_id', variableSubIds)
+      .gte('mes_ano', todayMesAno)
+      .order('mes_ano', { ascending: true });
+    if (error) { console.warn('[loadProxValores subs]', error); }
+    for (const row of (data || [])) {
+      if (!cachedProxValores.has(row.subcategoria_id)) {
+        cachedProxValores.set(row.subcategoria_id, row);
+      }
+    }
+  }
 
-  if (error) { console.warn('[loadProxValores]', error); return; }
-
-  for (const row of data || []) {
-    if (!cachedProxValores.has(row.subcategoria_id)) {
-      cachedProxValores.set(row.subcategoria_id, row);
+  const variableCatIds = cachedCategorias.filter((c) => c.valor_variavel).map((c) => c.id);
+  if (variableCatIds.length > 0) {
+    const { data, error } = await supabase
+      .from('orcamento_geral')
+      .select('categoria_id, valor_previsto, moeda, mes_ano')
+      .in('categoria_id', variableCatIds)
+      .gte('mes_ano', todayMesAno)
+      .order('mes_ano', { ascending: true });
+    if (error) { console.warn('[loadProxValores cats]', error); }
+    for (const row of (data || [])) {
+      if (!cachedProxValores.has('cat_' + row.categoria_id)) {
+        cachedProxValores.set('cat_' + row.categoria_id, row);
+      }
     }
   }
 }
@@ -1454,9 +1471,10 @@ function nextNMonths(n = 12) {
 }
 
 // Retorna {valor, moeda, isVariavel, mesAno?} pra exibição na lista/DRE/calendar.
-function getDisplayValor(c) {
+// proxKey permite sobrescrever a chave usada em cachedProxValores (ex: 'cat_' + id para categorias).
+function getDisplayValor(c, proxKey = null) {
   if (c.valor_variavel) {
-    const prox = cachedProxValores.get(c.id);
+    const prox = cachedProxValores.get(proxKey ?? c.id);
     if (prox) {
       return { valor: Number(prox.valor_previsto) || 0, moeda: prox.moeda || c.moeda, isVariavel: true, mesAno: prox.mes_ano };
     }
@@ -1470,8 +1488,7 @@ function getDisplayValor(c) {
 // -----------------------------
 
 function isRowConfigured(row) {
-  if (row._type === 'sub') return Number(row.valor_base) > 0 || row.valor_variavel === true;
-  return Number(row.valor_base) > 0;
+  return Number(row.valor_base) > 0 || row.valor_variavel === true;
 }
 
 function buildUnifiedRows() {
@@ -1661,7 +1678,7 @@ function renderUnifiedRow(row) {
       <td data-col="proximo">${configured && isSub ? renderNextDueCell(row) : '<span class="text-muted">—</span>'}</td>
       <td data-col="termina" class="tabular">${renderTerminaEmCell(row)}</td>
       <td data-col="periodo">${row.periodo || '<span class="text-muted">—</span>'}</td>
-      <td data-col="valor" class="text-right tabular text-bold">${configured ? (isSub ? renderValorCell(row) : formatCurrency(row.valor_base, row.moeda || 'BRL')) : '<span class="text-muted">—</span>'}</td>
+      <td data-col="valor" class="text-right tabular text-bold">${configured ? (isSub ? renderValorCell(row) : (row.valor_variavel ? renderValorCell(row, 'cat_' + row.id) : formatCurrency(row.valor_base, row.moeda || 'BRL'))) : '<span class="text-muted">—</span>'}</td>
       <td data-col="descricao">${renderDescricaoCell(row)}</td>
       <td data-col="status">${configured ? `<span class="status-pill status-${row.status || 'ativa'}">${statusLabel}</span>` : '<span class="text-muted">—</span>'}</td>
     </tr>
@@ -1699,8 +1716,8 @@ function renderDescricaoCell(c) {
 }
 
 // Célula de valor — mostra valor base, ou próximo valor pra valor_variavel.
-function renderValorCell(c) {
-  const dv = getDisplayValor(c);
+function renderValorCell(c, proxKey = null) {
+  const dv = getDisplayValor(c, proxKey);
   const valorStr = formatCurrency(dv.valor, dv.moeda);
   if (dv.isVariavel) {
     const tag = dv.mesAno
@@ -2201,8 +2218,11 @@ async function saveCatDirectCompromisso() {
   const periodo       = document.getElementById('comp-periodo').value;
   const vencimentoRaw = document.getElementById('comp-vencimento-dia').value;
   const diaSemanaRaw  = document.getElementById('comp-dia-semana').value;
+  const valorVariavel = document.getElementById('comp-valor-variavel').checked;
   const valorBaseRaw  = document.getElementById('comp-valor-base').value;
-  const moeda         = document.getElementById('comp-moeda').value;
+  const moedaFixaVal  = document.getElementById('comp-moeda').value;
+  const moedaVarVal   = document.getElementById('comp-moeda-var')?.value || moedaFixaVal;
+  const moeda         = valorVariavel ? moedaVarVal : moedaFixaVal;
   const iniciado_em   = document.getElementById('comp-iniciado-em').value || null;
   const terminado_em  = document.getElementById('comp-terminado-em').value || null;
   const descricao     = document.getElementById('comp-descricao').value.trim() || null;
@@ -2217,7 +2237,9 @@ async function saveCatDirectCompromisso() {
   if (!tipo) { showToast('Escolha o tipo', 'error'); return; }
   if (!iniciado_em) { showToast('Informe a data de início', 'error'); return; }
   if (isDividasCat && !dividaRaw) { showToast('Vincule uma dívida existente ou crie uma nova', 'error'); return; }
-  if (valorBaseRaw === '' || isNaN(Number(valorBaseRaw)) || Number(valorBaseRaw) <= 0) { showToast('Informe um valor maior que zero', 'error'); return; }
+  if (!valorVariavel && (valorBaseRaw === '' || isNaN(Number(valorBaseRaw)) || Number(valorBaseRaw) <= 0)) {
+    showToast('Informe um valor maior que zero', 'error'); return;
+  }
 
   const usaDiaSemana = periodo === 'Semanal' || periodo === 'Quinzenal';
   const ehUnico = periodo === 'Único';
@@ -2234,9 +2256,10 @@ async function saveCatDirectCompromisso() {
     conta_id,
     tipo_pagamento,
     periodo,
-    vencimento_dia: (usaDiaSemana || ehUnico) ? null : Number(vencimentoRaw),
-    dia_semana:     usaDiaSemana ? Number(diaSemanaRaw) : null,
-    valor_base:     Number(valorBaseRaw),
+    vencimento_dia:  (usaDiaSemana || ehUnico) ? null : Number(vencimentoRaw),
+    dia_semana:      usaDiaSemana ? Number(diaSemanaRaw) : null,
+    valor_base:      valorVariavel ? 0 : Number(valorBaseRaw),
+    valor_variavel:  valorVariavel,
     moeda,
     iniciado_em,
     terminado_em,
@@ -2275,12 +2298,17 @@ async function saveCatDirectCompromisso() {
     if (resolvedDividaId) payload.divida_id = resolvedDividaId;
 
     const { data: saved, error } = await supabase
-      .from('categorias').update(payload).eq('id', catId).select('valor_base').single();
+      .from('categorias').update(payload).eq('id', catId).select('valor_base, valor_variavel').single();
     if (error) throw error;
 
-    if (Number(saved?.valor_base) !== Number(payload.valor_base)) {
-      showToast('Atenção: migrations 0037/0038 não aplicadas no banco — execute-as no Supabase SQL Editor', 'warning', 12000);
+    if (!payload.valor_variavel && Number(saved?.valor_base) !== Number(payload.valor_base)) {
+      showToast('Atenção: migrations 0037/0038/0039 não aplicadas no banco — execute-as no Supabase SQL Editor', 'warning', 12000);
       return;
+    }
+
+    if (valorVariavel) {
+      const items = collectValoresMensais();
+      await saveValoresMensaisToOrcamento(null, moeda, items, catId);
     }
 
     showToast('Compromisso salvo', 'success');
