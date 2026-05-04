@@ -7,6 +7,15 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-05-btn-salvar',
+    version: '0.1.4',
+    date: '05/05/2026',
+    title: 'Correção — botão Salvar desabilitado após primeiro cadastro',
+    items: [
+      { type: 'fix', text: 'Botão Salvar ficava desabilitado após o primeiro cadastro bem-sucedido em Contas, Investimentos, Transações e Compromissos — era necessário recarregar a página para cadastrar novamente' },
+    ],
+  },
+  {
     id: '2026-05-05-compromissos-blocos',
     version: '0.1.3',
     date: '05/05/2026',
