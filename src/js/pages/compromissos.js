@@ -446,6 +446,9 @@ function setNivelMode(mode) {
   document.getElementById('comp-apelido-field').classList.toggle('hidden', isCategoria);
   document.getElementById('comp-categoria-field').classList.toggle('hidden', isCategoria);
   document.getElementById('comp-cat-existente-field').classList.toggle('hidden', !isCategoria);
+  const vvRow = document.getElementById('valor-variavel-row');
+  if (vvRow) vvRow.classList.toggle('hidden', isCategoria);
+
   if (!isCategoria) {
     const sel = document.getElementById('comp-cat-existente');
     if (sel) sel.value = '';
