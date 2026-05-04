@@ -7,6 +7,17 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-05-tabela-plana',
+    version: '0.1.7',
+    date: '05/05/2026',
+    title: 'Tabela plana — Categoria, Subcategoria e filtro Sem compromisso',
+    items: [
+      { type: 'new',         text: 'Tabela de Compromissos agora exibe tudo em lista plana com colunas Categoria e Subcategoria — sem headings de grupo' },
+      { type: 'new',         text: 'Filtro "Sem compromisso": mostra categorias e subcategorias criadas em Configurações que ainda não têm valor definido' },
+      { type: 'improvement', text: 'Categorias folha (sem subcategorias) aparecem automaticamente na tabela — basta criar a categoria em Configurações' },
+    ],
+  },
+  {
     id: '2026-05-05-cat-modal-toggle',
     version: '0.1.6',
     date: '05/05/2026',
