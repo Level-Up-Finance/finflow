@@ -7,7 +7,17 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-05-compromissos-blocos',
+    version: '0.1.3',
+    date: '05/05/2026',
+    title: 'Organização por blocos — Compromissos',
+    items: [
+      { type: 'improvement', text: 'Compromissos agora exibe os lançamentos organizados nos 3 blocos principais: Contribuição, Sonhos e Custo de vida — igual às demais páginas' },
+    ],
+  },
+  {
     id: '2026-05-04-novidades',
+    version: '0.1.2',
     date: '04/05/2026',
     title: 'Página Novidades com badge numérico',
     items: [
@@ -18,6 +28,7 @@ export const CHANGELOG = [
   },
   {
     id: '2026-05-04-b2fab70',
+    version: '0.1.1',
     date: '04/05/2026',
     title: 'Correção de layout — Investimentos',
     items: [
@@ -26,6 +37,7 @@ export const CHANGELOG = [
   },
   {
     id: '2026-05-03-fbcc0c4',
+    version: '0.1.0',
     date: '03/05/2026',
     title: 'Auditoria de código — 38 melhorias',
     items: [

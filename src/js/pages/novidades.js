@@ -25,7 +25,7 @@ function render() {
   container.innerHTML = `<div class="cfg-changelog-list">${CHANGELOG.map((entry) => `
     <div class="cfg-changelog-entry">
       <div class="cfg-changelog-header">
-        <span class="cfg-changelog-title">${escapeHtml(entry.title)}</span>
+        <span class="cfg-changelog-title">${entry.version ? `<span class="cfg-changelog-version">v${escapeHtml(entry.version)}</span> ` : ''}${escapeHtml(entry.title)}</span>
         <span class="cfg-changelog-date">${escapeHtml(entry.date)}</span>
       </div>
       <ul class="cfg-changelog-items">

@@ -477,6 +477,19 @@
 .cfg-changelog-type--fix         { background: #ffedd5; color: #ea580c; }
 .cfg-changelog-type--improvement { background: #ede9fe; color: #7c3aed; }
 
+.cfg-changelog-version {
+  display: inline-block;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-right: 4px;
+  vertical-align: middle;
+  letter-spacing: 0.03em;
+}
+
 @keyframes modal-slide-up {
   from {
     opacity: 0;
@@ -1964,6 +1977,21 @@
 }
 
 .compromissos-grouped-table tbody tr.categoria-section-header:first-child td {
+  border-top: none;
+}
+
+.compromissos-grouped-table .comp-bloco-header td {
+  background: color-mix(in srgb, var(--bloco-accent) 6%, var(--color-surface));
+  color: var(--bloco-accent);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: var(--space-2) var(--space-4);
+  border-top: 2px solid var(--bloco-accent);
+}
+
+.compromissos-grouped-table tbody tr.comp-bloco-header:first-child td {
   border-top: none;
 }
 

@@ -1414,12 +1414,19 @@ function renderGroupedTable(items) {
   }
   orphans.sort(compareByVencimento);
 
-  // Render: monta tbody com seções por categoria (somente as não-vazias)
+  // Render: agrupa por super-bloco → categoria
   const sections = [];
-  for (const cat of cachedCategorias) {
-    const arr = byCategoria.get(cat.id) || [];
-    if (arr.length === 0) continue;
-    sections.push(renderCategoriaSection(cat, arr));
+  for (const bloco of SUPER_BLOCOS_LIST) {
+    const cats = cachedCategorias.filter((cat) => bloco.grupos.includes(cat.grupo || 'custo_vida'));
+    const blocoRows = [];
+    for (const cat of cats) {
+      const arr = byCategoria.get(cat.id) || [];
+      if (arr.length === 0) continue;
+      blocoRows.push(renderCategoriaSection(cat, arr));
+    }
+    if (blocoRows.length === 0) continue;
+    sections.push(renderBlocoHeader(bloco));
+    sections.push(...blocoRows);
   }
   if (orphans.length > 0) {
     sections.push(renderCategoriaSection(
@@ -1451,6 +1458,14 @@ function renderGroupedTable(items) {
         <tbody>${sections.join('')}</tbody>
       </table>
     </div>
+  `;
+}
+
+function renderBlocoHeader(bloco) {
+  return `
+    <tr class="comp-bloco-header" style="--bloco-accent: ${bloco.accent};">
+      <td colspan="99">${escapeHtml(bloco.label)}</td>
+    </tr>
   `;
 }
 
