@@ -2277,8 +2277,11 @@ async function saveCatDirectCompromisso() {
 
     showToast('Compromisso salvo', 'success');
     closeModal('modal-compromisso');
+    const savedCatId = catId;
     editingCatId = null;
     await loadCategorias();
+    const afterReload = cachedCategorias.find((c) => c.id === savedCatId);
+    console.log('[debug] categoria após reload:', afterReload?.nome, '| valor_base:', afterReload?.valor_base);
     await loadCompromissos();
   } catch (err) {
     console.error('[saveCatDirectCompromisso]', err);
