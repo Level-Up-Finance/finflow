@@ -1330,6 +1330,7 @@ async function saveConta(event) {
       msg = 'Schema desatualizado — rode a migration 0004_contas_v3.sql no Supabase (SQL Editor → New query → cole o arquivo → Run).';
     }
     showToast('Erro ao salvar: ' + msg, 'error', 12000);
+  } finally {
     button.disabled = false;
     button.textContent = originalLabel;
   }

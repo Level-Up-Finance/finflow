@@ -1067,6 +1067,7 @@ async function saveTransacao() {
       msg = 'Schema desatualizado — rode a migration 0021_transacoes.sql no Supabase.';
     }
     showToast('Erro ao salvar: ' + msg, 'error', 12000);
+  } finally {
     btn.disabled = false;
     btn.textContent = originalLabel;
   }

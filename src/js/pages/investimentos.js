@@ -840,9 +840,10 @@ async function saveProjeto(event) {
     await loadAll();
     render();
   } catch (err) {
+    showToast('Erro ao salvar: ' + (err?.message || JSON.stringify(err)), 'error', 8000);
+  } finally {
     btn.disabled = false;
     btn.textContent = labelOriginal;
-    showToast('Erro ao salvar: ' + (err?.message || JSON.stringify(err)), 'error', 8000);
   }
 }
 

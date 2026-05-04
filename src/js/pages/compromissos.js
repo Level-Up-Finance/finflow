@@ -1247,6 +1247,7 @@ async function saveQuickValor(event) {
   } catch (err) {
     console.error('[saveQuickValor]', err);
     showToast('Erro ao atualizar: ' + (err.message || err), 'error', 8000);
+  } finally {
     button.disabled = false;
     button.textContent = original;
   }
@@ -2220,6 +2221,7 @@ async function saveCompromisso(event) {
       msg = 'Schema desatualizado — rode a migration 0006_compromissos_rebrand.sql no Supabase.';
     }
     showToast('Erro ao salvar: ' + msg, 'error', 12000);
+  } finally {
     button.disabled = false;
     button.textContent = originalLabel;
   }
