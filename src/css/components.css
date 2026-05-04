@@ -2019,41 +2019,6 @@
   background: color-mix(in srgb, var(--cat-color, transparent) 4%, var(--color-surface));
 }
 
-.compromissos-grouped-table tbody tr.cat-direct-row {
-  background: color-mix(in srgb, var(--cat-color, transparent) 8%, var(--color-surface));
-  cursor: pointer;
-}
-.compromissos-grouped-table tbody tr.cat-direct-row:hover {
-  background: color-mix(in srgb, var(--cat-color, transparent) 14%, var(--color-surface));
-}
-.compromissos-grouped-table tbody tr.cat-direct-row .conta-row-name-official {
-  font-size: var(--fs-xs);
-  color: var(--cat-color);
-  opacity: 0.8;
-  font-style: italic;
-}
-
-.btn-add-cat-valor {
-  margin-left: var(--space-3);
-  padding: 2px 8px;
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-medium);
-  background: color-mix(in srgb, var(--cat-color, var(--color-primary)) 12%, transparent);
-  color: var(--cat-color, var(--color-primary));
-  border: 1px dashed var(--cat-color, var(--color-primary));
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  text-transform: none;
-  letter-spacing: normal;
-  vertical-align: middle;
-  line-height: 1.6;
-  opacity: 0.75;
-  transition: opacity 0.15s;
-}
-.btn-add-cat-valor:hover {
-  opacity: 1;
-}
-
 .compromissos-grouped-table tbody tr.compromisso-row:hover {
   background: color-mix(in srgb, var(--cat-color, var(--color-primary)) 10%, var(--color-surface));
 }

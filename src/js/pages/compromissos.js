@@ -46,6 +46,7 @@ let cachedContatos = [];       // clientes/fornecedores do usuário
 let cachedProxValores = new Map(); // subcategoria_id → {valor_previsto, moeda, mes_ano} (próximo mês com valor)
 let editingId    = null;
 let editingCatId = null;
+let nivelMode    = 'subcategoria'; // 'subcategoria' | 'categoria'
 let detailsCompromisso = null;
 let pendingAction = null;
 let filterStatus = 'todas';
@@ -417,6 +418,38 @@ function renderModalDropdowns() {
   renderDividaOptions();
   // Contatos (sempre visível)
   renderContatoOptions();
+  // Dropdown de categoria existente (modo "Categoria existente")
+  renderCatExistenteOptions();
+}
+
+function renderCatExistenteOptions() {
+  const sel = document.getElementById('comp-cat-existente');
+  if (!sel) return;
+  const optgroupHtml = SUPER_BLOCOS_LIST.map((bloco) => {
+    const cats = cachedCategorias.filter((c) => bloco.grupos.includes(c.grupo || 'custo_vida'));
+    if (cats.length === 0) return '';
+    const opts = cats.map((c) => `<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join('');
+    return `<optgroup label="${escapeHtml(bloco.label)}">${opts}</optgroup>`;
+  }).join('');
+  sel.innerHTML = '<option value="">— Escolha uma categoria —</option>' + optgroupHtml;
+}
+
+function setNivelMode(mode) {
+  nivelMode = mode;
+  document.getElementById('comp-nivel').value = mode;
+  document.querySelectorAll('#nivel-segmented .segmented-btn').forEach((b) =>
+    b.classList.toggle('active', b.dataset.nivel === mode)
+  );
+  const isCategoria = mode === 'categoria';
+  document.getElementById('comp-nome-field').classList.toggle('hidden', isCategoria);
+  document.getElementById('comp-apelido-field').classList.toggle('hidden', isCategoria);
+  document.getElementById('comp-categoria-field').classList.toggle('hidden', isCategoria);
+  document.getElementById('comp-cat-existente-field').classList.toggle('hidden', !isCategoria);
+  if (!isCategoria) {
+    // Reset cat-existente selection so it doesn't interfere
+    const sel = document.getElementById('comp-cat-existente');
+    if (sel) sel.value = '';
+  }
 }
 
 function renderProjetoOptions() {
@@ -487,6 +520,20 @@ function bindEvents() {
     }
     syncCategoriaFilterUI();
     renderCompromissos();
+  });
+
+  // Nivel toggle (Nova subcategoria / Categoria existente)
+  document.getElementById('nivel-segmented').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-nivel]');
+    if (!btn) return;
+    setNivelMode(btn.dataset.nivel);
+  });
+
+  // Categoria existente → sync com comp-categoria e re-toggle campos
+  document.getElementById('comp-cat-existente').addEventListener('change', (e) => {
+    document.getElementById('comp-categoria').value = e.target.value;
+    toggleDividaField();
+    toggleProjetoField();
   });
 
   // Tipo selector
@@ -588,7 +635,12 @@ function bindEvents() {
 
   // Close modals
   document.querySelectorAll('[data-close-modal]').forEach((btn) => {
-    btn.addEventListener('click', () => closeModal(btn.dataset.closeModal));
+    btn.addEventListener('click', () => {
+      if (btn.dataset.closeModal === 'modal-compromisso') {
+        editingCatId = null;
+      }
+      closeModal(btn.dataset.closeModal);
+    });
   });
 
   // Details modal buttons
@@ -610,7 +662,6 @@ function bindEvents() {
   });
 
   document.getElementById('form-quick-valor').addEventListener('submit', saveQuickValor);
-  document.getElementById('form-cat-valor').addEventListener('submit', saveCatValor);
   document.getElementById('btn-arquivar').addEventListener('click', () => {
     if (!detailsCompromisso) return;
     pendingAction = { type: 'arquivar', id: detailsCompromisso.id };
@@ -921,7 +972,8 @@ function getConta(id) { return cachedContas.find((c) => c.id === id) || null; }
 // Open modal (novo / editar)
 // -----------------------------
 function openCompromissoModal(c = null) {
-  editingId = c?.id || null;
+  editingId    = c?.id || null;
+  editingCatId = null;
 
   document.getElementById('modal-compromisso-title').textContent = c ? 'Editar compromisso' : 'Novo compromisso';
   document.getElementById('btn-salvar-compromisso').textContent = c ? 'Salvar alterações' : 'Salvar';
@@ -930,6 +982,10 @@ function openCompromissoModal(c = null) {
 
   // Re-renderiza dropdowns (caso categorias/contas tenham mudado)
   renderModalDropdowns();
+
+  // Nivel toggle: só visível na criação; em edição está fixo em subcategoria
+  setNivelMode('subcategoria');
+  document.getElementById('nivel-field').classList.toggle('hidden', !!editingId);
 
   const tipo = c?.tipo || DEFAULT_TIPO;
   const status = c?.status || 'ativa';
@@ -980,6 +1036,55 @@ function openCompromissoModal(c = null) {
   } else {
     document.getElementById('valores-mensais-grid').innerHTML = '';
   }
+
+  openModal('modal-compromisso');
+}
+
+// Opens the edit modal for a categoria-direct commitment
+function openCatDirectModal(cat) {
+  editingId    = null;
+  editingCatId = cat.id;
+
+  document.getElementById('modal-compromisso-title').textContent = 'Editar compromisso — ' + cat.nome;
+  document.getElementById('btn-salvar-compromisso').textContent = 'Salvar alterações';
+
+  document.getElementById('form-compromisso').reset();
+  renderModalDropdowns();
+
+  // Lock in categoria mode, hide the toggle
+  setNivelMode('categoria');
+  document.getElementById('nivel-field').classList.add('hidden');
+  document.getElementById('comp-cat-existente').value = cat.id;
+
+  const tipo   = cat.tipo   || DEFAULT_TIPO;
+  const status = cat.status || 'ativa';
+
+  document.getElementById('comp-tipo').value           = tipo;
+  document.getElementById('comp-conta').value          = cat.conta_id       || '';
+  document.getElementById('comp-tipo-pagamento').value = cat.tipo_pagamento || '';
+  document.getElementById('comp-periodo').value        = cat.periodo        || 'Mensal';
+  document.getElementById('comp-vencimento-dia').value = cat.vencimento_dia || '';
+  document.getElementById('comp-dia-semana').value     = cat.dia_semana     ?? '';
+  document.getElementById('comp-valor-base').value     = cat.valor_base     ?? '';
+  document.getElementById('comp-moeda').value          = cat.moeda          || 'BRL';
+  document.getElementById('comp-iniciado-em').value    = cat.iniciado_em    || todayISO();
+  document.getElementById('comp-terminado-em').value   = cat.terminado_em   || '';
+  document.getElementById('comp-descricao').value      = cat.descricao      || '';
+  document.getElementById('comp-contato').value        = cat.contato_id     || '';
+  document.getElementById('comp-status').value         = status;
+  document.getElementById('motivo-field').classList.add('hidden');
+
+  // Sync comp-categoria so toggleDividaField / toggleProjetoField work
+  document.getElementById('comp-categoria').value = cat.id;
+  if (cat.divida_id) document.getElementById('comp-divida').value = cat.divida_id;
+
+  document.querySelectorAll('.tipo-btn').forEach((b) => b.classList.toggle('active', b.dataset.tipo === tipo));
+  document.querySelectorAll('#status-segmented .segmented-btn').forEach((b) => b.classList.toggle('active', b.dataset.status === status));
+
+  toggleVencimentoFields();
+  toggleDividaField();
+  toggleProjetoField();
+  updateLimiteInfo(cat.conta_id || '');
 
   openModal('modal-compromisso');
 }
@@ -1424,7 +1529,8 @@ function renderGroupedTable(items) {
     const blocoRows = [];
     for (const cat of cats) {
       const arr = byCategoria.get(cat.id) || [];
-      if (arr.length === 0 && !Number(cat.valor_base)) continue;
+      const hasDirect = Number(cat.valor_base) > 0;
+      if (arr.length === 0 && !hasDirect) continue;
       blocoRows.push(renderCategoriaSection(cat, arr));
     }
     if (blocoRows.length === 0) continue;
@@ -1474,52 +1580,66 @@ function renderBlocoHeader(bloco) {
 
 function renderCategoriaSection(cat, items) {
   const hasDirect = Number(cat.valor_base) > 0;
-  const directRow = hasDirect ? renderCatDirectRow(cat) : '';
+  const catDirectRow = hasDirect ? renderCatDirectRow(cat) : '';
   const rows = items.map((c) => renderRow(c, cat)).join('');
-  const totalCount = items.length + (hasDirect ? 1 : 0);
-  const addBtn = !hasDirect
-    ? `<button type="button" class="btn-add-cat-valor" data-cat-id="${cat.id}" title="Definir valor direto nesta categoria" aria-label="Definir valor direto">+ valor direto</button>`
-    : '';
+  const total = items.length + (hasDirect ? 1 : 0);
   return `
     <tr class="categoria-section-header" style="--cat-color: ${cat.cor};">
       <td colspan="99">
         <span class="cat-dot" style="background: ${cat.cor};"></span>
         ${escapeHtml(cat.nome)}
-        <span class="cat-count">${totalCount} ${totalCount === 1 ? 'item' : 'itens'}</span>
-        ${addBtn}
+        <span class="cat-count">${total} ${total === 1 ? 'item' : 'itens'}</span>
       </td>
     </tr>
-    ${directRow}
+    ${catDirectRow}
     ${rows}
   `;
 }
 
 function renderCatDirectRow(cat) {
-  const valor = formatCurrency(Number(cat.valor_base), cat.moeda || 'BRL');
-  const tipo  = cat.tipo || 'Despesa';
+  const isInactive = cat.status && cat.status !== 'ativa';
+  const statusLabel = { ativa: 'Ativa', inativa: 'Inativa', arquivada: 'Arquivada' }[cat.status] || 'Ativa';
+  const conta = getConta(cat.conta_id);
+
+  let venc = '—';
+  const usaDiaSemana = cat.periodo === 'Semanal' || cat.periodo === 'Quinzenal';
+  if (usaDiaSemana && cat.dia_semana != null) {
+    venc = diaSemanaLabel(cat.dia_semana);
+  } else if (cat.vencimento_dia) {
+    venc = `Dia ${cat.vencimento_dia}`;
+  }
+
+  let vinculoCell;
+  if (cat.divida_id) {
+    const div = getDivida(cat.divida_id);
+    vinculoCell = `<span class="vinculo-badge vinculo-badge--divida" data-vinculo-type="divida" data-vinculo-id="${cat.divida_id}">${escapeHtml(div?.nome ?? '—')}</span>`;
+  } else {
+    vinculoCell = '<span class="text-muted">—</span>';
+  }
+
+  const contaCell = conta
+    ? `<span class="conta-badge">${escapeHtml(conta.apelido?.trim() || conta.nome)}</span>`
+    : '<span class="text-muted">—</span>';
+
   return `
-    <tr class="compromisso-row cat-direct-row" style="--cat-color: ${cat.cor};" data-cat-id="${cat.id}" title="Clique para editar o valor direto">
+    <tr class="compromisso-row ${isInactive ? 'inactive' : ''}" style="--cat-color: ${cat.cor};" data-cat-id="${cat.id}">
       <td>
-        <div class="conta-row-name">
-          ${renderTipoIcon(tipo, 'sm')}
-          <div class="conta-row-name-text">
-            <span class="conta-row-name-display">${escapeHtml(cat.nome)}</span>
-            <span class="conta-row-name-official">valor direto da categoria</span>
-          </div>
+        <div class="comp-name-cell">
+          <div class="comp-name">${escapeHtml(cat.nome)}</div>
         </div>
       </td>
       <td data-col="categoria"><span class="text-muted">—</span></td>
-      <td data-col="tipo">${tipoPill(tipo)}</td>
-      <td data-col="projeto"><span class="text-muted">—</span></td>
-      <td data-col="conta"><span class="text-muted">—</span></td>
-      <td data-col="pagamento"><span class="text-muted">—</span></td>
-      <td data-col="vencimento"><span class="text-muted">—</span></td>
+      <td data-col="tipo">${tipoPill(cat.tipo || '—')}</td>
+      <td data-col="projeto">${vinculoCell}</td>
+      <td data-col="conta">${contaCell}</td>
+      <td data-col="pagamento">${cat.tipo_pagamento ? escapeHtml(cat.tipo_pagamento) : '<span class="text-muted">—</span>'}</td>
+      <td data-col="vencimento">${venc}</td>
       <td data-col="proximo"><span class="text-muted">—</span></td>
-      <td data-col="termina"><span class="text-muted">—</span></td>
-      <td data-col="periodo"><span class="text-muted">Mensal</span></td>
-      <td data-col="valor" class="text-right tabular text-bold">${valor}</td>
-      <td data-col="descricao"><span class="text-muted">—</span></td>
-      <td data-col="status"><span class="status-pill status-ativa">Ativa</span></td>
+      <td data-col="termina">${cat.terminado_em ? formatDateBR(cat.terminado_em) : '—'}</td>
+      <td data-col="periodo">${cat.periodo ? escapeHtml(cat.periodo) : '<span class="text-muted">—</span>'}</td>
+      <td data-col="valor" class="text-right">${formatCurrency(cat.valor_base, cat.moeda || 'BRL')}</td>
+      <td data-col="descricao">${cat.descricao ? escapeHtml(cat.descricao) : '<span class="text-muted">—</span>'}</td>
+      <td data-col="status"><span class="status-pill status-${cat.status || 'ativa'}">${statusLabel}</span></td>
     </tr>
   `;
 }
@@ -1673,67 +1793,15 @@ function renderContaTransferCell(c, contaOrigem) {
 function bindRowClicks() {
   document.querySelectorAll('.contas-table tbody tr').forEach((row) => {
     row.addEventListener('click', () => {
+      if (row.dataset.catId) {
+        const cat = cachedCategorias.find((x) => x.id === row.dataset.catId);
+        if (cat) openCatDirectModal(cat);
+        return;
+      }
       const c = cachedCompromissos.find((x) => x.id === row.dataset.id);
       if (c) openDetailsModal(c);
     });
   });
-  // Cat-direct rows: clique abre modal de edição do valor da categoria
-  document.querySelectorAll('.cat-direct-row').forEach((row) => {
-    row.addEventListener('click', () => openEditCatModal(row.dataset.catId));
-  });
-  // Botão "+ valor direto" no header de categoria
-  document.querySelectorAll('.btn-add-cat-valor').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openEditCatModal(btn.dataset.catId);
-    });
-  });
-}
-
-function openEditCatModal(catId) {
-  editingCatId = catId;
-  const cat = cachedCategorias.find((c) => c.id === catId);
-  if (!cat) return;
-  document.getElementById('modal-cat-valor-title').textContent = cat.nome;
-  document.getElementById('cat-valor-nome').textContent = cat.nome;
-  document.getElementById('cat-valor-tipo').value  = cat.tipo  || 'Despesa';
-  document.getElementById('cat-valor-valor').value = Number(cat.valor_base) > 0 ? Number(cat.valor_base) : '';
-  document.getElementById('cat-valor-moeda').value = cat.moeda || 'BRL';
-  openModal('modal-cat-valor');
-}
-
-async function saveCatValor(e) {
-  e.preventDefault();
-  const btn    = document.getElementById('btn-salvar-cat-valor');
-  const tipo   = document.getElementById('cat-valor-tipo').value;
-  const valor  = parseFloat(document.getElementById('cat-valor-valor').value);
-  const moeda  = document.getElementById('cat-valor-moeda').value;
-
-  if (!valor || isNaN(valor) || valor <= 0) {
-    showToast('Informe um valor válido', 'error');
-    return;
-  }
-
-  const original = btn.textContent;
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Salvando…';
-
-  try {
-    const { error } = await supabase
-      .from('categorias')
-      .update({ tipo, valor_base: valor, moeda })
-      .eq('id', editingCatId);
-    if (error) throw error;
-    showToast('Valor direto definido', 'success');
-    closeModal('modal-cat-valor');
-    await loadCategorias();
-    renderCompromissos();
-  } catch (err) {
-    showToast('Erro: ' + (err.message || JSON.stringify(err)), 'error', 8000);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = original;
-  }
 }
 
 // -----------------------------
@@ -2153,8 +2221,114 @@ function openDayModal(date, events) {
 // -----------------------------
 // Save (insert / update)
 // -----------------------------
+async function saveCatDirectCompromisso() {
+  const catId = editingCatId || document.getElementById('comp-cat-existente').value;
+  if (!catId) { showToast('Escolha uma categoria', 'error'); return; }
+
+  const tipo          = document.getElementById('comp-tipo').value;
+  const conta_id      = document.getElementById('comp-conta').value || null;
+  const tipo_pagamento = document.getElementById('comp-tipo-pagamento').value || null;
+  const periodo       = document.getElementById('comp-periodo').value;
+  const vencimentoRaw = document.getElementById('comp-vencimento-dia').value;
+  const diaSemanaRaw  = document.getElementById('comp-dia-semana').value;
+  const valorBaseRaw  = document.getElementById('comp-valor-base').value;
+  const moeda         = document.getElementById('comp-moeda').value;
+  const iniciado_em   = document.getElementById('comp-iniciado-em').value || null;
+  const terminado_em  = document.getElementById('comp-terminado-em').value || null;
+  const descricao     = document.getElementById('comp-descricao').value.trim() || null;
+  const status        = document.getElementById('comp-status').value;
+  const contatoRaw    = document.getElementById('comp-contato')?.value || '';
+  const contato_id    = (contatoRaw && contatoRaw !== '__new__') ? contatoRaw : null;
+
+  const cat = cachedCategorias.find((c) => c.id === catId);
+  const isDividasCat = cat?.grupo === 'dividas' || /dívida|divida/i.test(cat?.nome || '');
+  const dividaRaw = isDividasCat ? (document.getElementById('comp-divida')?.value || '') : '';
+
+  if (!tipo) { showToast('Escolha o tipo', 'error'); return; }
+  if (!iniciado_em) { showToast('Informe a data de início', 'error'); return; }
+  if (isDividasCat && !dividaRaw) { showToast('Vincule uma dívida existente ou crie uma nova', 'error'); return; }
+  if (valorBaseRaw === '' || isNaN(Number(valorBaseRaw))) { showToast('Informe um valor válido', 'error'); return; }
+
+  const usaDiaSemana = periodo === 'Semanal' || periodo === 'Quinzenal';
+  const ehUnico = periodo === 'Único';
+  if (usaDiaSemana) {
+    if (diaSemanaRaw === '') { showToast('Selecione o dia da semana', 'error'); return; }
+  } else if (!ehUnico) {
+    if (!vencimentoRaw || vencimentoRaw < 1 || vencimentoRaw > 31) {
+      showToast('Dia de vencimento deve ser entre 1 e 31', 'error'); return;
+    }
+  }
+
+  const payload = {
+    tipo,
+    conta_id,
+    tipo_pagamento,
+    periodo,
+    vencimento_dia: (usaDiaSemana || ehUnico) ? null : Number(vencimentoRaw),
+    dia_semana:     usaDiaSemana ? Number(diaSemanaRaw) : null,
+    valor_base:     Number(valorBaseRaw),
+    moeda,
+    iniciado_em,
+    terminado_em,
+    descricao,
+    status,
+    contato_id,
+  };
+
+  const button = document.getElementById('btn-salvar-compromisso');
+  const originalLabel = button.textContent;
+  button.disabled = true;
+  button.innerHTML = '<span class="spinner"></span> Salvando…';
+
+  try {
+    // Resolve divida_id
+    let resolvedDividaId = (isDividasCat && dividaRaw && dividaRaw !== '__new__') ? dividaRaw : null;
+    if (isDividasCat && dividaRaw === '__new__') {
+      const user = await getCurrentUser();
+      const { data: novaDivida, error: divErr } = await supabase.from('dividas').insert({
+        user_id:         user.id,
+        nome:            cat.nome,
+        valor_total:     Number(valorBaseRaw) || 0,
+        valor_pago:      0,
+        data_inicio:     iniciado_em,
+        data_vencimento: terminado_em || null,
+        conta_id:        conta_id || null,
+        status:          'Ativa',
+      }).select('id').single();
+      if (divErr) {
+        showToast('Categoria salva, mas erro ao criar dívida: ' + divErr.message, 'warning', 8000);
+      } else {
+        resolvedDividaId = novaDivida.id;
+        cachedDividas.push({ id: novaDivida.id, nome: cat.nome, status: 'Ativa' });
+      }
+    }
+    if (resolvedDividaId) payload.divida_id = resolvedDividaId;
+
+    const { error } = await supabase.from('categorias').update(payload).eq('id', catId);
+    if (error) throw error;
+
+    showToast('Compromisso salvo', 'success');
+    closeModal('modal-compromisso');
+    editingCatId = null;
+    await loadCategorias();
+    await loadCompromissos();
+  } catch (err) {
+    console.error('[saveCatDirectCompromisso]', err);
+    showToast('Erro ao salvar: ' + (err.message || JSON.stringify(err)), 'error', 12000);
+  } finally {
+    button.disabled = false;
+    button.textContent = originalLabel;
+  }
+}
+
 async function saveCompromisso(event) {
   event.preventDefault();
+
+  if (document.getElementById('comp-nivel').value === 'categoria') {
+    await saveCatDirectCompromisso();
+    return;
+  }
+
   const button = document.getElementById('btn-salvar-compromisso');
 
   const nome           = document.getElementById('comp-nome').value.trim();
