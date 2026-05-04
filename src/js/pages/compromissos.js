@@ -447,9 +447,12 @@ function setNivelMode(mode) {
   document.getElementById('comp-categoria-field').classList.toggle('hidden', isCategoria);
   document.getElementById('comp-cat-existente-field').classList.toggle('hidden', !isCategoria);
   if (!isCategoria) {
-    // Reset cat-existente selection so it doesn't interfere
     const sel = document.getElementById('comp-cat-existente');
     if (sel) sel.value = '';
+  } else {
+    // Categorias não suportam valor variável — força modo fixo
+    const cb = document.getElementById('comp-valor-variavel');
+    if (cb) { cb.checked = false; toggleValorVariavelFields(); }
   }
 }
 
