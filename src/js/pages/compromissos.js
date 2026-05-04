@@ -1093,6 +1093,7 @@ function openCatDirectModal(cat) {
   document.querySelectorAll('#status-segmented .segmented-btn').forEach((b) => b.classList.toggle('active', b.dataset.status === status));
 
   toggleVencimentoFields();
+  toggleValorVariavelFields();
   toggleDividaField();
   toggleProjetoField();
   updateLimiteInfo(cat.conta_id || '');
@@ -2209,7 +2210,7 @@ async function saveCatDirectCompromisso() {
   if (!tipo) { showToast('Escolha o tipo', 'error'); return; }
   if (!iniciado_em) { showToast('Informe a data de início', 'error'); return; }
   if (isDividasCat && !dividaRaw) { showToast('Vincule uma dívida existente ou crie uma nova', 'error'); return; }
-  if (valorBaseRaw === '' || isNaN(Number(valorBaseRaw))) { showToast('Informe um valor válido', 'error'); return; }
+  if (valorBaseRaw === '' || isNaN(Number(valorBaseRaw)) || Number(valorBaseRaw) <= 0) { showToast('Informe um valor maior que zero', 'error'); return; }
 
   const usaDiaSemana = periodo === 'Semanal' || periodo === 'Quinzenal';
   const ehUnico = periodo === 'Único';
@@ -2277,11 +2278,8 @@ async function saveCatDirectCompromisso() {
 
     showToast('Compromisso salvo', 'success');
     closeModal('modal-compromisso');
-    const savedCatId = catId;
     editingCatId = null;
     await loadCategorias();
-    const afterReload = cachedCategorias.find((c) => c.id === savedCatId);
-    console.log('[debug] categoria após reload:', afterReload?.nome, '| valor_base:', afterReload?.valor_base);
     await loadCompromissos();
   } catch (err) {
     console.error('[saveCatDirectCompromisso]', err);
