@@ -1,0 +1,33 @@
+// =============================================================
+// FinFlow — Registro de versões
+// Adicione entradas novas no INÍCIO do array.
+// id deve ser único — é usado para rastrear o que o usuário já leu.
+// type: 'new' | 'fix' | 'improvement'
+// =============================================================
+
+export const CHANGELOG = [
+  {
+    id: '2026-05-04-b2fab70',
+    date: '04/05/2026',
+    title: 'Correção de layout — Investimentos',
+    items: [
+      { type: 'fix', text: 'Botão Salvar e rodapé do modal de Novo Projeto em Investimentos estavam ocultos em telas com altura reduzida' },
+    ],
+  },
+  {
+    id: '2026-05-03-fbcc0c4',
+    date: '03/05/2026',
+    title: 'Auditoria de código — 38 melhorias',
+    items: [
+      { type: 'new',         text: 'Toggle de mostrar/ocultar senha no formulário de cadastro' },
+      { type: 'new',         text: 'Exportação de Excel agora gera arquivo .xlsx real via SheetJS' },
+      { type: 'improvement', text: 'Utilitários centralizados — formatação de datas, escape HTML e outros agora consistentes em todo o sistema' },
+      { type: 'improvement', text: 'Visibilidade de colunas em Transações migrada para o sistema compartilhado' },
+      { type: 'improvement', text: 'Caixas de confirmação substituídas por diálogo visual (em vez de popup nativo do navegador)' },
+      { type: 'improvement', text: 'Links de navegação corrigidos para caminhos absolutos' },
+      { type: 'improvement', text: 'Acessibilidade aprimorada em Contas (navegação por teclado) e Orçamento (labels para leitores de tela)' },
+      { type: 'fix',         text: 'Listeners de eventos duplicados removidos em menu de usuário e visibilidade de colunas' },
+      { type: 'fix',         text: 'Tela de login sempre visível mesmo quando ocorre erro de autenticação' },
+    ],
+  },
+];

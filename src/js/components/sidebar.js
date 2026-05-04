@@ -4,6 +4,11 @@
 import { initTheme } from '../lib/theme.js';
 import { showToast } from './toast.js';
 import { mountHeaderUserMenu } from './header-user-menu.js';
+import { CHANGELOG } from '../lib/changelog.js';
+
+function hasUnseenChangelog() {
+  return CHANGELOG.length > 0 && localStorage.getItem('finflow:changelog:seen') !== CHANGELOG[0].id;
+}
 
 const ICONS = {
   dashboard: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>`,
@@ -65,7 +70,10 @@ export async function initSidebar(activePage) {
       </nav>
       <div class="sidebar-footer">
         <a href="/configuracoes.html" class="sidebar-config ${activePage === 'configuracoes' ? 'active' : ''}" aria-label="Configurações">
-          <span class="sidebar-link-icon">${ICONS.configuracoes}</span>
+          <span class="sidebar-link-icon" style="position:relative">
+            ${ICONS.configuracoes}
+            <span class="sidebar-badge${hasUnseenChangelog() ? '' : ' hidden'}" id="sidebar-changelog-badge" aria-label="Novidades disponíveis"></span>
+          </span>
           <span class="sidebar-link-label">Configurações</span>
         </a>
       </div>

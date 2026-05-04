@@ -390,6 +390,96 @@
   to { opacity: 1; }
 }
 
+/* Sidebar changelog badge (ponto vermelho no ícone de Configurações) */
+.sidebar-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background: var(--color-danger);
+  border-radius: 50%;
+  border: 2px solid var(--color-surface);
+  pointer-events: none;
+}
+
+/* Badge na aba "Novidades" dentro de Configurações */
+.cfg-tab-badge {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--color-danger);
+  border-radius: 50%;
+  margin-left: var(--space-2);
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+/* Changelog entries */
+.cfg-changelog-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.cfg-changelog-entry {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.cfg-changelog-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-surface-alt);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cfg-changelog-title {
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+}
+
+.cfg-changelog-date {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.cfg-changelog-items {
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+}
+
+.cfg-changelog-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.cfg-changelog-type {
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.cfg-changelog-type--new         { background: #dcfce7; color: #16a34a; }
+.cfg-changelog-type--fix         { background: #ffedd5; color: #ea580c; }
+.cfg-changelog-type--improvement { background: #ede9fe; color: #7c3aed; }
+
 @keyframes modal-slide-up {
   from {
     opacity: 0;
