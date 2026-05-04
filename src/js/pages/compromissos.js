@@ -44,7 +44,8 @@ let cachedProjetos = [];       // projetos de investimento do usuário
 let cachedDividas = [];        // dívidas do usuário (para vínculo)
 let cachedContatos = [];       // clientes/fornecedores do usuário
 let cachedProxValores = new Map(); // subcategoria_id → {valor_previsto, moeda, mes_ano} (próximo mês com valor)
-let editingId = null;
+let editingId    = null;
+let editingCatId = null;
 let detailsCompromisso = null;
 let pendingAction = null;
 let filterStatus = 'todas';
@@ -609,6 +610,7 @@ function bindEvents() {
   });
 
   document.getElementById('form-quick-valor').addEventListener('submit', saveQuickValor);
+  document.getElementById('form-cat-valor').addEventListener('submit', saveCatValor);
   document.getElementById('btn-arquivar').addEventListener('click', () => {
     if (!detailsCompromisso) return;
     pendingAction = { type: 'arquivar', id: detailsCompromisso.id };
@@ -1422,7 +1424,7 @@ function renderGroupedTable(items) {
     const blocoRows = [];
     for (const cat of cats) {
       const arr = byCategoria.get(cat.id) || [];
-      if (arr.length === 0) continue;
+      if (arr.length === 0 && !Number(cat.valor_base)) continue;
       blocoRows.push(renderCategoriaSection(cat, arr));
     }
     if (blocoRows.length === 0) continue;
@@ -1471,16 +1473,54 @@ function renderBlocoHeader(bloco) {
 }
 
 function renderCategoriaSection(cat, items) {
+  const hasDirect = Number(cat.valor_base) > 0;
+  const directRow = hasDirect ? renderCatDirectRow(cat) : '';
   const rows = items.map((c) => renderRow(c, cat)).join('');
+  const totalCount = items.length + (hasDirect ? 1 : 0);
+  const addBtn = !hasDirect
+    ? `<button type="button" class="btn-add-cat-valor" data-cat-id="${cat.id}" title="Definir valor direto nesta categoria" aria-label="Definir valor direto">+ valor direto</button>`
+    : '';
   return `
     <tr class="categoria-section-header" style="--cat-color: ${cat.cor};">
       <td colspan="99">
         <span class="cat-dot" style="background: ${cat.cor};"></span>
         ${escapeHtml(cat.nome)}
-        <span class="cat-count">${items.length} ${items.length === 1 ? 'item' : 'itens'}</span>
+        <span class="cat-count">${totalCount} ${totalCount === 1 ? 'item' : 'itens'}</span>
+        ${addBtn}
       </td>
     </tr>
+    ${directRow}
     ${rows}
+  `;
+}
+
+function renderCatDirectRow(cat) {
+  const valor = formatCurrency(Number(cat.valor_base), cat.moeda || 'BRL');
+  const tipo  = cat.tipo || 'Despesa';
+  return `
+    <tr class="compromisso-row cat-direct-row" style="--cat-color: ${cat.cor};" data-cat-id="${cat.id}" title="Clique para editar o valor direto">
+      <td>
+        <div class="conta-row-name">
+          ${renderTipoIcon(tipo, 'sm')}
+          <div class="conta-row-name-text">
+            <span class="conta-row-name-display">${escapeHtml(cat.nome)}</span>
+            <span class="conta-row-name-official">valor direto da categoria</span>
+          </div>
+        </div>
+      </td>
+      <td data-col="categoria"><span class="text-muted">—</span></td>
+      <td data-col="tipo">${tipoPill(tipo)}</td>
+      <td data-col="projeto"><span class="text-muted">—</span></td>
+      <td data-col="conta"><span class="text-muted">—</span></td>
+      <td data-col="pagamento"><span class="text-muted">—</span></td>
+      <td data-col="vencimento"><span class="text-muted">—</span></td>
+      <td data-col="proximo"><span class="text-muted">—</span></td>
+      <td data-col="termina"><span class="text-muted">—</span></td>
+      <td data-col="periodo"><span class="text-muted">Mensal</span></td>
+      <td data-col="valor" class="text-right tabular text-bold">${valor}</td>
+      <td data-col="descricao"><span class="text-muted">—</span></td>
+      <td data-col="status"><span class="status-pill status-ativa">Ativa</span></td>
+    </tr>
   `;
 }
 
@@ -1637,6 +1677,63 @@ function bindRowClicks() {
       if (c) openDetailsModal(c);
     });
   });
+  // Cat-direct rows: clique abre modal de edição do valor da categoria
+  document.querySelectorAll('.cat-direct-row').forEach((row) => {
+    row.addEventListener('click', () => openEditCatModal(row.dataset.catId));
+  });
+  // Botão "+ valor direto" no header de categoria
+  document.querySelectorAll('.btn-add-cat-valor').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openEditCatModal(btn.dataset.catId);
+    });
+  });
+}
+
+function openEditCatModal(catId) {
+  editingCatId = catId;
+  const cat = cachedCategorias.find((c) => c.id === catId);
+  if (!cat) return;
+  document.getElementById('modal-cat-valor-title').textContent = cat.nome;
+  document.getElementById('cat-valor-nome').textContent = cat.nome;
+  document.getElementById('cat-valor-tipo').value  = cat.tipo  || 'Despesa';
+  document.getElementById('cat-valor-valor').value = Number(cat.valor_base) > 0 ? Number(cat.valor_base) : '';
+  document.getElementById('cat-valor-moeda').value = cat.moeda || 'BRL';
+  openModal('modal-cat-valor');
+}
+
+async function saveCatValor(e) {
+  e.preventDefault();
+  const btn    = document.getElementById('btn-salvar-cat-valor');
+  const tipo   = document.getElementById('cat-valor-tipo').value;
+  const valor  = parseFloat(document.getElementById('cat-valor-valor').value);
+  const moeda  = document.getElementById('cat-valor-moeda').value;
+
+  if (!valor || isNaN(valor) || valor <= 0) {
+    showToast('Informe um valor válido', 'error');
+    return;
+  }
+
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Salvando…';
+
+  try {
+    const { error } = await supabase
+      .from('categorias')
+      .update({ tipo, valor_base: valor, moeda })
+      .eq('id', editingCatId);
+    if (error) throw error;
+    showToast('Valor direto definido', 'success');
+    closeModal('modal-cat-valor');
+    await loadCategorias();
+    renderCompromissos();
+  } catch (err) {
+    showToast('Erro: ' + (err.message || JSON.stringify(err)), 'error', 8000);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
 }
 
 // -----------------------------

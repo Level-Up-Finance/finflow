@@ -378,6 +378,51 @@
   </div>
 
   <!-- ============================================================
+       MODAL: Valor direto na Categoria
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-cat-valor" role="dialog" aria-modal="true">
+    <form class="modal modal-sm" id="form-cat-valor" novalidate>
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-cat-valor-title">Valor direto — Categoria</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-cat-valor" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label class="field-label">Categoria</label>
+          <p id="cat-valor-nome" style="font-size: var(--fs-base); font-weight: var(--fw-semibold); color: var(--color-text-main); margin: 0;">—</p>
+          <p class="field-hint">O valor será atribuído diretamente a esta categoria, sem criar subcategorias.</p>
+        </div>
+        <div class="field">
+          <label class="field-label" for="cat-valor-tipo">Tipo <span class="required">*</span></label>
+          <select id="cat-valor-tipo" class="input" required>
+            <option value="Despesa">Despesa</option>
+            <option value="Receita">Receita</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: var(--space-3);">
+          <div class="field" style="flex: 2;">
+            <label class="field-label" for="cat-valor-valor">Valor mensal <span class="required">*</span></label>
+            <input type="number" id="cat-valor-valor" class="input" min="0.01" step="0.01" placeholder="0,00" required>
+          </div>
+          <div class="field" style="flex: 1;">
+            <label class="field-label" for="cat-valor-moeda">Moeda</label>
+            <select id="cat-valor-moeda" class="input">
+              <option value="BRL">BRL</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-cat-valor">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="btn-salvar-cat-valor">Salvar</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ============================================================
        MODAL: Compromissos do dia (clicado no calendário)
        ============================================================ -->
   <div class="modal-backdrop hidden" id="modal-day" role="dialog" aria-modal="true">
