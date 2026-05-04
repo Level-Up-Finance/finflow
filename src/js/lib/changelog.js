@@ -7,6 +7,16 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-04-novidades',
+    date: '04/05/2026',
+    title: 'Página Novidades com badge numérico',
+    items: [
+      { type: 'new',         text: 'Página dedicada "Novidades" no menu lateral com registro de todas as versões publicadas' },
+      { type: 'new',         text: 'Badge numérico vermelho no ícone de Novidades indicando quantas versões não foram lidas' },
+      { type: 'improvement', text: 'Badge some automaticamente ao visitar a página de Novidades' },
+    ],
+  },
+  {
     id: '2026-05-04-b2fab70',
     date: '04/05/2026',
     title: 'Correção de layout — Investimentos',

@@ -9,7 +9,6 @@ import { showToast } from '../components/toast.js';
 import { getTheme, setTheme } from '../lib/theme.js';
 import { CURRENCIES } from '../lib/currencies.js';
 import { escapeHtml } from '../lib/utils.js';
-import { CHANGELOG } from '../lib/changelog.js';
 
 // -----------------------------
 // State
@@ -64,7 +63,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   bindThemeEvents();
   bindIdiomaEvents();
   initVinculoPopover();
-  initChangelogBadge();
   window.addEventListener('resize', updateStickyThTop);
   loadProfileSettings();  // async, non-blocking
 });
@@ -544,7 +542,7 @@ function bindTabEvents() {
       });
 
       // Toolbar: só aparece em Categorias e Contatos
-      if (toolbar) toolbar.classList.toggle('hidden', ['aparencia', 'sistema', 'novidades'].includes(target));
+      if (toolbar) toolbar.classList.toggle('hidden', target === 'aparencia' || target === 'sistema');
 
       // Lazy-init Sistema panel
       if (target === 'sistema') renderSistemaPanel();
@@ -555,12 +553,6 @@ function bindTabEvents() {
 
       // Render lazy de Contatos quando entra na aba pela primeira vez
       if (target === 'contatos') renderContatos();
-
-      // Novidades: renderiza changelog e marca como lido
-      if (target === 'novidades') {
-        renderChangelog();
-        markChangelogSeen();
-      }
 
       updateStickyThTop();
     });
@@ -1082,55 +1074,4 @@ function fmtCurrency(val, moeda = 'BRL') {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: moeda }).format(Number(val) || 0);
 }
 
-// -----------------------------
-// Changelog / Novidades
-// -----------------------------
-const TYPE_LABELS = { new: 'Novidade', fix: 'Correção', improvement: 'Melhoria' };
-
-function hasUnseenChangelog() {
-  return CHANGELOG.length > 0 && localStorage.getItem('finflow:changelog:seen') !== CHANGELOG[0].id;
-}
-
-function initChangelogBadge() {
-  if (!hasUnseenChangelog()) return;
-  document.getElementById('cfg-novidades-badge')?.classList.remove('hidden');
-}
-
-let changelogRendered = false;
-function renderChangelog() {
-  if (changelogRendered) return;
-  changelogRendered = true;
-
-  const container = document.getElementById('cfg-changelog-list');
-  if (!container) return;
-
-  if (CHANGELOG.length === 0) {
-    container.innerHTML = '<p class="cfg-panel-desc">Nenhuma versão registrada ainda.</p>';
-    return;
-  }
-
-  container.innerHTML = `<div class="cfg-changelog-list">${CHANGELOG.map((entry) => `
-    <div class="cfg-changelog-entry">
-      <div class="cfg-changelog-header">
-        <span class="cfg-changelog-title">${escapeHtml(entry.title)}</span>
-        <span class="cfg-changelog-date">${escapeHtml(entry.date)}</span>
-      </div>
-      <ul class="cfg-changelog-items">
-        ${entry.items.map((item) => `
-          <li class="cfg-changelog-item">
-            <span class="cfg-changelog-type cfg-changelog-type--${item.type}">${TYPE_LABELS[item.type] || item.type}</span>
-            <span>${escapeHtml(item.text)}</span>
-          </li>
-        `).join('')}
-      </ul>
-    </div>
-  `).join('')}</div>`;
-}
-
-function markChangelogSeen() {
-  if (CHANGELOG.length === 0) return;
-  localStorage.setItem('finflow:changelog:seen', CHANGELOG[0].id);
-  document.getElementById('cfg-novidades-badge')?.classList.add('hidden');
-  document.getElementById('sidebar-changelog-badge')?.classList.add('hidden');
-}
 
