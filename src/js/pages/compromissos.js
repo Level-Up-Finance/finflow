@@ -2266,8 +2266,14 @@ async function saveCatDirectCompromisso() {
     }
     if (resolvedDividaId) payload.divida_id = resolvedDividaId;
 
-    const { error } = await supabase.from('categorias').update(payload).eq('id', catId);
+    const { data: saved, error } = await supabase
+      .from('categorias').update(payload).eq('id', catId).select('valor_base').single();
     if (error) throw error;
+
+    if (Number(saved?.valor_base) !== Number(payload.valor_base)) {
+      showToast('Atenção: migrations 0037/0038 não aplicadas no banco — execute-as no Supabase SQL Editor', 'warning', 12000);
+      return;
+    }
 
     showToast('Compromisso salvo', 'success');
     closeModal('modal-compromisso');
