@@ -7,6 +7,17 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-05-cat-valor-direto',
+    version: '0.1.5',
+    date: '05/05/2026',
+    title: 'Compromissos diretos em categorias',
+    items: [
+      { type: 'new',         text: 'Categorias agora podem ter um valor de compromisso direto, sem precisar criar subcategorias — ideal para pagamentos únicos como salários e serviços por pessoa' },
+      { type: 'improvement', text: 'Botão "+ valor direto" no cabeçalho de cada categoria abre modal para definir valor, tipo e moeda' },
+      { type: 'improvement', text: 'Linha de valor direto aparece na tabela de Compromissos com estilo visual distinto das subcategorias' },
+    ],
+  },
+  {
     id: '2026-05-05-btn-salvar',
     version: '0.1.4',
     date: '05/05/2026',
