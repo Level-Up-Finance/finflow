@@ -97,69 +97,70 @@
       </div>
       <form id="form-divida">
         <div class="modal-body">
-          <div class="form-row">
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="div-nome">Nome da dívida *</label>
-              <input class="form-input" id="div-nome" type="text" placeholder="Ex: Financiamento carro" required>
+          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field">
+              <label class="field-label" for="div-nome">Nome da dívida *</label>
+              <input class="input" id="div-nome" type="text" placeholder="Ex: Financiamento carro" required>
             </div>
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="div-credor">Credor</label>
-              <input class="form-input" id="div-credor" type="text" placeholder="Ex: Banco Itaú">
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="div-valor-total">Valor total *</label>
-              <input class="form-input" id="div-valor-total" type="number" step="0.01" min="0.01" placeholder="0,00" required>
-            </div>
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="div-juros">Juros ao mês (%)</label>
-              <input class="form-input" id="div-juros" type="number" step="0.01" min="0" placeholder="0,00">
+            <div class="field">
+              <label class="field-label" for="div-credor">Credor</label>
+              <input class="input" id="div-credor" type="text" placeholder="Ex: Banco Itaú">
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="div-data-inicio">Data de início *</label>
-              <input class="form-input" id="div-data-inicio" type="date" required>
+          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field">
+              <label class="field-label" for="div-valor-total">Valor total *</label>
+              <input class="input" id="div-valor-total" type="number" step="0.01" min="0.01" placeholder="0,00" required>
             </div>
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="div-data-vencimento">Data de vencimento</label>
-              <input class="form-input" id="div-data-vencimento" type="date">
+            <div class="field">
+              <label class="field-label" for="div-juros">Juros ao mês (%)</label>
+              <input class="input" id="div-juros" type="number" step="0.01" min="0" placeholder="0,00">
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="div-status">Status</label>
-              <select class="form-input" id="div-status">
+          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field">
+              <label class="field-label" for="div-data-inicio">Data de início *</label>
+              <input class="input" id="div-data-inicio" type="date" required>
+            </div>
+            <div class="field">
+              <label class="field-label" for="div-data-vencimento">Data de vencimento</label>
+              <input class="input" id="div-data-vencimento" type="date">
+            </div>
+          </div>
+
+          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field">
+              <label class="field-label" for="div-status">Status</label>
+              <select class="select" id="div-status">
                 <option value="Ativa">Ativa</option>
                 <option value="Negociando">Negociando</option>
                 <option value="Atrasada">Atrasada</option>
                 <option value="Quitada">Quitada</option>
               </select>
             </div>
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="div-conta">Conta vinculada</label>
-              <select class="form-input" id="div-conta">
+            <div class="field">
+              <label class="field-label" for="div-conta">Conta vinculada</label>
+              <select class="select" id="div-conta">
                 <option value="">Nenhuma</option>
               </select>
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="div-contato">Cliente / Fornecedor</label>
-              <select class="form-input" id="div-contato">
-                <option value="">— Sem contato —</option>
-              </select>
+          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field">
+              <label class="field-label" for="div-contato-search">Cliente / Fornecedor</label>
+              <div class="contato-picker" data-picker="div-contato">
+                <input type="text" id="div-contato-search" class="contato-picker-input input" autocomplete="off" placeholder="Buscar contato ou digitar novo nome…">
+                <input type="hidden" id="div-contato" value="">
+              </div>
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label" for="div-observacao">Observação</label>
-            <textarea class="form-input form-textarea" id="div-observacao" rows="2" placeholder="Anotações sobre a dívida…"></textarea>
+          <div class="field">
+            <label class="field-label" for="div-observacao">Observação</label>
+            <textarea class="textarea" id="div-observacao" rows="2" placeholder="Anotações sobre a dívida…"></textarea>
           </div>
         </div>
         <div class="modal-footer" style="justify-content: space-between;">

@@ -34,6 +34,7 @@ import {
   suggestSubcategoriaFromHistory,
 } from '../lib/regras-reconciliacao.js';
 import { escapeHtml, formatDateBR, showConfirm } from '../lib/utils.js';
+import { initContatoPicker } from '../components/contato-picker.js';
 import { initColVisibility } from '../lib/col-visibility.js';
 import {
   isContaCartao,
@@ -185,7 +186,7 @@ async function loadAll() {
 
   populateContaSelects();
   populateSubcategoriaSelect();
-  populateContatoSelectModal();
+  initContatoPickerOnce();
 
   document.getElementById('trans-loading').classList.add('hidden');
 }
@@ -205,41 +206,17 @@ function populateContaSelects() {
   document.getElementById('trans-conta').innerHTML = formOpts;
 }
 
-function buildContatoOptions(includeNew = true) {
-  const parts = ['<option value="">— Sem contato —</option>'];
-  for (const c of cachedContatos) {
-    parts.push(`<option value="${c.id}">${escapeHtml(c.nome)}</option>`);
-  }
-  if (includeNew) parts.push('<option value="__new__">+ Criar novo contato…</option>');
-  return parts.join('');
-}
+let contatoPicker = null;
 
-function populateContatoSelectModal() {
-  const sel = document.getElementById('trans-contato');
-  if (!sel) return;
-  sel.innerHTML = buildContatoOptions(true);
-}
-
-async function criarContatoInline(nome) {
-  const user = await getCurrentUser();
-  if (!user) return null;
-  const { data, error } = await supabase
-    .from('contatos')
-    .insert({ user_id: user.id, nome, tipo: 'ambos' })
-    .select()
-    .single();
-  if (error) {
-    let msg = error.message;
-    if (/relation.*contatos|column.*contatos/i.test(msg)) {
-      msg = 'Tabela contatos não existe — rode a migration 0023 no Supabase.';
-    }
-    showToast('Erro ao criar contato: ' + msg, 'error', 8000);
-    return null;
-  }
-  cachedContatos.push(data);
-  cachedContatos.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-  showToast(`Contato "${data.nome}" criado`, 'success');
-  return data;
+function initContatoPickerOnce() {
+  if (contatoPicker) return;
+  const rootEl = document.querySelector('[data-picker="trans-contato"]');
+  if (!rootEl) return;
+  contatoPicker = initContatoPicker({
+    rootEl,
+    contatos: () => cachedContatos,
+    defaultTipo: 'ambos',
+  });
 }
 
 function populateSubcategoriaSelect() {
@@ -803,21 +780,8 @@ function bindEvents() {
     updateSelectionBar();
   });
 
-  // Modal: select de contato com "+ Novo contato" + auto-reconciliação
-  document.getElementById('trans-contato').addEventListener('change', async (e) => {
-    if (e.target.value === '__new__') {
-      e.target.value = '';
-      const nome = window.prompt('Nome do novo contato (cliente/fornecedor):');
-      if (!nome || !nome.trim()) return;
-      const novo = await criarContatoInline(nome.trim());
-      if (novo) {
-        populateContatoSelectModal();
-        e.target.value = novo.id;
-      }
-      return;
-    }
-
-    // Auto-reconciliação no modal: aplica regra/sugestão se subcategoria estiver vazia
+  // Auto-reconciliação no modal: aplica regra/sugestão se subcategoria estiver vazia
+  document.getElementById('trans-contato').addEventListener('change', (e) => {
     if (e.target.value) {
       const subEl = document.getElementById('trans-subcategoria');
       if (subEl && !subEl.value) {
@@ -854,9 +818,8 @@ function bindEvents() {
     if (descEl && !descEl.value.trim()) {
       descEl.value = sub.descricao || sub.apelido || sub.nome || '';
     }
-    const contatoEl = document.getElementById('trans-contato');
-    if (sub.contato_id && contatoEl && !contatoEl.value) {
-      contatoEl.value = sub.contato_id;
+    if (sub.contato_id && contatoPicker && !contatoPicker.getValue()) {
+      contatoPicker.setValue(sub.contato_id);
     }
   });
 }
@@ -945,8 +908,7 @@ function openTransacaoModal(id = null) {
   editingId = id;
   const t = id ? cachedTransacoes.find((x) => x.id === id) : null;
 
-  // Garante que o select de contatos do modal está populado e atualizado
-  populateContatoSelectModal();
+  initContatoPickerOnce();
 
   document.getElementById('modal-transacao-title').textContent = t ? 'Editar transação' : 'Nova transação';
   document.getElementById('trans-data').value      = t?.data       || todayInput();
@@ -954,7 +916,7 @@ function openTransacaoModal(id = null) {
   document.getElementById('trans-valor').value     = t?.valor != null ? Number(t.valor) : '';
   document.getElementById('trans-moeda').value     = t?.moeda      || 'BRL';
   document.getElementById('trans-conta').value     = t?.conta_id   || '';
-  document.getElementById('trans-contato').value   = t?.contato_id || '';
+  contatoPicker?.setValue(t?.contato_id || '');
   document.getElementById('trans-descricao').value = t?.descricao  || '';
 
   // Cascade: sub → categoria → bloco
@@ -988,8 +950,7 @@ async function saveTransacao() {
   const moeda           = document.getElementById('trans-moeda').value;
   const conta_id        = document.getElementById('trans-conta').value || null;
   const subcategoria_id = document.getElementById('trans-subcategoria').value || null;
-  const contatoRaw      = document.getElementById('trans-contato').value;
-  const contato_id      = (contatoRaw && contatoRaw !== '__new__') ? contatoRaw : null;
+  const contato_id      = contatoPicker?.getValue() || null;
   const descricao       = document.getElementById('trans-descricao').value.trim() || null;
 
   if (!data) { showToast('Informe a data', 'error'); return; }

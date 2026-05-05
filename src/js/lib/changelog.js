@@ -7,6 +7,25 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-05-mobile-contatos',
+    version: '0.2.0',
+    date: '05/05/2026',
+    title: 'Contatos redesenhado + navegação mobile',
+    items: [
+      { type: 'new',         text: 'Navegação mobile: botão hambúrguer abre sidebar deslizante com overlay em todas as páginas' },
+      { type: 'new',         text: 'Busca por CNPJ via Brasil API — preenche nome, endereço, telefone, e-mail e logo automaticamente' },
+      { type: 'new',         text: 'Logo automático de empresas via Clearbit (a partir do domínio do e-mail ou website)' },
+      { type: 'new',         text: 'Seletor de contato com busca em tempo real e detecção de duplicatas em todas as páginas' },
+      { type: 'new',         text: 'Aba Vínculos nos detalhes do contato — lista dívidas e projetos de investimento vinculados' },
+      { type: 'new',         text: 'Novos campos: tipo (Pessoa Física / Empresa), WhatsApp, Website, LinkedIn, Instagram, Aniversário, Empresa e Cargo' },
+      { type: 'new',         text: 'Cartela de 21 cores unificada em Contas, Categorias e Projetos' },
+      { type: 'improvement', text: 'Filtros por relação (Cliente / Fornecedor / Arquivados) e tipo (Pessoas / Empresas) com contagem' },
+      { type: 'improvement', text: 'Lista de contatos com cabeçalhos fixos por letra e badges C / F por tipo de relação' },
+      { type: 'improvement', text: 'Modais em bottom-sheet no mobile e campos de formulário em coluna única' },
+      { type: 'fix',         text: 'Corrigido erro que impedia o carregamento da página Contatos' },
+    ],
+  },
+  {
     id: '2026-05-04-feedback-engine',
     version: '0.1.9',
     date: '04/05/2026',

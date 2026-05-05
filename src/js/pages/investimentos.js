@@ -15,6 +15,8 @@ import { openModal, closeModal } from '../components/modal.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
 import { initColVisibility } from '../lib/col-visibility.js';
 import { escapeHtml, formatDateBR, isoMonth, showConfirm } from '../lib/utils.js';
+import { DEFAULT_COLOR, renderColorPicker, setActiveColor } from '../lib/color-palette.js';
+import { initContatoPicker } from '../components/contato-picker.js';
 
 let cachedProjetos = [];
 let cachedSubcategorias = []; // só as do grupo investimentos
@@ -144,37 +146,17 @@ async function loadAll() {
   }
 }
 
-function populateContatoSelect() {
-  const sel = document.getElementById('proj-contato');
-  if (!sel) return;
-  const opts = ['<option value="">— Sem contato —</option>'];
-  for (const c of cachedContatos) {
-    opts.push(`<option value="${c.id}">${escapeHtml(c.nome)}</option>`);
-  }
-  opts.push('<option value="__new__">+ Criar novo contato…</option>');
-  sel.innerHTML = opts.join('');
-}
+let contatoPicker = null;
 
-async function criarContatoInline(nome) {
-  const user = await getCurrentUser();
-  if (!user) return null;
-  const { data, error } = await supabase
-    .from('contatos')
-    .insert({ user_id: user.id, nome, tipo: 'fornecedor' })
-    .select()
-    .single();
-  if (error) {
-    let msg = error.message;
-    if (/relation.*contatos|column.*contatos/i.test(msg)) {
-      msg = 'Tabela contatos não existe — rode a migration 0023 no Supabase.';
-    }
-    showToast('Erro ao criar contato: ' + msg, 'error', 8000);
-    return null;
-  }
-  cachedContatos.push(data);
-  cachedContatos.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-  showToast(`Contato "${data.nome}" criado`, 'success');
-  return data;
+function initContatoPickerOnce() {
+  if (contatoPicker) return;
+  const rootEl = document.querySelector('[data-picker="proj-contato"]');
+  if (!rootEl) return;
+  contatoPicker = initContatoPicker({
+    rootEl,
+    contatos: () => cachedContatos,
+    defaultTipo: 'fornecedor',
+  });
 }
 
 
@@ -191,19 +173,13 @@ function bindEvents() {
 
   document.getElementById('form-projeto').addEventListener('submit', saveProjeto);
 
-  // Select de contato: "__new__" abre prompt pra criar inline
-  document.getElementById('proj-contato')?.addEventListener('change', async (e) => {
-    if (e.target.value !== '__new__') return;
-    e.target.value = '';
-    const nome = window.prompt('Nome do novo contato (cliente/fornecedor):');
-    if (!nome || !nome.trim()) return;
-    const novo = await criarContatoInline(nome.trim());
-    if (novo) {
-      populateContatoSelect();
-      e.target.value = novo.id;
-    }
+  document.getElementById('proj-cor-picker').addEventListener('click', (e) => {
+    const btn = e.target.closest('.color-swatch');
+    if (!btn) return;
+    const color = btn.dataset.color;
+    document.getElementById('proj-cor').value = color;
+    setActiveColor(document.getElementById('proj-cor-picker'), color);
   });
-
 
   document.getElementById('btn-editar-projeto').addEventListener('click', () => {
     const proj = cachedProjetos.find((p) => p.id === detailsId);
@@ -860,14 +836,17 @@ function openProjetoModal(p = null) {
   document.getElementById('form-projeto').reset();
   document.getElementById('proj-nome').value          = p?.nome || '';
   document.getElementById('proj-descricao').value     = p?.descricao || '';
-  document.getElementById('proj-cor').value           = p?.cor || '#6D5EF5';
+  const initialCor = p?.cor || DEFAULT_COLOR;
+  const corPickerEl = document.getElementById('proj-cor-picker');
+  const activeCor = renderColorPicker(corPickerEl, initialCor);
+  document.getElementById('proj-cor').value = activeCor;
   document.getElementById('proj-status').value        = p?.status || 'ativo';
   document.getElementById('proj-meta-valor').value    = p?.meta_valor ?? '';
   document.getElementById('proj-data-alvo').value     = p?.data_alvo || '';
   document.getElementById('proj-saldo-inicial').value = p?.saldo_inicial ?? '';
 
-  populateContatoSelect();
-  document.getElementById('proj-contato').value       = p?.contato_id || '';
+  initContatoPickerOnce();
+  contatoPicker?.setValue(p?.contato_id || '');
 
   openModal('modal-projeto');
 }
@@ -879,8 +858,6 @@ async function saveProjeto(event) {
   const nome = document.getElementById('proj-nome').value.trim();
   if (!nome) { showToast('Informe o nome do projeto', 'error'); return; }
 
-  const contatoRaw = document.getElementById('proj-contato')?.value || '';
-
   const payload = {
     nome,
     descricao:   document.getElementById('proj-descricao').value.trim() || null,
@@ -889,7 +866,7 @@ async function saveProjeto(event) {
     meta_valor:  parseNum(document.getElementById('proj-meta-valor').value),
     data_alvo:   document.getElementById('proj-data-alvo').value || null,
     saldo_inicial: parseNum(document.getElementById('proj-saldo-inicial').value) || 0,
-    contato_id:  (contatoRaw && contatoRaw !== '__new__') ? contatoRaw : null,
+    contato_id:  contatoPicker?.getValue() || null,
   };
 
   const labelOriginal = btn.textContent;

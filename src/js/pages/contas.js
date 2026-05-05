@@ -18,6 +18,7 @@ import { initColVisibility } from '../lib/col-visibility.js';
 import { escapeHtml, formatDateBR, todayISO } from '../lib/utils.js';
 import { checkAndCloseFaturas } from '../lib/faturas-cartao.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
+import { COLOR_PALETTE, DEFAULT_COLOR, renderColorPicker } from '../lib/color-palette.js';
 import { fetchExchangeRate } from '../lib/currency.js';
 
 // Cache local de taxas (moeda → taxa para BRL). Reusa o cache de 5min de currency.js.
@@ -45,14 +46,7 @@ function toBRL(value, moeda) {
 // -----------------------------
 // Constants & state
 // -----------------------------
-const COLOR_PALETTE = [
-  '#6D5EF5', '#4B3FD6', '#3B82F6', '#2563EB',
-  '#10B981', '#EF4444', '#F59E0B', '#EC4899',
-  '#6366F1', '#14B8A6', '#F97316', '#6B7280',
-];
-
 const DEFAULT_TIPO = 'Corrente';
-const DEFAULT_COLOR = '#6D5EF5';
 
 let cachedContas = [];
 let cachedFaturasAbertas = new Map(); // conta_id → valor_total acumulado das faturas abertas
@@ -125,10 +119,7 @@ function renderPickers() {
     </button>
   `).join('');
 
-  const colorPicker = document.getElementById('color-picker');
-  colorPicker.innerHTML = COLOR_PALETTE.map((color) => `
-    <button type="button" class="color-swatch ${color === DEFAULT_COLOR ? 'active' : ''}" data-color="${color}" style="background-color: ${color};" aria-label="Cor ${color}"></button>
-  `).join('');
+  renderColorPicker(document.getElementById('color-picker'), DEFAULT_COLOR);
 }
 
 // -----------------------------

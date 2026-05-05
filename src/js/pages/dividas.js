@@ -10,6 +10,7 @@ import { openModal, closeModal } from '../components/modal.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
 import { initColVisibility } from '../lib/col-visibility.js';
 import { escapeHtml } from '../lib/utils.js';
+import { initContatoPicker } from '../components/contato-picker.js';
 
 // -----------------------------
 // Status config
@@ -128,42 +129,22 @@ async function loadAll() {
   cachedContas  = contRes.data || [];
 
   populateContaSelect('div-conta');
-  populateContatoSelect();
+  initContatoPickerOnce();
   renderWidgets();
   render();
 }
 
-function populateContatoSelect() {
-  const sel = document.getElementById('div-contato');
-  if (!sel) return;
-  const opts = ['<option value="">— Sem contato —</option>'];
-  for (const c of cachedContatos) {
-    opts.push(`<option value="${c.id}">${escapeHtml(c.nome)}</option>`);
-  }
-  opts.push('<option value="__new__">+ Criar novo contato…</option>');
-  sel.innerHTML = opts.join('');
-}
+let contatoPicker = null;
 
-async function criarContatoInline(nome) {
-  const user = await getCurrentUser();
-  if (!user) return null;
-  const { data, error } = await supabase
-    .from('contatos')
-    .insert({ user_id: user.id, nome, tipo: 'fornecedor' })
-    .select()
-    .single();
-  if (error) {
-    let msg = error.message;
-    if (/relation.*contatos|column.*contatos/i.test(msg)) {
-      msg = 'Tabela contatos não existe — rode a migration 0023 no Supabase.';
-    }
-    showToast('Erro ao criar contato: ' + msg, 'error', 8000);
-    return null;
-  }
-  cachedContatos.push(data);
-  cachedContatos.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-  showToast(`Contato "${data.nome}" criado`, 'success');
-  return data;
+function initContatoPickerOnce() {
+  if (contatoPicker) return;
+  const rootEl = document.querySelector('[data-picker="div-contato"]');
+  if (!rootEl) return;
+  contatoPicker = initContatoPicker({
+    rootEl,
+    contatos: () => cachedContatos,
+    defaultTipo: 'fornecedor',
+  });
 }
 
 
@@ -403,19 +384,6 @@ function bindEvents() {
     row.querySelector('.hist-row-data')?.focus();
   });
 
-  // Select de contato: "__new__" abre prompt pra criar inline
-  document.getElementById('div-contato')?.addEventListener('change', async (e) => {
-    if (e.target.value !== '__new__') return;
-    e.target.value = '';
-    const nome = window.prompt('Nome do novo contato (cliente/fornecedor):');
-    if (!nome || !nome.trim()) return;
-    const novo = await criarContatoInline(nome.trim());
-    if (novo) {
-      populateContatoSelect();
-      e.target.value = novo.id;
-    }
-  });
-
   // Zoom do Gantt — delegado em document (sobrevive a re-renders)
   document.addEventListener('click', (e) => {
     const zoomBtn = e.target.closest('[data-gantt-zoom]');
@@ -445,7 +413,8 @@ function openModalDivida(id) {
   document.getElementById('div-data-vencimento').value = d?.data_vencimento  ?? '';
   document.getElementById('div-status').value          = d?.status           ?? 'Ativa';
   document.getElementById('div-conta').value           = d?.conta_id         ?? '';
-  document.getElementById('div-contato').value         = d?.contato_id       ?? '';
+  initContatoPickerOnce();
+  contatoPicker?.setValue(d?.contato_id || '');
   document.getElementById('div-observacao').value      = d?.observacao       ?? '';
 
   openModal('modal-divida');
@@ -467,8 +436,7 @@ async function saveDivida(e) {
   const data_vencimento = document.getElementById('div-data-vencimento').value || null;
   const status          = document.getElementById('div-status').value;
   const conta_id        = document.getElementById('div-conta').value || null;
-  const contatoRaw      = document.getElementById('div-contato')?.value || '';
-  const contato_id      = (contatoRaw && contatoRaw !== '__new__') ? contatoRaw : null;
+  const contato_id      = contatoPicker?.getValue() || null;
   const observacao      = document.getElementById('div-observacao').value.trim() || null;
 
   if (!nome)              { showToast('Informe o nome da dívida', 'error'); return; }

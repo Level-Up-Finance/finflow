@@ -105,20 +105,20 @@
             <textarea id="proj-descricao" class="textarea" rows="2" maxlength="200" placeholder="O que é esse projeto, por que importa pra você"></textarea>
           </div>
 
-          <div class="field-group" style="grid-template-columns: 80px 1fr;">
-            <div class="field">
-              <label class="field-label" for="proj-cor">Cor</label>
-              <input type="color" id="proj-cor" class="input" value="#6D5EF5" style="height: 40px; padding: 4px; cursor: pointer;">
-            </div>
-            <div class="field">
-              <label class="field-label" for="proj-status">Status</label>
-              <select id="proj-status" class="select">
-                <option value="ativo">Ativo</option>
-                <option value="concluido">Concluído</option>
-                <option value="pausado">Pausado</option>
-                <option value="arquivado">Arquivado</option>
-              </select>
-            </div>
+          <div class="field">
+            <label class="field-label" for="proj-status">Status</label>
+            <select id="proj-status" class="select">
+              <option value="ativo">Ativo</option>
+              <option value="concluido">Concluído</option>
+              <option value="pausado">Pausado</option>
+              <option value="arquivado">Arquivado</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Cor</label>
+            <div class="color-picker" id="proj-cor-picker"></div>
+            <input type="hidden" id="proj-cor" value="#6D5EF5">
           </div>
 
           <div class="field-group" style="grid-template-columns: 1fr 1fr;">
@@ -141,8 +141,11 @@
           </div>
 
           <div class="field">
-            <label class="field-label" for="proj-contato">Cliente / Fornecedor</label>
-            <select id="proj-contato" class="select"></select>
+            <label class="field-label" for="proj-contato-search">Cliente / Fornecedor</label>
+            <div class="contato-picker" data-picker="proj-contato">
+              <input type="text" id="proj-contato-search" class="contato-picker-input input" autocomplete="off" placeholder="Buscar contato ou digitar novo nome…">
+              <input type="hidden" id="proj-contato" value="">
+            </div>
             <p class="field-hint">Identifica com quem o projeto se relaciona, ex: corretora, banco, parceiro (opcional).</p>
           </div>
         </div>

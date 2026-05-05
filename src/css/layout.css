@@ -453,9 +453,43 @@
 /* ============================================================
    RESPONSIVE
    ============================================================ */
-/* Sidebar já é collapsed por padrão (72px, só ícones).
-   Em mobile (≤640px) vira off-canvas, ver regra abaixo. */
 
+/* ── Hambúrguer (sempre no DOM, visível só no mobile via CSS) ── */
+.sidebar-toggle {
+  display: none;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.sidebar-toggle:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-text-main);
+}
+
+/* ── Overlay atrás da sidebar aberta no mobile ── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  pointer-events: none;
+}
+.sidebar-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Sidebar já é collapsed por padrão (72px, só ícones).
+   Em mobile (≤640px) vira off-canvas. */
 @media (max-width: 640px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -463,16 +497,57 @@
       "header"
       "main";
   }
+
   .app-sidebar {
     position: fixed;
     left: 0;
     top: 0;
+    height: 100vh;
+    width: var(--sidebar-width);
+    z-index: var(--z-sidebar);
     transform: translateX(-100%);
     transition: transform var(--transition-base);
   }
   .app-sidebar.open {
     transform: translateX(0);
+    width: var(--sidebar-width-expanded);
   }
+
+  /* Sidebar expandida: mostra labels inline (não como tooltip) */
+  .app-sidebar.open .sidebar {
+    width: var(--sidebar-width-expanded);
+    overflow-y: auto;
+  }
+  .app-sidebar.open .sidebar-logo-name {
+    display: block;
+  }
+  .app-sidebar.open .sidebar-link,
+  .app-sidebar.open .sidebar-config {
+    justify-content: flex-start;
+  }
+  .app-sidebar.open .sidebar-link .sidebar-link-label,
+  .app-sidebar.open .sidebar-config .sidebar-link-label {
+    position: static;
+    opacity: 1;
+    background: transparent;
+    color: inherit;
+    box-shadow: none;
+    padding: 0;
+    margin-top: 0;
+    pointer-events: auto;
+    font-size: var(--fs-sm);
+    transition: none;
+  }
+  .app-sidebar.open .sidebar-link .sidebar-link-label::before,
+  .app-sidebar.open .sidebar-config .sidebar-link-label::before {
+    display: none;
+  }
+
+  /* Mostra hambúrguer e ativa overlay no mobile */
+  .sidebar-toggle { display: flex; }
+  .sidebar-overlay { display: block; }
+
   .main { padding: var(--space-5) var(--space-4); }
   .page-header { flex-direction: column; align-items: stretch; }
+  .header { padding: 0 var(--space-4); }
 }

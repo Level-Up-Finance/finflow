@@ -151,28 +151,28 @@
       </div>
       <form id="form-transacao">
         <div class="modal-body">
-          <div class="form-row">
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="trans-data">Data <span class="required">*</span></label>
-              <input class="form-input" id="trans-data" type="date" required>
+          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field">
+              <label class="field-label" for="trans-data">Data <span class="required">*</span></label>
+              <input class="input" id="trans-data" type="date" required>
             </div>
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="trans-tipo">Tipo <span class="required">*</span></label>
-              <select class="form-input" id="trans-tipo" required>
+            <div class="field">
+              <label class="field-label" for="trans-tipo">Tipo <span class="required">*</span></label>
+              <select class="select" id="trans-tipo" required>
                 <option value="Despesa">Despesa</option>
                 <option value="Receita">Receita</option>
               </select>
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="trans-valor">Valor <span class="required">*</span></label>
-              <input class="form-input" id="trans-valor" type="number" step="0.01" min="0.01" placeholder="0,00" required>
+          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field">
+              <label class="field-label" for="trans-valor">Valor <span class="required">*</span></label>
+              <input class="input" id="trans-valor" type="number" step="0.01" min="0.01" placeholder="0,00" required>
             </div>
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="trans-moeda">Moeda</label>
-              <select class="form-input" id="trans-moeda">
+            <div class="field">
+              <label class="field-label" for="trans-moeda">Moeda</label>
+              <select class="select" id="trans-moeda">
                 <option value="BRL">BRL</option>
                 <option value="USD">USD</option>
                 <option value="EUR">EUR</option>
@@ -181,54 +181,55 @@
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label" for="trans-conta">Conta <span class="required">*</span></label>
-            <select class="form-input" id="trans-conta" required>
+          <div class="field">
+            <label class="field-label" for="trans-conta">Conta <span class="required">*</span></label>
+            <select class="select" id="trans-conta" required>
               <option value="">Selecione…</option>
             </select>
           </div>
 
-          <div class="form-row">
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="trans-bloco">Bloco</label>
-              <select class="form-input" id="trans-bloco">
+          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field">
+              <label class="field-label" for="trans-bloco">Bloco</label>
+              <select class="select" id="trans-bloco">
                 <option value="">— Todos —</option>
                 <option value="contribuicao">Contribuição</option>
                 <option value="sonhos">Sonhos</option>
                 <option value="custo_vida">Custo de vida</option>
               </select>
             </div>
-            <div class="form-group form-group-flex">
-              <label class="form-label" for="trans-categoria">Categoria</label>
-              <select class="form-input" id="trans-categoria">
+            <div class="field">
+              <label class="field-label" for="trans-categoria">Categoria</label>
+              <select class="select" id="trans-categoria">
                 <option value="">— Todas —</option>
               </select>
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label" for="trans-subcategoria">Subcategoria</label>
-            <select class="form-input" id="trans-subcategoria">
+          <div class="field">
+            <label class="field-label" for="trans-subcategoria">Subcategoria</label>
+            <select class="select" id="trans-subcategoria">
               <option value="">— Sem vínculo —</option>
             </select>
             <p class="field-hint">Selecione Bloco e Categoria para filtrar. Vincula a um compromisso recorrente.</p>
           </div>
 
-          <div class="form-group">
-            <label class="form-label" for="trans-contato">Cliente / Fornecedor</label>
-            <select class="form-input" id="trans-contato">
-              <option value="">— Sem contato —</option>
-            </select>
-            <p class="field-hint">Identifica com quem a transação foi feita. Cadastre novos em Configurações ou crie inline na tabela.</p>
+          <div class="field">
+            <label class="field-label" for="trans-contato-search">Cliente / Fornecedor</label>
+            <div class="contato-picker" data-picker="trans-contato">
+              <input type="text" id="trans-contato-search" class="contato-picker-input input" autocomplete="off" placeholder="Buscar contato ou digitar novo nome…">
+              <input type="hidden" id="trans-contato" value="">
+            </div>
+            <p class="field-hint">Identifica com quem a transação foi feita. Digite para buscar ou criar um novo.</p>
           </div>
 
-          <div class="form-group">
-            <label class="form-label" for="trans-descricao">Descrição</label>
-            <textarea class="form-input form-textarea" id="trans-descricao" rows="2" maxlength="300" placeholder="Anotação livre sobre a transação…"></textarea>
+          <div class="field">
+            <label class="field-label" for="trans-descricao">Descrição</label>
+            <textarea class="textarea" id="trans-descricao" rows="2" maxlength="300" placeholder="Anotação livre sobre a transação…"></textarea>
           </div>
 
           <!-- Reconciliação — exibido apenas ao editar -->
-          <div class="form-group hidden" id="trans-recon-group">
+          <div class="field hidden" id="trans-recon-group">
             <div class="trans-recon-toggle">
               <label class="trans-recon-label" for="trans-recon-check">
                 <input type="checkbox" id="trans-recon-check">

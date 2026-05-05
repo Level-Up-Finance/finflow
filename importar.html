@@ -68,9 +68,9 @@
             <span id="import-row-count" class="import-row-count">—</span>
           </div>
 
-          <div class="form-group" style="max-width: 360px; margin-top: var(--space-5);">
-            <label class="form-label" for="import-conta">Conta bancária <span class="required">*</span></label>
-            <select id="import-conta" class="form-input">
+          <div class="field" style="max-width: 360px; margin-top: var(--space-5);">
+            <label class="field-label" for="import-conta">Conta bancária <span class="required">*</span></label>
+            <select id="import-conta" class="select">
               <option value="">Selecione a conta…</option>
             </select>
             <p class="field-hint">Todas as transações importadas serão vinculadas a esta conta.</p>
@@ -94,7 +94,7 @@
             <h3 class="import-section-title">Prévia do arquivo</h3>
             <p class="import-section-hint">Primeiras linhas do arquivo. Verifique se a linha de cabeçalho está correta.</p>
             <div class="import-skip-row">
-              <label class="form-label" for="step2-skip" style="white-space:nowrap">Pular linhas iniciais:</label>
+              <label class="field-label" for="step2-skip" style="white-space:nowrap">Pular linhas iniciais:</label>
               <input type="number" id="step2-skip" class="input input-sm" value="0" min="0" max="20" style="width:70px">
               <span class="field-hint" style="margin:0">Use quando o arquivo tem linhas de cabeçalho do banco antes dos dados.</span>
             </div>
@@ -106,22 +106,22 @@
           <div class="import-section">
             <h3 class="import-section-title">Mapeamento de colunas</h3>
             <div class="import-col-grid">
-              <div class="form-group">
-                <label class="form-label" for="step2-col-date">Coluna de Data <span class="required">*</span></label>
-                <select id="step2-col-date" class="form-input"></select>
+              <div class="field">
+                <label class="field-label" for="step2-col-date">Coluna de Data <span class="required">*</span></label>
+                <select id="step2-col-date" class="select"></select>
               </div>
-              <div class="form-group">
-                <label class="form-label" for="step2-col-desc">Coluna de Descrição <span class="required">*</span></label>
-                <select id="step2-col-desc" class="form-input"></select>
+              <div class="field">
+                <label class="field-label" for="step2-col-desc">Coluna de Descrição <span class="required">*</span></label>
+                <select id="step2-col-desc" class="select"></select>
               </div>
-              <div class="form-group">
-                <label class="form-label" for="step2-col-id">Coluna de Identificador</label>
-                <select id="step2-col-id" class="form-input"></select>
+              <div class="field">
+                <label class="field-label" for="step2-col-id">Coluna de Identificador</label>
+                <select id="step2-col-id" class="select"></select>
                 <p class="field-hint">ID único do banco — usado para evitar importar a mesma transação duas vezes.</p>
               </div>
-              <div class="form-group">
-                <label class="form-label" for="step2-date-fmt">Formato de data</label>
-                <select id="step2-date-fmt" class="form-input">
+              <div class="field">
+                <label class="field-label" for="step2-date-fmt">Formato de data</label>
+                <select id="step2-date-fmt" class="select">
                   <option value="auto">Auto-detectar</option>
                   <option value="dmy">DD/MM/AAAA (padrão brasileiro)</option>
                   <option value="mdy">MM/DD/AAAA (americano)</option>
@@ -145,13 +145,13 @@
             </div>
 
             <div id="step2-single-fields" class="import-col-grid" style="margin-top: var(--space-4);">
-              <div class="form-group">
-                <label class="form-label" for="step2-col-valor">Coluna de Valor <span class="required">*</span></label>
-                <select id="step2-col-valor" class="form-input"></select>
+              <div class="field">
+                <label class="field-label" for="step2-col-valor">Coluna de Valor <span class="required">*</span></label>
+                <select id="step2-col-valor" class="select"></select>
               </div>
-              <div class="form-group">
-                <label class="form-label" for="step2-tipo-fixed">Tipo das transações</label>
-                <select id="step2-tipo-fixed" class="form-input">
+              <div class="field">
+                <label class="field-label" for="step2-tipo-fixed">Tipo das transações</label>
+                <select id="step2-tipo-fixed" class="select">
                   <option value="">Pelo sinal do valor (+/−)</option>
                   <option value="Despesa">Todas Despesa</option>
                   <option value="Receita">Todas Receita</option>
@@ -160,13 +160,13 @@
             </div>
 
             <div id="step2-dc-fields" class="import-col-grid hidden" style="margin-top: var(--space-4);">
-              <div class="form-group">
-                <label class="form-label" for="step2-col-debito">Coluna de Débito (saída)</label>
-                <select id="step2-col-debito" class="form-input"></select>
+              <div class="field">
+                <label class="field-label" for="step2-col-debito">Coluna de Débito (saída)</label>
+                <select id="step2-col-debito" class="select"></select>
               </div>
-              <div class="form-group">
-                <label class="form-label" for="step2-col-credito">Coluna de Crédito (entrada)</label>
-                <select id="step2-col-credito" class="form-input"></select>
+              <div class="field">
+                <label class="field-label" for="step2-col-credito">Coluna de Crédito (entrada)</label>
+                <select id="step2-col-credito" class="select"></select>
               </div>
             </div>
           </div>

@@ -9,6 +9,7 @@ import { showToast } from '../components/toast.js';
 import { getTheme, setTheme } from '../lib/theme.js';
 import { CURRENCIES } from '../lib/currencies.js';
 import { escapeHtml } from '../lib/utils.js';
+import { DEFAULT_COLOR, renderColorPicker, setActiveColor } from '../lib/color-palette.js';
 
 // -----------------------------
 // State
@@ -408,8 +409,10 @@ function openCatModal(catId = null, defaultGrupo = 'custo_vida') {
 
   document.getElementById('modal-categoria-title').textContent = cat ? 'Editar categoria' : 'Nova categoria';
   document.getElementById('cat-nome').value      = cat?.nome     || '';
-  document.getElementById('cat-cor').value       = cat?.cor      || '#6D5EF5';
-  document.getElementById('cat-cor-wrapper').style.background = cat?.cor || '#6D5EF5';
+  const initialCor = cat?.cor || DEFAULT_COLOR;
+  const corPickerEl = document.getElementById('cat-cor-picker');
+  const activeCor = renderColorPicker(corPickerEl, initialCor);
+  document.getElementById('cat-cor').value = activeCor;
   document.getElementById('cat-grupo').value     = cat?.grupo    || defaultGrupo;
   document.getElementById('cat-descricao').value = cat?.descricao || '';
 
@@ -701,8 +704,12 @@ function bindModalEvents() {
   document.getElementById('cat-nome').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') saveCat();
   });
-  document.getElementById('cat-cor').addEventListener('input', (e) => {
-    document.getElementById('cat-cor-wrapper').style.background = e.target.value;
+  document.getElementById('cat-cor-picker').addEventListener('click', (e) => {
+    const btn = e.target.closest('.color-swatch');
+    if (!btn) return;
+    const color = btn.dataset.color;
+    document.getElementById('cat-cor').value = color;
+    setActiveColor(document.getElementById('cat-cor-picker'), color);
   });
 
   // Subcategoria modal

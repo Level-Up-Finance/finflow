@@ -40,12 +40,18 @@
         <!-- ── Left: contacts list ── -->
         <div class="ctp-list-panel">
           <div class="ctp-list-toolbar">
-            <input type="search" class="form-input" id="ct-search" placeholder="Buscar…" autocomplete="off">
+            <input type="search" class="input" id="ct-search" placeholder="Buscar…" autocomplete="off">
             <div class="ctp-tipo-filters">
-              <button class="filter-pill active" data-tipo-filter="all"        type="button">Todos</button>
-              <button class="filter-pill"        data-tipo-filter="cliente"    type="button">Clientes</button>
-              <button class="filter-pill"        data-tipo-filter="fornecedor" type="button">Fornecedores</button>
+              <button class="filter-pill active" data-tipo-filter="all"         type="button">Todos</button>
+              <button class="filter-pill"        data-tipo-filter="cliente"     type="button">Clientes</button>
+              <button class="filter-pill"        data-tipo-filter="fornecedor"  type="button">Fornecedores</button>
+              <button class="filter-pill"        data-tipo-filter="arquivados"  type="button">Arquivados</button>
             </div>
+            <div class="ctp-tipo-filters">
+              <button class="filter-pill" data-pessoa-filter="fisica"    type="button">Pessoas</button>
+              <button class="filter-pill" data-pessoa-filter="juridica"  type="button">Empresas</button>
+            </div>
+            <div class="ctp-list-count" id="ct-list-count"></div>
           </div>
           <div id="ct-list" class="ctp-list"></div>
         </div>
@@ -82,6 +88,7 @@
 
             <div class="ctp-tabs">
               <button class="ctp-tab is-active" data-tab="dados"       type="button">Dados</button>
+              <button class="ctp-tab"            data-tab="vinculos"    type="button">Vínculos</button>
               <button class="ctp-tab"            data-tab="banco"       type="button">Reconhecimento</button>
               <button class="ctp-tab"            data-tab="transacoes"  type="button">Transações</button>
             </div>
@@ -89,6 +96,11 @@
             <!-- Dados -->
             <div class="ctp-tab-panel" data-tab="dados">
               <div class="ctp-dados-grid" id="ct-dados-content"></div>
+            </div>
+
+            <!-- Vínculos -->
+            <div class="ctp-tab-panel hidden" data-tab="vinculos">
+              <div id="ct-vinculos-content"></div>
             </div>
 
             <!-- Reconhecimento bancário -->
@@ -111,48 +123,126 @@
 
   <!-- ── Modal: Novo / Editar contato ── -->
   <div class="modal-backdrop hidden" id="modal-contato" role="dialog" aria-modal="true">
-    <form class="modal" id="form-contato" novalidate>
+    <form class="modal modal-lg" id="form-contato" novalidate>
       <div class="modal-header">
         <h2 class="modal-title" id="modal-contato-title">Novo contato</h2>
         <button type="button" class="modal-close" id="btn-close-modal-contato" aria-label="Fechar">×</button>
       </div>
       <div class="modal-body">
-        <div class="form-row">
-          <div class="form-group form-group-flex">
-            <label class="form-label" for="ct-nome">Nome <span class="required">*</span></label>
-            <input type="text" class="form-input" id="ct-nome" required maxlength="120" placeholder="Nome do contato">
+
+        <!-- Identificação -->
+        <h3 class="field-section-title">Identificação</h3>
+        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+          <div class="field">
+            <label class="field-label" for="ct-pessoa-tipo">Pessoa / Empresa</label>
+            <select class="select" id="ct-pessoa-tipo">
+              <option value="">— Não informado —</option>
+              <option value="fisica">Pessoa Física</option>
+              <option value="juridica">Pessoa Jurídica</option>
+            </select>
           </div>
-          <div class="form-group form-group-flex">
-            <label class="form-label" for="ct-tipo">Tipo</label>
-            <select class="form-input" id="ct-tipo">
+          <div class="field">
+            <label class="field-label" for="ct-tipo">Relação</label>
+            <select class="select" id="ct-tipo">
               <option value="ambos">Cliente e Fornecedor</option>
               <option value="cliente">Cliente</option>
               <option value="fornecedor">Fornecedor</option>
             </select>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="ct-nome-extrato">Nome no extrato</label>
-          <input type="text" class="form-input" id="ct-nome-extrato" maxlength="120" placeholder="Como aparece no extrato bancário">
+        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+          <div class="field">
+            <label class="field-label" for="ct-nome">Nome <span class="required">*</span></label>
+            <input type="text" class="input" id="ct-nome" required maxlength="120" placeholder="Nome do contato">
+          </div>
+          <div class="field">
+            <label class="field-label" for="ct-documento" id="ct-documento-label">Documento (CPF/CNPJ)</label>
+            <input type="text" class="input" id="ct-documento" maxlength="30">
+            <div class="ct-cnpj-actions hidden" id="ct-cnpj-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-buscar-cnpj">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                Buscar pelo CNPJ
+              </button>
+              <a class="btn-link btn-sm" id="link-buscar-google" href="#" target="_blank" rel="noopener">Não sei o CNPJ →</a>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="ct-nome-extrato">Nome no extrato</label>
+          <input type="text" class="input" id="ct-nome-extrato" maxlength="120" placeholder="Como aparece no extrato bancário">
           <p class="field-hint">Usado para reconhecimento por correspondência de texto.</p>
         </div>
-        <div class="form-row">
-          <div class="form-group form-group-flex">
-            <label class="form-label" for="ct-email">E-mail</label>
-            <input type="email" class="form-input" id="ct-email" maxlength="200">
+
+        <!-- Contato -->
+        <h3 class="field-section-title">Contato</h3>
+        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+          <div class="field">
+            <label class="field-label" for="ct-email">E-mail</label>
+            <input type="email" class="input" id="ct-email" maxlength="200" placeholder="email@dominio.com">
           </div>
-          <div class="form-group form-group-flex">
-            <label class="form-label" for="ct-telefone">Telefone</label>
-            <input type="text" class="form-input" id="ct-telefone" maxlength="30">
+          <div class="field">
+            <label class="field-label" for="ct-website">Website</label>
+            <input type="url" class="input" id="ct-website" maxlength="200" placeholder="https://…">
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="ct-documento">Documento (CPF/CNPJ)</label>
-          <input type="text" class="form-input" id="ct-documento" maxlength="30">
+        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+          <div class="field">
+            <label class="field-label" for="ct-telefone">Telefone</label>
+            <input type="text" class="input" id="ct-telefone" maxlength="30" placeholder="(11) 99999-9999">
+          </div>
+          <div class="field">
+            <label class="field-label" for="ct-whatsapp">WhatsApp</label>
+            <input type="text" class="input" id="ct-whatsapp" maxlength="30" placeholder="Ex: 5511999999999">
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="ct-observacao">Observação</label>
-          <textarea class="form-input" id="ct-observacao" rows="3" maxlength="500"></textarea>
+
+        <!-- Redes sociais -->
+        <h3 class="field-section-title">Redes sociais</h3>
+        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+          <div class="field">
+            <label class="field-label" for="ct-linkedin">LinkedIn</label>
+            <input type="text" class="input" id="ct-linkedin" maxlength="200" placeholder="URL ou usuário">
+          </div>
+          <div class="field">
+            <label class="field-label" for="ct-instagram">Instagram</label>
+            <input type="text" class="input" id="ct-instagram" maxlength="60" placeholder="@usuario (sem @)">
+          </div>
+        </div>
+
+        <!-- Profissional (só PF) -->
+        <div id="ct-profissional-section" class="hidden">
+          <h3 class="field-section-title">Profissional</h3>
+          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field">
+              <label class="field-label" for="ct-empresa">Empresa</label>
+              <input type="text" class="input" id="ct-empresa" maxlength="120">
+            </div>
+            <div class="field">
+              <label class="field-label" for="ct-cargo">Cargo</label>
+              <input type="text" class="input" id="ct-cargo" maxlength="80">
+            </div>
+          </div>
+        </div>
+
+        <!-- Localização -->
+        <h3 class="field-section-title">Localização</h3>
+        <div class="field">
+          <label class="field-label" for="ct-endereco">Endereço</label>
+          <textarea class="textarea" id="ct-endereco" rows="2" maxlength="300" placeholder="Rua, número, bairro, cidade, estado, CEP"></textarea>
+        </div>
+
+        <!-- Outros -->
+        <h3 class="field-section-title">Outros</h3>
+        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+          <div class="field">
+            <label class="field-label" for="ct-aniversario">Aniversário</label>
+            <input type="date" class="input" id="ct-aniversario">
+          </div>
+          <div class="field"></div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="ct-observacao">Observação</label>
+          <textarea class="textarea" id="ct-observacao" rows="3" maxlength="500"></textarea>
         </div>
       </div>
       <div class="modal-footer" style="justify-content: space-between;">

@@ -95,6 +95,49 @@ export async function initSidebar(activePage) {
     </aside>
   `;
 
+  // ── Mobile: hambúrguer + overlay ─────────────────────────────
+  const headerLeft = document.querySelector('.header-left');
+  if (headerLeft && !headerLeft.querySelector('.sidebar-toggle')) {
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'sidebar-toggle';
+    toggle.setAttribute('aria-label', 'Abrir menu');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.innerHTML = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>`;
+    headerLeft.insertBefore(toggle, headerLeft.firstChild);
+  }
+
+  if (!document.getElementById('sidebar-overlay')) {
+    const ov = document.createElement('div');
+    ov.id = 'sidebar-overlay';
+    ov.className = 'sidebar-overlay';
+    document.body.appendChild(ov);
+  }
+
+  function openSidebar() {
+    container.classList.add('open');
+    document.getElementById('sidebar-overlay')?.classList.add('visible');
+    document.querySelector('.sidebar-toggle')?.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSidebar() {
+    container.classList.remove('open');
+    document.getElementById('sidebar-overlay')?.classList.remove('visible');
+    document.querySelector('.sidebar-toggle')?.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
+
+  document.querySelector('.sidebar-toggle')?.addEventListener('click', () => {
+    container.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+
+  document.getElementById('sidebar-overlay')?.addEventListener('click', closeSidebar);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && container.classList.contains('open')) closeSidebar();
+  });
+
   // Sincroniza tema com profiles em background (não bloqueia render)
   initTheme();
 

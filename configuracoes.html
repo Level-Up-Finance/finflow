@@ -160,11 +160,10 @@
               <option value="custo_vida" selected>Custo de vida</option>
             </select>
           </div>
-          <div class="field">
-            <label class="field-label" for="cat-cor">Cor</label>
-            <div id="cat-cor-wrapper" style="width:42px;height:42px;border-radius:var(--radius-md);background:#6D5EF5;cursor:pointer;border:1px solid var(--color-border);position:relative;overflow:hidden;">
-              <input type="color" id="cat-cor" value="#6D5EF5" style="position:absolute;inset:-10px;width:calc(100% + 20px);height:calc(100% + 20px);opacity:0;cursor:pointer;border:none;">
-            </div>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label class="field-label">Cor</label>
+            <div class="color-picker" id="cat-cor-picker"></div>
+            <input type="hidden" id="cat-cor" value="#6D5EF5">
           </div>
         </div>
         <div class="field">

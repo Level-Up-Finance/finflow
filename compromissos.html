@@ -269,9 +269,12 @@
 
         <!-- Cliente / Fornecedor (sempre visível) -->
         <div class="field" id="contato-field">
-          <label class="field-label" for="comp-contato">Cliente / Fornecedor</label>
-          <select id="comp-contato" name="contato_id" class="select"></select>
-          <p class="field-hint">Identifica com quem este compromisso se relaciona (opcional). Cadastre novos contatos em Configurações.</p>
+          <label class="field-label" for="comp-contato-search">Cliente / Fornecedor</label>
+          <div class="contato-picker" data-picker="comp-contato">
+            <input type="text" id="comp-contato-search" class="contato-picker-input input" autocomplete="off" placeholder="Buscar contato ou digitar novo nome…">
+            <input type="hidden" id="comp-contato" name="contato_id" value="">
+          </div>
+          <p class="field-hint">Identifica com quem este compromisso se relaciona (opcional). Digite para buscar ou criar um novo.</p>
         </div>
 
         <!-- Projeto de investimento (só pra categoria do grupo Investimentos) -->

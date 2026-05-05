@@ -34,6 +34,7 @@ import { initColVisibility } from '../lib/col-visibility.js';
 import { typeIcon as accountTypeIcon, typeColor as accountTypeColor } from '../lib/account-types.js';
 import { escapeHtml, formatDateBR, todayISO, getInitials } from '../lib/utils.js';
 import { fetchExchangeRate } from '../lib/currency.js';
+import { initContatoPicker } from '../components/contato-picker.js';
 
 // -----------------------------
 // State
@@ -218,37 +219,17 @@ function getContato(id) {
   return cachedContatos.find((c) => c.id === id) || null;
 }
 
-async function criarContato(nome) {
-  const user = await getCurrentUser();
-  if (!user) return null;
-  const { data, error } = await supabase
-    .from('contatos')
-    .insert({ user_id: user.id, nome, tipo: 'ambos' })
-    .select()
-    .single();
-  if (error) {
-    let msg = error.message;
-    if (/relation.*contatos|column.*contatos/i.test(msg)) {
-      msg = 'Tabela contatos não existe — rode a migration 0023 no Supabase.';
-    }
-    showToast('Erro ao criar contato: ' + msg, 'error', 8000);
-    return null;
-  }
-  cachedContatos.push(data);
-  cachedContatos.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-  showToast(`Contato "${data.nome}" criado`, 'success');
-  return data;
-}
+let contatoPicker = null;
 
-function renderContatoOptions() {
-  const sel = document.getElementById('comp-contato');
-  if (!sel) return;
-  const opts = ['<option value="">— Sem contato —</option>'];
-  for (const c of cachedContatos) {
-    opts.push(`<option value="${c.id}">${escapeHtml(c.nome)}</option>`);
-  }
-  opts.push('<option value="__new__">+ Criar novo contato…</option>');
-  sel.innerHTML = opts.join('');
+function initContatoPickerOnce() {
+  if (contatoPicker) return;
+  const rootEl = document.querySelector('[data-picker="comp-contato"]');
+  if (!rootEl) return;
+  contatoPicker = initContatoPicker({
+    rootEl,
+    contatos: () => cachedContatos,
+    defaultTipo: 'ambos',
+  });
 }
 
 // -----------------------------
@@ -420,8 +401,8 @@ function renderModalDropdowns() {
   renderProjetoOptions();
   // Dívidas (só relevante quando categoria é do grupo Dívidas)
   renderDividaOptions();
-  // Contatos (sempre visível)
-  renderContatoOptions();
+  // Contatos (sempre visível) — picker é inicializado no openModal
+  initContatoPickerOnce();
   // Dropdown de categoria existente (modo "Categoria existente")
   renderCatExistenteOptions();
 }
@@ -606,25 +587,6 @@ function bindEvents() {
   document.getElementById('comp-divida')?.addEventListener('change', (e) => {
     if (e.target.value === '__new__') {
       // Deixa "__new__" selecionado — no save auto-criamos a dívida com os dados do compromisso
-    }
-  });
-
-  // Select de contato: "__new__" abre prompt pra criar inline
-  document.getElementById('comp-contato')?.addEventListener('change', async (e) => {
-    if (e.target.value !== '__new__') {
-      e.target.dataset.lastGood = e.target.value;
-      return;
-    }
-    const prev = e.target.dataset.lastGood || '';
-    e.target.value = '';
-    const nome = window.prompt('Nome do novo contato (cliente/fornecedor):');
-    if (!nome || !nome.trim()) { e.target.value = prev; return; }
-    const novo = await criarContato(nome.trim());
-    if (novo) {
-      renderContatoOptions();
-      e.target.value = novo.id;
-    } else {
-      e.target.value = prev;
     }
   });
 
@@ -1094,7 +1056,8 @@ function openCompromissoModal(c = null) {
   document.getElementById('comp-categoria').value = c?.categoria_id || '';
   document.getElementById('comp-projeto').value = c?.projeto_id || '';
   document.getElementById('comp-divida').value  = c?.divida_id  || '';
-  document.getElementById('comp-contato').value = c?.contato_id || '';
+  initContatoPickerOnce();
+  contatoPicker?.setValue(c?.contato_id || '');
   document.getElementById('comp-conta').value = c?.conta_id || '';
   document.getElementById('comp-tipo-pagamento').value = c?.tipo_pagamento || '';
   document.getElementById('comp-periodo').value = c?.periodo || 'Mensal';
@@ -1171,7 +1134,8 @@ function openCatDirectModal(cat) {
   document.getElementById('comp-iniciado-em').value    = cat.iniciado_em    || todayISO();
   document.getElementById('comp-terminado-em').value   = cat.terminado_em   || '';
   document.getElementById('comp-descricao').value      = cat.descricao      || '';
-  document.getElementById('comp-contato').value        = cat.contato_id     || '';
+  initContatoPickerOnce();
+  contatoPicker?.setValue(cat.contato_id || '');
   document.getElementById('comp-status').value         = status;
   document.getElementById('motivo-field').classList.add('hidden');
 
@@ -2496,8 +2460,7 @@ async function saveCatDirectCompromisso() {
   const terminado_em  = document.getElementById('comp-terminado-em').value || null;
   const descricao     = document.getElementById('comp-descricao').value.trim() || null;
   const status        = document.getElementById('comp-status').value;
-  const contatoRaw    = document.getElementById('comp-contato')?.value || '';
-  const contato_id    = (contatoRaw && contatoRaw !== '__new__') ? contatoRaw : null;
+  const contato_id    = contatoPicker?.getValue() || null;
 
   const cat = cachedCategorias.find((c) => c.id === catId);
   const isDividasCat = cat?.grupo === 'dividas' || /dívida|divida/i.test(cat?.nome || '');
@@ -2627,8 +2590,7 @@ async function saveCompromisso(event) {
   const projeto_id     = (cat?.grupo === 'investimentos' && projetoRaw && projetoRaw !== '__new__') ? projetoRaw : null;
   const isDividasCat   = cat?.grupo === 'dividas' || /dívida|divida/i.test(cat?.nome || '');
   const dividaRaw      = isDividasCat ? (document.getElementById('comp-divida')?.value || '') : '';
-  const contatoRaw     = document.getElementById('comp-contato')?.value || '';
-  const contato_id     = (contatoRaw && contatoRaw !== '__new__') ? contatoRaw : null;
+  const contato_id     = contatoPicker?.getValue() || null;
   const conta_id          = document.getElementById('comp-conta').value || null;
   const conta_destino_id  = document.getElementById('comp-conta-destino')?.value || null;
   const tipo_pagamento = document.getElementById('comp-tipo-pagamento').value || null;
