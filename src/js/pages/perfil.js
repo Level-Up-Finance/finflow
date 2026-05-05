@@ -14,7 +14,7 @@ let cachedProfile = null;
 let userId = null;
 let userEmail = null;
 
-const FIELDS = ['nome', 'apelido', 'bio', 'instagram', 'twitter', 'linkedin'];
+const FIELDS = ['nome', 'apelido', 'telefone', 'bio', 'instagram', 'twitter', 'linkedin'];
 
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();

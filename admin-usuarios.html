@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usuários · FinFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/variables.css">
+  <link rel="stylesheet" href="src/css/global.css">
+  <link rel="stylesheet" href="src/css/components.css">
+  <link rel="stylesheet" href="src/css/layout.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-sidebar" id="sidebar-container"></div>
+
+    <header class="app-header header">
+      <div class="header-left">
+        <h2 class="header-title">Usuários</h2>
+      </div>
+    </header>
+
+    <main class="app-main main">
+      <div class="page-header">
+        <div class="page-header-content">
+          <p class="page-eyebrow">Admin</p>
+          <h1 class="page-title">Usuários <span class="adm-usr-count hidden" id="usr-count"></span></h1>
+          <p class="page-description">Todos os usuários cadastrados no FinFlow, planos e informações de perfil.</p>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="adm-usr-toolbar">
+        <input type="search" class="input adm-usr-search" id="usr-search"
+               placeholder="Buscar por nome ou e-mail…" autocomplete="off">
+        <div class="adm-usr-filters">
+          <button class="filter-pill active" data-plano="todos"   type="button">Todos</button>
+          <button class="filter-pill"        data-plano="free"    type="button">Free</button>
+          <button class="filter-pill"        data-plano="pro"     type="button">Pro</button>
+          <button class="filter-pill"        data-plano="premium" type="button">Premium</button>
+        </div>
+      </div>
+
+      <!-- Tabela -->
+      <div class="table-wrapper">
+        <table class="table adm-usr-table" id="usr-table">
+          <thead>
+            <tr>
+              <th>Usuário</th>
+              <th>E-mail</th>
+              <th>Plano</th>
+              <th>Membro desde</th>
+              <th>Último acesso</th>
+            </tr>
+          </thead>
+          <tbody id="usr-tbody">
+            <tr><td colspan="5" class="table-loading">Carregando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- ── Modal: Detalhe do usuário ── -->
+  <div class="modal-backdrop hidden" id="modal-usuario" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header adm-usr-modal-header">
+        <div class="adm-usr-modal-identity">
+          <div class="adm-usr-modal-avatar" id="modal-usr-avatar"></div>
+          <div>
+            <div class="adm-usr-modal-name" id="modal-usr-name"></div>
+            <div class="adm-usr-modal-meta" id="modal-usr-meta"></div>
+          </div>
+        </div>
+        <button type="button" class="modal-close" id="btn-close-modal-usr" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body" id="modal-usr-body"></div>
+      <div class="modal-footer adm-usr-modal-footer">
+        <div class="adm-usr-plano-form">
+          <label class="field-label" for="modal-usr-plano-select">Definir plano</label>
+          <select class="select" id="modal-usr-plano-select">
+            <option value="free">Free</option>
+            <option value="pro">Pro</option>
+            <option value="premium">Premium</option>
+          </select>
+        </div>
+        <div style="display:flex; gap:var(--space-2);">
+          <button type="button" class="btn btn-ghost" id="btn-cancel-modal-usr">Fechar</button>
+          <button type="button" class="btn btn-primary" id="btn-save-plano">Salvar plano</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script type="module" src="src/js/pages/admin-usuarios.js"></script>
+</body>
+</html>
