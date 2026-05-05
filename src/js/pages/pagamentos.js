@@ -705,6 +705,15 @@ function renderPagamentoRow(p, catColor) {
        </span>`
     : '';
 
+  // Indicador de descrição
+  const desc = sub?.descricao?.trim() || '';
+  const descIcon = desc
+    ? `<span class="desc-indicator" tabindex="0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span class="desc-popover">${escapeHtml(desc)}</span>
+       </span>`
+    : '';
+
   // Indicador "atrasado"
   const atrasadoBadge = atrasadoFlag
     ? '<span class="atrasado-indicator">atrasado</span>'
@@ -730,6 +739,7 @@ function renderPagamentoRow(p, catColor) {
           ${parcialBadge}
           ${atrasadoBadge}
           ${obsIcon}
+          ${descIcon}
         </div>
       </td>
       <td class="tabular" style="font-size: var(--fs-xs); color: var(--color-text-secondary);">${vto}</td>
@@ -1254,7 +1264,12 @@ function occursOn(c, date) {
       && start.getMonth() === target.getMonth();
   }
   if (c.periodo === 'Semanal') {
-    return c.dia_semana === target.getDay();
+    if (c.dia_semana !== target.getDay()) return false;
+    const n = Number(c.intervalo_semanas) || 1;
+    if (n <= 1) return true;
+    if (!start) return true;
+    const diff = Math.round((target - start) / (24 * 60 * 60 * 1000));
+    return diff >= 0 && diff % (n * 7) === 0;
   }
   if (c.periodo === 'Quinzenal') {
     if (!start || c.dia_semana !== target.getDay()) return false;

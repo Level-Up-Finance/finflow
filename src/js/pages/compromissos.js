@@ -33,6 +33,7 @@ import { findBank, logoUrl } from '../lib/banks.js';
 import { initColVisibility } from '../lib/col-visibility.js';
 import { typeIcon as accountTypeIcon, typeColor as accountTypeColor } from '../lib/account-types.js';
 import { escapeHtml, formatDateBR, todayISO, getInitials } from '../lib/utils.js';
+import { fetchExchangeRate } from '../lib/currency.js';
 
 // -----------------------------
 // State
@@ -53,7 +54,9 @@ let filterStatus = 'todas';
 let filterCategorias = new Set(['all']);
 let viewMode     = 'table'; // 'table' | 'dre' | 'calendar'
 let filterConfig = 'todas'; // 'todas' | 'configurado' | 'sem-compromisso'
+let filterSearch = '';
 let colVisEl = null;   // wrapper do seletor de colunas
+const ratesMapLocal = new Map(); // 'USD' → 5.40 (usado só nesta página)
 
 // Estado do calendário
 const todayDate = new Date();
@@ -485,6 +488,11 @@ function bindEvents() {
   document.getElementById('btn-novo-compromisso').addEventListener('click', () => openCompromissoModal());
   document.querySelector('[data-trigger-novo]')?.addEventListener('click', () => openCompromissoModal());
 
+  document.getElementById('search-compromissos').addEventListener('input', (e) => {
+    filterSearch = e.target.value.toLowerCase().trim();
+    renderCompromissos();
+  });
+
   // View toggle (Tabela / DRE)
   document.getElementById('view-toggle').addEventListener('click', (e) => {
     const btn = e.target.closest('.view-toggle-btn');
@@ -557,8 +565,14 @@ function bindEvents() {
     toggleTransferFields();
   });
 
-  // Conta origin → limit info
-  document.getElementById('comp-conta').addEventListener('change', (e) => updateLimiteInfo(e.target.value));
+  // Conta origin → limit info + auto-set tipo_pagamento se cartão de crédito
+  document.getElementById('comp-conta').addEventListener('change', (e) => {
+    updateLimiteInfo(e.target.value);
+    const conta = getConta(e.target.value);
+    if (conta?.tipo === 'Cartão de Crédito') {
+      document.getElementById('comp-tipo-pagamento').value = 'Crédito';
+    }
+  });
 
   // Período → mostra/esconde dia mês ou dia semana
   document.getElementById('comp-periodo').addEventListener('change', toggleVencimentoFields);
@@ -691,6 +705,13 @@ function bindEvents() {
     );
   });
 
+  document.getElementById('btn-encerrar').addEventListener('click', () => {
+    if (!detailsCompromisso) return;
+    openEncerrarModal(detailsCompromisso);
+  });
+
+  document.getElementById('btn-confirmar-encerrar').addEventListener('click', confirmarEncerrar);
+
   // Confirmar
   document.getElementById('btn-confirmar-acao').addEventListener('click', async () => {
     if (!pendingAction) return;
@@ -806,15 +827,38 @@ function syncCategoriaFilterUI() {
 // -----------------------------
 // Vencimento conditional: dia mês vs dia semana vs único (sem dia)
 // -----------------------------
+// Lê o date input do Anual e retorna { dia, iso } ou { dia: null, iso: null }
+function readAnualDateInput() {
+  const raw = document.getElementById('comp-vencimento-data-anual').value;
+  if (!raw) return { dia: null, iso: null };
+  const parts = raw.split('-');
+  if (parts.length !== 3) return { dia: null, iso: null };
+  const dia = Number(parts[2]);
+  if (!dia || dia < 1 || dia > 31) return { dia: null, iso: null };
+  return { dia, iso: raw };
+}
+
+// Para Anual: combina mês de iniciado_em com vencimento_dia → ISO date "YYYY-MM-DD"
+function anualDateFromCompromisso(c) {
+  if (!c || c.periodo !== 'Anual' || !c.vencimento_dia) return '';
+  const base = c.iniciado_em ? new Date(c.iniciado_em + 'T00:00:00') : new Date();
+  const y = base.getFullYear();
+  const m = String(base.getMonth() + 1).padStart(2, '0');
+  const d = String(c.vencimento_dia).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 function toggleVencimentoFields() {
   const periodo = document.getElementById('comp-periodo').value;
   const usaDiaSemana = periodo === 'Semanal' || periodo === 'Quinzenal';
   const ehUnico = periodo === 'Único';
+  const ehSemanal = periodo === 'Semanal';
+  const ehAnual = periodo === 'Anual';
 
-  // Dia do mês: oculta quando usa dia da semana OU quando é Único
-  document.getElementById('vencimento-dia-field').classList.toggle('hidden', usaDiaSemana || ehUnico);
-  // Dia da semana: só visível pra Semanal/Quinzenal
+  document.getElementById('vencimento-dia-field').classList.toggle('hidden', usaDiaSemana || ehUnico || ehAnual);
+  document.getElementById('vencimento-data-anual-field').classList.toggle('hidden', !ehAnual);
   document.getElementById('dia-semana-field').classList.toggle('hidden', !usaDiaSemana);
+  document.getElementById('intervalo-semanas-field').classList.toggle('hidden', !ehSemanal);
 }
 
 // Alterna entre "valor base fixo" e "grid de valores mensais"
@@ -850,7 +894,7 @@ function toggleTransferFields() {
 }
 
 // Shows committed credit limit when a Cartão de Crédito is selected
-function updateLimiteInfo(contaId) {
+async function updateLimiteInfo(contaId) {
   const el = document.getElementById('comp-conta-limite-info');
   if (!el) return;
   if (!contaId) { el.classList.add('hidden'); el.innerHTML = ''; return; }
@@ -858,9 +902,25 @@ function updateLimiteInfo(contaId) {
   if (!conta || conta.tipo !== 'Cartão de Crédito') { el.classList.add('hidden'); el.innerHTML = ''; return; }
 
   const limite = Number(conta.limite) || 0;
-  const comprometido = cachedCompromissos
-    .filter((c) => c.conta_id === contaId && c.status === 'ativa' && !c.valor_variavel)
-    .reduce((sum, c) => sum + (Number(c.valor_base) || 0), 0);
+  const relevantes = cachedCompromissos
+    .filter((c) => c.conta_id === contaId && c.status === 'ativa' && !c.valor_variavel);
+
+  // Garante que todas as taxas necessárias estão carregadas antes de somar.
+  const moedasFaltando = [...new Set(
+    relevantes.map((c) => c.moeda).filter((m) => m && m !== 'BRL' && !ratesMapLocal.has(m))
+  )];
+  if (moedasFaltando.length > 0) {
+    await Promise.all(moedasFaltando.map(async (cur) => {
+      try {
+        ratesMapLocal.set(cur, await fetchExchangeRate(cur, 'BRL'));
+      } catch (err) {
+        console.error(`[updateLimiteInfo] falha ao buscar taxa ${cur}→BRL:`, err);
+      }
+    }));
+  }
+
+  const comprometido = relevantes
+    .reduce((sum, c) => sum + convertToLocalBRL(Number(c.valor_base) || 0, c.moeda), 0);
 
   if (!limite) {
     el.classList.remove('hidden');
@@ -1039,7 +1099,9 @@ function openCompromissoModal(c = null) {
   document.getElementById('comp-tipo-pagamento').value = c?.tipo_pagamento || '';
   document.getElementById('comp-periodo').value = c?.periodo || 'Mensal';
   document.getElementById('comp-vencimento-dia').value = c?.vencimento_dia || '';
+  document.getElementById('comp-vencimento-data-anual').value = anualDateFromCompromisso(c);
   document.getElementById('comp-dia-semana').value = c?.dia_semana ?? '';
+  document.getElementById('comp-intervalo-semanas').value = c?.intervalo_semanas || 1;
   document.getElementById('comp-valor-base').value = c?.valor_base ?? '';
   document.getElementById('comp-moeda').value = c?.moeda || 'BRL';
   const moedaVarEl = document.getElementById('comp-moeda-var');
@@ -1102,6 +1164,7 @@ function openCatDirectModal(cat) {
   document.getElementById('comp-tipo-pagamento').value = cat.tipo_pagamento || '';
   document.getElementById('comp-periodo').value        = cat.periodo        || 'Mensal';
   document.getElementById('comp-vencimento-dia').value = cat.vencimento_dia || '';
+  document.getElementById('comp-vencimento-data-anual').value = anualDateFromCompromisso(cat);
   document.getElementById('comp-dia-semana').value     = cat.dia_semana     ?? '';
   document.getElementById('comp-valor-base').value     = cat.valor_base     ?? '';
   document.getElementById('comp-moeda').value          = cat.moeda          || 'BRL';
@@ -1186,9 +1249,16 @@ async function openDetailsModal(c) {
   // Vencimento
   let venc = '—';
   if (c.periodo === 'Semanal' || c.periodo === 'Quinzenal') {
-    venc = c.dia_semana !== null && c.dia_semana !== undefined
-      ? `Toda${c.periodo === 'Quinzenal' ? ' outra' : ''} ${diaSemanaLabel(c.dia_semana)}`
-      : '—';
+    if (c.dia_semana !== null && c.dia_semana !== undefined) {
+      const n = Number(c.intervalo_semanas) || 1;
+      if (c.periodo === 'Quinzenal') {
+        venc = `Toda outra ${diaSemanaLabel(c.dia_semana)}`;
+      } else if (n > 1) {
+        venc = `A cada ${n} semanas (${diaSemanaLabel(c.dia_semana)})`;
+      } else {
+        venc = `Toda ${diaSemanaLabel(c.dia_semana)}`;
+      }
+    }
   } else if (c.vencimento_dia) {
     venc = `Dia ${c.vencimento_dia}`;
   }
@@ -1204,8 +1274,12 @@ async function openDetailsModal(c) {
   const fields = [
     { label: 'Categoria',         value: categoria ? categoria.nome : '— (categoria removida)' },
     ...(c.projeto_id ? [{
-      label: 'Projeto',
+      label: 'Projeto vinculado',
       value: getProjeto(c.projeto_id)?.nome || '— (projeto removido)'
+    }] : []),
+    ...(c.divida_id ? [{
+      label: 'Dívida vinculada',
+      value: getDivida(c.divida_id)?.nome || '— (dívida removida)'
     }] : []),
     { label: 'Banco/Cartão',      value: contaDisplay },
     { label: 'Tipo de pagamento', value: c.tipo_pagamento || '—' },
@@ -1238,14 +1312,139 @@ async function openDetailsModal(c) {
     btnDel.classList.add('hidden');
   }
 
+  document.getElementById('btn-encerrar').classList.toggle('hidden', c.status === 'arquivada' || !!c.terminado_em);
+
   // Reset histórico (escondido até carregar)
   document.getElementById('details-history').classList.add('hidden');
   document.getElementById('details-history-list').innerHTML = '';
+  document.getElementById('details-financial-history').classList.add('hidden');
+  document.getElementById('details-financial-history-list').innerHTML = '';
 
   openModal('modal-details');
 
   // Carrega histórico em background (não bloqueia abertura do modal)
   loadAndShowHistory(c.id, c.moeda);
+  if (c.projeto_id || c.divida_id) loadAndShowFinancialHistory(c);
+}
+
+// -----------------------------
+// Histórico financeiro do vínculo (projeto / dívida)
+// Mostra saldo_inicial / valor_pago mesmo quando não há extrato manual.
+// -----------------------------
+async function loadAndShowFinancialHistory(c) {
+  const section = document.getElementById('details-financial-history');
+  const titleEl = document.getElementById('details-financial-history-title');
+  const listEl  = document.getElementById('details-financial-history-list');
+  const fmtDate = (iso) => { if (!iso) return '—'; const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
+
+  if (c.projeto_id) {
+    const [projRes, aportesRes] = await Promise.all([
+      supabase.from('projetos_investimento').select('saldo_inicial, nome').eq('id', c.projeto_id).single(),
+      supabase.from('aportes_projeto').select('*').eq('projeto_id', c.projeto_id).order('data', { ascending: false }),
+    ]);
+    if (aportesRes.error && !/relation.*aportes_projeto/i.test(aportesRes.error.message))
+      console.warn('[financialHistory]', aportesRes.error);
+
+    const proj         = projRes.data;
+    const aportes      = aportesRes.data || [];
+    const saldoInicial = Number(proj?.saldo_inicial) || 0;
+
+    if (aportes.length === 0 && saldoInicial === 0) {
+      titleEl.textContent = `Aportes — ${escapeHtml(proj?.nome || '')}`;
+      listEl.innerHTML = `
+        <div style="text-align:center; padding: var(--space-5); color: var(--color-text-muted); font-size: var(--fs-sm);">
+          Nenhum aporte registrado ainda. Use a página <strong>Investimentos</strong> para registrar aportes neste projeto.
+        </div>`;
+      section.classList.remove('hidden');
+      return;
+    }
+
+    const rowsHtml = [];
+    for (const a of aportes) {
+      rowsHtml.push(`
+        <div class="proj-hist-row proj-hist-row-aporte">
+          <span class="proj-hist-date">${fmtDate(a.data)}</span>
+          <span class="proj-hist-name">${escapeHtml(a.descricao || 'Aporte')} <span class="proj-hist-tag">Aporte</span></span>
+          <span class="proj-hist-value">${formatCurrency(Number(a.valor), 'BRL')}</span>
+        </div>`);
+    }
+    if (saldoInicial > 0) {
+      rowsHtml.push(`
+        <div class="proj-hist-row proj-hist-row-saldo">
+          <span class="proj-hist-date">—</span>
+          <span class="proj-hist-name">Saldo inicial</span>
+          <span class="proj-hist-value">${formatCurrency(saldoInicial, 'BRL')}</span>
+        </div>`);
+    }
+
+    const totalAportes = aportes.reduce((s, a) => s + Number(a.valor), 0);
+    const totalGeral   = totalAportes + saldoInicial;
+    titleEl.textContent = `Aportes — ${escapeHtml(proj?.nome || '')} (${rowsHtml.length} entrada${rowsHtml.length !== 1 ? 's' : ''})`;
+    listEl.innerHTML = `
+      <div class="proj-hist-list">${rowsHtml.join('')}</div>
+      <div style="display:flex;justify-content:flex-end;padding:var(--space-3) var(--space-4);font-weight:var(--fw-bold);font-size:var(--fs-sm);border-top:1px solid var(--color-border);">
+        Total investido: ${formatCurrency(totalGeral, 'BRL')}
+      </div>`;
+    section.classList.remove('hidden');
+
+  } else if (c.divida_id) {
+    const [dividaRes, histRes] = await Promise.all([
+      supabase.from('dividas').select('nome, valor_pago, valor_total').eq('id', c.divida_id).single(),
+      supabase.from('pagamentos_divida_historico').select('*').eq('divida_id', c.divida_id).order('data', { ascending: false }),
+    ]);
+    if (histRes.error && !/relation.*pagamentos_divida_historico/i.test(histRes.error.message))
+      console.warn('[financialHistory]', histRes.error);
+
+    const divida   = dividaRes.data;
+    const entradas = histRes.data || [];
+    if (!divida) return;
+
+    const valorPago  = Number(divida.valor_pago) || 0;
+    const valorTotal = Number(divida.valor_total) || 0;
+    if (entradas.length === 0 && valorPago === 0) {
+      titleEl.textContent = `Pagamentos — ${escapeHtml(divida.nome)}`;
+      listEl.innerHTML = `
+        <div style="text-align:center; padding: var(--space-5); color: var(--color-text-muted); font-size: var(--fs-sm);">
+          Nenhum pagamento registrado ainda. Use a página <strong>Dívidas</strong> para registrar pagamentos.
+        </div>`;
+      section.classList.remove('hidden');
+      return;
+    }
+
+    let bodyHtml;
+    if (entradas.length > 0) {
+      const rows = entradas.map((h) => `
+        <div class="proj-hist-row">
+          <span class="proj-hist-date">${fmtDate(h.data)}</span>
+          <span class="proj-hist-name">${escapeHtml(h.descricao || 'Pagamento')}</span>
+          <span class="proj-hist-value">${formatCurrency(Number(h.valor), 'BRL')}</span>
+        </div>`).join('');
+      const totalExtrato = entradas.reduce((s, h) => s + Number(h.valor), 0);
+      bodyHtml = `
+        <div class="proj-hist-list">${rows}</div>
+        <div style="display:flex;justify-content:flex-end;padding:var(--space-3) var(--space-4);font-weight:var(--fw-bold);font-size:var(--fs-sm);border-top:1px solid var(--color-border);">
+          Total pago: ${formatCurrency(totalExtrato, 'BRL')}
+        </div>`;
+    } else {
+      // Registrado via "Total já pago" — sem extrato detalhado
+      const pct = valorTotal > 0 ? Math.min(100, (valorPago / valorTotal) * 100) : 0;
+      bodyHtml = `
+        <div class="proj-hist-row proj-hist-row-saldo">
+          <span class="proj-hist-date">—</span>
+          <span class="proj-hist-name">Total pago (sem extrato detalhado)</span>
+          <span class="proj-hist-value">${formatCurrency(valorPago, 'BRL')}</span>
+        </div>
+        <div class="proj-hist-row">
+          <span class="proj-hist-date">—</span>
+          <span class="proj-hist-name" style="color:var(--color-text-muted);">Total da dívida</span>
+          <span class="proj-hist-value" style="color:var(--color-text-muted);">${formatCurrency(valorTotal, 'BRL')} (${pct.toFixed(0)}%)</span>
+        </div>`;
+    }
+
+    titleEl.textContent = `Pagamentos — ${escapeHtml(divida.nome)} (${entradas.length > 0 ? entradas.length + ' entrada' + (entradas.length !== 1 ? 's' : '') : 'total'})`;
+    listEl.innerHTML = `<div class="proj-hist-list">${bodyHtml}</div>`;
+    section.classList.remove('hidden');
+  }
 }
 
 // -----------------------------
@@ -1438,8 +1637,29 @@ async function loadCompromissos() {
   }
 
   cachedCompromissos = data || [];
-  await loadProxValores();
+  await Promise.all([loadProxValores(), refreshLocalRates()]);
   renderCompromissos();
+}
+
+async function refreshLocalRates() {
+  const currencies = [...new Set(
+    cachedCompromissos.map((c) => c.moeda).filter((m) => m && m !== 'BRL')
+  )];
+  await Promise.all(currencies.map(async (cur) => {
+    try {
+      ratesMapLocal.set(cur, await fetchExchangeRate(cur, 'BRL'));
+    } catch { /* silent */ }
+  }));
+}
+
+function convertToLocalBRL(value, currency) {
+  if (!currency || currency === 'BRL') return Number(value) || 0;
+  const rate = ratesMapLocal.get(currency);
+  if (!rate) {
+    console.warn(`[convertToLocalBRL] taxa ${currency}→BRL ausente; usando valor cru.`);
+    return Number(value) || 0;
+  }
+  return (Number(value) || 0) * rate;
 }
 
 // Carrega o próximo valor (orcamento_geral mais recente >= hoje) pra cada
@@ -1594,6 +1814,15 @@ function renderCompromissos() {
     filtered = filtered.filter((r) => filterCategorias.has(r._catId));
   }
 
+  if (filterSearch) {
+    const q = filterSearch;
+    filtered = filtered.filter((r) => {
+      const name = (r._type === 'sub' ? displayName(r) : r.nome).toLowerCase();
+      const catName = (r._catObj?.nome || '').toLowerCase();
+      return name.includes(q) || catName.includes(q);
+    });
+  }
+
   if (viewMode === 'calendar') {
     const calItems = filtered.filter((r) => r._type === 'sub' && isRowConfigured(r));
     container.innerHTML = renderCalendar(calItems, calendarYear, calendarMonth);
@@ -1713,7 +1942,13 @@ function renderUnifiedRow(row) {
 
 function renderVencCell(c) {
   if (c.periodo === 'Semanal' || c.periodo === 'Quinzenal') {
-    return c.dia_semana != null ? diaSemanaLabel(c.dia_semana) : '—';
+    if (c.dia_semana == null) return '—';
+    const label = diaSemanaLabel(c.dia_semana);
+    if (c.periodo === 'Semanal') {
+      const n = Number(c.intervalo_semanas) || 1;
+      return n > 1 ? `${label} / ${n}sem` : label;
+    }
+    return label;
   }
   return c.vencimento_dia ? `Dia ${c.vencimento_dia}` : '—';
 }
@@ -2047,7 +2282,12 @@ function occursOn(c, date) {
       && start.getMonth() === target.getMonth();
   }
   if (c.periodo === 'Semanal') {
-    return c.dia_semana === target.getDay();
+    if (c.dia_semana !== target.getDay()) return false;
+    const n = Number(c.intervalo_semanas) || 1;
+    if (n <= 1) return true;
+    if (!start) return true;
+    const diff = Math.round((target - start) / (24 * 60 * 60 * 1000));
+    return diff >= 0 && diff % (n * 7) === 0;
   }
   if (c.periodo === 'Quinzenal') {
     if (!start || c.dia_semana !== target.getDay()) return false;
@@ -2246,6 +2486,7 @@ async function saveCatDirectCompromisso() {
   const periodo       = document.getElementById('comp-periodo').value;
   const vencimentoRaw = document.getElementById('comp-vencimento-dia').value;
   const diaSemanaRaw  = document.getElementById('comp-dia-semana').value;
+  const intervaloSemanasRawCat = document.getElementById('comp-intervalo-semanas')?.value;
   const valorVariavel = document.getElementById('comp-valor-variavel').checked;
   const valorBaseRaw  = document.getElementById('comp-valor-base').value;
   const moedaFixaVal  = document.getElementById('comp-moeda').value;
@@ -2271,7 +2512,15 @@ async function saveCatDirectCompromisso() {
 
   const usaDiaSemana = periodo === 'Semanal' || periodo === 'Quinzenal';
   const ehUnico = periodo === 'Único';
-  if (usaDiaSemana) {
+  const ehAnual = periodo === 'Anual';
+  let anualDia = null;
+  let anualIso = null;
+  if (ehAnual) {
+    const a = readAnualDateInput();
+    if (!a.dia) { showToast('Escolha a data de vencimento anual', 'error'); return; }
+    anualDia = a.dia;
+    anualIso = a.iso;
+  } else if (usaDiaSemana) {
     if (diaSemanaRaw === '') { showToast('Selecione o dia da semana', 'error'); return; }
   } else if (!ehUnico) {
     if (!vencimentoRaw || vencimentoRaw < 1 || vencimentoRaw > 31) {
@@ -2279,17 +2528,22 @@ async function saveCatDirectCompromisso() {
     }
   }
 
+  const intervalo_semanas_cat = (periodo === 'Semanal' && intervaloSemanasRawCat)
+    ? Math.max(1, Number(intervaloSemanasRawCat) || 1)
+    : 1;
+
   const payload = {
     tipo,
     conta_id,
     tipo_pagamento,
     periodo,
-    vencimento_dia:  (usaDiaSemana || ehUnico) ? null : Number(vencimentoRaw),
+    vencimento_dia:  ehAnual ? anualDia : ((usaDiaSemana || ehUnico) ? null : Number(vencimentoRaw)),
     dia_semana:      usaDiaSemana ? Number(diaSemanaRaw) : null,
+    intervalo_semanas: intervalo_semanas_cat,
     valor_base:      valorVariavel ? 0 : Number(valorBaseRaw),
     valor_variavel:  valorVariavel,
     moeda,
-    iniciado_em,
+    iniciado_em:     ehAnual ? anualIso : iniciado_em,
     terminado_em,
     descricao,
     status,
@@ -2381,6 +2635,7 @@ async function saveCompromisso(event) {
   const periodo        = document.getElementById('comp-periodo').value;
   const vencimentoRaw  = document.getElementById('comp-vencimento-dia').value;
   const diaSemanaRaw   = document.getElementById('comp-dia-semana').value;
+  const intervaloSemanasRaw = document.getElementById('comp-intervalo-semanas')?.value;
   const valorBaseRaw   = document.getElementById('comp-valor-base').value;
   const valorVariavel  = document.getElementById('comp-valor-variavel').checked;
   const ehRendaPrincipal = document.getElementById('comp-renda-principal').checked && tipo === 'Receita';
@@ -2402,13 +2657,25 @@ async function saveCompromisso(event) {
 
   const usaDiaSemana = periodo === 'Semanal' || periodo === 'Quinzenal';
   const ehUnico = periodo === 'Único';
-  if (usaDiaSemana) {
+  const ehAnual = periodo === 'Anual';
+  let anualDia = null;
+  let anualIso = null;
+  if (ehAnual) {
+    const a = readAnualDateInput();
+    if (!a.dia) { showToast('Escolha a data de vencimento anual', 'error'); return; }
+    anualDia = a.dia;
+    anualIso = a.iso;
+  } else if (usaDiaSemana) {
     if (diaSemanaRaw === '') { showToast('Selecione o dia da semana', 'error'); return; }
   } else if (!ehUnico) {
     if (!vencimentoRaw || vencimentoRaw < 1 || vencimentoRaw > 31) {
       showToast('Dia de vencimento deve ser entre 1 e 31', 'error'); return;
     }
   }
+
+  const intervalo_semanas = (periodo === 'Semanal' && intervaloSemanasRaw)
+    ? Math.max(1, Number(intervaloSemanasRaw) || 1)
+    : 1;
 
   const payload = {
     nome,
@@ -2419,11 +2686,12 @@ async function saveCompromisso(event) {
     conta_destino_id: tipo === 'Transferência' ? conta_destino_id : null,
     tipo_pagamento,
     periodo,
-    vencimento_dia: (usaDiaSemana || ehUnico) ? null : Number(vencimentoRaw),
+    vencimento_dia: ehAnual ? anualDia : ((usaDiaSemana || ehUnico) ? null : Number(vencimentoRaw)),
     dia_semana:     usaDiaSemana ? Number(diaSemanaRaw) : null,
+    intervalo_semanas,
     valor_base: valorVariavel ? 0 : Number(valorBaseRaw),
     moeda,
-    iniciado_em,
+    iniciado_em: ehAnual ? anualIso : iniciado_em,
     terminado_em,
     descricao,
     status,
@@ -2549,6 +2817,96 @@ async function deleteCompromisso(id) {
     return;
   }
   showToast('Compromisso deletado permanentemente', 'success');
+  await loadCompromissos();
+}
+
+// =============================================================
+// Encerrar compromisso
+// =============================================================
+let encerrandoId = null;
+
+function openEncerrarModal(c) {
+  encerrandoId = c.id;
+  const nome = escapeHtml(displayName(c));
+  document.getElementById('encerrar-msg').innerHTML =
+    `Encerrar <strong>${nome}</strong>?<br><br>` +
+    `Isso vai:<ul style="margin:var(--space-2) 0 0 var(--space-4);line-height:1.8;">` +
+    `<li>Definir <em>Termina em</em> = hoje</li>` +
+    `<li>Remover todos os pagamentos futuros com status Agendado</li>` +
+    `<li>Remover entradas de orçamento dos meses futuros</li>` +
+    `</ul>`;
+
+  const extras = document.getElementById('encerrar-extras');
+  extras.innerHTML = '';
+
+  if (c.divida_id) {
+    const div = getDivida(c.divida_id);
+    extras.innerHTML += `
+      <label class="checkbox-item" style="margin-bottom:var(--space-2);">
+        <input type="checkbox" id="encerrar-divida" checked>
+        <span>Marcar dívida <strong>${escapeHtml(div?.nome || '—')}</strong> como encerrada</span>
+      </label>`;
+  }
+  if (c.projeto_id) {
+    const proj = getProjeto(c.projeto_id);
+    extras.innerHTML += `
+      <label class="checkbox-item">
+        <input type="checkbox" id="encerrar-projeto" checked>
+        <span>Marcar projeto <strong>${escapeHtml(proj?.nome || '—')}</strong> como encerrado</span>
+      </label>`;
+  }
+
+  openModal('modal-encerrar');
+}
+
+async function confirmarEncerrar() {
+  if (!encerrandoId) return;
+  const c = cachedCompromissos.find((x) => x.id === encerrandoId);
+  if (!c) return;
+
+  const encerrarDivida  = document.getElementById('encerrar-divida')?.checked ?? false;
+  const encerrarProjeto = document.getElementById('encerrar-projeto')?.checked ?? false;
+
+  closeModal('modal-encerrar');
+  closeModal('modal-details');
+
+  const today = todayISO();
+  const currentMesAno = today.slice(0, 7) + '-01';
+
+  // 1. Encerra a subcategoria
+  const { error: subErr } = await supabase
+    .from('subcategorias')
+    .update({ terminado_em: today, status: 'inativa' })
+    .eq('id', encerrandoId);
+  if (subErr) { showToast('Erro ao encerrar: ' + subErr.message, 'error', 8000); return; }
+
+  // 2. Remove pagamentos Agendados futuros
+  await supabase
+    .from('pagamentos')
+    .delete()
+    .eq('subcategoria_id', encerrandoId)
+    .eq('status', 'Agendado')
+    .gte('data_vencimento', today);
+
+  // 3. Remove orcamentos de meses futuros
+  await supabase
+    .from('orcamento_geral')
+    .delete()
+    .eq('subcategoria_id', encerrandoId)
+    .gt('mes_ano', currentMesAno);
+
+  // 4. Dívida vinculada
+  if (encerrarDivida && c.divida_id) {
+    await supabase.from('dividas').update({ status: 'Quitada' }).eq('id', c.divida_id);
+  }
+
+  // 5. Projeto vinculado
+  if (encerrarProjeto && c.projeto_id) {
+    await supabase.from('projetos_investimento').update({ status: 'concluido' }).eq('id', c.projeto_id);
+  }
+
+  showToast(`${displayName(c)} encerrado`, 'success');
+  encerrandoId = null;
   await loadCompromissos();
 }
 

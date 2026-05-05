@@ -18,7 +18,7 @@
 
 .app-sidebar { grid-area: sidebar; }
 .app-header  { grid-area: header; min-width: 0; }
-.app-main    { grid-area: main;   min-width: 0; overflow-x: hidden; }
+.app-main    { grid-area: main;   min-width: 0; overflow-x: clip; }
 
 /* ============================================================
    SIDEBAR

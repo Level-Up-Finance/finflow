@@ -30,26 +30,6 @@
           <!-- Toolbar: Categorias -->
           <div class="cfg-toolbar-content" id="cfg-toolbar-categorias">
             <p class="cfg-panel-desc">Categorias organizam seus compromissos, investimentos e dívidas. Subcategorias podem ser vinculadas a um projeto, dívida ou compromisso específico.</p>
-            <div class="cfg-dropdown" id="dropdown-novo">
-              <button class="btn btn-primary" id="btn-novo-cfg" type="button">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Novo
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-              <div class="cfg-dropdown-menu hidden" id="dropdown-novo-menu">
-                <button class="cfg-dropdown-item" data-action="nova-categoria" type="button">Nova categoria</button>
-                <button class="cfg-dropdown-item" data-action="nova-subcategoria" type="button">Nova subcategoria</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Toolbar: Contatos -->
-          <div class="cfg-toolbar-content hidden" id="cfg-toolbar-contatos">
-            <p class="cfg-panel-desc">Contatos representam clientes e fornecedores — pessoas ou empresas com quem você se relaciona financeiramente. Vincule contatos a compromissos, dívidas, projetos e transações.</p>
-            <button class="btn btn-primary" id="btn-novo-contato" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Novo contato
-            </button>
           </div>
         </div>
 
@@ -58,10 +38,6 @@
           <button class="cfg-sidenav-item active" data-tab="categorias" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
             Categorias
-          </button>
-          <button class="cfg-sidenav-item" data-tab="contatos" type="button">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
-            Contatos
           </button>
           <button class="cfg-sidenav-item" data-tab="aparencia" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
@@ -84,14 +60,6 @@
 
         <!-- Tabela de categorias -->
         <div id="cfg-tree" class="hidden"></div>
-      </div>
-
-      <!-- Panel: Contatos -->
-      <div class="cfg-panel hidden" id="cfg-panel-contatos" role="region">
-        <div id="cfg-contatos-loading" class="loading-overlay" style="position:relative; min-height:120px;">
-          <span class="spinner"></span>
-        </div>
-        <div id="cfg-contatos-list" class="hidden"></div>
       </div>
 
       <!-- Panel: Aparência -->
@@ -184,9 +152,11 @@
           <div class="field">
             <label class="field-label" for="cat-grupo">Bloco</label>
             <select id="cat-grupo" class="select">
-              <option value="receitas">Contribuição — Receitas</option>
-              <option value="dividas">Contribuição — Dívidas</option>
-              <option value="investimentos">Sonhos — Investimentos</option>
+              <optgroup label="Contribuição">
+                <option value="receitas">Receita</option>
+                <option value="dividas">Dívida</option>
+              </optgroup>
+              <option value="investimentos">Sonhos</option>
               <option value="custo_vida" selected>Custo de vida</option>
             </select>
           </div>
@@ -195,6 +165,20 @@
             <div id="cat-cor-wrapper" style="width:42px;height:42px;border-radius:var(--radius-md);background:#6D5EF5;cursor:pointer;border:1px solid var(--color-border);position:relative;overflow:hidden;">
               <input type="color" id="cat-cor" value="#6D5EF5" style="position:absolute;inset:-10px;width:calc(100% + 20px);height:calc(100% + 20px);opacity:0;cursor:pointer;border:none;">
             </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="cat-descricao">Descrição <span class="field-optional">(opcional)</span></label>
+          <textarea id="cat-descricao" class="textarea" rows="2" maxlength="300" placeholder="Anotação sobre esta categoria…"></textarea>
+        </div>
+        <div class="cfg-migration-warning hidden" id="cat-migration-warning">
+          <div class="cfg-warning-box">
+            <strong>⚠ Esta categoria tem histórico vinculado</strong>
+            <p>Mover para outro bloco quebra a consistência dos relatórios (transações, compromissos, dívidas etc.). O ideal é criar uma categoria nova no bloco desejado e arquivar esta.</p>
+            <label class="cfg-override-toggle">
+              <input type="checkbox" id="cat-override-bloco">
+              <span>Mover mesmo assim — aceito perder a consistência</span>
+            </label>
           </div>
         </div>
       </div>
@@ -218,150 +202,30 @@
         <div class="field hidden" id="sub-categoria-field">
           <label class="field-label" for="sub-categoria-select">Categoria <span class="required">*</span></label>
           <select id="sub-categoria-select" class="select"></select>
+          <p class="field-hint" id="sub-categoria-hint"></p>
         </div>
         <div class="field">
           <label class="field-label" for="sub-nome">Nome <span class="required">*</span></label>
           <input type="text" id="sub-nome" class="input" maxlength="80" placeholder="Nome da subcategoria">
-          <p class="field-hint" id="sub-categoria-hint"></p>
+        </div>
+        <div class="field">
+          <label class="field-label" for="sub-descricao">Descrição <span class="field-optional">(opcional)</span></label>
+          <textarea id="sub-descricao" class="textarea" rows="2" maxlength="300" placeholder="Anotação sobre esta subcategoria…"></textarea>
+        </div>
+        <div class="cfg-migration-warning hidden" id="sub-migration-warning">
+          <div class="cfg-warning-box">
+            <strong>⚠ Esta subcategoria tem histórico vinculado</strong>
+            <p>Mover para uma categoria de outro bloco quebra a consistência dos relatórios. Categorias de outros blocos aparecem como bloqueadas. O ideal é criar uma subcategoria nova no bloco desejado.</p>
+            <label class="cfg-override-toggle">
+              <input type="checkbox" id="sub-override-bloco">
+              <span>Mover mesmo assim — aceito perder a consistência</span>
+            </label>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-ghost" id="btn-cancel-subcategoria">Cancelar</button>
         <button type="button" class="btn btn-primary" id="btn-save-subcategoria">Salvar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================================================
-       MODAL: Novo / Editar Contato
-       ============================================================ -->
-  <div class="modal-backdrop hidden" id="modal-contato" role="dialog" aria-modal="true">
-    <div class="modal modal-md">
-      <div class="modal-header">
-        <h2 class="modal-title" id="modal-contato-title">Novo contato</h2>
-        <button type="button" class="modal-close" id="btn-close-modal-contato" aria-label="Fechar">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="field">
-          <label class="field-label" for="ct-nome">Nome personalizado <span class="required">*</span></label>
-          <input type="text" id="ct-nome" class="input" maxlength="120" placeholder="Ex: Padaria do Zé, Imobiliária X, João Silva">
-        </div>
-        <div class="field">
-          <label class="field-label" for="ct-nome-extrato">Nome no extrato do banco</label>
-          <input type="text" id="ct-nome-extrato" class="input" maxlength="200" placeholder="Ex: IFOOD*RESTAURANTE SP 12345">
-          <span class="field-hint">Como aparece no extrato ou fatura — guardado para identificação automática futura.</span>
-        </div>
-        <div class="field">
-          <label class="field-label" for="ct-tipo">Tipo</label>
-          <select id="ct-tipo" class="select">
-            <option value="ambos" selected>Ambos (cliente e fornecedor)</option>
-            <option value="cliente">Cliente</option>
-            <option value="fornecedor">Fornecedor</option>
-          </select>
-        </div>
-        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
-          <div class="field">
-            <label class="field-label" for="ct-email">E-mail</label>
-            <input type="email" id="ct-email" class="input" maxlength="120" placeholder="contato@exemplo.com">
-          </div>
-          <div class="field">
-            <label class="field-label" for="ct-telefone">Telefone</label>
-            <input type="text" id="ct-telefone" class="input" maxlength="40" placeholder="(11) 99999-9999">
-          </div>
-        </div>
-        <div class="field">
-          <label class="field-label" for="ct-documento">Documento (CPF/CNPJ)</label>
-          <input type="text" id="ct-documento" class="input" maxlength="40" placeholder="000.000.000-00 ou 00.000.000/0000-00">
-        </div>
-        <div class="field">
-          <label class="field-label" for="ct-endereco">Endereço</label>
-          <textarea id="ct-endereco" class="textarea" rows="2" maxlength="300" placeholder="Rua, número, bairro, cidade — estado"></textarea>
-        </div>
-        <div class="field">
-          <label class="field-label" for="ct-observacao">Observação</label>
-          <textarea id="ct-observacao" class="textarea" rows="2" maxlength="300" placeholder="Anotação livre…"></textarea>
-        </div>
-      </div>
-      <div class="modal-footer" style="justify-content: space-between;">
-        <button type="button" class="btn btn-danger hidden" id="btn-deletar-contato">Excluir</button>
-        <div style="display:flex; gap: var(--space-2);">
-          <button type="button" class="btn btn-ghost" id="btn-cancel-contato">Cancelar</button>
-          <button type="button" class="btn btn-primary" id="btn-save-contato">Salvar</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================================================
-       MODAL: Visualizar Contato
-       ============================================================ -->
-  <div class="modal-backdrop hidden" id="modal-contato-view" role="dialog" aria-modal="true">
-    <div class="modal modal-lg">
-      <div class="modal-header cv-modal-header">
-        <div class="cv-identity">
-          <div class="cv-avatar" id="cv-avatar"></div>
-          <div class="cv-identity-info">
-            <h2 class="cv-nome" id="cv-nome"></h2>
-            <div class="cv-meta">
-              <span class="ct-tipo-pill" id="cv-tipo-badge"></span>
-            </div>
-          </div>
-        </div>
-        <button type="button" class="modal-close" id="btn-close-contato-view" aria-label="Fechar">×</button>
-      </div>
-
-      <div class="cv-tabs">
-        <button class="cv-tab is-active" data-cv-tab="dados"  type="button">Dados</button>
-        <button class="cv-tab"            data-cv-tab="banco"  type="button">Reconhecimento bancário</button>
-      </div>
-
-      <div class="modal-body">
-        <!-- Dados -->
-        <div id="cv-panel-dados" class="cv-panel">
-          <div class="cv-dados-grid">
-            <div class="cv-field">
-              <div class="cv-field-label">Nome no extrato</div>
-              <div class="cv-field-value" id="cv-nome-extrato"></div>
-            </div>
-            <div class="cv-field">
-              <div class="cv-field-label">E-mail</div>
-              <div class="cv-field-value" id="cv-email"></div>
-            </div>
-            <div class="cv-field">
-              <div class="cv-field-label">Telefone</div>
-              <div class="cv-field-value" id="cv-telefone"></div>
-            </div>
-            <div class="cv-field">
-              <div class="cv-field-label">Documento (CPF/CNPJ)</div>
-              <div class="cv-field-value" id="cv-documento"></div>
-            </div>
-            <div class="cv-field cv-field--full">
-              <div class="cv-field-label">Endereço</div>
-              <div class="cv-field-value" id="cv-endereco"></div>
-            </div>
-            <div class="cv-field cv-field--full">
-              <div class="cv-field-label">Observação</div>
-              <div class="cv-field-value" id="cv-observacao"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Reconhecimento bancário -->
-        <div id="cv-panel-banco" class="cv-panel hidden">
-          <p class="field-hint" style="margin-bottom:var(--space-4);">Padrões de texto do extrato bancário aprendidos automaticamente. Usados para pré-preencher transações importadas com este contato.</p>
-          <div id="cv-banco-list"></div>
-        </div>
-      </div>
-
-      <div class="modal-footer" style="justify-content:space-between;">
-        <button type="button" class="btn btn-danger" id="cv-btn-deletar">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          Excluir
-        </button>
-        <button type="button" class="btn btn-primary" id="cv-btn-editar">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-          Editar
-        </button>
       </div>
     </div>
   </div>

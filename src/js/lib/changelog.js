@@ -7,6 +7,25 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-04-feedback-engine',
+    version: '0.1.9',
+    date: '04/05/2026',
+    title: 'Feedback Engine + refinamento de Categorias',
+    items: [
+      { type: 'new',         text: 'Feedback Engine: página logada (/feedback), form público (/feedback-publico) e painel admin com 3 views — Triagem, Em andamento e Arquivo' },
+      { type: 'new',         text: '6 tipos de feedback com cor + ícone — Bug, Sugestão, Funcionalidade, Pergunta, Elogio, Parceria' },
+      { type: 'new',         text: 'Integração com Novidades — seção "No forno" mostra itens em progresso, e cada release lista os feedbacks que atendeu' },
+      { type: 'new',         text: 'Item "Ajuda & Sugestões" no menu do avatar' },
+      { type: 'new',         text: 'Drag & drop pra reordenar categorias dentro dos blocos em Configurações' },
+      { type: 'new',         text: 'Coluna Vínculo nas categorias com 3 níveis (projeto/dívida → "com transações" → "sem vínculo")' },
+      { type: 'new',         text: 'Coluna Descrição em categorias e subcategorias, com popover de detalhes ao passar o mouse' },
+      { type: 'new',         text: 'Banner sticky empilhável dos blocos (CONTRIBUIÇÃO, SONHOS, CUSTO DE VIDA) ao rolar a lista' },
+      { type: 'improvement', text: 'Categoria com histórico exige confirmação explícita pra mudar de bloco' },
+      { type: 'improvement', text: 'Botões "+" SVG inline nos headings de Categoria/Subcategoria, por bloco' },
+      { type: 'fix',         text: 'Sticky do menu interno de Configurações agora funciona corretamente ao rolar' },
+    ],
+  },
+  {
     id: '2026-05-05-cat-click-modal',
     version: '0.1.8',
     date: '05/05/2026',

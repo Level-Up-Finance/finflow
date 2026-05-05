@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feedback · FinFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/variables.css">
+  <link rel="stylesheet" href="src/css/global.css">
+  <link rel="stylesheet" href="src/css/components.css">
+</head>
+<body class="feedback-public-body">
+
+  <main class="feedback-public-shell">
+    <header class="feedback-public-header">
+      <h1 class="feedback-public-brand">FinFlow</h1>
+      <p class="feedback-public-tagline">Mande seu feedback, bug, ou sugestão</p>
+    </header>
+
+    <section class="feedback-public-card" id="feedback-card">
+      <form id="form-feedback" class="feedback-form" autocomplete="off" novalidate>
+        <div class="field">
+          <label class="field-label">Tipo</label>
+          <div class="feedback-type-options">
+            <label class="feedback-type-option">
+              <input type="radio" name="type" value="bug">
+              <span class="feedback-type-pill feedback-type-pill--bug">Bug</span>
+            </label>
+            <label class="feedback-type-option">
+              <input type="radio" name="type" value="sugestao" checked>
+              <span class="feedback-type-pill feedback-type-pill--sugestao">Sugestão</span>
+            </label>
+            <label class="feedback-type-option">
+              <input type="radio" name="type" value="feature">
+              <span class="feedback-type-pill feedback-type-pill--feature">Funcionalidade</span>
+            </label>
+            <label class="feedback-type-option">
+              <input type="radio" name="type" value="pergunta">
+              <span class="feedback-type-pill feedback-type-pill--pergunta">Pergunta</span>
+            </label>
+            <label class="feedback-type-option">
+              <input type="radio" name="type" value="elogio">
+              <span class="feedback-type-pill feedback-type-pill--elogio">Elogio</span>
+            </label>
+            <label class="feedback-type-option">
+              <input type="radio" name="type" value="parceria">
+              <span class="feedback-type-pill feedback-type-pill--parceria">Parceria</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+          <div class="field">
+            <label class="field-label" for="feedback-name">Nome <span class="field-optional">(opcional)</span></label>
+            <input type="text" id="feedback-name" class="input" maxlength="80" placeholder="Como te chamamos?">
+          </div>
+          <div class="field">
+            <label class="field-label" for="feedback-email">Email <span class="field-optional">(opcional)</span></label>
+            <input type="email" id="feedback-email" class="input" maxlength="200" placeholder="Pra te avisar quando ficar pronto">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="feedback-title">Título <span class="required">*</span></label>
+          <input type="text" id="feedback-title" class="input" maxlength="120" placeholder="Resumo curto" required>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="feedback-description">Descrição <span class="required">*</span></label>
+          <textarea id="feedback-description" class="textarea" rows="6" maxlength="2000" placeholder="Conta com mais detalhes…" required></textarea>
+        </div>
+
+        <!-- Honeypot anti-spam: bots preenchem, humanos não veem -->
+        <div class="hp-trap" aria-hidden="true">
+          <label>Não preencha esse campo
+            <input type="text" id="hp-url" name="hp-url" tabindex="-1" autocomplete="off">
+          </label>
+        </div>
+
+        <div class="feedback-form-actions">
+          <button type="submit" class="btn btn-primary" id="btn-feedback-submit">Enviar feedback</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="feedback-public-card feedback-public-success hidden" id="feedback-success">
+      <div class="feedback-success-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="48" height="48"><path d="M20 6 9 17l-5-5"/></svg>
+      </div>
+      <h2 class="feedback-success-title">Recebido!</h2>
+      <p class="feedback-success-text">Valeu por mandar — vou ler com atenção.</p>
+      <button type="button" class="btn btn-ghost" id="btn-feedback-again">Enviar outra entrada</button>
+    </section>
+
+    <footer class="feedback-public-footer">
+      <p>FinFlow · feito com cuidado</p>
+    </footer>
+  </main>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script type="module" src="src/js/pages/feedback-publico.js"></script>
+</body>
+</html>

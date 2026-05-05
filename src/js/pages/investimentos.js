@@ -21,8 +21,10 @@ let cachedSubcategorias = []; // só as do grupo investimentos
 let cachedPagamentos = [];    // pagos/cartão das subs de investimento
 let cachedOrcamento = [];     // mês corrente — pra "previsto neste mês"
 let cachedContatos = [];      // clientes/fornecedores do usuário
+let cachedAportes = [];       // aportes_projeto (histórico manual)
 let editingId = null;
 let detailsId = null;
+let historicoInvestId = null;
 let viewMode = 'cards'; // 'cards' | 'table' | 'timeline'
 let colVisEl = null;
 let timelineZoom = 'mes'; // 'mes' | 'ano' | '5anos' | '10anos'
@@ -93,7 +95,7 @@ async function loadAll() {
 
   const mesAno = isoMonth(viewYear, viewMonth);
 
-  const [projetos, subcats, pagamentos, orcamento, contatos] = await Promise.all([
+  const [projetos, subcats, pagamentos, orcamento, contatos, aportes] = await Promise.all([
     supabase.from('projetos_investimento').select('*').order('nome'),
     // Subs com categoria pra cruzar com grupo='investimentos'
     supabase.from('subcategorias').select('*, categorias(grupo, cor, nome)').eq('status', 'ativa'),
@@ -106,6 +108,7 @@ async function loadAll() {
       .select('*, subcategorias(projeto_id, categorias(grupo))')
       .eq('mes_ano', mesAno),
     supabase.from('contatos').select('id, nome, tipo, status').neq('status', 'arquivado').order('nome'),
+    supabase.from('aportes_projeto').select('*').order('data'),
   ]);
 
   if (projetos.error) {
@@ -129,6 +132,15 @@ async function loadAll() {
     cachedContatos = [];
   } else {
     cachedContatos = contatos.data || [];
+  }
+
+  if (aportes.error) {
+    if (!/relation.*aportes_projeto/i.test(aportes.error.message)) {
+      console.warn('[loadAportes]', aportes.error);
+    }
+    cachedAportes = [];
+  } else {
+    cachedAportes = aportes.data || [];
   }
 }
 
@@ -201,6 +213,35 @@ function bindEvents() {
   });
 
   document.getElementById('btn-arquivar-projeto').addEventListener('click', arquivarProjeto);
+
+  document.getElementById('btn-historico-invest').addEventListener('click', () => {
+    closeModal('modal-projeto-details');
+    openHistoricoViewInvest(detailsId);
+  });
+
+  document.getElementById('btn-salvar-hist-invest').addEventListener('click', saveHistoricoInvest);
+
+  document.getElementById('hist-invest-seg').addEventListener('click', (e) => {
+    const btn = e.target.closest('.view-toggle-btn');
+    if (!btn) return;
+    const mode = btn.dataset.histSeg;
+    document.querySelectorAll('#hist-invest-seg .view-toggle-btn')
+      .forEach((b) => b.classList.toggle('active', b.dataset.histSeg === mode));
+    document.getElementById('hist-invest-saldo-panel').classList.toggle('hidden', mode !== 'saldo');
+    document.getElementById('hist-invest-extrato-panel').classList.toggle('hidden', mode !== 'extrato');
+  });
+
+  document.getElementById('btn-hist-invest-add-row').addEventListener('click', () => {
+    let listEl = document.querySelector('#hist-invest-extrato-list .hist-extrato-list');
+    if (!listEl) {
+      listEl = document.createElement('div');
+      listEl.className = 'hist-extrato-list';
+      document.getElementById('hist-invest-extrato-list').appendChild(listEl);
+    }
+    const row = makeHistRow();
+    listEl.appendChild(row);
+    row.querySelector('.hist-row-data')?.focus();
+  });
 
   // View toggle (Cards / Tabela / Timeline)
   document.getElementById('view-toggle').addEventListener('click', (e) => {
@@ -324,6 +365,11 @@ function renderUniversalSparkline(projetosAtivos) {
         if (!pag.data_vencimento || pag.data_vencimento > fimISO) continue;
         acumulado += Number(pag.valor_real) || 0;
       }
+      for (const a of cachedAportes) {
+        if (a.projeto_id !== p.id) continue;
+        if (!a.data || a.data > fimISO) continue;
+        acumulado += Number(a.valor) || 0;
+      }
     }
     series.push(acumulado);
   }
@@ -362,6 +408,8 @@ function renderCard(p) {
     }
   }
 
+  const isParcial = (p.status === 'concluido' || p.status === 'arquivado') && meta > 0 && realizado < meta;
+
   return `
     <article class="projeto-card status-${p.status}" data-id="${p.id}" style="--projeto-cor: ${p.cor};">
       <header class="projeto-card-header">
@@ -369,6 +417,7 @@ function renderCard(p) {
         <div class="projeto-card-titles">
           <h3 class="projeto-card-name">${escapeHtml(p.nome)}</h3>
           <span class="projeto-card-status status-${p.status}">${STATUS_LABELS[p.status] || p.status}</span>
+          ${isParcial ? `<span class="tag-parcial" title="Encerrado antes de atingir a meta">Parcial</span>` : ''}
         </div>
       </header>
       ${p.descricao ? `<p class="projeto-card-desc">${escapeHtml(p.descricao)}</p>` : ''}
@@ -392,6 +441,10 @@ function renderCard(p) {
           ${subsCount} compromisso${subsCount === 1 ? '' : 's'}
         </span>
         ${prazo}
+        <button type="button" class="btn btn-sm btn-ghost proj-btn-aporte" data-id="${p.id}" title="Registrar aporte" style="margin-left:auto;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+          Aporte
+        </button>
       </footer>
     </article>
   `;
@@ -419,6 +472,11 @@ function calcEvolucaoMensal(projetoId) {
     let acumulado = baseInicial;
     for (const pag of pags) {
       if (pag.data_vencimento <= fimISO) acumulado += Number(pag.valor_real) || 0;
+    }
+    for (const a of cachedAportes) {
+      if (a.projeto_id !== projetoId) continue;
+      if (!a.data || a.data > fimISO) continue;
+      acumulado += Number(a.valor) || 0;
     }
     series.push({
       year: d.getFullYear(),
@@ -539,7 +597,10 @@ function renderTable(projetos) {
             ${escapeHtml(p.nome)}
           </span>
         </td>
-        <td data-col="status"><span class="projeto-card-status status-${p.status}">${STATUS_LABELS[p.status] || p.status}</span></td>
+        <td data-col="status">
+          <span class="projeto-card-status status-${p.status}">${STATUS_LABELS[p.status] || p.status}</span>
+          ${(p.status === 'concluido' || p.status === 'arquivado') && meta > 0 && realizado < meta ? `<span class="tag-parcial" title="Encerrado antes de atingir a meta">Parcial</span>` : ''}
+        </td>
         <td data-col="realizado" class="text-right tabular text-bold">${formatCurrency(realizado, 'BRL')}</td>
         <td data-col="previsto-mes" class="text-right tabular">${formatCurrency(previstoMes, 'BRL')}</td>
         <td data-col="meta" class="text-right tabular">${metaCell}</td>
@@ -744,7 +805,17 @@ document.addEventListener('click', (e) => {
 
 function bindCardClicks() {
   document.querySelectorAll('.projeto-card, .projeto-tabela-row, .timeline-row').forEach((el) => {
-    el.addEventListener('click', () => openDetailsModal(el.dataset.id));
+    el.addEventListener('click', (e) => {
+      // Don't open details if the "+ Aporte" button was clicked
+      if (e.target.closest('.proj-btn-aporte')) return;
+      openDetailsModal(el.dataset.id);
+    });
+  });
+  document.querySelectorAll('.proj-btn-aporte').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openHistoricoInvestModal(btn.dataset.id);
+    });
   });
 }
 
@@ -756,12 +827,14 @@ function calcRealizado(projetoId) {
   if (!proj) return 0;
   let total = Number(proj.saldo_inicial) || 0;
 
-  // Subs do projeto
   const subIds = cachedSubcategorias.filter((s) => s.projeto_id === projetoId).map((s) => s.id);
   for (const p of cachedPagamentos) {
     if (!subIds.includes(p.subcategoria_id)) continue;
-    const v = Number(p.valor_real) || 0;
-    total += v;
+    total += Number(p.valor_real) || 0;
+  }
+  for (const a of cachedAportes) {
+    if (a.projeto_id !== projetoId) continue;
+    total += Number(a.valor) || 0;
   }
   return total;
 }
@@ -906,11 +979,28 @@ function openDetailsModal(id) {
     }
   `;
 
-  // Histórico (pagamentos efetivados ordenados por data)
+  // Histórico — pagamentos efetivados + aportes manuais, ordenados por data desc
   const subIds = subs.map((s) => s.id);
-  const historico = cachedPagamentos
-    .filter((p) => subIds.includes(p.subcategoria_id))
-    .sort((a, b) => (b.data_vencimento || '').localeCompare(a.data_vencimento || ''));
+  const allEntries = [
+    ...cachedPagamentos
+      .filter((pag) => subIds.includes(pag.subcategoria_id))
+      .map((pag) => ({
+        date: pag.data_vencimento || '',
+        label: pag.subcategorias?.apelido?.trim() || pag.subcategorias?.nome || '—',
+        value: Number(pag.valor_real) || 0,
+        tag: `<span class="proj-hist-status">${pag.status}</span>`,
+        cls: '',
+      })),
+    ...cachedAportes
+      .filter((a) => a.projeto_id === id)
+      .map((a) => ({
+        date: a.data || '',
+        label: a.descricao || 'Aporte manual',
+        value: Number(a.valor) || 0,
+        tag: '<span class="proj-hist-tag">Aporte</span>',
+        cls: 'proj-hist-row-aporte',
+      })),
+  ].sort((a, b) => b.date.localeCompare(a.date));
 
   const histRowsHtml = [];
   if (Number(p.saldo_inicial) > 0) {
@@ -922,22 +1012,21 @@ function openDetailsModal(id) {
       </div>
     `);
   }
-  for (const pag of historico) {
-    const d = pag.data_vencimento ? formatDateBR(pag.data_vencimento) : '—';
-    const subNome = pag.subcategorias?.apelido?.trim() || pag.subcategorias?.nome || '—';
-    const v = Number(pag.valor_real) || 0;
+  for (const e of allEntries) {
+    const d = e.date ? formatDateBR(e.date) : '—';
     histRowsHtml.push(`
-      <div class="proj-hist-row">
+      <div class="proj-hist-row ${e.cls}">
         <span class="proj-hist-date">${d}</span>
-        <span class="proj-hist-name">${escapeHtml(subNome)} <span class="proj-hist-status">${pag.status}</span></span>
-        <span class="proj-hist-value">${formatCurrency(v, 'BRL')}</span>
+        <span class="proj-hist-name">${escapeHtml(e.label)} ${e.tag}</span>
+        <span class="proj-hist-value">${formatCurrency(e.value, 'BRL')}</span>
       </div>
     `);
   }
 
+  const totalEntries = histRowsHtml.length;
   document.getElementById('proj-details-historico').innerHTML = `
-    <h3 class="proj-details-section-title">Histórico de aportes (${histRowsHtml.length})</h3>
-    ${histRowsHtml.length === 0
+    <h3 class="proj-details-section-title">Histórico de aportes (${totalEntries})</h3>
+    ${totalEntries === 0
       ? '<div class="proj-details-empty">Sem aportes registrados ainda. Os pagamentos efetivados (Pago/Cartão) das subcategorias atreladas vão aparecer aqui.</div>'
       : `<div class="proj-hist-list">${histRowsHtml.join('')}</div>`
     }
@@ -983,5 +1072,156 @@ function parseNum(raw) {
 
 function fmtPct(pct) {
   return pct.toFixed(1) === '100.0' ? '100%' : `${pct.toFixed(1)}%`;
+}
+
+// -----------------------------
+// Histórico passado — Investimentos
+// -----------------------------
+function makeHistRow(entry = null) {
+  const div = document.createElement('div');
+  div.className = 'hist-row';
+  div.innerHTML = `
+    <input type="date" class="input hist-row-data" value="${entry?.data || ''}">
+    <input type="number" class="input hist-row-valor" value="${entry?.valor ?? ''}" step="0.01" min="0.01" placeholder="Valor (R$)">
+    <input type="text" class="input hist-row-desc" value="${escapeHtml(entry?.descricao || '')}" placeholder="Descrição (opcional)" maxlength="100">
+    <button type="button" class="hist-row-del" title="Remover">×</button>
+  `;
+  div.querySelector('.hist-row-del').addEventListener('click', () => div.remove());
+  return div;
+}
+
+function openHistoricoInvestModal(projetoId) {
+  historicoInvestId = projetoId;
+  const proj = cachedProjetos.find((p) => p.id === projetoId);
+  if (!proj) return;
+
+  document.getElementById('hist-invest-modal-title').textContent = `Histórico — ${proj.nome}`;
+
+  // Reset to saldo mode
+  document.querySelectorAll('#hist-invest-seg .view-toggle-btn')
+    .forEach((b) => b.classList.toggle('active', b.dataset.histSeg === 'saldo'));
+  document.getElementById('hist-invest-saldo-panel').classList.remove('hidden');
+  document.getElementById('hist-invest-extrato-panel').classList.add('hidden');
+
+  // Pre-fill saldo inicial
+  document.getElementById('hist-invest-saldo-valor').value = proj.saldo_inicial ?? '';
+
+  // Render extrato rows from cached aportes
+  const aportesProjeto = cachedAportes.filter((a) => a.projeto_id === projetoId);
+  const container = document.getElementById('hist-invest-extrato-list');
+  container.innerHTML = '';
+  if (aportesProjeto.length > 0) {
+    const listEl = document.createElement('div');
+    listEl.className = 'hist-extrato-list';
+    for (const a of aportesProjeto) listEl.appendChild(makeHistRow(a));
+    container.appendChild(listEl);
+  }
+
+  openModal('modal-historico-invest');
+}
+
+function openHistoricoViewInvest(projetoId) {
+  const proj = cachedProjetos.find((p) => p.id === projetoId);
+  if (!proj) return;
+
+  document.getElementById('hist-view-invest-title').textContent = `Histórico de aportes — ${proj.nome}`;
+
+  const aportes = cachedAportes
+    .filter((a) => a.projeto_id === projetoId)
+    .sort((a, b) => b.data.localeCompare(a.data));
+
+  const saldoInicial = Number(proj.saldo_inicial) || 0;
+  const content = document.getElementById('hist-view-invest-content');
+
+  if (aportes.length === 0 && saldoInicial === 0) {
+    content.innerHTML = `
+      <div style="text-align:center; padding: var(--space-6); color: var(--color-text-muted); font-size: var(--fs-sm);">
+        Nenhum aporte registrado ainda.<br>
+        Use o botão <strong>+ Aporte</strong> no card para registrar.
+      </div>`;
+  } else {
+    const fmtDate = (iso) => { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
+    const rows = [];
+    for (const a of aportes) {
+      rows.push(`
+        <div class="proj-hist-row proj-hist-row-aporte">
+          <span class="proj-hist-date">${fmtDate(a.data)}</span>
+          <span class="proj-hist-name">${escapeHtml(a.descricao || 'Aporte')} <span class="proj-hist-tag">Aporte</span></span>
+          <span class="proj-hist-value">${formatCurrency(a.valor)}</span>
+        </div>`);
+    }
+    if (saldoInicial > 0) {
+      rows.push(`
+        <div class="proj-hist-row proj-hist-row-saldo">
+          <span class="proj-hist-date">—</span>
+          <span class="proj-hist-name">Saldo inicial</span>
+          <span class="proj-hist-value">${formatCurrency(saldoInicial)}</span>
+        </div>`);
+    }
+    const total = aportes.reduce((s, a) => s + Number(a.valor), 0) + saldoInicial;
+    content.innerHTML = `
+      <div class="proj-hist-list">${rows.join('')}</div>
+      <div style="display:flex;justify-content:flex-end;padding:var(--space-3) var(--space-4);font-weight:var(--fw-bold);font-size:var(--fs-sm);border-top:1px solid var(--color-border);">
+        Total investido: ${formatCurrency(total)}
+      </div>`;
+  }
+
+  openModal('modal-historico-view-invest');
+}
+
+async function saveHistoricoInvest() {
+  const btn = document.getElementById('btn-salvar-hist-invest');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Salvando…';
+  const mode = document.querySelector('#hist-invest-seg .view-toggle-btn.active')?.dataset.histSeg || 'saldo';
+
+  try {
+    if (mode === 'saldo') {
+      const valor = parseNum(document.getElementById('hist-invest-saldo-valor').value) ?? 0;
+      const { error } = await supabase
+        .from('projetos_investimento')
+        .update({ saldo_inicial: valor })
+        .eq('id', historicoInvestId);
+      if (error) throw error;
+      showToast('Saldo inicial atualizado', 'success');
+    } else {
+      // Collect rows from DOM
+      const rows = [];
+      document.querySelectorAll('#hist-invest-extrato-list .hist-row').forEach((rowEl) => {
+        const data = rowEl.querySelector('.hist-row-data').value;
+        const valor = parseNum(rowEl.querySelector('.hist-row-valor').value);
+        const descricao = rowEl.querySelector('.hist-row-desc').value.trim() || null;
+        if (data && valor && valor > 0) rows.push({ data, valor, descricao });
+      });
+
+      const user = await getCurrentUser();
+      if (!user) throw new Error('Sessão expirada');
+
+      // Full replace
+      const { error: delErr } = await supabase
+        .from('aportes_projeto')
+        .delete()
+        .eq('projeto_id', historicoInvestId);
+      if (delErr) throw delErr;
+
+      if (rows.length > 0) {
+        const { error: insErr } = await supabase
+          .from('aportes_projeto')
+          .insert(rows.map((r) => ({ ...r, projeto_id: historicoInvestId, user_id: user.id })));
+        if (insErr) throw insErr;
+      }
+      showToast(`${rows.length} entrada${rows.length !== 1 ? 's' : ''} salva${rows.length !== 1 ? 's' : ''}`, 'success');
+    }
+
+    closeModal('modal-historico-invest');
+    await loadAll();
+    render();
+    openDetailsModal(historicoInvestId);
+  } catch (err) {
+    showToast('Erro ao salvar: ' + (err?.message || String(err)), 'error', 8000);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Salvar';
+  }
 }
 

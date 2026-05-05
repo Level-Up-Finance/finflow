@@ -45,15 +45,16 @@ const BLOCOS = [
 // -----------------------------
 // State
 // -----------------------------
-let cachedDividas  = [];
-let cachedContas   = [];
-let cachedContatos = [];
-let editingId      = null;
-let pagandoId     = null;
-let pendingDeleteId = null;
-let viewMode      = 'cards'; // 'cards' | 'table' | 'gantt'
-let ganttZoom     = '1ano';  // '1ano' | '3anos' | '5anos'
-let colVisEl      = null;
+let cachedDividas          = [];
+let cachedContas           = [];
+let cachedContatos         = [];
+let cachedDividaHistorico  = []; // pagamentos_divida_historico
+let editingId              = null;
+let historicoDividaId      = null;
+let pendingDeleteId        = null;
+let viewMode               = 'cards'; // 'cards' | 'table' | 'gantt'
+let ganttZoom              = '1ano';  // '1ano' | '3anos' | '5anos'
+let colVisEl               = null;
 
 const today = new Date();
 today.setHours(0, 0, 0, 0);
@@ -93,10 +94,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Load
 // -----------------------------
 async function loadAll() {
-  const [divRes, contRes, contatosRes] = await Promise.all([
+  const [divRes, contRes, contatosRes, histRes] = await Promise.all([
     supabase.from('dividas').select('*').order('created_at', { ascending: false }),
     supabase.from('contas').select('id, nome, apelido').order('nome'),
     supabase.from('contatos').select('id, nome, tipo, status').neq('status', 'arquivado').order('nome'),
+    supabase.from('pagamentos_divida_historico').select('*').order('data'),
   ]);
 
   if (divRes.error) {
@@ -111,6 +113,15 @@ async function loadAll() {
     cachedContatos = [];
   } else {
     cachedContatos = contatosRes.data || [];
+  }
+
+  if (histRes.error) {
+    if (!/relation.*pagamentos_divida_historico/i.test(histRes.error.message)) {
+      console.warn('[loadDividaHistorico]', histRes.error);
+    }
+    cachedDividaHistorico = [];
+  } else {
+    cachedDividaHistorico = histRes.data || [];
   }
 
   cachedDividas = divRes.data || [];
@@ -271,6 +282,7 @@ function renderCard(d) {
         <div class="div-card-title-row">
           <span class="div-card-nome">${d.nome}</span>
           <span class="div-card-badge" style="color:${st.color}; background:${st.bg};">${st.label}</span>
+          ${quitada && pago < total ? `<span class="tag-parcial" title="Encerrada antes de quitar o valor total">Parcial</span>` : ''}
         </div>
         ${d.credor ? `<span class="div-card-credor">${d.credor}</span>` : ''}
       </div>
@@ -311,11 +323,13 @@ function renderCard(d) {
       ${d.observacao ? `<p class="div-card-obs">${d.observacao}</p>` : ''}
 
       <div class="div-card-actions">
-        ${!quitada ? `
         <button class="btn btn-sm btn-ghost div-btn-pagar" data-id="${d.id}" type="button" title="Registrar pagamento">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
           Pagamento
-        </button>` : ''}
+        </button>
+        <button class="btn btn-sm btn-ghost div-btn-historico" data-id="${d.id}" type="button" title="Ver histórico de pagamentos">
+          Histórico
+        </button>
         <button class="btn btn-sm btn-ghost div-btn-editar" data-id="${d.id}" type="button" title="Editar">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
           Editar
@@ -345,9 +359,6 @@ function bindEvents() {
   });
   document.getElementById('btn-confirmar-excluir').addEventListener('click', confirmarExcluir);
 
-  // Pagamento
-  document.getElementById('form-pagamento').addEventListener('submit', registrarPagamento);
-
   // View toggle
   document.getElementById('view-toggle').addEventListener('click', (e) => {
     const btn = e.target.closest('.view-toggle-btn');
@@ -358,12 +369,38 @@ function bindEvents() {
     render();
   });
 
-  // Delegação: botões pagar/editar nos cards
+  // Delegação: botões pagar/editar/histórico nos cards
   document.getElementById('div-container').addEventListener('click', (e) => {
-    const btnPagar  = e.target.closest('.div-btn-pagar');
-    const btnEditar = e.target.closest('.div-btn-editar');
-    if (btnPagar)  openModalPagamento(btnPagar.dataset.id);
-    if (btnEditar) openModalDivida(btnEditar.dataset.id);
+    const btnPagar     = e.target.closest('.div-btn-pagar');
+    const btnEditar    = e.target.closest('.div-btn-editar');
+    const btnHistorico = e.target.closest('.div-btn-historico');
+    if (btnPagar)     openHistoricoDividaModal(btnPagar.dataset.id);   // registro (2 modos)
+    if (btnEditar)    openModalDivida(btnEditar.dataset.id);
+    if (btnHistorico) openHistoricoViewDivida(btnHistorico.dataset.id); // visualização
+  });
+
+  document.getElementById('btn-salvar-hist-divida').addEventListener('click', saveHistoricoDivida);
+
+  document.getElementById('hist-divida-seg').addEventListener('click', (e) => {
+    const btn = e.target.closest('.view-toggle-btn');
+    if (!btn) return;
+    const mode = btn.dataset.histSeg;
+    document.querySelectorAll('#hist-divida-seg .view-toggle-btn')
+      .forEach((b) => b.classList.toggle('active', b.dataset.histSeg === mode));
+    document.getElementById('hist-divida-total-panel').classList.toggle('hidden', mode !== 'total');
+    document.getElementById('hist-divida-extrato-panel').classList.toggle('hidden', mode !== 'extrato');
+  });
+
+  document.getElementById('btn-hist-divida-add-row').addEventListener('click', () => {
+    let listEl = document.querySelector('#hist-divida-extrato-list .hist-extrato-list');
+    if (!listEl) {
+      listEl = document.createElement('div');
+      listEl.className = 'hist-extrato-list';
+      document.getElementById('hist-divida-extrato-list').appendChild(listEl);
+    }
+    const row = makeHistRow();
+    listEl.appendChild(row);
+    row.querySelector('.hist-row-data')?.focus();
   });
 
   // Select de contato: "__new__" abre prompt pra criar inline
@@ -464,56 +501,42 @@ async function saveDivida(e) {
 }
 
 // -----------------------------
-// Modal: registrar pagamento
+// Modal: visualizar histórico (read-only)
 // -----------------------------
-function openModalPagamento(id) {
+function openHistoricoViewDivida(id) {
   const d = cachedDividas.find((x) => x.id === id);
   if (!d) return;
-  pagandoId = id;
 
-  const pago     = Number(d.valor_pago);
-  const restante = Math.max(0, Number(d.valor_total) - pago);
+  document.getElementById('hist-view-divida-title').textContent = `Histórico — ${d.nome}`;
 
-  document.getElementById('pag-divida-nome').textContent    = d.nome;
-  document.getElementById('pag-valor-pago-atual').textContent = formatCurrency(pago);
-  document.getElementById('pag-valor-restante').textContent  = formatCurrency(restante);
-  document.getElementById('pag-valor').value = '';
+  const entradas = cachedDividaHistorico
+    .filter((h) => h.divida_id === id)
+    .sort((a, b) => b.data.localeCompare(a.data));
 
-  openModal('modal-pagamento');
-}
-
-async function registrarPagamento(e) {
-  e.preventDefault();
-  const btn = document.getElementById('btn-salvar-pagamento');
-
-  const valorNovo = parseFloat(document.getElementById('pag-valor').value);
-  if (!valorNovo || isNaN(valorNovo) || valorNovo <= 0) {
-    showToast('Informe um valor válido', 'error'); return;
+  const content = document.getElementById('hist-view-divida-content');
+  if (entradas.length === 0) {
+    content.innerHTML = `
+      <div style="text-align:center; padding: var(--space-6); color: var(--color-text-muted); font-size: var(--fs-sm);">
+        Nenhum pagamento registrado no extrato ainda.<br>
+        Use o botão <strong>Pagamento</strong> para registrar.
+      </div>`;
+  } else {
+    const fmtDate = (iso) => { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
+    const rows = entradas.map((h) => `
+      <div class="proj-hist-row">
+        <span class="proj-hist-date">${fmtDate(h.data)}</span>
+        <span class="proj-hist-name">${escapeHtml(h.descricao || 'Pagamento')}</span>
+        <span class="proj-hist-value">${formatCurrency(Number(h.valor))}</span>
+      </div>`).join('');
+    const total = entradas.reduce((s, h) => s + Number(h.valor), 0);
+    content.innerHTML = `
+      <div class="proj-hist-list">${rows}</div>
+      <div style="display:flex; justify-content:flex-end; padding: var(--space-3) var(--space-4); font-weight: var(--fw-bold); font-size: var(--fs-sm); border-top: 1px solid var(--color-border); margin-top: var(--space-1);">
+        Total: ${formatCurrency(total)}
+      </div>`;
   }
 
-  const d = cachedDividas.find((x) => x.id === pagandoId);
-  if (!d) return;
-
-  const novoTotal = Number(d.valor_pago) + valorNovo;
-  const novoStatus = novoTotal >= Number(d.valor_total) ? 'Quitada' : d.status;
-
-  btn.disabled = true;
-  btn.textContent = 'Confirmando…';
-
-  const { error } = await supabase
-    .from('dividas')
-    .update({ valor_pago: novoTotal, status: novoStatus })
-    .eq('id', pagandoId);
-
-  btn.disabled = false;
-  btn.textContent = 'Confirmar';
-
-  if (error) { showToast('Erro ao registrar pagamento: ' + error.message, 'error', 8000); return; }
-
-  const msg = novoStatus === 'Quitada' ? '🎉 Dívida quitada!' : 'Pagamento registrado';
-  showToast(msg, 'success');
-  closeModal('modal-pagamento');
-  await loadAll();
+  openModal('modal-historico-view-divida');
 }
 
 // -----------------------------
@@ -594,7 +617,10 @@ function renderTable(dividas) {
           </span>
         </td>
         <td data-col="credor" class="text-muted-if-empty">${d.credor ? escapeHtml(d.credor) : '<span class="text-muted">—</span>'}</td>
-        <td data-col="status"><span class="div-card-badge" style="color:${st.color};background:${st.bg};">${st.label}</span></td>
+        <td data-col="status">
+          <span class="div-card-badge" style="color:${st.color};background:${st.bg};">${st.label}</span>
+          ${quitada && pago < total ? `<span class="tag-parcial" title="Encerrada antes de quitar o valor total">Parcial</span>` : ''}
+        </td>
         <td data-col="total"   class="text-right tabular">${formatCurrency(total)}</td>
         <td data-col="pago"    class="text-right tabular" style="color:var(--color-success);">${formatCurrency(pago)}</td>
         <td data-col="restante" class="text-right tabular${quitada ? '' : ' text-bold'}" style="${quitada ? '' : 'color:var(--color-danger);'}">${formatCurrency(restante)}</td>
@@ -787,5 +813,120 @@ function renderDonutSVG(pct, color = 'var(--color-primary)', size = 'md') {
 // Formata porcentagem: 1 decimal exceto quando exato 100%
 function fmtPct(pct) {
   return pct.toFixed(1) === '100.0' ? '100%' : `${pct.toFixed(1)}%`;
+}
+
+// =============================================================
+// Histórico passado — Dívidas
+// =============================================================
+function makeHistRow(entry = null) {
+  const div = document.createElement('div');
+  div.className = 'hist-row';
+  div.innerHTML = `
+    <input type="date" class="input hist-row-data" value="${entry?.data || ''}">
+    <input type="number" class="input hist-row-valor" value="${entry?.valor ?? ''}" step="0.01" min="0.01" placeholder="Valor (R$)">
+    <input type="text" class="input hist-row-desc" value="${escapeHtml(entry?.descricao || '')}" placeholder="Descrição (opcional)" maxlength="100">
+    <button type="button" class="hist-row-del" title="Remover">×</button>
+  `;
+  div.querySelector('.hist-row-del').addEventListener('click', () => div.remove());
+  return div;
+}
+
+function openHistoricoDividaModal(id) {
+  const d = cachedDividas.find((x) => x.id === id);
+  if (!d) return;
+  historicoDividaId = id;
+
+  document.getElementById('hist-divida-title').textContent = `Histórico — ${d.nome}`;
+
+  // Reset to total mode
+  document.querySelectorAll('#hist-divida-seg .view-toggle-btn')
+    .forEach((b) => b.classList.toggle('active', b.dataset.histSeg === 'total'));
+  document.getElementById('hist-divida-total-panel').classList.remove('hidden');
+  document.getElementById('hist-divida-extrato-panel').classList.add('hidden');
+
+  // Pre-fill valor pago
+  document.getElementById('hist-divida-total-valor').value = Number(d.valor_pago) > 0 ? d.valor_pago : '';
+
+  // Render extrato rows from cached historico
+  const entradas = cachedDividaHistorico.filter((h) => h.divida_id === id);
+  const container = document.getElementById('hist-divida-extrato-list');
+  container.innerHTML = '';
+  if (entradas.length > 0) {
+    const listEl = document.createElement('div');
+    listEl.className = 'hist-extrato-list';
+    for (const h of entradas) listEl.appendChild(makeHistRow(h));
+    container.appendChild(listEl);
+  }
+
+  openModal('modal-historico-divida');
+}
+
+async function saveHistoricoDivida() {
+  const btn = document.getElementById('btn-salvar-hist-divida');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Salvando…';
+  const mode = document.querySelector('#hist-divida-seg .view-toggle-btn.active')?.dataset.histSeg || 'total';
+  const d = cachedDividas.find((x) => x.id === historicoDividaId);
+  if (!d) { btn.disabled = false; btn.textContent = 'Salvar'; return; }
+
+  try {
+    if (mode === 'total') {
+      const valor = parseFloat(document.getElementById('hist-divida-total-valor').value) || 0;
+      const novoStatus = valor >= Number(d.valor_total) ? 'Quitada'
+        : (d.status === 'Quitada' ? 'Ativa' : d.status);
+      const { error } = await supabase
+        .from('dividas')
+        .update({ valor_pago: valor, status: novoStatus })
+        .eq('id', historicoDividaId);
+      if (error) throw error;
+      showToast('Valor pago atualizado', 'success');
+    } else {
+      // Collect rows from DOM
+      const rows = [];
+      document.querySelectorAll('#hist-divida-extrato-list .hist-row').forEach((rowEl) => {
+        const data = rowEl.querySelector('.hist-row-data').value;
+        const valor = parseFloat(rowEl.querySelector('.hist-row-valor').value);
+        const descricao = rowEl.querySelector('.hist-row-desc').value.trim() || null;
+        if (data && valor && valor > 0) rows.push({ data, valor, descricao });
+      });
+
+      const user = await getCurrentUser();
+      if (!user) throw new Error('Sessão expirada');
+
+      // Full replace historico
+      const { error: delErr } = await supabase
+        .from('pagamentos_divida_historico')
+        .delete()
+        .eq('divida_id', historicoDividaId);
+      if (delErr) throw delErr;
+
+      if (rows.length > 0) {
+        const { error: insErr } = await supabase
+          .from('pagamentos_divida_historico')
+          .insert(rows.map((r) => ({ ...r, divida_id: historicoDividaId, user_id: user.id })));
+        if (insErr) throw insErr;
+      }
+
+      // Recalculate valor_pago from sum of extrato entries
+      const totalPago = rows.reduce((s, r) => s + Number(r.valor), 0);
+      const novoStatus = totalPago >= Number(d.valor_total) ? 'Quitada'
+        : (d.status === 'Quitada' && totalPago < Number(d.valor_total) ? 'Ativa' : d.status);
+      const { error: updErr } = await supabase
+        .from('dividas')
+        .update({ valor_pago: totalPago, status: novoStatus })
+        .eq('id', historicoDividaId);
+      if (updErr) throw updErr;
+
+      showToast(`${rows.length} entrada${rows.length !== 1 ? 's' : ''} salva${rows.length !== 1 ? 's' : ''}`, 'success');
+    }
+
+    closeModal('modal-historico-divida');
+    await loadAll();
+  } catch (err) {
+    showToast('Erro ao salvar: ' + (err?.message || String(err)), 'error', 8000);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Salvar';
+  }
 }
 

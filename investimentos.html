@@ -171,8 +171,64 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-ghost" id="btn-arquivar-projeto">Arquivar projeto</button>
         <div style="flex: 1;"></div>
+        <button type="button" class="btn btn-ghost" id="btn-historico-invest">Histórico passado</button>
         <button type="button" class="btn btn-ghost" data-close-modal="modal-projeto-details">Fechar</button>
         <button type="button" class="btn btn-primary" id="btn-editar-projeto">Editar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Registrar histórico passado (investimento)
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-historico-invest" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h2 class="modal-title" id="hist-invest-modal-title">Histórico passado</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-historico-invest" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="field-hint" style="margin-bottom: var(--space-4);">Registre aportes feitos antes de começar a usar o FinFlow. Esses valores somam ao "Realizado".</p>
+        <div class="view-toggle view-toggle--text" id="hist-invest-seg" style="margin-bottom: var(--space-5); width: 100%;">
+          <button type="button" class="view-toggle-btn active" data-hist-seg="saldo" style="flex:1;">Saldo inicial</button>
+          <button type="button" class="view-toggle-btn" data-hist-seg="extrato" style="flex:1;">Extrato manual</button>
+        </div>
+
+        <div id="hist-invest-saldo-panel">
+          <div class="field">
+            <label class="field-label" for="hist-invest-saldo-valor">Total já investido neste projeto (antes do FinFlow)</label>
+            <input type="number" id="hist-invest-saldo-valor" class="input" step="0.01" min="0" placeholder="R$ 0,00">
+            <p class="field-hint">Atualiza o "Saldo inicial" do projeto e soma ao "Realizado".</p>
+          </div>
+        </div>
+
+        <div id="hist-invest-extrato-panel" class="hidden">
+          <p class="field-hint" style="margin-bottom: var(--space-3);">Registre transação por transação com data, valor e descrição. O conteúdo atual do extrato será substituído ao salvar.</p>
+          <div id="hist-invest-extrato-list"></div>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-hist-invest-add-row" style="margin-top: var(--space-3);">+ Adicionar entrada</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-historico-invest">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-salvar-hist-invest">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Ver histórico de aportes (somente leitura)
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-historico-view-invest" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h2 class="modal-title" id="hist-view-invest-title">Histórico de aportes</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-historico-view-invest" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="hist-view-invest-content"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-historico-view-invest">Fechar</button>
       </div>
     </div>
   </div>

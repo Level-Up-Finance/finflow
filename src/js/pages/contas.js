@@ -18,6 +18,29 @@ import { initColVisibility } from '../lib/col-visibility.js';
 import { escapeHtml, formatDateBR, todayISO } from '../lib/utils.js';
 import { checkAndCloseFaturas } from '../lib/faturas-cartao.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
+import { fetchExchangeRate } from '../lib/currency.js';
+
+// Cache local de taxas (moeda → taxa para BRL). Reusa o cache de 5min de currency.js.
+const ratesMapLocal = new Map();
+async function ensureRates(currencies) {
+  const faltando = [...new Set(currencies.filter((m) => m && m !== 'BRL' && !ratesMapLocal.has(m)))];
+  await Promise.all(faltando.map(async (cur) => {
+    try {
+      ratesMapLocal.set(cur, await fetchExchangeRate(cur, 'BRL'));
+    } catch (err) {
+      console.error(`[contas] falha ao buscar taxa ${cur}→BRL:`, err);
+    }
+  }));
+}
+function toBRL(value, moeda) {
+  if (!moeda || moeda === 'BRL') return Number(value) || 0;
+  const rate = ratesMapLocal.get(moeda);
+  if (!rate) {
+    console.warn(`[contas] taxa ${moeda}→BRL ausente; usando valor cru.`);
+    return Number(value) || 0;
+  }
+  return (Number(value) || 0) * rate;
+}
 
 // -----------------------------
 // Constants & state
@@ -597,9 +620,11 @@ async function loadAndRenderCompromissosLimite(conta) {
 
   const compromissos = data || [];
   const limite       = Number(conta.limite) || 0;
+
+  await ensureRates(compromissos.filter((c) => !c.valor_variavel).map((c) => c.moeda));
   const comprometido = compromissos
     .filter((c) => !c.valor_variavel)
-    .reduce((sum, c) => sum + (Number(c.valor_base) || 0), 0);
+    .reduce((sum, c) => sum + toBRL(c.valor_base, c.moeda), 0);
 
   // Resumo / barra
   if (!limite) {
@@ -872,14 +897,16 @@ async function loadCompromissosContas(contaIds) {
   if (!contaIds.length) return;
   const { data, error } = await supabase
     .from('subcategorias')
-    .select('conta_id, valor_base')
+    .select('conta_id, valor_base, moeda')
     .in('conta_id', contaIds)
     .eq('status', 'ativa');
   if (error) { console.warn('[loadCompromissosContas]', error); return; }
+
+  await ensureRates((data || []).map((s) => s.moeda));
   for (const s of (data || [])) {
     const prev = cachedCompromissosContas.get(s.conta_id) || { comprometido: 0, count: 0 };
     cachedCompromissosContas.set(s.conta_id, {
-      comprometido: prev.comprometido + Number(s.valor_base || 0),
+      comprometido: prev.comprometido + toBRL(s.valor_base, s.moeda),
       count: prev.count + 1,
     });
   }
