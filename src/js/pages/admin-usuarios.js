@@ -18,12 +18,17 @@ const TEMA_LABELS  = { claro: 'Claro', escuro: 'Escuro', auto: 'Automático' };
 const IDIOMA_LABELS = { 'pt-BR': 'Português (BR)', en: 'English' };
 
 // ── Init ──────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
-  await guardSession();
-  await initSidebar('usuarios');
+export async function init() {
   await loadData();
   bindEvents();
   renderTable();
+}
+
+// Standalone (admin-usuarios.html acessado diretamente)
+document.addEventListener('DOMContentLoaded', async () => {
+  await guardSession();
+  await initSidebar('admin');
+  await init();
 });
 
 // ── Dados ─────────────────────────────────────────────────────

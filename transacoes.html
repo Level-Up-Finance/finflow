@@ -161,6 +161,7 @@
               <select class="select" id="trans-tipo" required>
                 <option value="Despesa">Despesa</option>
                 <option value="Receita">Receita</option>
+                <option value="Transferência">Transferência</option>
               </select>
             </div>
           </div>
@@ -188,7 +189,46 @@
             </select>
           </div>
 
-          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+          <!-- ── Seção de transferência (visível só quando tipo = Transferência) ── -->
+          <div class="transfer-section hidden" id="trans-transfer-section">
+            <div class="field">
+              <label class="field-label" for="trans-conta-destino">Conta destino <span class="required">*</span></label>
+              <select class="select" id="trans-conta-destino">
+                <option value="">Selecione…</option>
+              </select>
+            </div>
+
+            <div class="transfer-cambio-card" id="trans-cambio-card">
+              <div class="transfer-cambio-header">
+                <span class="transfer-cambio-title">Câmbio</span>
+                <span class="transfer-cambio-par" id="trans-cambio-par">—</span>
+                <span class="transfer-fetch-status" id="trans-fetch-status"></span>
+              </div>
+              <div class="field">
+                <label class="field-label" for="trans-taxa-oficial">Taxa oficial do dia</label>
+                <input class="input" id="trans-taxa-oficial" type="number" step="0.000001" min="0" placeholder="Buscando…">
+                <p class="field-hint">Cotação Frankfurter. Ajuste manualmente se necessário.</p>
+              </div>
+              <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+                <div class="field">
+                  <label class="field-label" for="trans-valor-previsto">Valor previsto (BRL)</label>
+                  <input class="input transfer-input-readonly" id="trans-valor-previsto" type="text" readonly placeholder="—" tabindex="-1">
+                  <p class="field-hint">Valor × taxa oficial. Calculado automaticamente.</p>
+                </div>
+                <div class="field">
+                  <label class="field-label" for="trans-valor-destino">Valor recebido (BRL)</label>
+                  <input class="input" id="trans-valor-destino" type="number" step="0.01" min="0" placeholder="Confirme após o crédito">
+                  <p class="field-hint">Pré-preenchido com o valor previsto. Ajuste se diferir.</p>
+                </div>
+              </div>
+              <div class="transfer-taxa-efetiva hidden" id="trans-taxa-efetiva-wrap">
+                <span class="transfer-taxa-efetiva-label">Taxa efetiva:</span>
+                <span class="transfer-taxa-efetiva-value" id="trans-taxa-efetiva-value">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-group" style="grid-template-columns: 1fr 1fr;" id="trans-cat-fields">
             <div class="field">
               <label class="field-label" for="trans-bloco">Bloco</label>
               <select class="select" id="trans-bloco">
@@ -206,7 +246,7 @@
             </div>
           </div>
 
-          <div class="field">
+          <div class="field" id="trans-sub-field">
             <label class="field-label" for="trans-subcategoria">Subcategoria</label>
             <select class="select" id="trans-subcategoria">
               <option value="">— Sem vínculo —</option>
@@ -214,7 +254,7 @@
             <p class="field-hint">Selecione Bloco e Categoria para filtrar. Vincula a um compromisso recorrente.</p>
           </div>
 
-          <div class="field">
+          <div class="field" id="trans-contato-field">
             <label class="field-label" for="trans-contato-search">Cliente / Fornecedor</label>
             <div class="contato-picker" data-picker="trans-contato">
               <input type="text" id="trans-contato-search" class="contato-picker-input input" autocomplete="off" placeholder="Buscar contato ou digitar novo nome…">

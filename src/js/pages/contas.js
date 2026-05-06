@@ -204,6 +204,13 @@ function bindEvents() {
   // Bank combobox
   initBankCombobox();
 
+  // Origem: Nacional / Estrangeira
+  document.getElementById('conta-origem-segmented').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-origem]');
+    if (!btn) return;
+    setOrigem(btn.dataset.origem);
+  });
+
   // Form submit
   document.getElementById('form-conta').addEventListener('submit', saveConta);
 
@@ -416,6 +423,17 @@ function pickColorByName(name) {
 // -----------------------------
 // Conditional fields (Cartão)
 // -----------------------------
+function setOrigem(origem) {
+  document.querySelectorAll('#conta-origem-segmented [data-origem]').forEach((b) =>
+    b.classList.toggle('active', b.dataset.origem === origem)
+  );
+  const isEstrangeira = origem === 'estrangeira';
+  document.getElementById('conta-moeda-field').classList.toggle('hidden', !isEstrangeira);
+  if (!isEstrangeira) {
+    document.getElementById('conta-moeda').value = 'BRL';
+  }
+}
+
 function toggleCartaoFields() {
   const tipo = document.getElementById('conta-tipo').value;
   const cartaoFields = document.getElementById('cartao-fields');
@@ -470,7 +488,7 @@ function openContaModal(conta = null) {
   // Populate moeda select with user's configured currencies + any current value
   const userCurrencies = getUserCurrencies();
   const currentMoeda   = conta?.moeda || getMoedaPadrao();
-  const allCodes = [...new Set([...userCurrencies, currentMoeda])];
+  const allCodes = [...new Set([...userCurrencies, currentMoeda].filter((c) => c !== 'BRL'))];
   const moedaSel = document.getElementById('conta-moeda');
   moedaSel.innerHTML = allCodes.map((code) => {
     const cur = CURRENCIES.find((c) => c.code === code);
@@ -478,12 +496,15 @@ function openContaModal(conta = null) {
     return `<option value="${code}" ${code === currentMoeda ? 'selected' : ''}>${label}</option>`;
   }).join('');
   // Add "Outra…" group for currencies not in user list
-  const otherCurrencies = CURRENCIES.filter((c) => !allCodes.includes(c.code));
+  const otherCurrencies = CURRENCIES.filter((c) => c.code !== 'BRL' && !allCodes.includes(c.code));
   if (otherCurrencies.length) {
     moedaSel.innerHTML += `<optgroup label="Outras">`
       + otherCurrencies.map((c) => `<option value="${c.code}">${c.code} — ${c.label}</option>`).join('')
       + `</optgroup>`;
   }
+
+  // Origem: Nacional (BRL) ou Estrangeira
+  setOrigem(currentMoeda === 'BRL' ? 'nacional' : 'estrangeira');
   document.getElementById('conta-desde').value = conta?.desde || todayISO();
   document.getElementById('conta-fechada-em').value = conta?.fechada_em || '';
   document.getElementById('conta-fec-fatura').value = conta?.fec_fatura || '';
@@ -1148,6 +1169,9 @@ function renderContaCard(conta) {
         <div class="conta-card-meta">
           ${typePill(conta.tipo)}
           <span class="status-pill status-${conta.status}">${statusLabel}</span>
+          ${conta.moeda && conta.moeda !== 'BRL'
+            ? `<span class="conta-moeda-badge conta-moeda-badge--estrangeira">🌐 ${escapeHtml(conta.moeda)}</span>`
+            : `<span class="conta-moeda-badge conta-moeda-badge--nacional">🇧🇷 BRL</span>`}
         </div>
         ${conta.descricao ? `<p class="conta-card-desc">${escapeHtml(conta.descricao)}</p>` : ''}
         ${dates.length ? `<div class="conta-card-dates">${dates.join('')}</div>` : ''}

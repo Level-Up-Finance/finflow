@@ -21,9 +21,10 @@ const TYPE_LABELS = {
 
 const STATUS_LABELS = {
   novo:         'Novo',
+  em_analise:   'Em análise',
   em_progresso: 'Em progresso',
   feito:        'Feito',
-  descartado:   'Descartado',
+  agora_nao:    'Agora não',
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -40,6 +41,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function bindEvents() {
   document.getElementById('form-feedback').addEventListener('submit', onSubmit);
+
+  document.getElementById('btn-close-fbd').addEventListener('click',  closeDetailModal);
+  document.getElementById('btn-cancel-fbd').addEventListener('click', closeDetailModal);
+  document.getElementById('modal-fb-detail').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeDetailModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDetailModal();
+  });
 }
 
 async function onSubmit(e) {
@@ -96,7 +106,7 @@ async function loadMine() {
 
   const { data, error } = await supabase
     .from('feedback')
-    .select('id, type, title, description, status, created_at, changelog_id')
+    .select('id, codigo, type, title, description, status, created_at, updated_at, changelog_id, resposta_usuario')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
@@ -112,49 +122,115 @@ async function loadMine() {
     return;
   }
 
-  const groups = [
-    { label: 'Novo',                 items: data.filter((f) => f.status === 'novo') },
-    { label: 'Em progresso',         items: data.filter((f) => f.status === 'em_progresso') },
-    { label: 'Feito & descartado',   items: data.filter((f) => f.status === 'feito' || f.status === 'descartado') },
-  ];
-
-  list.innerHTML = groups
-    .filter((g) => g.items.length)
-    .map(renderGroup)
-    .join('');
+  list.innerHTML = renderTable(data);
   list.classList.remove('hidden');
+  initDetailModal(data);
 }
 
-function renderGroup(group) {
-  return `
-    <div class="feedback-group">
-      <h3 class="feedback-group-title">
-        ${escapeHtml(group.label)}
-        <span class="feedback-group-count">${group.items.length}</span>
-      </h3>
-      <div class="feedback-group-list">
-        ${group.items.map(renderCard).join('')}
-      </div>
-    </div>
-  `;
+// ── Tabela agrupada ───────────────────────────────────────────
+const GROUPS = [
+  { label: 'Novas',                    statuses: ['novo'] },
+  { label: 'Em análise e em andamento', statuses: ['em_analise', 'em_progresso'] },
+  { label: 'Concluídas e rejeitadas',  statuses: ['feito', 'agora_nao'] },
+];
+
+function renderTable(items) {
+  const thead = `
+    <thead>
+      <tr>
+        <th class="ft-th-codigo">Código</th>
+        <th class="ft-th-type">Tipo</th>
+        <th>Título</th>
+        <th>Descrição</th>
+        <th class="ft-th-status">Status</th>
+        <th class="ft-th-retorno">Retorno</th>
+        <th class="ft-th-date">Criada</th>
+        <th class="ft-th-date">Concluído</th>
+      </tr>
+    </thead>`;
+
+  const bodies = GROUPS.map((group) => {
+    const filtered = items.filter((f) => group.statuses.includes(f.status));
+    if (!filtered.length) return '';
+
+    const rows = filtered.map((fb) => {
+      const typeLabel   = TYPE_LABELS[fb.type]    || fb.type;
+      const statusLabel = STATUS_LABELS[fb.status] || fb.status;
+      const criada      = new Date(fb.created_at).toLocaleDateString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+      });
+      const concluido   = (fb.status === 'feito' || fb.status === 'agora_nao') && fb.updated_at
+        ? new Date(fb.updated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : '—';
+      return `
+        <tr class="ft-row fb-mine-row" data-id="${fb.id}">
+          <td><span class="i18n-chave">${escapeHtml(fb.codigo || '—')}</span></td>
+          <td><span class="feedback-type-pill feedback-type-pill--${fb.type}">${escapeHtml(typeLabel)}</span></td>
+          <td class="fb-col-title">${escapeHtml(fb.title)}</td>
+          <td class="fb-col-desc">${escapeHtml(truncate(fb.description, 100))}</td>
+          <td><span class="feedback-status-badge feedback-status-badge--${fb.status}">${escapeHtml(statusLabel)}</span></td>
+          <td class="fb-col-retorno">${fb.resposta_usuario ? escapeHtml(truncate(fb.resposta_usuario, 60)) : '<span style="color:var(--color-text-tertiary)">—</span>'}</td>
+          <td class="ft-td-date">${escapeHtml(criada)}</td>
+          <td class="ft-td-date">${escapeHtml(concluido)}</td>
+        </tr>`;
+    }).join('');
+
+    return `
+      <tbody>
+        <tr class="fb-group-header-row">
+          <td colspan="8">
+            <span class="fb-group-header-label">${escapeHtml(group.label)}</span>
+            <span class="feedback-group-count">${filtered.length}</span>
+          </td>
+        </tr>
+        ${rows}
+      </tbody>`;
+  }).join('');
+
+  return `<table class="table fb-mine-table">${thead}${bodies}</table>`;
 }
 
-function renderCard(fb) {
-  const typeLabel   = TYPE_LABELS[fb.type] || fb.type;
-  const statusLabel = STATUS_LABELS[fb.status] || fb.status;
-  const date        = new Date(fb.created_at).toLocaleDateString('pt-BR', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
+function truncate(text, n) {
+  if (!text) return '';
+  return text.length > n ? text.slice(0, n - 1) + '…' : text;
+}
+
+// ── Modal de detalhe ──────────────────────────────────────────
+function initDetailModal(items) {
+  document.querySelectorAll('.fb-mine-row').forEach((row) => {
+    const fb = items.find((f) => f.id === row.dataset.id);
+    if (!fb) return;
+    row.addEventListener('click', () => openDetailModal(fb));
   });
+}
 
-  return `
-    <article class="feedback-card">
-      <header class="feedback-card-header">
-        <span class="feedback-type-pill feedback-type-pill--${fb.type}">${escapeHtml(typeLabel)}</span>
-        <span class="feedback-status-badge feedback-status-badge--${fb.status}">${escapeHtml(statusLabel)}</span>
-        <span class="feedback-card-date">${escapeHtml(date)}</span>
-      </header>
-      <h3 class="feedback-card-title">${escapeHtml(fb.title)}</h3>
-      <p class="feedback-card-desc">${escapeHtml(fb.description)}</p>
-    </article>
-  `;
+function openDetailModal(fb) {
+  const date        = new Date(fb.created_at).toLocaleDateString('pt-BR', {
+    day: '2-digit', month: 'long', year: 'numeric',
+  });
+  const typeLabel   = TYPE_LABELS[fb.type]    || fb.type;
+  const statusLabel = STATUS_LABELS[fb.status] || fb.status;
+
+  document.getElementById('fbd-codigo').textContent = fb.codigo || '';
+  document.getElementById('fbd-meta').innerHTML =
+    `<span class="feedback-type-pill feedback-type-pill--${fb.type}">${escapeHtml(typeLabel)}</span>` +
+    `<span class="feedback-status-badge feedback-status-badge--${fb.status}">${escapeHtml(statusLabel)}</span>`;
+  document.getElementById('fbd-title').textContent = fb.title;
+  document.getElementById('fbd-desc').textContent  = fb.description;
+
+  const retornoWrap = document.getElementById('fbd-retorno-wrap');
+  if (fb.resposta_usuario) {
+    document.getElementById('fbd-retorno').textContent = fb.resposta_usuario;
+    retornoWrap.classList.remove('hidden');
+  } else {
+    retornoWrap.classList.add('hidden');
+  }
+
+  document.getElementById('fbd-date').textContent  = `Enviado em ${date}`;
+
+  document.getElementById('modal-fb-detail').classList.remove('hidden');
+}
+
+function closeDetailModal() {
+  document.getElementById('modal-fb-detail').classList.add('hidden');
 }

@@ -209,10 +209,18 @@
 
         <!-- Moeda -->
         <div class="field">
+          <label class="field-label">Origem da conta <span class="required">*</span></label>
+          <div class="segmented" id="conta-origem-segmented">
+            <button type="button" class="segmented-btn active" data-origem="nacional">🇧🇷 Nacional (BRL)</button>
+            <button type="button" class="segmented-btn" data-origem="estrangeira">🌐 Estrangeira</button>
+          </div>
+        </div>
+        <div class="field hidden" id="conta-moeda-field">
           <label class="field-label" for="conta-moeda">Moeda <span class="required">*</span></label>
           <select id="conta-moeda" name="moeda" class="input"></select>
-          <p class="field-hint">Moeda principal desta conta. Gerencia as moedas disponíveis em Configurações → Sistema.</p>
+          <p class="field-hint">Gerencia as moedas disponíveis em Configurações → Sistema.</p>
         </div>
+        <input type="hidden" id="conta-moeda-nacional" value="BRL">
 
         <!-- Descrição -->
         <div class="field">

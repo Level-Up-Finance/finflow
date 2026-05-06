@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administração · FinFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/variables.css">
+  <link rel="stylesheet" href="src/css/global.css">
+  <link rel="stylesheet" href="src/css/components.css">
+  <link rel="stylesheet" href="src/css/layout.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-sidebar" id="sidebar-container"></div>
+
+    <header class="app-header header">
+      <div class="header-left">
+        <h2 class="header-title">Administração</h2>
+      </div>
+    </header>
+
+    <main class="app-main main cfg-main">
+      <div class="cfg-layout">
+
+        <!-- Side nav -->
+        <nav class="cfg-sidenav" id="admin-sidenav" aria-label="Administração">
+          <button class="cfg-sidenav-item active" data-tab="feedback" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><rect width="3" height="9" x="7" y="7"/><rect width="3" height="5" x="14" y="7"/></svg>
+            Feedback
+          </button>
+          <button class="cfg-sidenav-item" data-tab="usuarios" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M14 10h4M14 12h4M8 16h10"/></svg>
+            Usuários
+          </button>
+          <button class="cfg-sidenav-item" data-tab="idiomas" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            Idiomas
+          </button>
+        </nav>
+
+        <!-- Content area -->
+        <div class="cfg-content">
+
+          <!-- Panel: Feedback -->
+          <div class="cfg-panel" id="admin-panel-feedback">
+
+            <!-- Tab toggle entre as 3 views -->
+            <div class="feedback-views-tabs" id="feedback-views-tabs">
+              <button class="feedback-view-tab active" data-view="triagem" type="button">
+                <span class="feedback-view-tab-label">Triagem</span>
+                <span class="feedback-view-tab-count" data-count="triagem">0</span>
+              </button>
+              <button class="feedback-view-tab" data-view="andamento" type="button">
+                <span class="feedback-view-tab-label">Em andamento</span>
+                <span class="feedback-view-tab-count" data-count="andamento">0</span>
+              </button>
+              <button class="feedback-view-tab" data-view="arquivo" type="button">
+                <span class="feedback-view-tab-label">Arquivo</span>
+                <span class="feedback-view-tab-count" data-count="arquivo">0</span>
+              </button>
+            </div>
+
+            <div id="feedback-loading" class="loading-overlay" style="position:relative; min-height:200px;">
+              <span class="spinner"></span>
+            </div>
+
+            <!-- VIEW: Triagem (status = novo) -->
+            <section class="feedback-view hidden" id="view-triagem">
+              <div class="feedback-toolbar">
+                <input type="search" id="triagem-search" class="input feedback-search" placeholder="Buscar por título ou descrição…">
+                <div class="filter-pills" id="triagem-tipo-filters">
+                  <button class="filter-pill active" data-tipo="todos" type="button">Todos</button>
+                  <button class="filter-pill filter-pill--bug" data-tipo="bug" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>
+                    Bugs
+                  </button>
+                  <button class="filter-pill filter-pill--sugestao" data-tipo="sugestao" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
+                    Sugestões
+                  </button>
+                  <button class="filter-pill filter-pill--feature" data-tipo="feature" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 2 L15 8.5 L22 9.3 L17 14 L18.2 21 L12 17.8 L5.8 21 L7 14 L2 9.3 L9 8.5 Z"/></svg>
+                    Funcionalidades
+                  </button>
+                  <button class="filter-pill filter-pill--pergunta" data-tipo="pergunta" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                    Perguntas
+                  </button>
+                  <button class="filter-pill filter-pill--elogio" data-tipo="elogio" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                    Elogios
+                  </button>
+                  <button class="filter-pill filter-pill--parceria" data-tipo="parceria" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Parcerias
+                  </button>
+                </div>
+              </div>
+
+              <div class="feedback-bulk-bar hidden" id="triagem-bulk-bar">
+                <span class="feedback-bulk-bar-count" id="triagem-bulk-count">0 selecionados</span>
+                <div class="feedback-bulk-bar-actions">
+                  <button class="btn btn-ghost btn-sm" data-bulk-action="em_analise"  type="button">Mover pra Em análise</button>
+                  <button class="btn btn-ghost btn-sm" data-bulk-action="em_progresso" type="button">Mover pra Em andamento</button>
+                  <button class="btn btn-ghost btn-sm" data-bulk-action="agora_nao" type="button">Agora não</button>
+                  <button class="btn btn-ghost btn-sm" id="triagem-bulk-clear" type="button">Limpar seleção</button>
+                </div>
+              </div>
+
+              <div class="feedback-table-wrap">
+                <table class="feedback-table" id="triagem-table">
+                  <thead>
+                    <tr>
+                      <th class="ft-th-check"><input type="checkbox" id="triagem-check-all" class="ft-check" aria-label="Selecionar todos"></th>
+                      <th class="ft-th-codigo">Código</th>
+                      <th class="ft-th-type">Tipo</th>
+                      <th class="ft-th-title">Título</th>
+                      <th class="ft-th-desc">Descrição</th>
+                      <th class="ft-th-submitter">Enviado por</th>
+                      <th class="ft-th-date">Criada</th>
+                      <th class="ft-th-date">Concluído</th>
+                      <th class="ft-th-priority">Prioridade</th>
+                      <th class="ft-th-retorno">Retorno</th>
+                    </tr>
+                  </thead>
+                  <tbody id="triagem-tbody"></tbody>
+                </table>
+              </div>
+              <div class="feedback-empty hidden" id="triagem-empty">
+                <p>Caixa de entrada vazia. Tudo em dia.</p>
+              </div>
+            </section>
+
+            <!-- VIEW: Em andamento (status = em_progresso) -->
+            <section class="feedback-view hidden" id="view-andamento">
+              <p class="feedback-view-hint">Itens em paralelo agora. Manter o WIP baixo (≤ 5) acelera a entrega.</p>
+              <div class="feedback-toolbar">
+                <input type="search" id="andamento-search" class="input feedback-search" placeholder="Buscar por título ou descrição…">
+                <div class="filter-pills" id="andamento-tipo-filters">
+                  <button class="filter-pill active" data-tipo="todos" type="button">Todos</button>
+                  <button class="filter-pill filter-pill--bug" data-tipo="bug" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>
+                    Bugs
+                  </button>
+                  <button class="filter-pill filter-pill--sugestao" data-tipo="sugestao" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
+                    Sugestões
+                  </button>
+                  <button class="filter-pill filter-pill--feature" data-tipo="feature" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 2 L15 8.5 L22 9.3 L17 14 L18.2 21 L12 17.8 L5.8 21 L7 14 L2 9.3 L9 8.5 Z"/></svg>
+                    Funcionalidades
+                  </button>
+                  <button class="filter-pill filter-pill--pergunta" data-tipo="pergunta" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                    Perguntas
+                  </button>
+                  <button class="filter-pill filter-pill--elogio" data-tipo="elogio" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                    Elogios
+                  </button>
+                  <button class="filter-pill filter-pill--parceria" data-tipo="parceria" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Parcerias
+                  </button>
+                </div>
+              </div>
+              <div class="feedback-table-wrap">
+                <table class="feedback-table" id="andamento-table">
+                  <thead>
+                    <tr>
+                      <th class="ft-th-codigo">Código</th>
+                      <th class="ft-th-type">Tipo</th>
+                      <th class="ft-th-title">Título</th>
+                      <th class="ft-th-desc">Descrição</th>
+                      <th class="ft-th-submitter">Enviado por</th>
+                      <th class="ft-th-date">Criada</th>
+                      <th class="ft-th-date">Concluído</th>
+                      <th class="ft-th-priority">Prioridade</th>
+                      <th class="ft-th-retorno">Retorno</th>
+                    </tr>
+                  </thead>
+                  <tbody id="andamento-tbody"></tbody>
+                </table>
+              </div>
+              <div class="feedback-empty hidden" id="andamento-empty">
+                <p>Nenhum item em andamento. Vá pra Triagem e puxe o que vai trabalhar.</p>
+              </div>
+            </section>
+
+            <!-- VIEW: Arquivo (status = feito ou descartado) -->
+            <section class="feedback-view hidden" id="view-arquivo">
+              <div class="feedback-toolbar">
+                <input type="search" id="arquivo-search" class="input feedback-search" placeholder="Buscar no arquivo…">
+                <div class="filter-pills" id="arquivo-status-filters">
+                  <button class="filter-pill active" data-status="todos" type="button">Todos</button>
+                  <button class="filter-pill" data-status="feito" type="button">Feitos</button>
+                  <button class="filter-pill" data-status="agora_nao" type="button">Agora não</button>
+                </div>
+              </div>
+
+              <div class="feedback-table-wrap">
+                <table class="feedback-table" id="arquivo-table">
+                  <thead>
+                    <tr>
+                      <th class="ft-th-codigo">Código</th>
+                      <th class="ft-th-status">Status</th>
+                      <th class="ft-th-type">Tipo</th>
+                      <th class="ft-th-title">Título</th>
+                      <th class="ft-th-desc">Descrição</th>
+                      <th class="ft-th-submitter">Enviado por</th>
+                      <th class="ft-th-date">Criada</th>
+                      <th class="ft-th-date">Concluído</th>
+                      <th class="ft-th-retorno">Retorno</th>
+                      <th class="ft-th-changelog">Vínculo</th>
+                    </tr>
+                  </thead>
+                  <tbody id="arquivo-tbody"></tbody>
+                </table>
+              </div>
+              <div class="feedback-empty hidden" id="arquivo-empty">
+                <p>Arquivo vazio.</p>
+              </div>
+            </section>
+
+          </div><!-- /#admin-panel-feedback -->
+
+          <!-- Panel: Usuários -->
+          <div class="cfg-panel hidden" id="admin-panel-usuarios">
+
+            <div class="page-header">
+              <div class="page-header-content">
+                <h1 class="page-title">Usuários <span class="adm-usr-count hidden" id="usr-count"></span></h1>
+              </div>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="adm-usr-toolbar">
+              <input type="search" class="input adm-usr-search" id="usr-search"
+                     placeholder="Buscar por nome ou e-mail…" autocomplete="off">
+              <div class="adm-usr-filters">
+                <button class="filter-pill active" data-plano="todos"   type="button">Todos</button>
+                <button class="filter-pill"        data-plano="free"    type="button">Free</button>
+                <button class="filter-pill"        data-plano="pro"     type="button">Pro</button>
+                <button class="filter-pill"        data-plano="premium" type="button">Premium</button>
+              </div>
+            </div>
+
+            <!-- Tabela -->
+            <div class="table-wrapper">
+              <table class="table adm-usr-table" id="usr-table">
+                <thead>
+                  <tr>
+                    <th>Usuário</th>
+                    <th>E-mail</th>
+                    <th>Plano</th>
+                    <th>Membro desde</th>
+                    <th>Último acesso</th>
+                  </tr>
+                </thead>
+                <tbody id="usr-tbody">
+                  <tr><td colspan="5" class="table-loading">Carregando…</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div><!-- /#admin-panel-usuarios -->
+
+          <!-- Panel: Idiomas -->
+          <div class="cfg-panel hidden" id="admin-panel-idiomas">
+
+            <div class="page-header">
+              <div class="page-header-content">
+                <h1 class="page-title">Idiomas <span class="adm-usr-count hidden" id="i18n-count"></span></h1>
+                <p class="page-description">Gerencie as traduções da interface do FinFlow em PT-BR, EN, ES e FR.</p>
+              </div>
+              <div class="page-header-actions">
+                <button type="button" class="btn btn-ghost" id="btn-importar-csv">Importar CSV</button>
+                <button type="button" class="btn btn-ghost" id="btn-exportar-csv">Exportar CSV</button>
+              </div>
+            </div>
+
+            <!-- Toolbar de filtros -->
+            <div class="i18n-toolbar">
+              <input type="search" class="input i18n-search" id="i18n-search"
+                     placeholder="Buscar chave ou texto…" autocomplete="off">
+              <select class="select i18n-filter-select" id="i18n-filter-pagina">
+                <option value="">Todas as páginas</option>
+                <option value="global">global</option>
+                <option value="nav">nav</option>
+                <option value="auth">auth</option>
+                <option value="contatos">contatos</option>
+                <option value="transacoes">transacoes</option>
+                <option value="compromissos">compromissos</option>
+                <option value="contas">contas</option>
+                <option value="dividas">dividas</option>
+                <option value="investimentos">investimentos</option>
+                <option value="perfil">perfil</option>
+                <option value="configuracoes">configuracoes</option>
+              </select>
+              <select class="select i18n-filter-select" id="i18n-filter-categoria">
+                <option value="">Todas as categorias</option>
+                <option value="ui">ui</option>
+                <option value="toast">toast</option>
+                <option value="modal">modal</option>
+                <option value="erro">erro</option>
+                <option value="sistema">sistema</option>
+                <option value="nav">nav</option>
+                <option value="form">form</option>
+                <option value="tabela">tabela</option>
+              </select>
+              <select class="select i18n-filter-select" id="i18n-filter-lang">
+                <option value="">Todos os idiomas</option>
+                <option value="en">EN</option>
+                <option value="es">ES</option>
+                <option value="fr">FR</option>
+              </select>
+              <select class="select i18n-filter-select" id="i18n-filter-status">
+                <option value="">Todos os status</option>
+                <option value="aguardando_aprovacao">Aguardando aprovação</option>
+                <option value="ok">ok</option>
+                <option value="pendente">pendente</option>
+                <option value="desatualizado">desatualizado</option>
+              </select>
+            </div>
+
+            <!-- Tabela -->
+            <div class="table-wrapper">
+              <table class="table" id="i18n-table">
+                <thead>
+                  <tr>
+                    <th>Código</th>
+                    <th>Chave</th>
+                    <th>Página · Categoria</th>
+                    <th>PT-BR</th>
+                    <th>EN</th>
+                    <th>ES</th>
+                    <th>FR</th>
+                    <th>Estado</th>
+                    <th>Criada / Atualizada</th>
+                  </tr>
+                </thead>
+                <tbody id="i18n-tbody">
+                  <tr><td colspan="9" class="table-loading">Carregando…</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div><!-- /#admin-panel-idiomas -->
+
+        </div><!-- /.cfg-content -->
+      </div><!-- /.cfg-layout -->
+    </main>
+  </div><!-- /.app-shell -->
+
+  <!-- ============================================================
+       MODAL: Editar feedback
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-feedback" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h2 class="modal-title">Detalhes do feedback</h2>
+        <button type="button" class="modal-close" id="btn-close-feedback" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="feedback-modal-meta">
+          <span id="modal-fb-codigo" class="i18n-chave" style="margin-right:var(--space-2)"></span>
+          <span id="modal-fb-type"   class="feedback-type-pill"></span>
+          <span id="modal-fb-status" class="feedback-status-badge"></span>
+          <span id="modal-fb-date"   class="feedback-card-date"></span>
+        </div>
+
+        <h3 id="modal-fb-title" class="feedback-modal-title"></h3>
+
+        <p id="modal-fb-submitter" class="feedback-modal-submitter"></p>
+
+        <div class="feedback-modal-desc-box">
+          <p id="modal-fb-description"></p>
+        </div>
+
+        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+          <div class="field">
+            <label class="field-label" for="modal-fb-status-select">Status</label>
+            <select id="modal-fb-status-select" class="select">
+              <option value="novo">Novo</option>
+              <option value="em_analise">Em análise</option>
+              <option value="em_progresso">Em progresso</option>
+              <option value="feito">Feito</option>
+              <option value="agora_nao">Agora não</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="modal-fb-priority-select">Prioridade</label>
+            <select id="modal-fb-priority-select" class="select">
+              <option value="">— sem prioridade —</option>
+              <option value="alta">Alta</option>
+              <option value="media">Média</option>
+              <option value="baixa">Baixa</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="modal-fb-changelog">Vínculo com changelog</label>
+          <select id="modal-fb-changelog" class="select"></select>
+          <p class="field-hint">Quando vira release, escolhe a entrada do changelog.</p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="modal-fb-resposta">Resposta para o usuário <span class="field-optional">(visível pro usuário)</span></label>
+          <textarea id="modal-fb-resposta" class="textarea" rows="3" maxlength="2000" placeholder="Explique o que foi feito, por que foi descartado, ou qualquer retorno útil…"></textarea>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="modal-fb-notes">Notas internas <span class="field-optional">(só você vê)</span></label>
+          <textarea id="modal-fb-notes" class="textarea" rows="3" maxlength="1000" placeholder="Decisões, contexto, próximos passos…"></textarea>
+        </div>
+
+        <div class="field fb-history-wrap">
+          <p class="field-label">Histórico de alterações</p>
+          <div id="modal-fb-history" class="fb-history-list"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" id="btn-feedback-delete" style="margin-right:auto;">Excluir</button>
+        <button type="button" class="btn btn-ghost" id="btn-feedback-cancel">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-feedback-save">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Link rápido a changelog (ao arrastar pra "Feito") -->
+  <div class="modal-backdrop hidden" id="modal-link-changelog" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title">Marcar como feito</h2>
+        <button type="button" class="modal-close" id="btn-close-link-changelog" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="field-hint" style="margin-bottom:var(--space-3);">Vincular esse feedback a uma entrada do changelog?</p>
+        <div class="field">
+          <label class="field-label" for="link-changelog-select">Entrada do changelog</label>
+          <select id="link-changelog-select" class="select"></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-link-changelog-skip">Pular</button>
+        <button type="button" class="btn btn-primary" id="btn-link-changelog-save">Vincular</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmar exclusão -->
+  <div class="modal-backdrop hidden" id="modal-confirm-delete" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title">Excluir feedback?</h2>
+        <button type="button" class="modal-close" id="btn-close-confirm-delete" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <p>Essa ação não pode ser desfeita.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-confirm-delete-cancel">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btn-confirm-delete-ok">Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Detalhe do usuário ── -->
+  <div class="modal-backdrop hidden" id="modal-usuario" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header adm-usr-modal-header">
+        <div class="adm-usr-modal-identity">
+          <div class="adm-usr-modal-avatar" id="modal-usr-avatar"></div>
+          <div>
+            <div class="adm-usr-modal-name" id="modal-usr-name"></div>
+            <div class="adm-usr-modal-meta" id="modal-usr-meta"></div>
+          </div>
+        </div>
+        <button type="button" class="modal-close" id="btn-close-modal-usr" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body" id="modal-usr-body"></div>
+      <div class="modal-footer adm-usr-modal-footer">
+        <div class="adm-usr-plano-form">
+          <label class="field-label" for="modal-usr-plano-select">Definir plano</label>
+          <select class="select" id="modal-usr-plano-select">
+            <option value="free">Free</option>
+            <option value="pro">Pro</option>
+            <option value="premium">Premium</option>
+          </select>
+        </div>
+        <div style="display:flex; gap:var(--space-2);">
+          <button type="button" class="btn btn-ghost" id="btn-cancel-modal-usr">Fechar</button>
+          <button type="button" class="btn btn-primary" id="btn-save-plano">Salvar plano</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Editar / Nova string ── -->
+  <div class="modal-backdrop hidden" id="modal-i18n" role="dialog" aria-modal="true" aria-labelledby="i18n-modal-chave">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <div>
+          <div class="i18n-modal-chave" id="i18n-modal-chave">Nova string</div>
+          <div class="i18n-modal-meta" id="i18n-modal-meta"></div>
+        </div>
+        <button type="button" class="modal-close" id="btn-close-i18n" aria-label="Fechar">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="i18n-modal-body">
+
+          <!-- Campos só visíveis no modo "criar" -->
+          <div class="i18n-create-form hidden" id="i18n-create-form">
+            <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+              <div class="field">
+                <label class="field-label" for="i18n-new-chave">Chave <span class="field-required">*</span></label>
+                <input type="text" id="i18n-new-chave" class="input" placeholder="pagina.categoria.nome" maxlength="120" autocomplete="off">
+                <p class="field-hint">Use ponto como separador. Ex: contatos.toast.salvo</p>
+              </div>
+              <div class="field">
+                <label class="field-label" for="i18n-new-pagina">Página</label>
+                <input type="text" id="i18n-new-pagina" class="input" placeholder="contatos" maxlength="60" autocomplete="off">
+              </div>
+            </div>
+            <div class="field-group" style="grid-template-columns: 1fr 1fr 1fr;">
+              <div class="field">
+                <label class="field-label" for="i18n-new-categoria">Categoria</label>
+                <select id="i18n-new-categoria" class="select">
+                  <option value="ui">ui</option>
+                  <option value="toast">toast</option>
+                  <option value="modal">modal</option>
+                  <option value="erro">erro</option>
+                  <option value="sistema">sistema</option>
+                  <option value="nav">nav</option>
+                  <option value="form">form</option>
+                  <option value="tabela">tabela</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="field-label" for="i18n-new-visibilidade">Visibilidade</label>
+                <select id="i18n-new-visibilidade" class="select">
+                  <option value="usuario">usuario</option>
+                  <option value="notificacao">notificacao</option>
+                  <option value="interno">interno</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="field-label" for="i18n-new-descricao">Descrição</label>
+                <input type="text" id="i18n-new-descricao" class="input" placeholder="Contexto de uso" maxlength="200" autocomplete="off">
+              </div>
+            </div>
+          </div>
+
+          <!-- PT-BR (fonte) -->
+          <div class="i18n-lang-block i18n-lang-block--source">
+            <div class="i18n-lang-header">
+              <span class="i18n-lang-name">PT-BR (fonte)</span>
+            </div>
+            <textarea id="i18n-edit-ptbr" class="textarea" rows="3"
+                      placeholder="Texto em português…"></textarea>
+          </div>
+
+          <!-- EN -->
+          <div class="i18n-lang-block">
+            <div class="i18n-lang-header">
+              <span class="i18n-lang-name">English (EN)</span>
+              <span class="i18n-status-badge" id="i18n-badge-en"></span>
+            </div>
+            <textarea id="i18n-edit-en" class="textarea" rows="3"
+                      placeholder="English translation…"></textarea>
+          </div>
+
+          <!-- ES -->
+          <div class="i18n-lang-block">
+            <div class="i18n-lang-header">
+              <span class="i18n-lang-name">Español (ES)</span>
+              <span class="i18n-status-badge" id="i18n-badge-es"></span>
+            </div>
+            <textarea id="i18n-edit-es" class="textarea" rows="3"
+                      placeholder="Traducción en español…"></textarea>
+          </div>
+
+          <!-- FR -->
+          <div class="i18n-lang-block">
+            <div class="i18n-lang-header">
+              <span class="i18n-lang-name">Français (FR)</span>
+              <span class="i18n-status-badge" id="i18n-badge-fr"></span>
+            </div>
+            <textarea id="i18n-edit-fr" class="textarea" rows="3"
+                      placeholder="Traduction en français…"></textarea>
+          </div>
+
+          <!-- Motivo -->
+          <div class="field i18n-motivo-row">
+            <label class="field-label" for="i18n-edit-motivo">Motivo da alteração</label>
+            <input type="text" id="i18n-edit-motivo" class="input" placeholder="Opcional — aparece no histórico" maxlength="200" autocomplete="off">
+          </div>
+
+          <!-- Histórico (só no modo edição) -->
+          <div class="i18n-history-section hidden" id="i18n-history-section">
+            <div class="i18n-history-title">Histórico de alterações</div>
+            <div class="i18n-history-list" id="i18n-history-list">
+              <span class="i18n-history-empty">Carregando…</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-aprovar-i18n" hidden>Aprovar string</button>
+        <div style="flex:1"></div>
+        <button type="button" class="btn btn-ghost" id="btn-cancel-i18n">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-save-i18n">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Importar CSV ── -->
+  <div class="modal-backdrop hidden" id="modal-csv-import" role="dialog" aria-modal="true">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title">Importar CSV</h3>
+        <button type="button" class="modal-close" id="btn-close-csv" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="i18n-import-area" id="csv-drop-area">
+          <input type="file" id="csv-file-input" accept=".csv,text/csv" hidden>
+          <p>Solte o arquivo aqui ou
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-choose-csv">escolha um arquivo</button>
+          </p>
+          <p class="i18n-import-info">
+            Formato esperado: <code>chave, en, es, fr</code> (somente traduções são importadas — PT-BR nunca é sobrescrito).
+          </p>
+        </div>
+        <div class="i18n-import-preview-wrap hidden" id="csv-preview-wrap">
+          <p class="i18n-import-count" id="csv-preview-count"></p>
+          <div class="i18n-import-table-wrap">
+            <table class="table" id="csv-preview-table">
+              <thead>
+                <tr>
+                  <th>Chave</th>
+                  <th>EN</th>
+                  <th>ES</th>
+                  <th>FR</th>
+                  <th>Situação</th>
+                </tr>
+              </thead>
+              <tbody id="csv-preview-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-cancel-csv">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-confirm-csv" disabled>Importar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script type="module" src="src/js/pages/admin.js"></script>
+</body>
+</html>

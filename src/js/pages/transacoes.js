@@ -36,6 +36,7 @@ import {
 import { escapeHtml, formatDateBR, showConfirm } from '../lib/utils.js';
 import { initContatoPicker } from '../components/contato-picker.js';
 import { initColVisibility } from '../lib/col-visibility.js';
+import { fetchExchangeRate } from '../lib/currency.js';
 import {
   isContaCartao,
   syncTransacaoFatura,
@@ -142,7 +143,7 @@ async function loadAll() {
       .order('created_at', { ascending: false }),
     supabase
       .from('contas')
-      .select('id, nome, apelido, tipo, icone_cor, status, fec_fatura, vencimento')
+      .select('id, nome, apelido, tipo, icone_cor, moeda, status, fec_fatura, vencimento')
       .neq('status', 'arquivada')
       .order('nome'),
     supabase
@@ -204,6 +205,7 @@ function populateContaSelects() {
     .concat(cachedContas.map((c) => `<option value="${c.id}">${escapeHtml(c.apelido || c.nome)}</option>`))
     .join('');
   document.getElementById('trans-conta').innerHTML = formOpts;
+  document.getElementById('trans-conta-destino').innerHTML = formOpts;
 }
 
 let contatoPicker = null;
@@ -385,10 +387,16 @@ async function execBulkDelete() {
   const n = ids.length;
   if (!await showConfirm(`Excluir ${n} transaç${n > 1 ? 'ões' : 'ão'}?\n\nEsta ação não pode ser desfeita.`)) return;
 
-  const { error } = await supabase.from('transacoes').delete().in('id', ids);
+  const parIds = ids.flatMap((id) => {
+    const par = cachedTransacoes.find((t) => t.id === id)?.transferencia_par_id;
+    return par ? [par] : [];
+  });
+  const allIds = [...new Set([...ids, ...parIds])];
+
+  const { error } = await supabase.from('transacoes').delete().in('id', allIds);
   if (error) { showToast('Erro ao excluir: ' + error.message, 'error', 8000); return; }
 
-  ids.forEach((id) => {
+  allIds.forEach((id) => {
     const idx = cachedTransacoes.findIndex((t) => t.id === id);
     if (idx !== -1) cachedTransacoes.splice(idx, 1);
   });
@@ -536,11 +544,13 @@ function renderDataRows(items) {
   }
 
   // Saldo corrente: acumula do mais antigo para o mais novo (items vem newest-first)
+  const parById = new Map(cachedTransacoes.map((x) => [x.id, x]));
   const runningBalances = new Map();
   let balance = 0;
   const itemsAsc = [...items].reverse();
   for (const t of itemsAsc) {
-    balance += t.tipo === 'Receita' ? Number(t.valor || 0) : -Number(t.valor || 0);
+    const isEntradaT = t.tipo === 'Transferência' && !!t.transferencia_par_id && !t.conta_destino_id;
+    balance += (t.tipo === 'Receita' || isEntradaT) ? Number(t.valor || 0) : -Number(t.valor || 0);
     runningBalances.set(t.id, balance);
   }
 
@@ -551,20 +561,23 @@ function renderDataRows(items) {
     const bloco   = getBlocoFromSub(sub);
     const contato = t.contato_id ? cachedContatos.find((c) => c.id === t.contato_id) : null;
 
-    const tipoCls = t.tipo === 'Receita' ? 'trans-tipo-receita' : 'trans-tipo-despesa';
-    const sinal   = t.tipo === 'Receita' ? '+' : '−';
+    const isTransferSaida   = t.tipo === 'Transferência' && !!t.conta_destino_id;
+    const isTransferEntrada = t.tipo === 'Transferência' && !!t.transferencia_par_id && !t.conta_destino_id;
+    const isTransfer        = t.tipo === 'Transferência';
+    const tipoCls = t.tipo === 'Receita' ? 'trans-tipo-receita' : t.tipo === 'Despesa' ? 'trans-tipo-despesa' : 'trans-tipo-transferencia';
+    const sinal   = (t.tipo === 'Receita' || isTransferEntrada) ? '+' : '−';
 
-    const blocoHtml = bloco
+    const blocoHtml = (!isTransfer && bloco)
       ? `<span class="trans-bloco-pill" style="--bloco-color:${bloco.color};">${escapeHtml(bloco.label)}</span>`
       : '<span class="trans-bloco-empty">—</span>';
 
-    const catHtml = cat
-      ? `<span class="trans-cat-name">${escapeHtml(cat.nome)}</span>`
-      : '<span class="trans-cat-empty">—</span>';
+    const catHtml = isTransfer
+      ? '<span class="trans-cat-transfer">Transferência</span>'
+      : (cat ? `<span class="trans-cat-name">${escapeHtml(cat.nome)}</span>` : '<span class="trans-cat-empty">—</span>');
 
-    const subHtml = sub
-      ? `<span class="trans-sub-name">${escapeHtml(sub.apelido || sub.nome)}</span>`
-      : '<span class="trans-sub-empty">—</span>';
+    const subHtml = isTransfer
+      ? `<span class="trans-transfer-side">${isTransferEntrada ? 'entrada' : 'saída'}</span>`
+      : (sub ? `<span class="trans-sub-name">${escapeHtml(sub.apelido || sub.nome)}</span>` : '<span class="trans-sub-empty">—</span>');
 
     // Identificador: ID único do banco (banco_id)
     const bancoIdHtml = t.banco_id
@@ -632,8 +645,22 @@ function renderDataRows(items) {
          </button>`
       : '';
 
+    let contaSpan;
+    if (isTransferSaida) {
+      const contaDest = cachedContas.find((c) => c.id === t.conta_destino_id);
+      contaSpan = `<span class="trans-transfer-flow"><span class="trans-transfer-flow-src">${escapeHtml(conta ? (conta.apelido || conta.nome) : '?')}</span><span class="trans-transfer-flow-arrow"> → </span><span class="trans-transfer-flow-dst">${escapeHtml(contaDest ? (contaDest.apelido || contaDest.nome) : '?')}</span></span>`;
+    } else if (isTransferEntrada) {
+      const parTrans = parById.get(t.transferencia_par_id);
+      const contaOrigem = parTrans ? cachedContas.find((c) => c.id === parTrans.conta_id) : null;
+      contaSpan = `<span class="trans-transfer-flow"><span class="trans-transfer-flow-src">${escapeHtml(contaOrigem ? (contaOrigem.apelido || contaOrigem.nome) : '?')}</span><span class="trans-transfer-flow-arrow"> → </span><span class="trans-transfer-flow-dst">${escapeHtml(conta ? (conta.apelido || conta.nome) : '?')}</span></span>`;
+    } else {
+      contaSpan = `<span>${escapeHtml(conta ? (conta.apelido || conta.nome) : '—')}</span>`;
+    }
+    const rowTypeCls = t.tipo === 'Receita' ? 'trans-row-receita' : t.tipo === 'Despesa' ? 'trans-row-despesa' : `trans-row-transfer${isTransferEntrada ? ' trans-row-transfer--entrada' : ''}`;
+    const editId = isTransferEntrada && t.transferencia_par_id ? t.transferencia_par_id : t.id;
+
     return `
-      <tr class="trans-row trans-row-${t.tipo === 'Receita' ? 'receita' : 'despesa'}${isImportado ? ' trans-row--importado' : ''}" data-id="${t.id}">
+      <tr class="trans-row ${rowTypeCls}${isImportado ? ' trans-row--importado' : ''}" data-id="${t.id}">
         <td class="trans-td-data tabular">${formatDateBR(t.data)}</td>
         <td class="trans-td-planejada" data-col="planejada">${planejadaHtml}</td>
         <td class="trans-td-id" data-col="id">${bancoIdHtml}</td>
@@ -644,7 +671,7 @@ function renderDataRows(items) {
         <td class="trans-td-subcategoria" data-col="subcategoria">${subHtml}</td>
         <td class="trans-td-conta" data-col="conta">
           <div class="trans-conta-cell">
-            <span>${escapeHtml(conta ? (conta.apelido || conta.nome) : '—')}</span>
+            ${contaSpan}
             ${reconBadge}${parcialIcon}
           </div>
         </td>
@@ -655,7 +682,7 @@ function renderDataRows(items) {
             <input type="checkbox" class="trans-row-check" data-id="${t.id}"
               ${selectedIds.has(t.id) ? 'checked' : ''} title="Selecionar">
             ${reconBtn}
-            <button class="btn-icon" data-edit="${t.id}" title="Editar">
+            <button class="btn-icon" data-edit="${editId}" title="Editar">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
           </div>
@@ -745,6 +772,40 @@ function bindEvents() {
   document.getElementById('form-transacao').addEventListener('submit', (e) => {
     e.preventDefault();
     saveTransacao();
+  });
+
+  // Transferência — mostrar/esconder seção
+  document.getElementById('trans-tipo').addEventListener('change', (e) => {
+    toggleTransferSection(e.target.value === 'Transferência');
+    updateCambioPar();
+  });
+
+  // Transferência — atualizar par de câmbio ao mudar moeda
+  document.getElementById('trans-moeda').addEventListener('change', () => {
+    updateCambioPar();
+    if (document.getElementById('trans-tipo').value === 'Transferência') {
+      fetchAndFillRate();
+    }
+  });
+
+  // Conta origem — auto-detectar moeda da conta
+  document.getElementById('trans-conta').addEventListener('change', (e) => {
+    const conta = cachedContas.find((c) => c.id === e.target.value);
+    if (conta?.moeda) {
+      document.getElementById('trans-moeda').value = conta.moeda;
+      updateCambioPar();
+      if (document.getElementById('trans-tipo').value === 'Transferência') fetchAndFillRate();
+    }
+  });
+
+  // Transferência — recalcular previsto ao mudar valor ou taxa
+  document.getElementById('trans-valor').addEventListener('input', updatePrevisto);
+  document.getElementById('trans-taxa-oficial').addEventListener('input', updatePrevisto);
+
+  // Transferência — marcar destino como editado manualmente
+  document.getElementById('trans-valor-destino').addEventListener('input', () => {
+    document.getElementById('trans-valor-destino').dataset.manuallyEdited = '1';
+    updateEfetiva();
   });
 
   // Botão excluir dentro do modal
@@ -904,6 +965,71 @@ async function upsertContatoBancoDesc(contatoId, bancoDesc, subcategoriaId = nul
 // -----------------------------
 // Modal: open / save
 // -----------------------------
+// ── Helpers de transferência ──────────────────────────────────
+function toggleTransferSection(show) {
+  const section = document.getElementById('trans-transfer-section');
+  section.classList.toggle('hidden', !show);
+  document.getElementById('trans-conta-destino').required = show;
+  document.getElementById('trans-cat-fields').classList.toggle('field--faded', show);
+  document.getElementById('trans-sub-field').classList.toggle('field--faded', show);
+  document.getElementById('trans-contato-field').classList.toggle('field--faded', show);
+  if (show) fetchAndFillRate();
+}
+
+function updateCambioPar() {
+  const moeda      = document.getElementById('trans-moeda').value || 'BRL';
+  const parEl      = document.getElementById('trans-cambio-par');
+  const cardEl     = document.getElementById('trans-cambio-card');
+  const isForeign  = moeda !== 'BRL';
+  cardEl.classList.toggle('hidden', !isForeign);
+  if (parEl) parEl.textContent = isForeign ? `${moeda} → BRL` : '—';
+}
+
+function updateEfetiva() {
+  const valor         = parseFloat(document.getElementById('trans-valor').value) || 0;
+  const valorDestino  = parseFloat(document.getElementById('trans-valor-destino').value) || 0;
+  const wrapEl        = document.getElementById('trans-taxa-efetiva-wrap');
+  const valEl         = document.getElementById('trans-taxa-efetiva-value');
+  if (valor > 0 && valorDestino > 0) {
+    const efetiva = valorDestino / valor;
+    valEl.textContent = efetiva.toFixed(6);
+    wrapEl.classList.remove('hidden');
+  } else {
+    wrapEl.classList.add('hidden');
+  }
+}
+
+function updatePrevisto() {
+  const valor  = parseFloat(document.getElementById('trans-valor').value) || 0;
+  const taxa   = parseFloat(document.getElementById('trans-taxa-oficial').value) || 0;
+  const prevEl = document.getElementById('trans-valor-previsto');
+  const destEl = document.getElementById('trans-valor-destino');
+  if (valor > 0 && taxa > 0) {
+    const previsto = (valor * taxa).toFixed(2);
+    prevEl.value = previsto;
+    if (!destEl.dataset.manuallyEdited) destEl.value = previsto;
+  } else {
+    prevEl.value = '';
+  }
+  updateEfetiva();
+}
+
+async function fetchAndFillRate() {
+  const moeda = document.getElementById('trans-moeda').value;
+  if (!moeda || moeda === 'BRL') return;
+  const statusEl = document.getElementById('trans-fetch-status');
+  if (statusEl) statusEl.textContent = 'Buscando cotação…';
+  try {
+    const taxa = await fetchExchangeRate(moeda, 'BRL');
+    document.getElementById('trans-taxa-oficial').value = taxa;
+    updatePrevisto();
+    if (statusEl) statusEl.textContent = '';
+  } catch {
+    showToast('Não foi possível buscar a cotação.', 'error');
+    if (statusEl) statusEl.textContent = 'Erro ao buscar cotação';
+  }
+}
+
 function openTransacaoModal(id = null) {
   editingId = id;
   const t = id ? cachedTransacoes.find((x) => x.id === id) : null;
@@ -930,6 +1056,22 @@ function openTransacaoModal(id = null) {
   filterSubForModal(cat?.id || '', t?.subcategoria_id || '');
 
   document.getElementById('btn-deletar-transacao').classList.toggle('hidden', !id);
+
+  // Transferência
+  const isTransfer = (t?.tipo || 'Despesa') === 'Transferência';
+  toggleTransferSection(isTransfer);
+  document.getElementById('trans-conta-destino').value   = t?.conta_destino_id    || '';
+  document.getElementById('trans-taxa-oficial').value    = t?.taxa_cambio_oficial != null ? t.taxa_cambio_oficial : '';
+  const destEl = document.getElementById('trans-valor-destino');
+  destEl.dataset.manuallyEdited = '';
+  if (t?.valor_destino != null) {
+    destEl.value = t.valor_destino;
+    destEl.dataset.manuallyEdited = '1';
+  } else {
+    destEl.value = '';
+  }
+  updateCambioPar();
+  updatePrevisto();
 
   // Reconciliação — só mostra ao editar
   const reconGroup = document.getElementById('trans-recon-group');
@@ -959,6 +1101,11 @@ async function saveTransacao() {
   }
   if (!conta_id) { showToast('Selecione uma conta', 'error'); return; }
 
+  if (tipo === 'Transferência') {
+    const contaDestId = document.getElementById('trans-conta-destino').value || null;
+    if (!contaDestId) { showToast('Selecione a conta destino', 'error'); return; }
+  }
+
   const btn = document.getElementById('btn-salvar-transacao');
   const originalLabel = btn.textContent;
   btn.disabled = true;
@@ -967,32 +1114,33 @@ async function saveTransacao() {
   try {
     const markRecon = editingId && (document.getElementById('trans-recon-check')?.checked ?? false);
 
-    const payload = {
-      data,
-      tipo,
-      valor: Number(valorRaw),
-      moeda,
-      conta_id,
-      subcategoria_id,
-      contato_id,
-      descricao,
-      // estabelecimento intencionalmente NÃO mexido aqui — preserva texto legado
-      // se a transação foi criada antes da feature de contatos
-      ...(markRecon ? { reconciliacao_status: 'reconciliado' } : {}),
-    };
+    let savedTr;
 
-    let response;
-    if (editingId) {
-      response = await supabase.from('transacoes').update(payload).eq('id', editingId).select().single();
+    if (tipo === 'Transferência') {
+      const conta_destino_id   = document.getElementById('trans-conta-destino').value || null;
+      const taxa_cambio_oficial = parseFloat(document.getElementById('trans-taxa-oficial').value) || null;
+      const valor_destino       = parseFloat(document.getElementById('trans-valor-destino').value) || null;
+      const taxa_cambio_efetiva = (valor_destino && Number(valorRaw)) ? valor_destino / Number(valorRaw) : null;
+      savedTr = await handleTransferSave({
+        editingId, data, descricao, valor: Number(valorRaw), moeda, conta_id,
+        conta_destino_id, taxa_cambio_oficial, valor_destino, taxa_cambio_efetiva,
+      });
     } else {
-      const user = await getCurrentUser();
-      if (!user) throw new Error('Sessão expirada. Faça login novamente.');
-      response = await supabase.from('transacoes').insert({ ...payload, user_id: user.id }).select().single();
+      const payload = {
+        data, tipo, valor: Number(valorRaw), moeda, conta_id, subcategoria_id, contato_id, descricao,
+        ...(markRecon ? { reconciliacao_status: 'reconciliado' } : {}),
+      };
+      let response;
+      if (editingId) {
+        response = await supabase.from('transacoes').update(payload).eq('id', editingId).select().single();
+      } else {
+        const user = await getCurrentUser();
+        if (!user) throw new Error('Sessão expirada. Faça login novamente.');
+        response = await supabase.from('transacoes').insert({ ...payload, user_id: user.id }).select().single();
+      }
+      if (response.error) throw response.error;
+      savedTr = response.data;
     }
-
-    if (response.error) throw response.error;
-
-    const savedTr = response.data;
 
     // Sync com fatura de cartão (Fase 4)
     // Se a conta antiga era cartão e mudou, recalcula a fatura antiga também
@@ -1034,15 +1182,66 @@ async function saveTransacao() {
   }
 }
 
+async function handleTransferSave({ editingId, data, descricao, valor, moeda, conta_id, conta_destino_id, taxa_cambio_oficial, valor_destino, taxa_cambio_efetiva }) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('Sessão expirada. Faça login novamente.');
+
+  const destConta  = cachedContas.find((c) => c.id === conta_destino_id);
+  const destMoeda  = destConta?.moeda || 'BRL';
+  const valorEntrada = valor_destino || valor;
+
+  if (editingId) {
+    const existing = cachedTransacoes.find((x) => x.id === editingId);
+    const { data: saida, error: saidaErr } = await supabase
+      .from('transacoes')
+      .update({ data, descricao, valor, moeda, conta_id, conta_destino_id, taxa_cambio_oficial, valor_destino: valorEntrada, taxa_cambio_efetiva })
+      .eq('id', editingId)
+      .select().single();
+    if (saidaErr) throw saidaErr;
+
+    if (existing?.transferencia_par_id) {
+      await supabase.from('transacoes')
+        .update({ data, descricao, conta_id: conta_destino_id, valor: valorEntrada, moeda: destMoeda })
+        .eq('id', existing.transferencia_par_id);
+    }
+    return saida;
+  }
+
+  // Nova transferência: inserir saída
+  const { data: saida, error: saidaErr } = await supabase.from('transacoes').insert({
+    data, tipo: 'Transferência', user_id: user.id,
+    conta_id, valor, moeda, descricao,
+    conta_destino_id, taxa_cambio_oficial, valor_destino: valorEntrada, taxa_cambio_efetiva,
+  }).select().single();
+  if (saidaErr) throw saidaErr;
+
+  // Inserir entrada
+  const { data: entrada, error: entradaErr } = await supabase.from('transacoes').insert({
+    data, tipo: 'Transferência', user_id: user.id,
+    conta_id: conta_destino_id, valor: valorEntrada, moeda: destMoeda, descricao,
+    transferencia_par_id: saida.id,
+  }).select().single();
+  if (entradaErr) {
+    await supabase.from('transacoes').delete().eq('id', saida.id);
+    throw entradaErr;
+  }
+
+  // Ligar saída ↔ entrada
+  await supabase.from('transacoes').update({ transferencia_par_id: entrada.id }).eq('id', saida.id);
+
+  return saida;
+}
+
 async function execDelete(id) {
   closeModal('modal-confirmar');
   pendingDeleteId = null;
 
-  // Lembra fatura_cartao_id antes de excluir, pra recalcular o total depois
   const tr = cachedTransacoes.find((x) => x.id === id);
   const faturaIdAfetada = tr?.fatura_cartao_id || null;
+  const parId = tr?.transferencia_par_id || null;
 
-  const { error } = await supabase.from('transacoes').delete().eq('id', id);
+  const idsToDelete = parId ? [id, parId] : [id];
+  const { error } = await supabase.from('transacoes').delete().in('id', idsToDelete);
   if (error) {
     showToast('Erro ao excluir: ' + error.message, 'error', 8000);
     return;

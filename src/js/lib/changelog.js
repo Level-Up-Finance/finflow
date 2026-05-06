@@ -7,6 +7,23 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-05-transferencias-cambio',
+    version: '0.2.2',
+    date: '05/05/2026',
+    title: 'Transferências entre contas com câmbio',
+    items: [
+      { type: 'new',         text: 'Transferências entre contas criam automaticamente dois registros vinculados — saída e entrada — garantindo balanço correto por conta' },
+      { type: 'new',         text: 'Câmbio automático em transferências estrangeiras: cotação do dia preenchida na abertura, valor previsto calculado (bloqueado) e valor recebido real editável' },
+      { type: 'new',         text: 'Contas: toggle Nacional / Estrangeira — Real selecionado automaticamente para contas nacionais; moeda configurável para estrangeiras' },
+      { type: 'new',         text: 'Badge de moeda nos cards de contas — BRL cinza para nacionais, moeda estrangeira em roxo' },
+      { type: 'new',         text: 'Tabela de transações: coluna Conta exibe fluxo "Origem → Destino"; badge "Transferência" na coluna Categoria; indicador "saída / entrada" na Subcategoria' },
+      { type: 'improvement', text: 'Campos Bloco, Categoria, Subcategoria e Cliente/Fornecedor ficam desabilitados ao selecionar tipo Transferência' },
+      { type: 'improvement', text: 'Admin — Strings de idioma: grupos "Para Aprovação" e "Aprovados", badges de estado (virgem/atualizada), data e hora de cada alteração, botão de aprovação individual' },
+      { type: 'fix',         text: 'Descrição de conta: quebras de linha e bullet points agora exibidos corretamente nos detalhes' },
+      { type: 'fix',         text: 'Painel Admin — Usuários: contagem de usuários voltou a carregar corretamente' },
+    ],
+  },
+  {
     id: '2026-05-05-mobile-contatos',
     version: '0.2.0',
     date: '05/05/2026',

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Idiomas · FinFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/variables.css">
+  <link rel="stylesheet" href="src/css/global.css">
+  <link rel="stylesheet" href="src/css/components.css">
+  <link rel="stylesheet" href="src/css/layout.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-sidebar" id="sidebar-container"></div>
+
+    <header class="app-header header">
+      <div class="header-left">
+        <h2 class="header-title">Idiomas</h2>
+      </div>
+    </header>
+
+    <main class="app-main main">
+      <div class="page-header">
+        <div class="page-header-content">
+          <p class="page-eyebrow">Admin</p>
+          <h1 class="page-title">Idiomas <span class="adm-usr-count hidden" id="i18n-count"></span></h1>
+          <p class="page-description">Gerencie as traduções da interface do FinFlow em PT-BR, EN, ES e FR.</p>
+        </div>
+        <div class="page-header-actions">
+          <button type="button" class="btn btn-ghost" id="btn-importar-csv">Importar CSV</button>
+          <button type="button" class="btn btn-ghost" id="btn-exportar-csv">Exportar CSV</button>
+          <button type="button" class="btn btn-primary" id="btn-nova-string">Nova string</button>
+        </div>
+      </div>
+
+      <!-- Toolbar de filtros -->
+      <div class="i18n-toolbar">
+        <input type="search" class="input i18n-search" id="i18n-search"
+               placeholder="Buscar chave ou texto…" autocomplete="off">
+        <select class="select i18n-filter-select" id="i18n-filter-pagina">
+          <option value="">Todas as páginas</option>
+          <option value="global">global</option>
+          <option value="nav">nav</option>
+          <option value="auth">auth</option>
+          <option value="contatos">contatos</option>
+          <option value="transacoes">transacoes</option>
+          <option value="compromissos">compromissos</option>
+          <option value="contas">contas</option>
+          <option value="dividas">dividas</option>
+          <option value="investimentos">investimentos</option>
+          <option value="perfil">perfil</option>
+          <option value="configuracoes">configuracoes</option>
+        </select>
+        <select class="select i18n-filter-select" id="i18n-filter-categoria">
+          <option value="">Todas as categorias</option>
+          <option value="ui">ui</option>
+          <option value="toast">toast</option>
+          <option value="modal">modal</option>
+          <option value="erro">erro</option>
+          <option value="sistema">sistema</option>
+          <option value="nav">nav</option>
+          <option value="form">form</option>
+          <option value="tabela">tabela</option>
+        </select>
+        <select class="select i18n-filter-select" id="i18n-filter-lang">
+          <option value="">Todos os idiomas</option>
+          <option value="en">EN</option>
+          <option value="es">ES</option>
+          <option value="fr">FR</option>
+        </select>
+        <select class="select i18n-filter-select" id="i18n-filter-status">
+          <option value="">Todos os status</option>
+          <option value="ok">ok</option>
+          <option value="pendente">pendente</option>
+          <option value="desatualizado">desatualizado</option>
+        </select>
+      </div>
+
+      <!-- Tabela -->
+      <div class="table-wrapper">
+        <table class="table" id="i18n-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Chave</th>
+              <th>Página · Categoria</th>
+              <th>PT-BR</th>
+              <th>EN</th>
+              <th>ES</th>
+              <th>FR</th>
+            </tr>
+          </thead>
+          <tbody id="i18n-tbody">
+            <tr><td colspan="7" class="table-loading">Carregando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- ── Modal: Editar / Nova string ── -->
+  <div class="modal-backdrop hidden" id="modal-i18n" role="dialog" aria-modal="true" aria-labelledby="i18n-modal-chave">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <div>
+          <div class="i18n-modal-chave" id="i18n-modal-chave">Nova string</div>
+          <div class="i18n-modal-meta" id="i18n-modal-meta"></div>
+        </div>
+        <button type="button" class="modal-close" id="btn-close-i18n" aria-label="Fechar">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="i18n-modal-body">
+
+          <!-- Campos só visíveis no modo "criar" -->
+          <div class="i18n-create-form hidden" id="i18n-create-form">
+            <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+              <div class="field">
+                <label class="field-label" for="i18n-new-chave">Chave <span class="field-required">*</span></label>
+                <input type="text" id="i18n-new-chave" class="input" placeholder="pagina.categoria.nome" maxlength="120" autocomplete="off">
+                <p class="field-hint">Use ponto como separador. Ex: contatos.toast.salvo</p>
+              </div>
+              <div class="field">
+                <label class="field-label" for="i18n-new-pagina">Página</label>
+                <input type="text" id="i18n-new-pagina" class="input" placeholder="contatos" maxlength="60" autocomplete="off">
+              </div>
+            </div>
+            <div class="field-group" style="grid-template-columns: 1fr 1fr 1fr;">
+              <div class="field">
+                <label class="field-label" for="i18n-new-categoria">Categoria</label>
+                <select id="i18n-new-categoria" class="select">
+                  <option value="ui">ui</option>
+                  <option value="toast">toast</option>
+                  <option value="modal">modal</option>
+                  <option value="erro">erro</option>
+                  <option value="sistema">sistema</option>
+                  <option value="nav">nav</option>
+                  <option value="form">form</option>
+                  <option value="tabela">tabela</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="field-label" for="i18n-new-visibilidade">Visibilidade</label>
+                <select id="i18n-new-visibilidade" class="select">
+                  <option value="usuario">usuario</option>
+                  <option value="notificacao">notificacao</option>
+                  <option value="interno">interno</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="field-label" for="i18n-new-descricao">Descrição</label>
+                <input type="text" id="i18n-new-descricao" class="input" placeholder="Contexto de uso" maxlength="200" autocomplete="off">
+              </div>
+            </div>
+          </div>
+
+          <!-- PT-BR (fonte) -->
+          <div class="i18n-lang-block i18n-lang-block--source">
+            <div class="i18n-lang-header">
+              <span class="i18n-lang-name">PT-BR (fonte)</span>
+            </div>
+            <textarea id="i18n-edit-ptbr" class="textarea" rows="3"
+                      placeholder="Texto em português…"></textarea>
+          </div>
+
+          <!-- EN -->
+          <div class="i18n-lang-block">
+            <div class="i18n-lang-header">
+              <span class="i18n-lang-name">English (EN)</span>
+              <span class="i18n-status-badge" id="i18n-badge-en"></span>
+            </div>
+            <textarea id="i18n-edit-en" class="textarea" rows="3"
+                      placeholder="English translation…"></textarea>
+          </div>
+
+          <!-- ES -->
+          <div class="i18n-lang-block">
+            <div class="i18n-lang-header">
+              <span class="i18n-lang-name">Español (ES)</span>
+              <span class="i18n-status-badge" id="i18n-badge-es"></span>
+            </div>
+            <textarea id="i18n-edit-es" class="textarea" rows="3"
+                      placeholder="Traducción en español…"></textarea>
+          </div>
+
+          <!-- FR -->
+          <div class="i18n-lang-block">
+            <div class="i18n-lang-header">
+              <span class="i18n-lang-name">Français (FR)</span>
+              <span class="i18n-status-badge" id="i18n-badge-fr"></span>
+            </div>
+            <textarea id="i18n-edit-fr" class="textarea" rows="3"
+                      placeholder="Traduction en français…"></textarea>
+          </div>
+
+          <!-- Motivo -->
+          <div class="field i18n-motivo-row">
+            <label class="field-label" for="i18n-edit-motivo">Motivo da alteração</label>
+            <input type="text" id="i18n-edit-motivo" class="input" placeholder="Opcional — aparece no histórico" maxlength="200" autocomplete="off">
+          </div>
+
+          <!-- Histórico (só no modo edição) -->
+          <div class="i18n-history-section hidden" id="i18n-history-section">
+            <div class="i18n-history-title">Histórico de alterações</div>
+            <div class="i18n-history-list" id="i18n-history-list">
+              <span class="i18n-history-empty">Carregando…</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-cancel-i18n">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-save-i18n">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Importar CSV ── -->
+  <div class="modal-backdrop hidden" id="modal-csv-import" role="dialog" aria-modal="true">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title">Importar CSV</h3>
+        <button type="button" class="modal-close" id="btn-close-csv" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="i18n-import-area" id="csv-drop-area">
+          <input type="file" id="csv-file-input" accept=".csv,text/csv" hidden>
+          <p>Solte o arquivo aqui ou
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-choose-csv">escolha um arquivo</button>
+          </p>
+          <p class="i18n-import-info">
+            Formato esperado: <code>chave, en, es, fr</code> (somente traduções são importadas — PT-BR nunca é sobrescrito).
+          </p>
+        </div>
+        <div class="i18n-import-preview-wrap hidden" id="csv-preview-wrap">
+          <p class="i18n-import-count" id="csv-preview-count"></p>
+          <div class="i18n-import-table-wrap">
+            <table class="table" id="csv-preview-table">
+              <thead>
+                <tr>
+                  <th>Chave</th>
+                  <th>EN</th>
+                  <th>ES</th>
+                  <th>FR</th>
+                  <th>Situação</th>
+                </tr>
+              </thead>
+              <tbody id="csv-preview-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-cancel-csv">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-confirm-csv" disabled>Importar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script type="module" src="src/js/pages/admin-i18n.js"></script>
+</body>
+</html>

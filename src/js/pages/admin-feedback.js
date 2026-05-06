@@ -34,18 +34,23 @@ const TYPE_LABELS = {
 
 const STATUS_LABELS = {
   novo:         'Novo',
+  em_analise:   'Em análise',
   em_progresso: 'Em progresso',
   feito:        'Feito',
-  descartado:   'Descartado',
+  agora_nao:    'Agora não',
 };
 
-document.addEventListener('DOMContentLoaded', async () => {
-  await guardSession();
-  await initSidebar('feedback');
-
+export async function init() {
   populateChangelogSelects();
   bindEvents();
   await load();
+}
+
+// Standalone (admin-feedback.html acessado diretamente)
+document.addEventListener('DOMContentLoaded', async () => {
+  await guardSession();
+  await initSidebar('admin');
+  await init();
 });
 
 function changelogOptionsHtml() {
@@ -75,7 +80,7 @@ async function load() {
 
   const { data, error } = await supabase
     .from('feedback')
-    .select('*')
+    .select('*, codigo')
     .order('priority', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false });
 
@@ -99,8 +104,8 @@ function hideAllViews() {
 function updateCounts() {
   const counts = {
     triagem:   cachedFeedback.filter((f) => f.status === 'novo').length,
-    andamento: cachedFeedback.filter((f) => f.status === 'em_progresso').length,
-    arquivo:   cachedFeedback.filter((f) => f.status === 'feito' || f.status === 'descartado').length,
+    andamento: cachedFeedback.filter((f) => f.status === 'em_analise' || f.status === 'em_progresso').length,
+    arquivo:   cachedFeedback.filter((f) => f.status === 'feito' || f.status === 'agora_nao').length,
   };
   for (const [key, n] of Object.entries(counts)) {
     document.querySelector(`[data-count="${key}"]`).textContent = n;
@@ -161,24 +166,23 @@ function renderTriagem() {
 }
 
 function renderTriagemRow(fb) {
-  const checked = triagemSelected.has(fb.id) ? 'checked' : '';
-  const date = new Date(fb.created_at).toLocaleDateString('pt-BR', {
-    day: '2-digit', month: '2-digit', year: '2-digit',
-  });
+  const checked  = triagemSelected.has(fb.id) ? 'checked' : '';
+  const criada   = new Date(fb.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
   const priorityCell = fb.priority
     ? `<span class="kanban-card-priority kanban-card-priority--${fb.priority}" title="${escapeHtml(fb.priority)}"></span> ${escapeHtml(fb.priority)}`
     : '<span class="ft-muted">—</span>';
   return `
     <tr data-id="${fb.id}" class="ft-row${triagemSelected.has(fb.id) ? ' ft-row--selected' : ''}">
       <td class="ft-td-check"><input type="checkbox" class="ft-check ft-row-check" data-row-check="${fb.id}" ${checked} aria-label="Selecionar"></td>
+      <td class="ft-td-codigo"><span class="i18n-chave">${escapeHtml(fb.codigo || '—')}</span></td>
       <td><span class="feedback-type-pill feedback-type-pill--${fb.type}">${escapeHtml(TYPE_LABELS[fb.type] || fb.type)}</span></td>
-      <td class="ft-td-title">
-        <div class="ft-title-main">${escapeHtml(fb.title)}</div>
-        <div class="ft-title-sub">${escapeHtml(truncate(fb.description, 110))}</div>
-      </td>
+      <td class="ft-td-title">${escapeHtml(fb.title)}</td>
+      <td class="fb-col-desc">${escapeHtml(truncate(fb.description, 110))}</td>
       <td class="ft-td-submitter">${escapeHtml(submitterFor(fb))}</td>
-      <td class="ft-td-date">${escapeHtml(date)}</td>
+      <td class="ft-td-date">${escapeHtml(criada)}</td>
+      <td class="ft-td-date ft-muted">—</td>
       <td class="ft-td-priority">${priorityCell}</td>
+      <td class="fb-col-retorno">${fb.resposta_usuario ? escapeHtml(truncate(fb.resposta_usuario, 80)) : '<span class="ft-muted">—</span>'}</td>
     </tr>
   `;
 }
@@ -209,7 +213,7 @@ function syncTriagemCheckAll() {
 // View: Em andamento
 // -----------------------------
 function getAndamentoItems() {
-  let items = cachedFeedback.filter((f) => f.status === 'em_progresso');
+  let items = cachedFeedback.filter((f) => f.status === 'em_analise' || f.status === 'em_progresso');
   if (andamentoFilters.tipo !== 'todos') items = items.filter((f) => f.type === andamentoFilters.tipo);
   if (andamentoFilters.search) {
     const q = andamentoFilters.search.toLowerCase();
@@ -240,23 +244,21 @@ function renderAndamento() {
 }
 
 function renderAndamentoRow(fb) {
-  // Usa updated_at como "iniciado em" — quando virou em_progresso
-  const date = new Date(fb.updated_at || fb.created_at).toLocaleDateString('pt-BR', {
-    day: '2-digit', month: '2-digit', year: '2-digit',
-  });
+  const criada = new Date(fb.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
   const priorityCell = fb.priority
     ? `<span class="kanban-card-priority kanban-card-priority--${fb.priority}" title="${escapeHtml(fb.priority)}"></span> ${escapeHtml(fb.priority)}`
     : '<span class="ft-muted">—</span>';
   return `
     <tr data-id="${fb.id}" class="ft-row">
+      <td class="ft-td-codigo"><span class="i18n-chave">${escapeHtml(fb.codigo || '—')}</span></td>
       <td><span class="feedback-type-pill feedback-type-pill--${fb.type}">${escapeHtml(TYPE_LABELS[fb.type] || fb.type)}</span></td>
-      <td class="ft-td-title">
-        <div class="ft-title-main">${escapeHtml(fb.title)}</div>
-        <div class="ft-title-sub">${escapeHtml(truncate(fb.description, 110))}</div>
-      </td>
+      <td class="ft-td-title">${escapeHtml(fb.title)}</td>
+      <td class="fb-col-desc">${escapeHtml(truncate(fb.description, 110))}</td>
       <td class="ft-td-submitter">${escapeHtml(submitterFor(fb))}</td>
-      <td class="ft-td-date">${escapeHtml(date)}</td>
+      <td class="ft-td-date">${escapeHtml(criada)}</td>
+      <td class="ft-td-date ft-muted">—</td>
       <td class="ft-td-priority">${priorityCell}</td>
+      <td class="fb-col-retorno">${fb.resposta_usuario ? escapeHtml(truncate(fb.resposta_usuario, 80)) : '<span class="ft-muted">—</span>'}</td>
     </tr>
   `;
 }
@@ -265,7 +267,7 @@ function renderAndamentoRow(fb) {
 // View: Arquivo
 // -----------------------------
 function getArquivoItems() {
-  let items = cachedFeedback.filter((f) => f.status === 'feito' || f.status === 'descartado');
+  let items = cachedFeedback.filter((f) => f.status === 'feito' || f.status === 'agora_nao');
   if (arquivoFilters.status !== 'todos') items = items.filter((f) => f.status === arquivoFilters.status);
   if (arquivoFilters.search) {
     const q = arquivoFilters.search.toLowerCase();
@@ -296,9 +298,10 @@ function renderArquivo() {
 }
 
 function renderArquivoRow(fb) {
-  const date = new Date(fb.updated_at || fb.created_at).toLocaleDateString('pt-BR', {
-    day: '2-digit', month: '2-digit', year: '2-digit',
-  });
+  const criada     = new Date(fb.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  const concluido  = fb.updated_at
+    ? new Date(fb.updated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+    : '—';
   let changelogCell = '<span class="ft-muted">—</span>';
   if (fb.changelog_id) {
     const entry = CHANGELOG.find((e) => e.id === fb.changelog_id);
@@ -308,17 +311,62 @@ function renderArquivoRow(fb) {
   }
   return `
     <tr data-id="${fb.id}" class="ft-row">
+      <td class="ft-td-codigo"><span class="i18n-chave">${escapeHtml(fb.codigo || '—')}</span></td>
       <td><span class="feedback-status-badge feedback-status-badge--${fb.status}">${escapeHtml(STATUS_LABELS[fb.status] || fb.status)}</span></td>
       <td><span class="feedback-type-pill feedback-type-pill--${fb.type}">${escapeHtml(TYPE_LABELS[fb.type] || fb.type)}</span></td>
-      <td class="ft-td-title">
-        <div class="ft-title-main">${escapeHtml(fb.title)}</div>
-        <div class="ft-title-sub">${escapeHtml(truncate(fb.description, 110))}</div>
-      </td>
+      <td class="ft-td-title">${escapeHtml(fb.title)}</td>
+      <td class="fb-col-desc">${escapeHtml(truncate(fb.description, 110))}</td>
       <td class="ft-td-submitter">${escapeHtml(submitterFor(fb))}</td>
-      <td class="ft-td-date">${escapeHtml(date)}</td>
+      <td class="ft-td-date">${escapeHtml(criada)}</td>
+      <td class="ft-td-date">${escapeHtml(concluido)}</td>
+      <td class="fb-col-retorno">${fb.resposta_usuario ? escapeHtml(truncate(fb.resposta_usuario, 80)) : '<span class="ft-muted">—</span>'}</td>
       <td class="ft-td-changelog">${changelogCell}</td>
     </tr>
   `;
+}
+
+// -----------------------------
+// History
+// -----------------------------
+const FIELD_LABELS_HIST = {
+  status:           'Status',
+  priority:         'Prioridade',
+  resposta_usuario: 'Resposta',
+  admin_notes:      'Notas internas',
+  changelog_id:     'Vínculo',
+};
+
+async function loadHistory(feedbackId) {
+  const container = document.getElementById('modal-fb-history');
+  container.innerHTML = '<span class="spinner spinner-sm" style="display:block;margin:var(--space-3) 0"></span>';
+
+  const { data, error } = await supabase
+    .from('feedback_historico')
+    .select('campo, valor_anterior, valor_novo, alterado_por, alterado_em')
+    .eq('feedback_id', feedbackId)
+    .order('alterado_em', { ascending: false });
+
+  if (error || !data?.length) {
+    container.innerHTML = '<p class="fb-history-empty">Nenhuma alteração registrada.</p>';
+    return;
+  }
+
+  container.innerHTML = data.map(renderHistoryItem).join('');
+}
+
+function renderHistoryItem(h) {
+  const dt      = new Date(h.alterado_em);
+  const dateStr = dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const timeStr = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const field   = FIELD_LABELS_HIST[h.campo] || h.campo;
+  const prev    = h.valor_anterior ?? '—';
+  const next    = h.valor_novo     ?? '—';
+  return `
+    <div class="fb-history-item">
+      <span class="fb-history-field">${escapeHtml(field)}</span>
+      <span class="fb-history-change">${escapeHtml(prev)} → ${escapeHtml(next)}</span>
+      <span class="fb-history-meta">${escapeHtml(h.alterado_por || 'Admin')} · ${escapeHtml(dateStr)} ${escapeHtml(timeStr)}</span>
+    </div>`;
 }
 
 // -----------------------------
@@ -509,6 +557,8 @@ function openEditModal(id) {
     submitterText = 'Enviado anonimamente';
   }
 
+  document.getElementById('modal-fb-codigo').textContent = fb.codigo || '';
+
   const typeEl = document.getElementById('modal-fb-type');
   typeEl.textContent = TYPE_LABELS[fb.type] || fb.type;
   typeEl.className = `feedback-type-pill feedback-type-pill--${fb.type}`;
@@ -524,10 +574,12 @@ function openEditModal(id) {
 
   document.getElementById('modal-fb-status-select').value   = fb.status;
   document.getElementById('modal-fb-priority-select').value = fb.priority || '';
+  document.getElementById('modal-fb-resposta').value        = fb.resposta_usuario || '';
   document.getElementById('modal-fb-notes').value           = fb.admin_notes || '';
   document.getElementById('modal-fb-changelog').value       = fb.changelog_id || '';
 
   document.getElementById('modal-feedback').classList.remove('hidden');
+  loadHistory(id);
 }
 
 function closeEditModal() {
@@ -544,14 +596,18 @@ async function saveEdit() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>';
 
-  const newStatus       = document.getElementById('modal-fb-status-select').value;
-  const newChangelogId  = document.getElementById('modal-fb-changelog').value || null;
+  const newStatus      = document.getElementById('modal-fb-status-select').value;
+  const newPriority    = document.getElementById('modal-fb-priority-select').value || null;
+  const newResposta    = document.getElementById('modal-fb-resposta').value.trim() || null;
+  const newNotes       = document.getElementById('modal-fb-notes').value.trim() || null;
+  const newChangelogId = document.getElementById('modal-fb-changelog').value || null;
 
   const updates = {
-    status:       newStatus,
-    priority:     document.getElementById('modal-fb-priority-select').value || null,
-    admin_notes:  document.getElementById('modal-fb-notes').value.trim() || null,
-    changelog_id: newChangelogId,
+    status:           newStatus,
+    priority:         newPriority,
+    resposta_usuario: newResposta,
+    admin_notes:      newNotes,
+    changelog_id:     newChangelogId,
   };
 
   const { error } = await supabase.from('feedback').update(updates).eq('id', editingId);
@@ -562,6 +618,33 @@ async function saveEdit() {
   if (error) {
     showToast('Erro ao salvar: ' + error.message, 'error', 8000);
     return;
+  }
+
+  // Compute diffs and record history
+  const diffs = [];
+  if (newStatus !== fb.status) {
+    diffs.push({ campo: 'status', valor_anterior: STATUS_LABELS[fb.status] || fb.status, valor_novo: STATUS_LABELS[newStatus] || newStatus });
+  }
+  if (newPriority !== (fb.priority || null)) {
+    diffs.push({ campo: 'priority', valor_anterior: fb.priority || null, valor_novo: newPriority });
+  }
+  if (newResposta !== (fb.resposta_usuario || null)) {
+    diffs.push({ campo: 'resposta_usuario', valor_anterior: truncate(fb.resposta_usuario || '', 80) || null, valor_novo: truncate(newResposta || '', 80) || null });
+  }
+  if (newNotes !== (fb.admin_notes || null)) {
+    diffs.push({ campo: 'admin_notes', valor_anterior: truncate(fb.admin_notes || '', 80) || null, valor_novo: truncate(newNotes || '', 80) || null });
+  }
+  if (newChangelogId !== (fb.changelog_id || null)) {
+    const prevEntry = fb.changelog_id  ? CHANGELOG.find((e) => e.id === fb.changelog_id) : null;
+    const newEntry  = newChangelogId   ? CHANGELOG.find((e) => e.id === newChangelogId)  : null;
+    diffs.push({ campo: 'changelog_id', valor_anterior: prevEntry ? `v${prevEntry.version} · ${prevEntry.title}` : null, valor_novo: newEntry ? `v${newEntry.version} · ${newEntry.title}` : null });
+  }
+  if (diffs.length) {
+    const { data: userData } = await supabase.auth.getUser();
+    const email = userData?.user?.email || 'Admin';
+    await supabase.from('feedback_historico').insert(
+      diffs.map((d) => ({ feedback_id: editingId, ...d, alterado_por: email }))
+    );
   }
 
   showToast('Salvo.', 'success');

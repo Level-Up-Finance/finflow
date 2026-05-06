@@ -117,13 +117,44 @@
           <div id="feedback-mine-loading" class="loading-overlay" style="position:relative; min-height:120px;">
             <span class="spinner"></span>
           </div>
-          <div id="feedback-mine-list" class="feedback-list hidden"></div>
+          <div id="feedback-mine-list" class="table-wrapper hidden"></div>
           <div id="feedback-mine-empty" class="feedback-empty hidden">
             <p>Você ainda não enviou nada. Use o formulário acima.</p>
           </div>
         </section>
       </div>
     </main>
+  </div>
+
+  <!-- Modal: Detalhe da entrada -->
+  <div class="modal-backdrop hidden" id="modal-fb-detail" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <div>
+          <span id="fbd-codigo" class="i18n-chave"></span>
+        </div>
+        <button type="button" class="modal-close" id="btn-close-fbd" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body" style="gap:var(--space-4)">
+        <div class="fb-hover-meta" id="fbd-meta"></div>
+        <div>
+          <p class="field-label" style="margin-bottom:var(--space-1)">Título</p>
+          <p id="fbd-title" style="font-size:var(--fs-sm);font-weight:var(--fw-semibold);color:var(--color-text-main)"></p>
+        </div>
+        <div>
+          <p class="field-label" style="margin-bottom:var(--space-1)">Descrição</p>
+          <p id="fbd-desc" style="font-size:var(--fs-sm);color:var(--color-text-secondary);white-space:pre-wrap;line-height:1.6"></p>
+        </div>
+        <div id="fbd-retorno-wrap">
+          <p class="field-label" style="margin-bottom:var(--space-1)">Retorno</p>
+          <p id="fbd-retorno" style="font-size:var(--fs-sm);color:var(--color-text-secondary);white-space:pre-wrap;line-height:1.6"></p>
+        </div>
+        <p id="fbd-date" style="font-size:var(--fs-xs);color:var(--color-text-tertiary)"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="btn-cancel-fbd">Fechar</button>
+      </div>
+    </div>
   </div>
 
   <div id="toast-container" class="toast-container"></div>

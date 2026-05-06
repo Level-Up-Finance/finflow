@@ -87,8 +87,9 @@
         <div class="feedback-bulk-bar hidden" id="triagem-bulk-bar">
           <span class="feedback-bulk-bar-count" id="triagem-bulk-count">0 selecionados</span>
           <div class="feedback-bulk-bar-actions">
+            <button class="btn btn-ghost btn-sm" data-bulk-action="em_analise"  type="button">Mover pra Em análise</button>
             <button class="btn btn-ghost btn-sm" data-bulk-action="em_progresso" type="button">Mover pra Em andamento</button>
-            <button class="btn btn-ghost btn-sm" data-bulk-action="descartado" type="button">Descartar</button>
+            <button class="btn btn-ghost btn-sm" data-bulk-action="agora_nao" type="button">Agora não</button>
             <button class="btn btn-ghost btn-sm" id="triagem-bulk-clear" type="button">Limpar seleção</button>
           </div>
         </div>
@@ -98,11 +99,15 @@
             <thead>
               <tr>
                 <th class="ft-th-check"><input type="checkbox" id="triagem-check-all" class="ft-check" aria-label="Selecionar todos"></th>
+                <th class="ft-th-codigo">Código</th>
                 <th class="ft-th-type">Tipo</th>
                 <th class="ft-th-title">Título</th>
+                <th class="ft-th-desc">Descrição</th>
                 <th class="ft-th-submitter">Enviado por</th>
-                <th class="ft-th-date">Data</th>
+                <th class="ft-th-date">Criada</th>
+                <th class="ft-th-date">Concluído</th>
                 <th class="ft-th-priority">Prioridade</th>
+                <th class="ft-th-retorno">Retorno</th>
               </tr>
             </thead>
             <tbody id="triagem-tbody"></tbody>
@@ -150,11 +155,15 @@
           <table class="feedback-table" id="andamento-table">
             <thead>
               <tr>
+                <th class="ft-th-codigo">Código</th>
                 <th class="ft-th-type">Tipo</th>
                 <th class="ft-th-title">Título</th>
+                <th class="ft-th-desc">Descrição</th>
                 <th class="ft-th-submitter">Enviado por</th>
-                <th class="ft-th-date">Iniciado</th>
+                <th class="ft-th-date">Criada</th>
+                <th class="ft-th-date">Concluído</th>
                 <th class="ft-th-priority">Prioridade</th>
+                <th class="ft-th-retorno">Retorno</th>
               </tr>
             </thead>
             <tbody id="andamento-tbody"></tbody>
@@ -172,7 +181,7 @@
           <div class="filter-pills" id="arquivo-status-filters">
             <button class="filter-pill active" data-status="todos" type="button">Todos</button>
             <button class="filter-pill" data-status="feito" type="button">Feitos</button>
-            <button class="filter-pill" data-status="descartado" type="button">Descartados</button>
+            <button class="filter-pill" data-status="agora_nao" type="button">Agora não</button>
           </div>
         </div>
 
@@ -180,11 +189,15 @@
           <table class="feedback-table" id="arquivo-table">
             <thead>
               <tr>
+                <th class="ft-th-codigo">Código</th>
                 <th class="ft-th-status">Status</th>
                 <th class="ft-th-type">Tipo</th>
                 <th class="ft-th-title">Título</th>
+                <th class="ft-th-desc">Descrição</th>
                 <th class="ft-th-submitter">Enviado por</th>
-                <th class="ft-th-date">Data</th>
+                <th class="ft-th-date">Criada</th>
+                <th class="ft-th-date">Concluído</th>
+                <th class="ft-th-retorno">Retorno</th>
                 <th class="ft-th-changelog">Vínculo</th>
               </tr>
             </thead>
@@ -209,6 +222,7 @@
       </div>
       <div class="modal-body">
         <div class="feedback-modal-meta">
+          <span id="modal-fb-codigo" class="i18n-chave" style="margin-right:var(--space-2)"></span>
           <span id="modal-fb-type"   class="feedback-type-pill"></span>
           <span id="modal-fb-status" class="feedback-status-badge"></span>
           <span id="modal-fb-date"   class="feedback-card-date"></span>
@@ -227,9 +241,10 @@
             <label class="field-label" for="modal-fb-status-select">Status</label>
             <select id="modal-fb-status-select" class="select">
               <option value="novo">Novo</option>
+              <option value="em_analise">Em análise</option>
               <option value="em_progresso">Em progresso</option>
               <option value="feito">Feito</option>
-              <option value="descartado">Descartado</option>
+              <option value="agora_nao">Agora não</option>
             </select>
           </div>
           <div class="field">
@@ -250,8 +265,18 @@
         </div>
 
         <div class="field">
+          <label class="field-label" for="modal-fb-resposta">Resposta para o usuário <span class="field-optional">(visível pro usuário)</span></label>
+          <textarea id="modal-fb-resposta" class="textarea" rows="3" maxlength="2000" placeholder="Explique o que foi feito, por que foi descartado, ou qualquer retorno útil…"></textarea>
+        </div>
+
+        <div class="field">
           <label class="field-label" for="modal-fb-notes">Notas internas <span class="field-optional">(só você vê)</span></label>
           <textarea id="modal-fb-notes" class="textarea" rows="3" maxlength="1000" placeholder="Decisões, contexto, próximos passos…"></textarea>
+        </div>
+
+        <div class="field fb-history-wrap">
+          <p class="field-label">Histórico de alterações</p>
+          <div id="modal-fb-history" class="fb-history-list"></div>
         </div>
       </div>
       <div class="modal-footer">
