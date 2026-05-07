@@ -906,40 +906,45 @@ function bindEvents() {
   });
 }
 
+// Event delegation: 1 listener no tbody (estável entre renders) cobre todas
+// as linhas. Idempotente — bindRowEvents() pode ser chamado a cada render
+// sem acumular handlers (o flag _delegationBound previne re-attach).
 function bindRowEvents() {
-  document.querySelectorAll('[data-edit]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      const id = e.currentTarget.dataset.edit;
-      openTransacaoModal(id);
-    });
-  });
+  const tbody = document.getElementById('trans-data-tbody');
+  if (tbody && !tbody._delegationBound) {
+    tbody._delegationBound = true;
 
-  document.querySelectorAll('[data-confirm-recon]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      const id = e.currentTarget.dataset.confirmRecon;
-      execConfirmRecon(id);
-    });
-  });
+    tbody.addEventListener('click', (e) => {
+      const editBtn = e.target.closest('[data-edit]');
+      if (editBtn) { openTransacaoModal(editBtn.dataset.edit); return; }
 
-  // Select-all checkbox (re-rendered with the shell)
-  document.getElementById('trans-select-all')?.addEventListener('change', (e) => {
-    const all = [...document.querySelectorAll('.trans-row-check')];
-    all.forEach((cb) => {
-      cb.checked = e.target.checked;
-      if (e.target.checked) selectedIds.add(cb.dataset.id);
-      else                   selectedIds.delete(cb.dataset.id);
+      const reconBtn = e.target.closest('[data-confirm-recon]');
+      if (reconBtn) { execConfirmRecon(reconBtn.dataset.confirmRecon); return; }
     });
-    updateSelectionBar();
-  });
 
-  // Row checkboxes
-  document.querySelectorAll('.trans-row-check').forEach((cb) => {
-    cb.addEventListener('change', (e) => {
-      if (e.target.checked) selectedIds.add(e.target.dataset.id);
-      else                   selectedIds.delete(e.target.dataset.id);
+    tbody.addEventListener('change', (e) => {
+      const cb = e.target.closest('.trans-row-check');
+      if (!cb) return;
+      if (cb.checked) selectedIds.add(cb.dataset.id);
+      else            selectedIds.delete(cb.dataset.id);
       updateSelectionBar();
     });
-  });
+  }
+
+  // Select-all checkbox: vive no shell, também só precisa bind 1x
+  const selectAll = document.getElementById('trans-select-all');
+  if (selectAll && !selectAll._bound) {
+    selectAll._bound = true;
+    selectAll.addEventListener('change', (e) => {
+      const all = [...document.querySelectorAll('.trans-row-check')];
+      all.forEach((cb) => {
+        cb.checked = e.target.checked;
+        if (e.target.checked) selectedIds.add(cb.dataset.id);
+        else                   selectedIds.delete(cb.dataset.id);
+      });
+      updateSelectionBar();
+    });
+  }
 }
 
 async function execConfirmRecon(id) {

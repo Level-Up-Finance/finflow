@@ -773,42 +773,52 @@ function renderPagamentoRow(p, catColor) {
 // -----------------------------
 // Inline edits
 // -----------------------------
+// Event delegation no container estável (#pagamentos-container).
+// Idempotente — pode ser chamado a cada render sem acumular handlers.
 function bindEdits() {
-  // Status changes
-  document.querySelectorAll('.pagamento-status-select').forEach((select) => {
-    select.addEventListener('change', () => saveStatus(select));
-    // Stop propagation pra não abrir modal ao mexer no select
-    select.addEventListener('click', (e) => e.stopPropagation());
+  const container = document.getElementById('pagamentos-container');
+  if (!container || container._delegationBound) return;
+  container._delegationBound = true;
+
+  // CHANGE: status select + valor-real blur (capture em vez de bubble pra blur)
+  container.addEventListener('change', (e) => {
+    const sel = e.target.closest('.pagamento-status-select');
+    if (sel) { saveStatus(sel); return; }
   });
 
-  // Valor real changes
-  document.querySelectorAll('.pagamento-valor-real').forEach((input) => {
-    input.addEventListener('blur', () => saveValorReal(input));
-    input.addEventListener('click', (e) => e.stopPropagation());
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        input.blur();
-      } else if (e.key === 'Escape') {
-        input.blur();
-      }
-    });
-  });
+  container.addEventListener('blur', (e) => {
+    const inp = e.target.closest('.pagamento-valor-real');
+    if (inp) saveValorReal(inp);
+  }, true); // capture phase — blur não bubbles
 
-  // Quick-pay buttons (5.C): marcar como pago em 1 clique
-  document.querySelectorAll('[data-quick-pay]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation(); // não abrir modal
-      quickPay(btn.dataset.quickPay);
-    });
-  });
+  // CLICK: stop-propagation em inputs + dispatch quick-pay vs row
+  container.addEventListener('click', (e) => {
+    // Inputs/selects: não abrir modal ao clicar
+    if (e.target.closest('.pagamento-status-select, .pagamento-valor-real')) {
+      e.stopPropagation();
+      return;
+    }
 
-  // Click na linha (fora dos inputs/botões) → abre modal de detalhes
-  document.querySelectorAll('.pag-row').forEach((row) => {
-    row.addEventListener('click', () => {
+    const quickBtn = e.target.closest('[data-quick-pay]');
+    if (quickBtn) {
+      e.stopPropagation();
+      quickPay(quickBtn.dataset.quickPay);
+      return;
+    }
+
+    const row = e.target.closest('.pag-row');
+    if (row) {
       const p = cachedPagamentos.find((x) => x.id === row.dataset.id);
       if (p) openDetailsModal(p);
-    });
+    }
+  });
+
+  // KEYDOWN: Enter/Escape no valor-real
+  container.addEventListener('keydown', (e) => {
+    const inp = e.target.closest('.pagamento-valor-real');
+    if (!inp) return;
+    if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+    else if (e.key === 'Escape') { inp.blur(); }
   });
 }
 

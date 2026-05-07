@@ -1121,12 +1121,17 @@ function renderContaRow(conta) {
   `;
 }
 
+// Event delegation no #contas-container (estável entre renders).
 function bindRowClicks() {
-  document.querySelectorAll('.contas-table tbody tr').forEach((row) => {
-    row.addEventListener('click', () => {
-      const conta = cachedContas.find((c) => c.id === row.dataset.id);
-      if (conta) openDetailsModal(conta);
-    });
+  const container = document.getElementById('contas-container');
+  if (!container || container._delegationBound) return;
+  container._delegationBound = true;
+
+  container.addEventListener('click', (e) => {
+    const row = e.target.closest('.contas-table tbody tr');
+    if (!row) return;
+    const conta = cachedContas.find((c) => c.id === row.dataset.id);
+    if (conta) openDetailsModal(conta);
   });
 }
 

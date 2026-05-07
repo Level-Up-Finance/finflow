@@ -715,21 +715,28 @@ function renderEntryRow(entry) {
 // -----------------------------
 // Inline edit
 // -----------------------------
+// Event delegation no #orcamento-container (estável entre renders).
+// Idempotente — pode ser chamado a cada render sem acumular handlers.
 function bindCellEdits() {
-  document.querySelectorAll('.orcamento-cell-edit').forEach((input) => {
-    input.addEventListener('blur', () => saveCell(input));
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        input.blur();
-      } else if (e.key === 'Escape') {
-        // Restaura valor original
-        const id = input.dataset.orcamentoId;
-        const entry = cachedOrcamento.find((x) => x.id === id);
-        if (entry) input.value = Number(entry.valor_previsto).toFixed(2);
-        input.blur();
-      }
-    });
+  const container = document.getElementById('orcamento-container');
+  if (!container || container._delegationBoundMes) return;
+  container._delegationBoundMes = true;
+
+  container.addEventListener('blur', (e) => {
+    const inp = e.target.closest('.orcamento-cell-edit');
+    if (inp) saveCell(inp);
+  }, true); // capture — blur não bubbles
+
+  container.addEventListener('keydown', (e) => {
+    const inp = e.target.closest('.orcamento-cell-edit');
+    if (!inp) return;
+    if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+    else if (e.key === 'Escape') {
+      const id = inp.dataset.orcamentoId;
+      const entry = cachedOrcamento.find((x) => x.id === id);
+      if (entry) inp.value = Number(entry.valor_previsto).toFixed(2);
+      inp.blur();
+    }
   });
 }
 
@@ -1198,19 +1205,25 @@ function sumByTipoForMonth(tipo, mesAno) {
 }
 
 function bindCellEdits12m() {
-  document.querySelectorAll('.orcamento-cell-edit-12m').forEach((input) => {
-    input.addEventListener('blur', () => saveCell(input));
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        input.blur();
-      } else if (e.key === 'Escape') {
-        const id = input.dataset.orcamentoId;
-        const entry = cachedOrcamento.find((x) => x.id === id);
-        if (entry) input.value = Number(entry.valor_previsto).toFixed(2);
-        input.blur();
-      }
-    });
+  const container = document.getElementById('orcamento-container');
+  if (!container || container._delegationBound12m) return;
+  container._delegationBound12m = true;
+
+  container.addEventListener('blur', (e) => {
+    const inp = e.target.closest('.orcamento-cell-edit-12m');
+    if (inp) saveCell(inp);
+  }, true);
+
+  container.addEventListener('keydown', (e) => {
+    const inp = e.target.closest('.orcamento-cell-edit-12m');
+    if (!inp) return;
+    if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+    else if (e.key === 'Escape') {
+      const id = inp.dataset.orcamentoId;
+      const entry = cachedOrcamento.find((x) => x.id === id);
+      if (entry) inp.value = Number(entry.valor_previsto).toFixed(2);
+      inp.blur();
+    }
   });
 }
 

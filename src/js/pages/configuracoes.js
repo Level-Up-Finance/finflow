@@ -365,8 +365,12 @@ function updateBlocoStack() {
 // -----------------------------
 // Tree event delegation
 // -----------------------------
+// Idempotente — chamado a cada renderTree() sem acumular listeners.
+// Já era event delegation, mas faltava o guard.
 function bindTreeEvents() {
   const tree = document.getElementById('cfg-tree');
+  if (!tree || tree._delegationBound) return;
+  tree._delegationBound = true;
 
   tree.addEventListener('click', (e) => {
     // Nova categoria por bloco
