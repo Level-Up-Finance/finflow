@@ -10,6 +10,7 @@ import { getTheme, setTheme } from '../lib/theme.js';
 import { CURRENCIES } from '../lib/currencies.js';
 import { escapeHtml } from '../lib/utils.js';
 import { DEFAULT_COLOR, renderColorPicker, setActiveColor } from '../lib/color-palette.js';
+import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 // -----------------------------
 // State
@@ -67,6 +68,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('configuracoes');
   initTutorial('configuracoes');
+  await loadStrings();
+  applyTranslationsToDom();
   await loadAll();
   renderTree();
   updateStickyThTop();
@@ -449,7 +452,7 @@ async function saveCat() {
   const grupo     = document.getElementById('cat-grupo').value;
   const descricao = document.getElementById('cat-descricao').value.trim() || null;
 
-  if (!nome) { showToast('Informe o nome da categoria', 'error'); return; }
+  if (!nome) { showToast(t('configuracoes.validacao.cat_nome_obrigatorio', 'Informe o nome da categoria'), 'error'); return; }
 
   // Enforce migration lock unless override is checked
   if (editingCatId && historicoCatIds.has(editingCatId)) {
@@ -481,7 +484,10 @@ async function saveCat() {
 
   if (error) { showToast('Erro: ' + error.message, 'error', 8000); return; }
 
-  showToast(editingCatId ? 'Categoria atualizada' : 'Categoria criada', 'success');
+  showToast(editingCatId
+    ? t('configuracoes.toast.cat_atualizada', 'Categoria atualizada')
+    : t('configuracoes.toast.cat_criada', 'Categoria criada'),
+    'success');
   const savedNome = nome;
   closeCatModal();
   await reloadAll();
@@ -567,7 +573,7 @@ function closeSubModal() {
 async function saveSub() {
   const nome      = document.getElementById('sub-nome').value.trim();
   const descricao = document.getElementById('sub-descricao').value.trim() || null;
-  if (!nome) { showToast('Informe o nome da subcategoria', 'error'); return; }
+  if (!nome) { showToast(t('configuracoes.validacao.sub_nome_obrigatorio', 'Informe o nome da subcategoria'), 'error'); return; }
 
   // Resolve catId from: pre-selected (inline + button), category selector, or existing sub's cat
   let resolvedCatId = newSubCatId;

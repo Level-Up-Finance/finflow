@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { escapeHtml } from '../lib/utils.js';
 import { CHANGELOG } from '../lib/changelog.js';
+import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 let cachedFeedback = [];
 let editingId      = null;
@@ -50,6 +51,8 @@ export async function init() {
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('admin');
+  await loadStrings();
+  applyTranslationsToDom();
   await init();
 });
 

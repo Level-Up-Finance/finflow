@@ -5,8 +5,11 @@
 // =============================================================
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
+import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadStrings();
+  applyTranslationsToDom();
   document.getElementById('form-feedback').addEventListener('submit', onSubmit);
   document.getElementById('btn-feedback-again').addEventListener('click', resetForm);
 });

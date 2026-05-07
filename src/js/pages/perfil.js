@@ -9,6 +9,7 @@ import { initSidebar } from '../components/sidebar.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { escapeHtml, getInitials, showConfirm } from '../lib/utils.js';
+import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 let cachedProfile = null;
 let userId = null;
@@ -19,6 +20,8 @@ const FIELDS = ['nome', 'apelido', 'telefone', 'bio', 'instagram', 'twitter', 'l
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar(null); // não destaca nenhum item — perfil não está no nav
+  await loadStrings();
+  applyTranslationsToDom();
 
   const user = await getCurrentUser();
   if (!user) return;

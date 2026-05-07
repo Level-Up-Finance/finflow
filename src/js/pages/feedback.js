@@ -7,6 +7,7 @@ import { initSidebar } from '../components/sidebar.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { escapeHtml } from '../lib/utils.js';
+import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 let userId = null;
 
@@ -30,6 +31,8 @@ const STATUS_LABELS = {
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar(null);
+  await loadStrings();
+  applyTranslationsToDom();
 
   const user = await getCurrentUser();
   if (!user) return;

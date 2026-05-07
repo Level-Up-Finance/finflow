@@ -5,6 +5,7 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js';
 import { redirectIfAuthenticated } from '../lib/auth.js';
 import { showToast } from '../components/toast.js';
+import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 const HOME_PATH = '/dashboard.html';
 
@@ -183,6 +184,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   } finally {
     document.body.style.visibility = 'visible';
   }
+
+  await loadStrings();
+  applyTranslationsToDom();
 
   // Toggle de modo (login / signup / forgot)
   document.querySelectorAll('[data-action]').forEach((el) => {

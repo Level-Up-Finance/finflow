@@ -1,5 +1,71 @@
 [
   {
+    "chave": "academia.descricao",
+    "pt_br": "Tutoriais completos de cada tela, como ela funciona e como se conecta com o restante do sistema.",
+    "pagina": "academia",
+    "fontes": [
+      "academia.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "academia.titulo",
+    "pt_br": "Academia FinFlow",
+    "pagina": "academia",
+    "fontes": [
+      "academia.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "admin.feedback.descricao",
+    "pt_br": "Triagem, trabalho em andamento e arquivo — cada um com a ferramenta certa pro tamanho.",
+    "pagina": "admin",
+    "fontes": [
+      "admin-feedback.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "admin.feedback.titulo",
+    "pt_br": "Gerenciar feedback",
+    "pagina": "admin",
+    "fontes": [
+      "admin-feedback.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "admin.idiomas.descricao",
+    "pt_br": "Gerencie as traduções da interface do FinFlow em PT-BR, EN, ES e FR.",
+    "pagina": "admin",
+    "fontes": [
+      "admin-i18n.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "admin.usuarios.descricao",
+    "pt_br": "Todos os usuários cadastrados no FinFlow, planos e informações de perfil.",
+    "pagina": "admin",
+    "fontes": [
+      "admin-usuarios.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
     "chave": "compromissos.descricao",
     "pt_br": "Suas entradas e saídas recorrentes. Organizadas em Categorias e Subcategorias.",
     "pagina": "compromissos",
@@ -110,6 +176,50 @@
     ]
   },
   {
+    "chave": "configuracoes.toast.cat_atualizada",
+    "pt_br": "Categoria atualizada",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "configuracoes.toast.cat_criada",
+    "pt_br": "Categoria criada",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "configuracoes.validacao.cat_nome_obrigatorio",
+    "pt_br": "Informe o nome da categoria",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "configuracoes.validacao.sub_nome_obrigatorio",
+    "pt_br": "Informe o nome da subcategoria",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "contas.descricao",
     "pt_br": "Bancos, cartões, carteiras e investimentos. Alimenta as demais telas.",
     "pagina": "contas",
@@ -192,6 +302,50 @@
     "pagina": "contas",
     "fontes": [
       "src/js/pages/contas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "contatos.descricao",
+    "pt_br": "Clientes e fornecedores. Histórico de reconhecimento automático por extrato bancário.",
+    "pagina": "contatos",
+    "fontes": [
+      "contatos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "contatos.titulo",
+    "pt_br": "Contatos",
+    "pagina": "contatos",
+    "fontes": [
+      "contatos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "contatos.toast.arquivado",
+    "pt_br": "Contato arquivado.",
+    "pagina": "contatos",
+    "fontes": [
+      "src/js/pages/contatos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "contatos.toast.reativado",
+    "pt_br": "Contato reativado.",
+    "pagina": "contatos",
+    "fontes": [
+      "src/js/pages/contatos.js"
     ],
     "kinds": [
       "js"
@@ -528,6 +682,50 @@
     ]
   },
   {
+    "chave": "feedback.descricao",
+    "pt_br": "Encontrou um bug, tem uma ideia, ou quer sugerir uma funcionalidade nova? Manda aqui — vou ler tudo.",
+    "pagina": "feedback",
+    "fontes": [
+      "feedback.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "feedback.titulo",
+    "pt_br": "Sugestões & Bugs",
+    "pagina": "feedback",
+    "fontes": [
+      "feedback.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "feedback_publico.success.texto",
+    "pt_br": "Valeu por mandar — vou ler com atenção.",
+    "pagina": "feedback_publico",
+    "fontes": [
+      "feedback-publico.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "feedback_publico.success.titulo",
+    "pt_br": "Recebido!",
+    "pagina": "feedback_publico",
+    "fontes": [
+      "feedback-publico.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
     "chave": "global.btn.cancelar",
     "pt_br": "Cancelar",
     "pagina": "global",
@@ -558,6 +756,50 @@
     ],
     "kinds": [
       "html"
+    ]
+  },
+  {
+    "chave": "importar.descricao",
+    "pt_br": "Importe CSV ou Excel do seu banco. As transações entram como",
+    "pagina": "importar",
+    "fontes": [
+      "importar.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "importar.titulo",
+    "pt_br": "Importar transações",
+    "pagina": "importar",
+    "fontes": [
+      "importar.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "importar.toast.arquivo_vazio",
+    "pt_br": "Arquivo vazio ou sem dados suficientes.",
+    "pagina": "importar",
+    "fontes": [
+      "src/js/pages/importar.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "importar.toast.formato_nao_suportado",
+    "pt_br": "Formato não suportado. Use CSV, XLSX ou XLS.",
+    "pagina": "importar",
+    "fontes": [
+      "src/js/pages/importar.js"
+    ],
+    "kinds": [
+      "js"
     ]
   },
   {
@@ -726,6 +968,39 @@
     ]
   },
   {
+    "chave": "login.titulo_forgot",
+    "pt_br": "Recuperar senha",
+    "pagina": "login",
+    "fontes": [
+      "index.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "login.titulo_login",
+    "pt_br": "Bem-vindo de volta",
+    "pagina": "login",
+    "fontes": [
+      "index.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "login.titulo_signup",
+    "pt_br": "Criar sua conta",
+    "pagina": "login",
+    "fontes": [
+      "index.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
     "chave": "minha.chave",
     "pt_br": "Texto pt-BR",
     "pagina": "minha",
@@ -742,6 +1017,28 @@
     "pagina": "nav",
     "fontes": [
       "dividas.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "novidades.descricao",
+    "pt_br": "Registro de todas as melhorias, correções e novas funcionalidades publicadas no FinFlow.",
+    "pagina": "novidades",
+    "fontes": [
+      "novidades.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "novidades.titulo",
+    "pt_br": "Novidades",
+    "pagina": "novidades",
+    "fontes": [
+      "novidades.html"
     ],
     "kinds": [
       "html"
@@ -940,6 +1237,83 @@
     "pagina": "pagamentos",
     "fontes": [
       "src/js/pages/pagamentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "perfil.descricao",
+    "pt_br": "Foto, dados pessoais, redes sociais e plano de assinatura.",
+    "pagina": "perfil",
+    "fontes": [
+      "perfil.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "perfil.titulo",
+    "pt_br": "Meu perfil",
+    "pagina": "perfil",
+    "fontes": [
+      "perfil.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "relatorios.descricao",
+    "pt_br": "Fluxo de caixa, previsto vs real, gastos por categoria. Exporte em CSV, Excel ou imprima em PDF.",
+    "pagina": "relatorios",
+    "fontes": [
+      "relatorios.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "relatorios.titulo",
+    "pt_br": "Relatórios",
+    "pagina": "relatorios",
+    "fontes": [
+      "relatorios.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "relatorios.toast.csv_exportado",
+    "pt_br": "CSV exportado",
+    "pagina": "relatorios",
+    "fontes": [
+      "src/js/pages/relatorios.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "relatorios.validacao.datas_obrigatorias",
+    "pt_br": "Informe as duas datas do período",
+    "pagina": "relatorios",
+    "fontes": [
+      "src/js/pages/relatorios.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "relatorios.validacao.datas_ordem",
+    "pt_br": "Data de início deve ser anterior ao fim",
+    "pagina": "relatorios",
+    "fontes": [
+      "src/js/pages/relatorios.js"
     ],
     "kinds": [
       "js"

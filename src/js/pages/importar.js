@@ -12,6 +12,7 @@ import { showToast } from '../components/toast.js';
 import { loadRules, findRule } from '../lib/regras-reconciliacao.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
 import { escapeHtml } from '../lib/utils.js';
+import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 // ── State ─────────────────────────────────────────────────────
 let rawRows      = [];   // todas as linhas parseadas (inclui header)
@@ -44,6 +45,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('importar');
   initTutorial('importar');
+  await loadStrings();
+  applyTranslationsToDom();
   await loadData();
   bindStep1Events();
 });
@@ -116,12 +119,12 @@ async function handleFileSelect(file) {
       }
       rawRows = await parseExcel(file);
     } else {
-      showToast('Formato não suportado. Use CSV, XLSX ou XLS.', 'error');
+      showToast(t('importar.toast.formato_nao_suportado', 'Formato não suportado. Use CSV, XLSX ou XLS.'), 'error');
       return;
     }
 
     if (rawRows.length < 2) {
-      showToast('Arquivo vazio ou sem dados suficientes.', 'error');
+      showToast(t('importar.toast.arquivo_vazio', 'Arquivo vazio ou sem dados suficientes.'), 'error');
       rawRows = [];
       return;
     }

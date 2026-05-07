@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
 import { escapeHtml, formatDateBR } from '../lib/utils.js';
+import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 // -------------------------------------------------------
 // Estado
@@ -34,6 +35,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('relatorios');
   initTutorial('relatorios');
+  await loadStrings();
+  applyTranslationsToDom();
   initFilters();
   bindEvents();
   await loadAndRender();
@@ -108,8 +111,8 @@ function getDateRange() {
   if (filterMode === 'periodo') {
     const start = document.getElementById('relat-dt-inicio').value;
     const end   = document.getElementById('relat-dt-fim').value;
-    if (!start || !end) { showToast('Informe as duas datas do período', 'warning'); return null; }
-    if (start > end)    { showToast('Data de início deve ser anterior ao fim', 'warning'); return null; }
+    if (!start || !end) { showToast(t('relatorios.validacao.datas_obrigatorias', 'Informe as duas datas do período'), 'warning'); return null; }
+    if (start > end)    { showToast(t('relatorios.validacao.datas_ordem', 'Data de início deve ser anterior ao fim'), 'warning'); return null; }
     return { start, end, label: `${formatDateBR(start)} — ${formatDateBR(end)}` };
   }
   return { start: null, end: null, label: 'Todo o período' };
@@ -811,7 +814,7 @@ function exportCSV() {
     new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' }),
     `finflow-${activeTab}-${toISODate(today)}.csv`,
   );
-  showToast('CSV exportado', 'success');
+  showToast(t('relatorios.toast.csv_exportado', 'CSV exportado'), 'success');
 }
 
 async function exportExcel() {

@@ -9,6 +9,7 @@ import { showToast }                    from '../components/toast.js';
 import { formatCurrency }               from '../lib/compromissos-config.js';
 import { escapeHtml, formatDateBR } from '../lib/utils.js';
 import { fetchCnpjData, isValidCnpj, formatCnpj, digitsOnly, googleCnpjSearchUrl, inferLogoUrl, checkImageExists } from '../lib/cnpj-lookup.js';
+import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 // ── State ─────────────────────────────────────────────────────
 let cachedContatos      = [];
@@ -33,6 +34,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('contatos');
   initTutorial('contatos');
+  await loadStrings();
+  applyTranslationsToDom();
   await loadData();
   bindEvents();
   renderList();
@@ -516,7 +519,10 @@ function bindEvents() {
     const newStatus = c.status === 'arquivado' ? 'ativo' : 'arquivado';
     const { error } = await supabase.from('contatos').update({ status: newStatus }).eq('id', id);
     if (error) { showToast('Erro: ' + error.message, 'error'); return; }
-    showToast(newStatus === 'arquivado' ? 'Contato arquivado.' : 'Contato reativado.', 'success');
+    showToast(newStatus === 'arquivado'
+      ? t('contatos.toast.arquivado', 'Contato arquivado.')
+      : t('contatos.toast.reativado', 'Contato reativado.'),
+      'success');
     await reloadContatos();
     renderList();
     const updated = cachedContatos.find((x) => x.id === id);

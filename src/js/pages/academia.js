@@ -4,10 +4,13 @@
 import { guardSession } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
 import { TUTORIALS, TUTORIAL_ORDER, CATEGORIES } from '../lib/tutorial-content.js';
+import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('academia');
+  await loadStrings();
+  applyTranslationsToDom();
   init();
 });
 

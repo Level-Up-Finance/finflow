@@ -3,12 +3,15 @@
 // =============================================================
 import { guardSession } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
+import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 const initialized = { feedback: false, usuarios: false, idiomas: false };
 
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('admin');
+  await loadStrings();
+  applyTranslationsToDom();
 
   bindTabEvents();
   await activateTab('feedback');

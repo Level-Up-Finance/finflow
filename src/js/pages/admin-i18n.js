@@ -6,6 +6,7 @@ import { initSidebar }                    from '../components/sidebar.js';
 import { supabase }                       from '../lib/supabase.js';
 import { showToast }                      from '../components/toast.js';
 import { escapeHtml, formatDateBR }       from '../lib/utils.js';
+import { loadStrings as loadTextos, applyTranslationsToDom } from '../lib/textos.js';
 
 // ── Estado ────────────────────────────────────────────────────
 let cachedStrings  = [];
@@ -33,6 +34,8 @@ export async function init() {
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('admin');
+  await loadTextos();
+  applyTranslationsToDom();
   await init();
 });
 

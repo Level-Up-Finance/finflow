@@ -9,6 +9,7 @@ import { fetchExchangeRate } from '../lib/currency.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
 import { isPaidStatus } from '../lib/transacao-pagamento-sync.js';
 import { escapeHtml, isoMonth } from '../lib/utils.js';
+import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 const MONTH_LABELS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const DAY_LABELS   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
@@ -467,6 +468,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('dashboard');
   initTutorial('dashboard');
+  await loadStrings();
+  applyTranslationsToDom();
 
   await loadAll();
   renderGreeting();

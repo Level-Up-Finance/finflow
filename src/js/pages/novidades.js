@@ -8,6 +8,7 @@ import { initSidebar } from '../components/sidebar.js';
 import { CHANGELOG } from '../lib/changelog.js';
 import { supabase } from '../lib/supabase.js';
 import { escapeHtml } from '../lib/utils.js';
+import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 const LS_KEY = 'finflow:changelog:seen';
 const TYPE_LABELS = { new: 'Novidade', fix: 'Correção', improvement: 'Melhoria' };
@@ -114,6 +115,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   markSeen();
   await initSidebar('novidades');
+  await loadStrings();
+  applyTranslationsToDom();
 
   const feedbacks = await loadFeedback();
   renderRoadmap(feedbacks);
