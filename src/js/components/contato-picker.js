@@ -9,8 +9,9 @@
 //
 // O dropdown é portal'd para o <body> com position:fixed pra escapar do
 // overflow:hidden dos modais.
-import { findSimilarContatos, criarContato, normalize } from '../lib/contato-utils.js';
+import { findSimilarContatos, normalize } from '../lib/contato-utils.js';
 import { escapeHtml } from '../lib/utils.js';
+import { openContatoModal } from './contato-modal.js';
 
 const TIPO_LABELS = { cliente: 'Cliente', fornecedor: 'Fornecedor', ambos: 'Ambos' };
 
@@ -65,9 +66,20 @@ export function initContatoPicker({ rootEl, contatos, defaultTipo = 'fornecedor'
     const rect = inputEl.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom - 16;
     const maxH = Math.max(160, Math.min(320, spaceBelow));
+    // Dropdown nunca menor que 320px — evita truncar nomes em campos estreitos.
+    // Limite superior: largura do viewport menos margens; alinha à direita se
+    // estourar pra direita.
+    const minW = 380;
+    const desiredW = Math.max(rect.width, minW);
+    const maxW = Math.max(rect.width, window.innerWidth - 32);
+    const finalW = Math.min(desiredW, maxW);
+    let left = rect.left;
+    if (left + finalW > window.innerWidth - 16) {
+      left = Math.max(16, window.innerWidth - finalW - 16);
+    }
     dropdownEl.style.top = `${rect.bottom + 4}px`;
-    dropdownEl.style.left = `${rect.left}px`;
-    dropdownEl.style.width = `${rect.width}px`;
+    dropdownEl.style.left = `${left}px`;
+    dropdownEl.style.width = `${finalW}px`;
     dropdownEl.style.maxHeight = `${maxH}px`;
     dropdownEl.style.overflowY = 'auto';
   }
@@ -116,50 +128,7 @@ export function initContatoPicker({ rootEl, contatos, defaultTipo = 'fornecedor'
     dropdownEl.classList.remove('hidden');
   }
 
-  function showTipoModal(nome) {
-    return new Promise((resolve) => {
-      const backdrop = document.createElement('div');
-      backdrop.className = 'modal-backdrop';
-      backdrop.setAttribute('role', 'dialog');
-      backdrop.setAttribute('aria-modal', 'true');
-      backdrop.innerHTML = `
-        <div class="modal modal-sm">
-          <div class="modal-header"><h3 class="modal-title">Que tipo é esse contato?</h3></div>
-          <div class="modal-body">
-            <p>Definindo o tipo de "<strong>${escapeHtml(nome)}</strong>":</p>
-            <div class="contato-tipo-grid">
-              <button type="button" class="contato-tipo-btn ${defaultTipo === 'cliente' ? 'active' : ''}" data-tipo="cliente">
-                <span class="contato-tipo-emoji">🤝</span><span>Cliente</span>
-              </button>
-              <button type="button" class="contato-tipo-btn ${defaultTipo === 'fornecedor' ? 'active' : ''}" data-tipo="fornecedor">
-                <span class="contato-tipo-emoji">🏢</span><span>Fornecedor</span>
-              </button>
-              <button type="button" class="contato-tipo-btn ${defaultTipo === 'ambos' ? 'active' : ''}" data-tipo="ambos">
-                <span class="contato-tipo-emoji">🔄</span><span>Ambos</span>
-              </button>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-ghost" data-cancel>Cancelar</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(backdrop);
-      function cleanup(result) {
-        backdrop.remove();
-        document.removeEventListener('keydown', onKey);
-        resolve(result);
-      }
-      function onKey(e) { if (e.key === 'Escape') cleanup(null); }
-      backdrop.addEventListener('click', (e) => {
-        if (e.target === backdrop) return cleanup(null);
-        const tipoBtn = e.target.closest('[data-tipo]');
-        if (tipoBtn) return cleanup(tipoBtn.dataset.tipo);
-        if (e.target.closest('[data-cancel]')) return cleanup(null);
-      });
-      document.addEventListener('keydown', onKey);
-    });
-  }
+  // (Modal de cadastro completo é compartilhado em ./contato-modal.js)
 
   // Resolve com: id (usar existente) | '__new__' (criar mesmo) | null (cancelar)
   function showSimilarModal(nome, exact, similar) {
@@ -226,10 +195,11 @@ export function initContatoPicker({ rootEl, contatos, defaultTipo = 'fornecedor'
       }
     }
 
-    const tipo = await showTipoModal(nome);
-    if (!tipo) return;
-
-    const novo = await criarContato(nome, tipo);
+    // Abre o MESMO modal usado em Contatos (consistência total)
+    const novo = await openContatoModal({
+      modo: 'create',
+      initialData: { nome, tipo: defaultTipo },
+    });
     if (novo) {
       pushContato(novo);
       onCreated?.(novo);

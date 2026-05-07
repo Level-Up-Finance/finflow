@@ -26,10 +26,16 @@
       <div class="page-header">
         <div class="page-header-content">
           <p class="page-eyebrow">Sonhos</p>
-          <h1 class="page-title">Investimentos</h1>
-          <p class="page-description">Cada projeto é uma meta. Compromissos do grupo Investimentos podem ser atrelados a um projeto.</p>
+          <h1 class="page-title" data-i18n-key="investimentos.titulo">Investimentos</h1>
+          <p class="page-description" data-i18n-key="investimentos.descricao">Cada projeto é uma meta. Compromissos do grupo Investimentos podem ser atrelados a um projeto.</p>
         </div>
-        <button type="button" class="btn btn-primary" id="btn-novo-projeto">+ Novo projeto</button>
+        <div style="display:flex; gap: var(--space-2);">
+          <button type="button" class="btn btn-secondary" id="btn-simular-invest">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:-2px;"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+            Simular
+          </button>
+          <button type="button" class="btn btn-primary" id="btn-novo-projeto" data-i18n-key="investimentos.btn.novo">+ Novo projeto</button>
+        </div>
       </div>
 
       <!-- KPIs: Total investido universal + Projetos com meta -->
@@ -77,9 +83,9 @@
         <div class="empty-state-icon">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
         </div>
-        <h2 class="empty-state-title">Nenhum projeto ainda</h2>
+        <h2 class="empty-state-title" data-i18n-key="investimentos.empty.titulo">Nenhum projeto ainda</h2>
         <p class="empty-state-message">Crie um projeto pra organizar seus investimentos por meta (ex: Casa própria, Aposentadoria).</p>
-        <button type="button" class="btn btn-primary" data-trigger-novo-projeto>+ Criar primeiro projeto</button>
+        <button type="button" class="btn btn-primary" data-trigger-novo-projeto data-i18n-key="investimentos.empty.btn">+ Criar primeiro projeto</button>
       </div>
     </main>
   </div>
@@ -148,10 +154,46 @@
             </div>
             <p class="field-hint">Identifica com quem o projeto se relaciona, ex: corretora, banco, parceiro (opcional).</p>
           </div>
+
+          <!-- Criar compromisso vinculado (apenas em modo criação) -->
+          <div class="field" id="proj-compromisso-toggle-wrap">
+            <label class="checkbox-row" style="display:flex; align-items:center; gap:var(--space-2); cursor:pointer;">
+              <input type="checkbox" id="proj-criar-compromisso">
+              <span><strong>Criar compromisso recorrente vinculado</strong></span>
+            </label>
+            <p class="field-hint">Cria automaticamente uma subcategoria em Compromissos para registrar aportes recorrentes neste projeto.</p>
+          </div>
+          <div id="proj-compromisso-fields" class="hidden">
+            <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+              <div class="field">
+                <label class="field-label" for="proj-comp-valor">Valor do aporte <span class="required">*</span></label>
+                <input type="text" id="proj-comp-valor" class="input input-decimal" inputmode="decimal" placeholder="0,00">
+              </div>
+              <div class="field">
+                <label class="field-label" for="proj-comp-periodo">Frequência <span class="required">*</span></label>
+                <select id="proj-comp-periodo" class="select">
+                  <option value="Mensal" selected>Mensal</option>
+                  <option value="Quinzenal">Quinzenal</option>
+                  <option value="Semanal">Semanal</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+              <div class="field">
+                <label class="field-label" for="proj-comp-data">Data do primeiro aporte <span class="required">*</span></label>
+                <input type="date" id="proj-comp-data" class="input">
+              </div>
+              <div class="field">
+                <label class="field-label" for="proj-comp-categoria">Categoria</label>
+                <select id="proj-comp-categoria" class="select"></select>
+                <p class="field-hint">Categoria do grupo Investimentos onde a subcategoria será criada.</p>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-ghost" data-close-modal="modal-projeto">Cancelar</button>
-          <button type="submit" class="btn btn-primary" id="btn-salvar-projeto">Salvar</button>
+          <button type="button" class="btn btn-ghost" data-close-modal="modal-projeto" data-i18n-key="global.btn.cancelar">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-salvar-projeto" data-i18n-key="global.btn.salvar">Salvar</button>
         </div>
       </form>
     </div>
@@ -172,11 +214,33 @@
         <div id="proj-details-historico" style="margin-top: var(--space-5);"></div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-ghost" id="btn-arquivar-projeto">Arquivar projeto</button>
+        <button type="button" class="btn btn-danger" id="btn-excluir-projeto">Excluir</button>
+        <button type="button" class="btn btn-success hidden" id="btn-restaurar-projeto">Restaurar</button>
         <div style="flex: 1;"></div>
         <button type="button" class="btn btn-ghost" id="btn-historico-invest">Histórico passado</button>
         <button type="button" class="btn btn-ghost" data-close-modal="modal-projeto-details">Fechar</button>
         <button type="button" class="btn btn-primary" id="btn-editar-projeto">Editar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Confirmar excluir / arquivar projeto
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-confirmar-projeto" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h2 class="modal-title" id="proj-confirmar-title">Excluir projeto</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-confirmar-projeto" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="proj-confirmar-msg"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-confirmar-projeto">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btn-confirmar-acao-projeto">Excluir</button>
       </div>
     </div>
   </div>
@@ -232,6 +296,114 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-ghost" data-close-modal="modal-historico-view-invest">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Simulador de juros compostos
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-simular" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h2 class="modal-title">Simular investimento</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-simular" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+
+        <!-- Modo: Saldo final / Tempo / Aporte -->
+        <div class="view-toggle view-toggle--text" id="sim-modo-seg" style="width: 100%; margin-bottom: var(--space-4);">
+          <button type="button" class="view-toggle-btn active" data-modo="saldo"  style="flex:1;">Saldo final</button>
+          <button type="button" class="view-toggle-btn"        data-modo="tempo"  style="flex:1;">Tempo</button>
+          <button type="button" class="view-toggle-btn"        data-modo="aporte" style="flex:1;">Aporte</button>
+        </div>
+
+        <p class="field-hint" id="sim-modo-hint" style="margin-bottom: var(--space-4);"></p>
+
+        <!-- Origem da taxa -->
+        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+          <div class="field">
+            <label class="field-label" for="sim-juros-tipo">Origem da taxa</label>
+            <select class="select" id="sim-juros-tipo">
+              <option value="manual">Manual</option>
+              <option value="selic">SELIC (auto)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="sim-taxa">Taxa ao mês (%)</label>
+            <input class="input input-decimal" id="sim-taxa" type="text" inputmode="decimal" placeholder="0,00" data-decimals="4">
+            <p class="field-hint hidden" id="sim-taxa-hint"></p>
+          </div>
+        </div>
+
+        <!-- Saldo inicial (comum a todos modos) -->
+        <div class="field">
+          <label class="field-label" for="sim-pv">Saldo inicial <span class="field-label-hint">(opcional)</span></label>
+          <input class="input input-decimal" id="sim-pv" type="text" inputmode="decimal" placeholder="0,00">
+        </div>
+
+        <!-- Modo: SALDO — pede aporte + período -->
+        <div id="sim-fields-saldo">
+          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field">
+              <label class="field-label" for="sim-pmt">Aporte mensal *</label>
+              <input class="input input-decimal" id="sim-pmt" type="text" inputmode="decimal" placeholder="0,00">
+            </div>
+            <div class="field">
+              <label class="field-label" for="sim-anos">Período (anos) *</label>
+              <input class="input input-decimal" id="sim-anos" type="text" inputmode="decimal" placeholder="Ex: 5" data-decimals="2">
+            </div>
+          </div>
+        </div>
+
+        <!-- Modo: TEMPO — pede aporte + meta -->
+        <div id="sim-fields-tempo" class="hidden">
+          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field">
+              <label class="field-label" for="sim-pmt-tempo">Aporte mensal *</label>
+              <input class="input input-decimal" id="sim-pmt-tempo" type="text" inputmode="decimal" placeholder="0,00">
+            </div>
+            <div class="field">
+              <label class="field-label" for="sim-meta-tempo">Meta (R$) *</label>
+              <input class="input input-decimal" id="sim-meta-tempo" type="text" inputmode="decimal" placeholder="0,00">
+            </div>
+          </div>
+        </div>
+
+        <!-- Modo: APORTE — pede meta + período -->
+        <div id="sim-fields-aporte" class="hidden">
+          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field">
+              <label class="field-label" for="sim-meta-aporte">Meta (R$) *</label>
+              <input class="input input-decimal" id="sim-meta-aporte" type="text" inputmode="decimal" placeholder="0,00">
+            </div>
+            <div class="field">
+              <label class="field-label" for="sim-anos-aporte">Período (anos) *</label>
+              <input class="input input-decimal" id="sim-anos-aporte" type="text" inputmode="decimal" placeholder="Ex: 10" data-decimals="2">
+            </div>
+          </div>
+        </div>
+
+        <!-- Resultado -->
+        <div class="sim-resultado hidden" id="sim-resultado">
+          <div class="sim-resultado-principal">
+            <span class="sim-resultado-label" id="sim-resultado-label">Resultado</span>
+            <span class="sim-resultado-valor" id="sim-resultado-valor">—</span>
+          </div>
+          <div class="sim-resultado-detalhes" id="sim-resultado-detalhes"></div>
+          <div style="margin-top: var(--space-4); display:flex; justify-content:flex-end;">
+            <button type="button" class="btn btn-secondary" id="btn-sim-criar-projeto">
+              + Criar projeto com esses dados
+            </button>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-simular">Fechar</button>
+        <button type="button" class="btn btn-primary" id="btn-simular-calcular">Calcular</button>
       </div>
     </div>
   </div>

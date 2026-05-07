@@ -33,14 +33,17 @@ async function activateTab(tab) {
   if (initialized[tab]) return;
   initialized[tab] = true;
 
+  // Cache-bust dos dynamic imports — força browser a baixar nova versão
+  // quando o arquivo muda (em dev). Em produção, hash do build resolveria.
+  const v = `?v=${Date.now()}`;
   if (tab === 'feedback') {
-    const { init } = await import('./admin-feedback.js');
+    const { init } = await import('./admin-feedback.js' + v);
     await init();
   } else if (tab === 'usuarios') {
-    const { init } = await import('./admin-usuarios.js');
+    const { init } = await import('./admin-usuarios.js' + v);
     await init();
   } else if (tab === 'idiomas') {
-    const { init } = await import('./admin-i18n.js');
+    const { init } = await import('./admin-i18n.js' + v);
     await init();
   }
 }

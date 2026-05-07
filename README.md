@@ -49,16 +49,33 @@ leveluponline-finance/
 
 ## Setup local
 
+Pré-requisito: **Node.js ≥ 18** e **npm**.
+
 1. Configure `src/js/lib/config.js` com sua `SUPABASE_URL` e `SUPABASE_ANON_KEY` (ver passo a passo abaixo).
-2. Rode um servidor HTTP estático na raiz do projeto:
+2. Instale dependências (uma vez):
 
 ```bash
-python3 -m http.server 8000
+npm install
 ```
 
-3. Abra `http://localhost:8000/` no navegador.
+3. Inicie o dev server (Vite, com HMR):
 
-> **Importante**: ES Modules não funcionam via `file://`. Sempre use um servidor HTTP local.
+```bash
+npm run dev
+```
+
+4. Abra `http://localhost:8000/` no navegador.
+
+> Atalho: dê duplo-clique em `FinFlow.command` (Mac) — instala dependências se necessário e sobe o servidor em background.
+
+### Build de produção
+
+```bash
+npm run build      # gera dist/ com chunks otimizados
+npm run preview    # serve dist/ pra testar antes de deploy
+```
+
+O Vercel já está configurado (`buildCommand` + `outputDirectory` em `vercel.json`) — basta `git push` que ele roda o build.
 
 ## Setup Supabase
 

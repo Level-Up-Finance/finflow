@@ -1,4 +1,12 @@
 // =============================================================
+// TODO refactor: dividir este arquivo (~3000 linhas) em:
+//   compromissos/calendar.js  — renderCalendar + renderCalendarPopover + occursOn + navigateCalendar + openDayModal (~250L)
+//   compromissos/dre.js       — renderDre + renderDreBlock + renderDreItem + renderDreSummary + bindDreClicks (~160L)
+//   compromissos/table.js     — renderFlatTable + renderUnifiedRow + render*Cell helpers (~200L)
+//   compromissos/modals.js    — openCompromissoModal + openCatDirectModal + openDetailsModal + openValorUpdateModal (~600L)
+//   compromissos/save.js      — saveCompromisso + saveCatDirectCompromisso + saveQuickValor (~400L)
+// Acoplamento forte de estado: requer dependency injection (passar getters/setters).
+// =============================================================
 // FinFlow — Página: Compromissos (antes "Categorias")
 //
 // Hierarquia: Categoria (parent) → Subcategoria/Compromisso (filha)

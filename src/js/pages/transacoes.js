@@ -52,6 +52,7 @@ let cachedContas        = [];
 let cachedSubcategorias = [];
 let cachedCategorias    = [];
 let cachedContatos      = [];
+let cachedDividas       = [];
 let cachedRules         = [];
 let editingId           = null;
 let pendingDeleteId     = null;
@@ -135,7 +136,7 @@ async function loadAll() {
     .then((n) => { if (n > 0) showToast(`${n} fatura${n > 1 ? 's' : ''} de cartão fechada${n > 1 ? 's' : ''} — confira em Pagamentos`, 'success', 5000); })
     .catch((e) => console.warn('[checkAndCloseFaturas]', e));
 
-  const [transRes, contRes, subRes, catRes, contatosRes] = await Promise.all([
+  const [transRes, contRes, subRes, catRes, contatosRes, divRes] = await Promise.all([
     supabase
       .from('transacoes')
       .select('*, pagamento:pagamentos(data_vencimento, status)')
@@ -160,6 +161,9 @@ async function loadAll() {
       .select('id, nome, tipo, status')
       .neq('status', 'arquivado')
       .order('nome'),
+    supabase
+      .from('dividas')
+      .select('id, nome, status'),
   ]);
 
   if (transRes.error) {
@@ -172,6 +176,9 @@ async function loadAll() {
   cachedContas        = contRes.data  || [];
   cachedSubcategorias = subRes.data   || [];
   cachedCategorias    = catRes.data   || [];
+  // Dívidas (silencioso se erro — campo divida_id pode não existir antes da migration 0063)
+  if (divRes && !divRes.error) cachedDividas = divRes.data || [];
+  else cachedDividas = [];
 
   if (contatosRes.error) {
     if (!/relation.*contatos|column.*contatos/i.test(contatosRes.error.message)) {
@@ -584,10 +591,21 @@ function renderDataRows(items) {
       ? `<span class="trans-banco-id" title="${escapeHtml(t.banco_id)}">${escapeHtml(t.banco_id.length > 14 ? t.banco_id.slice(0, 14) + '…' : t.banco_id)}</span>`
       : '<span class="trans-banco-empty">—</span>';
 
-    // Descrição: texto bruto do extrato (banco_desc)
-    const bancoDescHtml = t.banco_desc
-      ? `<span class="trans-banco-desc" title="${escapeHtml(t.banco_desc)}">${escapeHtml(t.banco_desc.length > 42 ? t.banco_desc.slice(0, 42) + '…' : t.banco_desc)}</span>`
+    // Descrição: texto bruto do extrato (banco_desc) + descricao livre
+    const descTexto = t.banco_desc || t.descricao || '';
+    const bancoDescHtml = descTexto
+      ? `<span class="trans-banco-desc" title="${escapeHtml(descTexto)}">${escapeHtml(descTexto.length > 42 ? descTexto.slice(0, 42) + '…' : descTexto)}</span>`
       : '<span class="trans-banco-empty">—</span>';
+
+    // Indicador de vínculo com dívida — aparece como badge ao lado da descrição
+    const divida = t.divida_id ? cachedDividas.find((d) => d.id === t.divida_id) : null;
+    const dividaBadge = divida
+      ? `<a href="dividas.html" class="trans-divida-link" title="Vinculado à dívida: ${escapeHtml(divida.nome)}${divida.status === 'Arquivada' ? ' (arquivada)' : ''}">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <span>${escapeHtml(divida.nome.length > 18 ? divida.nome.slice(0, 18) + '…' : divida.nome)}</span>
+        </a>`
+      : '';
+    const descColHtml = `${bancoDescHtml}${dividaBadge}`;
 
     // Cliente/Fornecedor: prefere contato vinculado → fallback banco_desc → fallback legado
     let contatoHtml;
@@ -664,7 +682,7 @@ function renderDataRows(items) {
         <td class="trans-td-data tabular">${formatDateBR(t.data)}</td>
         <td class="trans-td-planejada" data-col="planejada">${planejadaHtml}</td>
         <td class="trans-td-id" data-col="id">${bancoIdHtml}</td>
-        <td class="trans-td-banco" data-col="banco">${bancoDescHtml}</td>
+        <td class="trans-td-banco" data-col="banco">${descColHtml}</td>
         <td class="trans-td-contato" data-col="contato">${contatoHtml}</td>
         <td class="trans-td-bloco" data-col="bloco">${blocoHtml}</td>
         <td class="trans-td-categoria" data-col="categoria">${catHtml}</td>

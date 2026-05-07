@@ -17,8 +17,12 @@
 # Logs
 *.log
 
-# Node (just in case)
+# Node
 node_modules/
+
+# Build output
+dist/
+.vite/
 
 # Claude Code
 .claude/

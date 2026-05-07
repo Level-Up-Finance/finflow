@@ -22,6 +22,7 @@ import { initCurrencyWidget } from '../components/currency-widget.js';
 import { findBank, logoUrl } from '../lib/banks.js';
 import { syncPagamentoToTransacao, isPaidStatus } from '../lib/transacao-pagamento-sync.js';
 import { escapeHtml, formatDateBR, isoMonth, showConfirm } from '../lib/utils.js';
+import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 // -----------------------------
 // State
@@ -58,6 +59,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('pagamentos');
   initTutorial('pagamentos');
+  await loadStrings();
+  applyTranslationsToDom();
   initCurrencyWidget('currency-widget');
   bindEvents();
   await loadCategorias();
@@ -185,13 +188,13 @@ async function regenerateBlocosForCurrentMonth() {
     .is('valor_real', null);
 
   if (delError) {
-    showToast('Erro ao limpar pagamentos: ' + delError.message, 'error', 8000);
+    showToast(`${t('pagamentos.toast.erro_limpar', 'Erro ao limpar pagamentos')}: ${delError.message}`, 'error', 8000);
     return;
   }
 
-  showToast('Pagamentos pendentes limpos. Regenerando…', 'info', 3000);
+  showToast(t('pagamentos.toast.limpos', 'Pagamentos pendentes limpos. Regenerando…'), 'info', 3000);
   await loadMonth();
-  showToast('Blocos regenerados', 'success');
+  showToast(t('pagamentos.toast.regenerados', 'Blocos regenerados'), 'success');
 }
 
 // -----------------------------
@@ -211,7 +214,7 @@ async function loadSubcategorias() {
   // Sanity check: a coluna eh_renda_principal existe no schema?
   if (cachedSubcategorias.length > 0 && !('eh_renda_principal' in cachedSubcategorias[0])) {
     console.warn('[pagamentos] Coluna eh_renda_principal não existe — rode a migration 0011_valor_variavel_renda_principal.sql.');
-    showToast('Schema desatualizado. Rode a migration 0011 no Supabase pra blocos dinâmicos.', 'error', 12000);
+    showToast(t('pagamentos.toast.schema_desatualizado', 'Schema desatualizado. Rode a migration 0011 no Supabase pra blocos dinâmicos.'), 'error', 12000);
   }
 }
 
@@ -831,12 +834,12 @@ async function quickPay(id) {
 
   if (error) {
     console.error('[quickPay]', error);
-    showToast('Erro ao marcar como pago: ' + error.message, 'error', 8000);
+    showToast(`${t('pagamentos.toast.erro_marcar_pago', 'Erro ao marcar como pago')}: ${error.message}`, 'error', 8000);
     return;
   }
 
   Object.assign(p, update);
-  showToast('Marcado como pago', 'success');
+  showToast(t('pagamentos.toast.marcado_pago', 'Marcado como pago'), 'success');
   renderPagamentos();
 
   // Propaga valor pago para a dívida vinculada (fire-and-forget)
@@ -1039,7 +1042,7 @@ function openParcialNovoComp() {
 async function criarCompromissoParcial() {
   if (!parcialState) return;
   const dataInicio = document.getElementById('pns-data-inicio').value;
-  if (!dataInicio) { showToast('Informe a data de início', 'error'); return; }
+  if (!dataInicio) { showToast(t('pagamentos.validacao.data_inicio', 'Informe a data de início'), 'error'); return; }
 
   const { pag, restanteOrig } = parcialState;
   const sub  = pag.subcategorias;
@@ -1141,7 +1144,7 @@ async function saveValorReal(input) {
   if (raw !== '') {
     const newValueBRL = Number(raw);
     if (isNaN(newValueBRL) || newValueBRL < 0) {
-      showToast('Valor inválido', 'error');
+      showToast(t('pagamentos.validacao.valor_invalido', 'Valor inválido'), 'error');
       // Restore
       const oldBRL = pag.valor_real != null ? convertToBRL(Number(pag.valor_real), pag.moeda) : null;
       input.value = oldBRL !== null ? oldBRL.toFixed(2) : '';

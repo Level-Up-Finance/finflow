@@ -315,7 +315,7 @@ async function saveString() {
   btn.textContent = 'Salvar';
 }
 
-async function saveEdit(updated, motivo) {
+async function saveEdit(updated, motivo, extras = {}) {
   const orig = originalValues;
   const ptChanged = (updated.pt_br || '') !== (orig.pt_br || '');
 
@@ -336,7 +336,8 @@ async function saveEdit(updated, motivo) {
     }
   }
 
-  const payload = { ...updated, ...newStatuses, updated_at: new Date().toISOString() };
+  // `extras` permite ações combinadas (ex: aprovar + salvar)
+  const payload = { ...updated, ...newStatuses, ...extras, updated_at: new Date().toISOString() };
 
   const { error } = await supabase
     .from('i18n_strings')
@@ -374,7 +375,7 @@ async function saveEdit(updated, motivo) {
     cachedStrings[idx] = { ...cachedStrings[idx], ...payload };
   }
 
-  showToast('String atualizada.', 'success');
+  showToast(extras.aprovado ? 'String aprovada e salva.' : 'String atualizada.', 'success');
   closeEditModal();
   renderTable();
 }
@@ -419,26 +420,23 @@ async function saveCreate({ pt_br, en, es, fr }, motivo) {
 
 // ── Aprovar string ────────────────────────────────────────────
 async function approveString() {
+  if (!editingId) return;
   const btn = document.getElementById('btn-aprovar-i18n');
   btn.disabled = true;
   btn.textContent = 'Aprovando…';
 
-  const { error } = await supabase
-    .from('i18n_strings')
-    .update({ aprovado: true })
-    .eq('id', editingId);
+  // Aprovar = salvar valores atuais do form + marcar aprovado=true + fechar modal.
+  // Reusa saveEdit pra registrar histórico, atualizar status por idioma e cache.
+  const motivo = (document.getElementById('i18n-edit-motivo').value || '').trim();
+  const ptBr   = (document.getElementById('i18n-edit-ptbr').value   || '').trim() || null;
+  const en     = (document.getElementById('i18n-edit-en').value     || '').trim() || null;
+  const es     = (document.getElementById('i18n-edit-es').value     || '').trim() || null;
+  const fr     = (document.getElementById('i18n-edit-fr').value     || '').trim() || null;
+
+  await saveEdit({ pt_br: ptBr, en, es, fr }, motivo, { aprovado: true });
 
   btn.disabled = false;
   btn.textContent = 'Aprovar string';
-
-  if (error) { showToast('Erro ao aprovar: ' + error.message, 'error'); return; }
-
-  const idx = cachedStrings.findIndex((x) => x.id === editingId);
-  if (idx !== -1) cachedStrings[idx].aprovado = true;
-
-  btn.hidden = true;
-  showToast('String aprovada.', 'success');
-  renderTable();
 }
 
 // ── Exportar CSV ──────────────────────────────────────────────

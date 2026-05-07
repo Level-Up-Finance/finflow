@@ -29,8 +29,8 @@
       <div class="page-header">
         <div class="page-header-content">
           <p class="page-eyebrow">Operacional</p>
-          <h1 class="page-title">Pagamentos</h1>
-          <p class="page-description">Controle do que foi pago no mês. Marque status e registre o valor real efetivamente pago.</p>
+          <h1 class="page-title" data-i18n-key="pagamentos.titulo">Pagamentos</h1>
+          <p class="page-description" data-i18n-key="pagamentos.descricao">Controle do que foi pago no mês. Marque status e registre o valor real efetivamente pago.</p>
         </div>
         <div style="display:flex; gap: var(--space-2);">
           <button type="button" class="btn btn-ghost" id="btn-regen-blocos" title="Apaga pagamentos pendentes (Agendado, sem valor real) e recria com a divisão de blocos atual. Útil ao mudar renda principal.">Regenerar blocos</button>
@@ -76,9 +76,9 @@
         <div class="empty-state-icon">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
         </div>
-        <h2 class="empty-state-title">Nenhum pagamento neste mês</h2>
-        <p class="empty-state-message">Cadastre compromissos ativos pra começar a registrar pagamentos. Pagamentos são gerados automaticamente a partir do orçamento.</p>
-        <a href="/compromissos.html" class="btn btn-primary">Ir para Compromissos</a>
+        <h2 class="empty-state-title" data-i18n-key="pagamentos.empty.titulo">Nenhum pagamento neste mês</h2>
+        <p class="empty-state-message" data-i18n-key="pagamentos.empty.mensagem">Cadastre compromissos ativos pra começar a registrar pagamentos. Pagamentos são gerados automaticamente a partir do orçamento.</p>
+        <a href="/compromissos.html" class="btn btn-primary" data-i18n-key="pagamentos.empty.btn">Ir para Compromissos</a>
       </div>
     </main>
   </div>
@@ -110,8 +110,8 @@
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn btn-ghost" data-close-modal="modal-pag-details">Fechar</button>
-        <button type="button" class="btn btn-primary" id="btn-salvar-observacao">Salvar observação</button>
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-pag-details" data-i18n-key="global.btn.fechar">Fechar</button>
+        <button type="button" class="btn btn-primary" id="btn-salvar-observacao" data-i18n-key="pagamentos.btn.salvar_observacao">Salvar observação</button>
       </div>
     </div>
   </div>

@@ -18,20 +18,20 @@
 
     <header class="app-header header">
       <div class="header-left">
-        <h2 class="header-title">Dívidas</h2>
+        <h2 class="header-title" data-i18n-key="nav.dividas">Dívidas</h2>
       </div>
     </header>
 
     <main class="app-main main">
       <div class="page-header">
         <div class="page-header-content">
-          <p class="page-eyebrow">Controle</p>
-          <h1 class="page-title">Dívidas</h1>
-          <p class="page-description">Acompanhe dívidas ativas, em negociação e quitadas com barras de progresso.</p>
+          <p class="page-eyebrow" data-i18n-key="dividas.eyebrow">Controle</p>
+          <h1 class="page-title" data-i18n-key="dividas.titulo">Dívidas</h1>
+          <p class="page-description" data-i18n-key="dividas.descricao">Acompanhe dívidas ativas, em negociação e quitadas com barras de progresso.</p>
         </div>
         <button class="btn btn-primary" id="btn-nova-divida" type="button">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
-          Nova dívida
+          <span data-i18n-key="dividas.btn_nova">Nova dívida</span>
         </button>
       </div>
 
@@ -99,33 +99,132 @@
         <div class="modal-body">
           <div class="field-group" style="grid-template-columns: 1fr 1fr;">
             <div class="field">
-              <label class="field-label" for="div-nome">Nome da dívida *</label>
-              <input class="input" id="div-nome" type="text" placeholder="Ex: Financiamento carro" required>
+              <label class="field-label" for="div-nome" data-i18n-key="dividas.modal.label.nome">Nome da dívida *</label>
+              <input class="input" id="div-nome" type="text" data-i18n-placeholder="dividas.modal.placeholder.nome" placeholder="Ex: Financiamento carro" required>
             </div>
             <div class="field">
-              <label class="field-label" for="div-credor">Credor</label>
-              <input class="input" id="div-credor" type="text" placeholder="Ex: Banco Itaú">
+              <label class="field-label" for="div-credor-search" data-i18n-key="dividas.modal.label.credor">Credor</label>
+              <div class="contato-picker" data-picker="div-credor">
+                <input type="text" id="div-credor-search" class="contato-picker-input input" autocomplete="off" data-i18n-placeholder="dividas.modal.placeholder.credor" placeholder="Buscar contato ou digitar novo nome…">
+                <input type="hidden" id="div-credor-contato-id" value="">
+              </div>
             </div>
           </div>
 
           <div class="field-group" style="grid-template-columns: 1fr 1fr;">
             <div class="field">
               <label class="field-label" for="div-valor-total">Valor total *</label>
-              <input class="input" id="div-valor-total" type="number" step="0.01" min="0.01" placeholder="0,00" required>
+              <input class="input input-decimal" id="div-valor-total" type="text" inputmode="decimal" placeholder="0,00" required>
             </div>
             <div class="field">
-              <label class="field-label" for="div-juros">Juros ao mês (%)</label>
-              <input class="input" id="div-juros" type="number" step="0.01" min="0" placeholder="0,00">
+              <label class="field-label" for="div-juros-tipo">Origem da taxa</label>
+              <select class="select" id="div-juros-tipo">
+                <optgroup label="Manual">
+                  <option value="manual_fixo">Manual — fixa</option>
+                  <option value="manual_variavel">Manual — variável</option>
+                </optgroup>
+                <optgroup label="Indicadores (auto)">
+                  <option value="selic">SELIC</option>
+                  <option value="selic_plus">SELIC + spread</option>
+                  <option value="cdi">CDI</option>
+                  <option value="cdi_plus">CDI + spread</option>
+                  <option value="ipca">IPCA</option>
+                  <option value="ipca_plus">IPCA + spread</option>
+                </optgroup>
+              </select>
             </div>
           </div>
 
           <div class="field-group" style="grid-template-columns: 1fr 1fr;">
             <div class="field">
-              <label class="field-label" for="div-data-inicio">Data de início *</label>
+              <label class="field-label" id="div-juros-label" for="div-juros">Juros ao mês (%)</label>
+              <input class="input input-decimal" id="div-juros" type="text" inputmode="decimal" placeholder="0,00" data-decimals="4">
+              <p class="field-hint hidden" id="div-juros-hint"></p>
+            </div>
+            <div class="field hidden" id="div-juros-spread-field">
+              <label class="field-label" for="div-juros-spread">Spread (% a.m.)</label>
+              <input class="input input-decimal" id="div-juros-spread" type="text" inputmode="decimal" placeholder="Ex: 0,5" data-decimals="4">
+            </div>
+          </div>
+
+          <!-- Regime de amortização (linha completa) -->
+          <div class="field">
+            <label class="field-label">Regime</label>
+            <div class="view-toggle view-toggle--text" id="div-regime-seg" style="width:100%;">
+              <button type="button" class="view-toggle-btn active" data-regime="" style="flex:1;">Nenhum</button>
+              <button type="button" class="view-toggle-btn" data-regime="SAC" style="flex:1;">SAC</button>
+              <button type="button" class="view-toggle-btn" data-regime="Price" style="flex:1;">Price</button>
+              <button type="button" class="view-toggle-btn" data-regime="Customizado" style="flex:1;">Customizado</button>
+            </div>
+          </div>
+
+          <!-- Nº de parcelas (aparece quando regime é selecionado) -->
+          <div class="field hidden" id="div-n-parcelas-field" style="max-width: 200px;">
+            <label class="field-label" for="div-n-parcelas">Nº de parcelas</label>
+            <input class="input" id="div-n-parcelas" type="number" min="1" step="1" placeholder="Ex: 60">
+          </div>
+
+          <!-- Explicação do regime selecionado -->
+          <div class="div-regime-info hidden" id="div-regime-info">
+            <span class="div-regime-info-icon">ⓘ</span>
+            <div class="div-regime-info-text">
+              <strong id="div-regime-info-title"></strong>
+              <p id="div-regime-info-desc"></p>
+              <p class="div-regime-info-example" id="div-regime-info-example"></p>
+            </div>
+          </div>
+
+          <!-- Fases (apenas Customizado) -->
+          <div class="field hidden" id="div-fases-field">
+            <label class="field-label">Fases das parcelas</label>
+            <div id="div-fases-list" class="div-fases-list"></div>
+            <button type="button" class="btn btn-sm btn-ghost" id="btn-add-fase" style="margin-top: var(--space-2);">+ Adicionar fase</button>
+            <p class="field-hint">Ex: parcelas 1–6 de R$124,48 + parcelas 7–60 de R$216,70 (carência ou parcelas variáveis).</p>
+          </div>
+
+          <!-- Índice de referência (apenas para Manual variável) -->
+          <div class="field hidden" id="div-taxa-ref-field" style="max-width: 400px;">
+            <label class="field-label" for="div-taxa-referencia">Índice de referência <span class="field-label-hint">(opcional)</span></label>
+            <select class="select" id="div-taxa-referencia">
+              <option value="">— Sem índice —</option>
+              <option value="SELIC">SELIC</option>
+              <option value="SELIC + spread">SELIC + spread</option>
+              <option value="CDI">CDI</option>
+              <option value="CDI + spread">CDI + spread</option>
+              <option value="IPCA">IPCA</option>
+              <option value="IPCA + spread">IPCA + spread</option>
+              <option value="IGP-M">IGP-M</option>
+              <option value="TR">TR</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+
+          <!-- Correção monetária -->
+          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field">
+              <label class="field-label" for="div-indice-correcao">Correção monetária</label>
+              <select class="select" id="div-indice-correcao">
+                <option value="nenhum">Nenhuma</option>
+                <option value="TR">TR (estimada)</option>
+                <option value="IPCA">IPCA</option>
+                <option value="IGPM">IGP-M</option>
+                <option value="fixo">Fixa (% a.m.)</option>
+              </select>
+            </div>
+            <div class="field hidden" id="div-correcao-taxa-field">
+              <label class="field-label" for="div-correcao-taxa">Taxa correção (% a.m.)</label>
+              <input class="input input-decimal" id="div-correcao-taxa" type="text" inputmode="decimal" placeholder="Ex: 0,5" data-decimals="4">
+            </div>
+          </div>
+
+          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field">
+              <label class="field-label" for="div-data-inicio">1º Vencimento *</label>
               <input class="input" id="div-data-inicio" type="date" required>
+              <p class="field-hint">Data da primeira parcela. As demais são calculadas mensalmente.</p>
             </div>
             <div class="field">
-              <label class="field-label" for="div-data-vencimento">Data de vencimento</label>
+              <label class="field-label" for="div-data-vencimento">Vencimento final</label>
               <input class="input" id="div-data-vencimento" type="date">
             </div>
           </div>
@@ -138,6 +237,7 @@
                 <option value="Negociando">Negociando</option>
                 <option value="Atrasada">Atrasada</option>
                 <option value="Quitada">Quitada</option>
+                <option value="Arquivada">Arquivada</option>
               </select>
             </div>
             <div class="field">
@@ -145,16 +245,6 @@
               <select class="select" id="div-conta">
                 <option value="">Nenhuma</option>
               </select>
-            </div>
-          </div>
-
-          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
-            <div class="field">
-              <label class="field-label" for="div-contato-search">Cliente / Fornecedor</label>
-              <div class="contato-picker" data-picker="div-contato">
-                <input type="text" id="div-contato-search" class="contato-picker-input input" autocomplete="off" placeholder="Buscar contato ou digitar novo nome…">
-                <input type="hidden" id="div-contato" value="">
-              </div>
             </div>
           </div>
 
@@ -192,9 +282,9 @@
     </div>
   </div>
 
-  <!-- Modal: Confirmar exclusão -->
+  <!-- Modal: Confirmar exclusão / arquivamento -->
   <div class="modal-backdrop hidden" id="modal-confirmar" role="dialog" aria-modal="true">
-    <div class="modal modal-sm">
+    <div class="modal modal-md">
       <div class="modal-header">
         <h2 class="modal-title">Excluir dívida</h2>
         <button type="button" class="modal-close" data-close-modal="modal-confirmar" aria-label="Fechar">
@@ -230,7 +320,7 @@
         <div id="hist-divida-total-panel">
           <div class="field">
             <label class="field-label" for="hist-divida-total-valor">Valor total já pago (antes do FinFlow)</label>
-            <input type="number" id="hist-divida-total-valor" class="input" step="0.01" min="0" placeholder="R$ 0,00">
+            <input type="text" inputmode="decimal" id="hist-divida-total-valor" class="input input-decimal" placeholder="R$ 0,00">
             <p class="field-hint">Atualiza diretamente o valor pago acumulado da dívida.</p>
           </div>
         </div>
@@ -244,6 +334,166 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-ghost" data-close-modal="modal-historico-divida">Cancelar</button>
         <button type="button" class="btn btn-primary" id="btn-salvar-hist-divida">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Atualizar taxa de juros (taxa variável) -->
+  <div class="modal-backdrop hidden" id="modal-atualizar-taxa" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title" id="atualizar-taxa-title">Atualizar taxa</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-atualizar-taxa" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label class="field-label">Taxa atual</label>
+          <p class="atualizar-taxa-atual" id="atualizar-taxa-atual">—</p>
+        </div>
+        <div class="field">
+          <label class="field-label" for="nova-taxa-input">Nova taxa (% a.m.) *</label>
+          <input class="input input-decimal" type="text" inputmode="decimal" id="nova-taxa-input" placeholder="0,0000" data-decimals="4">
+        </div>
+        <div class="field">
+          <label class="field-label" for="nova-taxa-vigencia">Vigência a partir de *</label>
+          <input class="input" type="date" id="nova-taxa-vigencia">
+        </div>
+        <div class="field">
+          <label class="field-label" for="nova-taxa-motivo">
+            Motivo <span class="field-label-hint">(opcional)</span>
+          </label>
+          <input class="input" type="text" id="nova-taxa-motivo" placeholder="Ex: Reajuste SELIC — ago/2026">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-atualizar-taxa">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-confirmar-atualizar-taxa">Atualizar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Registrar pagamento de parcela -->
+  <div class="modal-backdrop hidden" id="modal-pagar-parcela" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h2 class="modal-title" id="pagar-parcela-title">Registrar pagamento</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-pagar-parcela" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+
+        <!-- Breakdown card (atualizado dinamicamente) -->
+        <div class="pagar-parcela-card">
+          <div class="pagar-parcela-card-header">
+            <span id="pagar-parcela-label"></span>
+            <span class="pagar-parcela-saldo-text" id="pagar-parcela-saldo"></span>
+          </div>
+          <div class="pagar-parcela-row">
+            <span class="pagar-parcela-row-label">Amortização</span>
+            <span class="pagar-parcela-row-val" id="pagar-parcela-amort-val">—</span>
+          </div>
+          <div class="pagar-parcela-row pagar-parcela-row--juros">
+            <span class="pagar-parcela-row-label">Juros</span>
+            <span class="pagar-parcela-row-val" id="pagar-parcela-juros-val">—</span>
+          </div>
+          <div class="pagar-parcela-row pagar-parcela-row--correcao hidden" id="pagar-correcao-display-row">
+            <span class="pagar-parcela-row-label">Correção</span>
+            <span class="pagar-parcela-row-val" id="pagar-parcela-correcao-val">—</span>
+          </div>
+          <div class="pagar-parcela-row pagar-parcela-row--desconto hidden" id="pagar-desconto-display-row">
+            <span class="pagar-parcela-row-label">Desconto</span>
+            <span class="pagar-parcela-row-val" id="pagar-parcela-desconto-val">—</span>
+          </div>
+          <div class="pagar-parcela-row pagar-parcela-row--total">
+            <span class="pagar-parcela-row-label">Total sugerido</span>
+            <span class="pagar-parcela-row-val" id="pagar-parcela-total-val">—</span>
+          </div>
+        </div>
+
+        <!-- Controles -->
+        <div class="field-group" style="grid-template-columns: auto 1fr; align-items: end; margin-top: var(--space-4);">
+          <div class="field">
+            <label class="field-label">Parcelas</label>
+            <div class="pagar-stepper">
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-pagar-menos">−</button>
+              <span class="pagar-stepper-val" id="pagar-parcela-n-display">1</span>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-pagar-mais">+</button>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="pagar-parcela-data">Data de pagamento</label>
+            <input class="input" type="date" id="pagar-parcela-data">
+          </div>
+        </div>
+
+        <div class="field" style="margin-top: var(--space-3);">
+          <label class="field-label" for="pagar-desc-input">
+            Desconto de antecipação
+            <span class="field-label-hint">(auto-calculado, edite se necessário)</span>
+          </label>
+          <input class="input input-decimal" type="text" inputmode="decimal" id="pagar-desc-input" placeholder="0,00">
+        </div>
+
+        <div class="field" style="margin-top: var(--space-3);">
+          <label class="field-label" for="pagar-valor-real">
+            Valor real pago
+            <span class="field-label-hint">(edite se diferiu do sugerido)</span>
+          </label>
+          <input class="input input-decimal" type="text" inputmode="decimal" id="pagar-valor-real" placeholder="0,00">
+          <p class="field-hint" id="pagar-valor-real-delta"></p>
+        </div>
+
+        <!-- Registrar em Transações (sempre cria — campo obrigatório) -->
+        <div class="field" style="margin-top: var(--space-4);">
+          <label class="field-label" for="pagar-transacao-conta">
+            Conta debitada *
+            <span class="field-label-hint">(obrigatório — pagamento sempre é registrado em Transações)</span>
+          </label>
+          <select class="select" id="pagar-transacao-conta" required></select>
+        </div>
+        <input type="hidden" id="pagar-criar-transacao" checked>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-pagar-parcela">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-confirmar-pagar-parcela">Registrar pagamento</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Tabela de amortização -->
+  <div class="modal-backdrop hidden" id="modal-tabela-amort" role="dialog" aria-modal="true">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h2 class="modal-title" id="tabela-amort-title">Tabela de Amortização</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-tabela-amort" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" style="padding-top: var(--space-3);">
+        <div id="tabela-amort-summary" class="tabela-amort-summary"></div>
+        <div class="tabela-amort-wrapper" style="margin-top: var(--space-4);">
+          <table class="tabela-amort">
+            <thead>
+              <tr>
+                <th class="tabular">#</th>
+                <th class="tabular">Vencimento</th>
+                <th class="text-right tabular">Saldo inicial</th>
+                <th class="text-right tabular">Amortização</th>
+                <th class="text-right tabular">Juros</th>
+                <th class="text-right tabular">Parcela</th>
+                <th class="text-right tabular">Saldo final</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-amort-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-tabela-amort">Fechar</button>
       </div>
     </div>
   </div>

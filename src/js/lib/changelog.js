@@ -7,6 +7,28 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-07-dividas-investimentos-rework',
+    version: '0.2.3',
+    date: '07/05/2026',
+    title: 'Dívidas avançadas + Simulador de investimentos + Build com Vite',
+    items: [
+      { type: 'new',         text: 'Dívidas — regimes SAC, Price e Customizado (com fases jsonb): geração automática de tabela de amortização' },
+      { type: 'new',         text: 'Dívidas — tipo de juros unificado: SELIC, SELIC+%, CDI, CDI+%, IPCA, IPCA+% (cotações ao vivo da BrasilAPI) ou manual fixo/variável' },
+      { type: 'new',         text: 'Dívidas — histórico de mudanças de taxa quando o tipo é variável' },
+      { type: 'new',         text: 'Dívidas — correção monetária mensal aplicada ao saldo (TR, IPCA, IGPM ou taxa fixa)' },
+      { type: 'new',         text: 'Dívidas — status "Arquivada": ao excluir uma dívida com pagamentos, ela vai para o grupo Terminado preservando transações; restaurar recria o compromisso vinculado' },
+      { type: 'new',         text: 'Investimentos — Simulador de juros compostos com 3 modos: saldo final, tempo necessário e aporte mensal (taxa SELIC ou manual)' },
+      { type: 'new',         text: 'Investimentos — botão "+ Criar projeto com esses dados" no resultado do simulador, pré-preenchendo meta, saldo inicial e aporte' },
+      { type: 'new',         text: 'Investimentos — opção "Criar compromisso vinculado" no Novo projeto, com valor, frequência, data do primeiro aporte e categoria' },
+      { type: 'new',         text: 'Investimentos — fluxo de excluir/arquivar/restaurar projetos espelhando o de Dívidas (com aviso explicando o que será removido e mantido)' },
+      { type: 'new',         text: 'Modal de novo contato unificado — mesma janela em Dívidas, Investimentos, Transações e Contatos (sem divergências de UX)' },
+      { type: 'improvement', text: 'Formato de número padronizado em todo o sistema: vírgula como separador decimal, ponto como milhar' },
+      { type: 'improvement', text: 'Painel Admin — fluxo de aprovação de strings: botão "Aprovar" agora salva, aprova e fecha o modal em um clique' },
+      { type: 'improvement', text: 'Build com Vite: site em produção agora carrega 1 bundle por página em vez de 30+ arquivos separados — carregamento mais rápido' },
+      { type: 'fix',         text: 'Diversas correções menores em validações e mensagens de erro identificadas durante auditoria de código' },
+    ],
+  },
+  {
     id: '2026-05-05-transferencias-cambio',
     version: '0.2.2',
     date: '05/05/2026',

@@ -17,6 +17,9 @@ import { initColVisibility } from '../lib/col-visibility.js';
 import { escapeHtml, formatDateBR, isoMonth, showConfirm } from '../lib/utils.js';
 import { DEFAULT_COLOR, renderColorPicker, setActiveColor } from '../lib/color-palette.js';
 import { initContatoPicker } from '../components/contato-picker.js';
+import { parseDecimal, formatDecimal, autoAttachDecimalInputs } from '../lib/number-format.js';
+import { bindSimulador } from './investimentos/simulator.js';
+import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 let cachedProjetos = [];
 let cachedSubcategorias = []; // só as do grupo investimentos
@@ -24,6 +27,7 @@ let cachedPagamentos = [];    // pagos/cartão das subs de investimento
 let cachedOrcamento = [];     // mês corrente — pra "previsto neste mês"
 let cachedContatos = [];      // clientes/fornecedores do usuário
 let cachedAportes = [];       // aportes_projeto (histórico manual)
+let cachedCategoriasInvest = []; // categorias do grupo investimentos (pra picker do compromisso vinculado)
 let editingId = null;
 let detailsId = null;
 let historicoInvestId = null;
@@ -67,7 +71,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('investimentos');
   initTutorial('investimentos');
+  await loadStrings();
+  applyTranslationsToDom();
   bindEvents();
+  bindSimulador({ onCreateProject: (prefill) => openProjetoModal(null, prefill) });
+  autoAttachDecimalInputs();
   await loadAll();
 
   colVisEl = initColVisibility({
@@ -97,7 +105,7 @@ async function loadAll() {
 
   const mesAno = isoMonth(viewYear, viewMonth);
 
-  const [projetos, subcats, pagamentos, orcamento, contatos, aportes] = await Promise.all([
+  const [projetos, subcats, pagamentos, orcamento, contatos, aportes, categorias] = await Promise.all([
     supabase.from('projetos_investimento').select('*').order('nome'),
     // Subs com categoria pra cruzar com grupo='investimentos'
     supabase.from('subcategorias').select('*, categorias(grupo, cor, nome)').eq('status', 'ativa'),
@@ -111,13 +119,14 @@ async function loadAll() {
       .eq('mes_ano', mesAno),
     supabase.from('contatos').select('id, nome, tipo, status').neq('status', 'arquivado').order('nome'),
     supabase.from('aportes_projeto').select('*').order('data'),
+    supabase.from('categorias').select('id, nome, grupo, ordem').eq('grupo', 'investimentos').order('ordem'),
   ]);
 
   if (projetos.error) {
     if (/relation.*projetos_investimento/i.test(projetos.error.message)) {
-      showToast('Schema desatualizado. Rode a migration 0016 + 0017 no Supabase.', 'error', 12000);
+      showToast(t('investimentos.toast.schema_desatualizado', 'Schema desatualizado. Rode a migration 0016 + 0017 no Supabase.'), 'error', 12000);
     } else {
-      showToast('Erro ao carregar projetos: ' + projetos.error.message, 'error', 8000);
+      showToast(`${t('investimentos.toast.erro_carregar', 'Erro ao carregar projetos')}: ${projetos.error.message}`, 'error', 8000);
     }
     return;
   }
@@ -143,6 +152,13 @@ async function loadAll() {
     cachedAportes = [];
   } else {
     cachedAportes = aportes.data || [];
+  }
+
+  if (categorias.error) {
+    console.warn('[loadCategorias]', categorias.error);
+    cachedCategoriasInvest = [];
+  } else {
+    cachedCategoriasInvest = categorias.data || [];
   }
 }
 
@@ -173,6 +189,11 @@ function bindEvents() {
 
   document.getElementById('form-projeto').addEventListener('submit', saveProjeto);
 
+  // Toggle da seção "Criar compromisso vinculado" no modal de projeto
+  document.getElementById('proj-criar-compromisso').addEventListener('change', (e) => {
+    document.getElementById('proj-compromisso-fields').classList.toggle('hidden', !e.target.checked);
+  });
+
   document.getElementById('proj-cor-picker').addEventListener('click', (e) => {
     const btn = e.target.closest('.color-swatch');
     if (!btn) return;
@@ -188,7 +209,9 @@ function bindEvents() {
     openProjetoModal(proj);
   });
 
-  document.getElementById('btn-arquivar-projeto').addEventListener('click', arquivarProjeto);
+  document.getElementById('btn-excluir-projeto').addEventListener('click', excluirProjeto);
+  document.getElementById('btn-restaurar-projeto').addEventListener('click', restaurarProjeto);
+  document.getElementById('btn-confirmar-acao-projeto').addEventListener('click', confirmarAcaoProjeto);
 
   document.getElementById('btn-historico-invest').addEventListener('click', () => {
     closeModal('modal-projeto-details');
@@ -828,7 +851,7 @@ function calcPrevistoMes(projetoId) {
 // -----------------------------
 // Modal: criar / editar
 // -----------------------------
-function openProjetoModal(p = null) {
+function openProjetoModal(p = null, prefill = null) {
   editingId = p?.id || null;
   document.getElementById('modal-projeto-title').textContent = p ? 'Editar projeto' : 'Novo projeto';
   document.getElementById('btn-salvar-projeto').textContent = p ? 'Salvar alterações' : 'Salvar';
@@ -841,14 +864,59 @@ function openProjetoModal(p = null) {
   const activeCor = renderColorPicker(corPickerEl, initialCor);
   document.getElementById('proj-cor').value = activeCor;
   document.getElementById('proj-status').value        = p?.status || 'ativo';
-  document.getElementById('proj-meta-valor').value    = p?.meta_valor ?? '';
-  document.getElementById('proj-data-alvo').value     = p?.data_alvo || '';
-  document.getElementById('proj-saldo-inicial').value = p?.saldo_inicial ?? '';
+  document.getElementById('proj-meta-valor').value    = p?.meta_valor ?? (prefill?.meta_valor ?? '');
+  document.getElementById('proj-data-alvo').value     = p?.data_alvo || (prefill?.data_alvo || '');
+  document.getElementById('proj-saldo-inicial').value = p?.saldo_inicial ?? (prefill?.saldo_inicial ?? '');
 
   initContatoPickerOnce();
   contatoPicker?.setValue(p?.contato_id || '');
 
+  // Seção "Criar compromisso vinculado": só em modo CRIAÇÃO
+  const toggleWrap   = document.getElementById('proj-compromisso-toggle-wrap');
+  const compFields   = document.getElementById('proj-compromisso-fields');
+  const compCheckbox = document.getElementById('proj-criar-compromisso');
+  const compValor    = document.getElementById('proj-comp-valor');
+  const compPeriodo  = document.getElementById('proj-comp-periodo');
+  const compData     = document.getElementById('proj-comp-data');
+  const compCategSel = document.getElementById('proj-comp-categoria');
+
+  if (editingId) {
+    toggleWrap.classList.add('hidden');
+    compFields.classList.add('hidden');
+    compCheckbox.checked = false;
+  } else {
+    toggleWrap.classList.remove('hidden');
+    compCheckbox.checked = !!prefill?.aporte_mensal;
+    compFields.classList.toggle('hidden', !compCheckbox.checked);
+    compValor.value   = prefill?.aporte_mensal != null ? formatDecimal(prefill.aporte_mensal, 2) : '';
+    compPeriodo.value = 'Mensal';
+    compData.value    = todayISODate();
+
+    // Popula categorias do grupo investimentos (default = "Investimentos")
+    compCategSel.innerHTML = '';
+    if (cachedCategoriasInvest.length === 0) {
+      compCategSel.innerHTML = '<option value="">Nenhuma categoria do grupo Investimentos encontrada</option>';
+    } else {
+      cachedCategoriasInvest.forEach((c) => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.nome;
+        compCategSel.appendChild(opt);
+      });
+      const padrao = cachedCategoriasInvest.find((c) => /^investimentos?$/i.test(c.nome));
+      if (padrao) compCategSel.value = padrao.id;
+    }
+  }
+
   openModal('modal-projeto');
+}
+
+function todayISODate() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 async function saveProjeto(event) {
@@ -856,7 +924,7 @@ async function saveProjeto(event) {
   const btn = document.getElementById('btn-salvar-projeto');
 
   const nome = document.getElementById('proj-nome').value.trim();
-  if (!nome) { showToast('Informe o nome do projeto', 'error'); return; }
+  if (!nome) { showToast(t('investimentos.validacao.nome_obrigatorio', 'Informe o nome do projeto'), 'error'); return; }
 
   const payload = {
     nome,
@@ -869,22 +937,52 @@ async function saveProjeto(event) {
     contato_id:  contatoPicker?.getValue() || null,
   };
 
+  // Compromisso vinculado (só em modo criação)
+  const wantCompromisso = !editingId && document.getElementById('proj-criar-compromisso').checked;
+  let compromissoData = null;
+  if (wantCompromisso) {
+    const valor      = parseDecimal(document.getElementById('proj-comp-valor').value);
+    const periodo    = document.getElementById('proj-comp-periodo').value;
+    const dataInicio = document.getElementById('proj-comp-data').value;
+    const categoria  = document.getElementById('proj-comp-categoria').value;
+    if (!valor || valor <= 0)   { showToast(t('investimentos.validacao.aporte_obrigatorio', 'Informe o valor do aporte do compromisso'), 'error'); return; }
+    if (!dataInicio)            { showToast(t('investimentos.validacao.data_aporte_obrigatoria', 'Informe a data do primeiro aporte'), 'error'); return; }
+    if (!categoria)             { showToast(t('investimentos.validacao.categoria_obrigatoria', 'Selecione uma categoria para o compromisso'), 'error'); return; }
+    compromissoData = { valor, periodo, dataInicio, categoria_id: categoria };
+  }
+
   const labelOriginal = btn.textContent;
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Salvando…';
 
   try {
     let response;
+    let user = null;
     if (editingId) {
       response = await supabase.from('projetos_investimento').update(payload).eq('id', editingId).select().single();
     } else {
-      const user = await getCurrentUser();
+      user = await getCurrentUser();
       if (!user) throw new Error('Sessão expirada');
       response = await supabase.from('projetos_investimento').insert({ ...payload, user_id: user.id }).select().single();
     }
     if (response.error) throw response.error;
 
-    showToast(editingId ? 'Projeto atualizado' : 'Projeto criado', 'success');
+    // Cria compromisso vinculado se solicitado
+    if (compromissoData && response.data?.id && user) {
+      try {
+        await ensureSubcategoriaForProjeto(response.data.id, user.id, payload.nome, compromissoData);
+        showToast(t('investimentos.toast.criado_com_compromisso', 'Projeto criado e compromisso vinculado'), 'success');
+      } catch (err) {
+        console.warn('[ensureSubcategoriaForProjeto]', err);
+        showToast('Projeto criado, mas falhou ao criar compromisso: ' + (err?.message || String(err)), 'error', 10000);
+      }
+    } else {
+      showToast(editingId
+        ? t('investimentos.toast.atualizado', 'Projeto atualizado')
+        : t('investimentos.toast.criado', 'Projeto criado'),
+        'success');
+    }
+
     closeModal('modal-projeto');
     editingId = null;
     await loadAll();
@@ -895,6 +993,40 @@ async function saveProjeto(event) {
     btn.disabled = false;
     btn.textContent = labelOriginal;
   }
+}
+
+// -----------------------------
+// Auto-criar subcategoria vinculada ao projeto de investimento
+// (espelha ensureSubcategoriaForDivida em dividas.js)
+// -----------------------------
+async function ensureSubcategoriaForProjeto(projetoId, userId, nomeProjeto, comp) {
+  // Já existe sub vinculada a esse projeto com mesmo nome? evita duplicata acidental
+  const { data: existing, error: existErr } = await supabase.from('subcategorias')
+    .select('id')
+    .eq('projeto_id', projetoId)
+    .limit(1);
+  if (existErr) throw existErr;
+  if (existing && existing.length > 0) return; // já existe pelo menos uma sub vinculada
+
+  const [, , diaStr] = comp.dataInicio.split('-');
+  const vencDia = parseInt(diaStr) || 1;
+
+  const { error: insErr } = await supabase.from('subcategorias').insert({
+    user_id:        userId,
+    nome:           nomeProjeto,
+    tipo:           'Despesa',
+    categoria_id:   comp.categoria_id,
+    projeto_id:     projetoId,
+    tipo_pagamento: 'Boleto',
+    vencimento_dia: vencDia,
+    periodo:        comp.periodo,
+    iniciado_em:    comp.dataInicio,
+    moeda:          'BRL',
+    valor_base:     comp.valor,
+    status:         'ativa',
+    descricao:      `Auto-criado para o projeto de investimento "${nomeProjeto}"`,
+  });
+  if (insErr) throw insErr;
 }
 
 // -----------------------------
@@ -1009,33 +1141,248 @@ function openDetailsModal(id) {
     }
   `;
 
-  // Botão Arquivar: hide se já está arquivado
-  const btnArq = document.getElementById('btn-arquivar-projeto');
-  btnArq.classList.toggle('hidden', p.status === 'arquivado');
+  const arquivado = p.status === 'arquivado';
+  document.getElementById('btn-excluir-projeto').classList.toggle('hidden', arquivado);
+  document.getElementById('btn-restaurar-projeto').classList.toggle('hidden', !arquivado);
+  document.getElementById('btn-editar-projeto').classList.toggle('hidden', arquivado);
 
   openModal('modal-projeto-details');
 }
 
 // -----------------------------
-// Arquivar projeto
+// Excluir / Arquivar projeto
 // -----------------------------
-async function arquivarProjeto() {
+let pendingAcaoProjeto = null; // 'arquivar' | 'excluir'
+let pendingCompBackup  = null; // dados do compromisso pra salvar antes de arquivar
+
+async function excluirProjeto() {
   const p = cachedProjetos.find((x) => x.id === detailsId);
   if (!p) return;
-  if (!await showConfirm(`Arquivar "${escapeHtml(p.nome)}"? Ele some da listagem ativa, mas os dados ficam preservados. Você pode reativar depois.`, { okLabel: 'Arquivar', danger: false })) return;
 
-  const { error } = await supabase
-    .from('projetos_investimento')
-    .update({ status: 'arquivado' })
-    .eq('id', p.id);
-  if (error) {
-    showToast('Erro ao arquivar: ' + error.message, 'error', 8000);
-    return;
+  const nome = escapeHtml(p.nome);
+  const subs = cachedSubcategorias.filter((s) => s.projeto_id === p.id);
+  const subCount = subs.length;
+  const aportesManuais = cachedAportes.filter((a) => a.projeto_id === p.id).length;
+  const aportesReais   = cachedPagamentos.filter((pg) => pg.subcategorias?.projeto_id === p.id).length;
+  const hasAportes     = aportesManuais > 0 || aportesReais > 0;
+
+  const titleEl  = document.getElementById('proj-confirmar-title');
+  const msgEl    = document.getElementById('proj-confirmar-msg');
+  const btnAcao  = document.getElementById('btn-confirmar-acao-projeto');
+  const item     = (n, sing, pl) => `${n} ${n === 1 ? sing : (pl || sing + 's')}`;
+
+  if (hasAportes) {
+    // ── COM APORTES: arquivar (soft delete) ─────────────────────
+    pendingAcaoProjeto = 'arquivar';
+    // Guarda dados da subcategoria vinculada para restauração futura
+    const sub = subs.find((s) => s.descricao?.startsWith('Auto-criado para o projeto')) || subs[0];
+    pendingCompBackup = sub ? {
+      valor_base:   sub.valor_base,
+      periodo:      sub.periodo,
+      categoria_id: sub.categoria_id,
+      data_inicio:  sub.iniciado_em,
+    } : null;
+
+    titleEl.textContent = 'Arquivar projeto';
+    btnAcao.textContent = 'Arquivar';
+    btnAcao.className = 'btn btn-warning';
+    btnAcao.dataset.acao = 'arquivar';
+
+    const totalAportes = aportesManuais + aportesReais;
+    const deletados = [];
+    if (subCount > 0) deletados.push(`<li>${item(subCount, 'compromisso vinculado', 'compromissos vinculados')} (subcategoria)</li>`);
+
+    msgEl.innerHTML = `
+      <p style="margin-bottom: var(--space-3);">O projeto <strong>"${nome}"</strong> tem <strong>${item(totalAportes, 'aporte registrado', 'aportes registrados')}</strong>. Por isso ele será <strong>arquivado</strong> em vez de excluído.</p>
+
+      ${deletados.length ? `
+        <div class="confirm-section confirm-section--danger">
+          <h4 class="confirm-section-title">🗑️ O que será removido</h4>
+          <ul class="confirm-list">${deletados.join('')}</ul>
+        </div>
+      ` : ''}
+
+      <div class="confirm-section confirm-section--info">
+        <h4 class="confirm-section-title">📦 O que será mantido</h4>
+        <ul class="confirm-list">
+          <li>O próprio <strong>projeto</strong> (movido para o grupo "Terminado" com status <strong>Arquivado</strong>)</li>
+          <li>${item(totalAportes, 'aporte no histórico', 'aportes no histórico')}</li>
+          <li>Transações já registradas nas contas (vínculo via subcategoria preservado como referência)</li>
+        </ul>
+      </div>
+
+      <div class="confirm-section confirm-section--success">
+        <h4 class="confirm-section-title">↻ Se você restaurar depois</h4>
+        <ul class="confirm-list">
+          <li>Status volta para <strong>Ativo</strong></li>
+          <li>Projeto volta para "Em progresso" ou "Por começar"</li>
+          ${pendingCompBackup ? '<li>O <strong>compromisso é recriado automaticamente</strong> em Compromissos → Investimentos</li>' : ''}
+          <li>Histórico de aportes permanece intacto</li>
+        </ul>
+      </div>
+    `;
+  } else {
+    // ── SEM APORTES: hard delete ──────────────────────────────────
+    pendingAcaoProjeto = 'excluir';
+    pendingCompBackup  = null;
+
+    titleEl.textContent = 'Excluir projeto';
+    btnAcao.textContent = 'Excluir';
+    btnAcao.className = 'btn btn-danger';
+    btnAcao.dataset.acao = 'excluir';
+
+    const itens = [`<li>O próprio <strong>projeto</strong> "${nome}"</li>`];
+    if (subCount > 0) itens.push(`<li>${item(subCount, 'compromisso vinculado', 'compromissos vinculados')} (subcategoria)</li>`);
+
+    msgEl.innerHTML = `
+      <p style="margin-bottom: var(--space-3);">Como este projeto <strong>não tem aportes registrados</strong>, ele será excluído permanentemente.</p>
+
+      <div class="confirm-section confirm-section--danger">
+        <h4 class="confirm-section-title">🗑️ O que será removido</h4>
+        <ul class="confirm-list">${itens.join('')}</ul>
+      </div>
+
+      <p class="confirm-irreversible">⚠️ Esta ação não pode ser desfeita.</p>
+    `;
   }
-  showToast('Projeto arquivado', 'success');
+
   closeModal('modal-projeto-details');
-  await loadAll();
-  render();
+  openModal('modal-confirmar-projeto');
+}
+
+async function confirmarAcaoProjeto() {
+  const p = cachedProjetos.find((x) => x.id === detailsId);
+  if (!p) return;
+
+  const btn = document.getElementById('btn-confirmar-acao-projeto');
+  const labelOrig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Aguarde…';
+
+  try {
+    if (pendingAcaoProjeto === 'restaurar') {
+      const { error: updErr } = await supabase
+        .from('projetos_investimento')
+        .update({ status: 'ativo' })
+        .eq('id', p.id);
+      if (updErr) throw updErr;
+
+      if (p.comp_valor_base && p.comp_categoria_id && p.comp_data_inicio) {
+        const user = await getCurrentUser();
+        if (user) {
+          try {
+            await ensureSubcategoriaForProjeto(p.id, user.id, p.nome, {
+              valor:        p.comp_valor_base,
+              periodo:      p.comp_periodo || 'Mensal',
+              categoria_id: p.comp_categoria_id,
+              dataInicio:   p.comp_data_inicio,
+            });
+            showToast(`Projeto "${p.nome}" restaurado — compromisso recriado`, 'success');
+          } catch (subErr) {
+            console.warn('[restaurar] falha ao recriar subcategoria', subErr);
+            showToast(`Projeto restaurado, mas falhou ao recriar compromisso: ${subErr?.message || ''}`, 'error', 10000);
+          }
+        }
+      } else {
+        showToast(`Projeto "${p.nome}" restaurado`, 'success');
+      }
+
+      closeModal('modal-confirmar-projeto');
+      detailsId = null;
+      pendingAcaoProjeto = null;
+      await loadAll();
+      render();
+      return;
+
+    } else if (pendingAcaoProjeto === 'arquivar') {
+      // 1. Salva backup do compromisso no projeto
+      const backupPayload = pendingCompBackup ? {
+        comp_valor_base:   pendingCompBackup.valor_base,
+        comp_periodo:      pendingCompBackup.periodo,
+        comp_categoria_id: pendingCompBackup.categoria_id,
+        comp_data_inicio:  pendingCompBackup.data_inicio,
+      } : {};
+
+      const { error: updErr } = await supabase
+        .from('projetos_investimento')
+        .update({ status: 'arquivado', ...backupPayload })
+        .eq('id', p.id);
+      if (updErr) throw updErr;
+
+      // 2. Remove subcategorias vinculadas (cascades orcamento + pagamentos futuros)
+      const { error: subErr } = await supabase
+        .from('subcategorias')
+        .delete()
+        .eq('projeto_id', p.id);
+      if (subErr) console.warn('[arquivar] falha ao remover subcategoria', subErr);
+
+      showToast(`Projeto "${p.nome}" arquivado — movido para Terminado`, 'success');
+
+    } else {
+      // Hard delete — aportes_projeto cascadeiam automaticamente
+      const { error } = await supabase
+        .from('projetos_investimento')
+        .delete()
+        .eq('id', p.id);
+      if (error) throw error;
+
+      showToast(`Projeto "${p.nome}" excluído`, 'success');
+    }
+
+    closeModal('modal-confirmar-projeto');
+    detailsId = null;
+    pendingAcaoProjeto = null;
+    pendingCompBackup  = null;
+    await loadAll();
+    render();
+  } catch (err) {
+    showToast('Erro: ' + (err?.message || String(err)), 'error', 8000);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = labelOrig;
+  }
+}
+
+// -----------------------------
+// Restaurar projeto arquivado (mostra aviso antes de executar)
+// -----------------------------
+function restaurarProjeto() {
+  const p = cachedProjetos.find((x) => x.id === detailsId);
+  if (!p) return;
+
+  pendingAcaoProjeto = 'restaurar';
+  const nome         = escapeHtml(p.nome);
+  const temBackup    = !!(p.comp_valor_base && p.comp_categoria_id && p.comp_data_inicio);
+  const aportesManuais = cachedAportes.filter((a) => a.projeto_id === p.id).length;
+
+  const titleEl = document.getElementById('proj-confirmar-title');
+  const msgEl   = document.getElementById('proj-confirmar-msg');
+  const btnAcao = document.getElementById('btn-confirmar-acao-projeto');
+
+  titleEl.textContent = 'Restaurar projeto';
+  btnAcao.textContent = 'Restaurar';
+  btnAcao.className   = 'btn btn-success';
+  btnAcao.dataset.acao = 'restaurar';
+
+  msgEl.innerHTML = `
+    <p style="margin-bottom: var(--space-3);">O projeto <strong>"${nome}"</strong> está arquivado. Restaurar irá colocá-lo de volta no fluxo ativo.</p>
+
+    <div class="confirm-section confirm-section--success">
+      <h4 class="confirm-section-title">↻ O que vai acontecer</h4>
+      <ul class="confirm-list">
+        <li>Status muda de <strong>Arquivado</strong> → <strong>Ativo</strong></li>
+        <li>Projeto volta para "${aportesManuais > 0 ? 'Em progresso' : 'Por começar'}"</li>
+        ${temBackup
+          ? '<li>O <strong>compromisso (subcategoria) é recriado automaticamente</strong> em Compromissos → Investimentos, com mesmo valor e frequência</li>'
+          : '<li>Nenhum compromisso vinculado para recriar</li>'
+        }
+        <li>Histórico de aportes permanece intacto</li>
+      </ul>
+    </div>
+  `;
+
+  closeModal('modal-projeto-details');
+  openModal('modal-confirmar-projeto');
 }
 
 // -----------------------------
@@ -1160,7 +1507,7 @@ async function saveHistoricoInvest() {
         .update({ saldo_inicial: valor })
         .eq('id', historicoInvestId);
       if (error) throw error;
-      showToast('Saldo inicial atualizado', 'success');
+      showToast(t('investimentos.toast.saldo_atualizado', 'Saldo inicial atualizado'), 'success');
     } else {
       // Collect rows from DOM
       const rows = [];
@@ -1201,4 +1548,6 @@ async function saveHistoricoInvest() {
     btn.textContent = 'Salvar';
   }
 }
+
+// Simulador de juros compostos extraído para ./investimentos/simulator.js
 

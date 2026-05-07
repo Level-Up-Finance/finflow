@@ -57,11 +57,23 @@ export function findSimilarContatos(nome, contatos) {
 // Insere um contato no Supabase. Retorna o registro criado ou null em erro.
 // O caller é responsável por adicionar ao seu cache local.
 export async function criarContato(nome, tipo) {
+  return criarContatoCompleto({ nome, tipo });
+}
+
+// Versão completa: aceita qualquer subset de campos do contato.
+export async function criarContatoCompleto(payload) {
   const user = await getCurrentUser();
   if (!user) return null;
+  const cleaned = {};
+  for (const [k, v] of Object.entries(payload || {})) {
+    if (v === undefined) continue;
+    cleaned[k] = (typeof v === 'string' ? v.trim() : v) || null;
+  }
+  if (!cleaned.nome) return null;
+  if (!cleaned.tipo) cleaned.tipo = 'fornecedor';
   const { data, error } = await supabase
     .from('contatos')
-    .insert({ user_id: user.id, nome, tipo })
+    .insert({ user_id: user.id, ...cleaned })
     .select()
     .single();
   if (error) {

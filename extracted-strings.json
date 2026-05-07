@@ -1,0 +1,706 @@
+[
+  {
+    "chave": "dividas.btn_nova",
+    "pt_br": "Nova dívida",
+    "pagina": "dividas",
+    "fontes": [
+      "dividas.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "dividas.descricao",
+    "pt_br": "Acompanhe dívidas ativas, em negociação e quitadas com barras de progresso.",
+    "pagina": "dividas",
+    "fontes": [
+      "dividas.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "dividas.eyebrow",
+    "pt_br": "Controle",
+    "pagina": "dividas",
+    "fontes": [
+      "dividas.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "dividas.modal.label.credor",
+    "pt_br": "Credor",
+    "pagina": "dividas",
+    "fontes": [
+      "dividas.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "dividas.modal.label.nome",
+    "pt_br": "Nome da dívida *",
+    "pagina": "dividas",
+    "fontes": [
+      "dividas.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "dividas.modal.placeholder.credor",
+    "pt_br": "Buscar contato ou digitar novo nome…",
+    "pagina": "dividas",
+    "fontes": [
+      "dividas.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "dividas.modal.placeholder.nome",
+    "pt_br": "Ex: Financiamento carro",
+    "pagina": "dividas",
+    "fontes": [
+      "dividas.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "dividas.titulo",
+    "pt_br": "Dívidas",
+    "pagina": "dividas",
+    "fontes": [
+      "dividas.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "dividas.toast.arquivada",
+    "pt_br": "Dívida arquivada (movida para Terminado)",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.toast.atualizada",
+    "pt_br": "Dívida atualizada",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.toast.categoria_nao_encontrada",
+    "pt_br": "Categoria \"Dívidas\" não encontrada — vá em Configurações para criá-la antes.",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.toast.criada",
+    "pt_br": "Dívida cadastrada",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.toast.erro_arquivar",
+    "pt_br": "Erro ao arquivar",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.toast.erro_carregar",
+    "pt_br": "Erro ao carregar dívidas",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.toast.erro_excluir",
+    "pt_br": "Erro ao excluir",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.toast.erro_restaurar",
+    "pt_br": "Erro ao restaurar",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.toast.erro_salvar",
+    "pt_br": "Erro ao salvar",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.toast.excluida",
+    "pt_br": "Dívida excluída",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.toast.taxa_atualizada",
+    "pt_br": "Taxa atualizada",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.toast.todas_parcelas_pagas",
+    "pt_br": "Todas as parcelas já foram pagas",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.validacao.conta_obrigatoria",
+    "pt_br": "Selecione a conta debitada — pagamento sempre é registrado em Transações.",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.validacao.data_inicio",
+    "pt_br": "Informe a data de início",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.validacao.data_pagamento",
+    "pt_br": "Informe a data de pagamento",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.validacao.desconto_excede",
+    "pt_br": "Desconto não pode exceder o total de juros",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.validacao.nome_obrigatorio",
+    "pt_br": "Informe o nome da dívida",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.validacao.nova_taxa",
+    "pt_br": "Informe a nova taxa",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.validacao.parcelas_obrigatorias",
+    "pt_br": "Informe o número de parcelas",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.validacao.regime_sem_parcelas",
+    "pt_br": "Regime selecionado — informe o número de parcelas.",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.validacao.valor_total",
+    "pt_br": "Informe um valor total válido",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "dividas.validacao.vigencia",
+    "pt_br": "Informe a data de vigência",
+    "pagina": "dividas",
+    "fontes": [
+      "src/js/pages/dividas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "global.btn.cancelar",
+    "pt_br": "Cancelar",
+    "pagina": "global",
+    "fontes": [
+      "investimentos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "global.btn.fechar",
+    "pt_br": "Fechar",
+    "pagina": "global",
+    "fontes": [
+      "pagamentos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "global.btn.salvar",
+    "pt_br": "Salvar",
+    "pagina": "global",
+    "fontes": [
+      "investimentos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "investimentos.btn.novo",
+    "pt_br": "+ Novo projeto",
+    "pagina": "investimentos",
+    "fontes": [
+      "investimentos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "investimentos.descricao",
+    "pt_br": "Cada projeto é uma meta. Compromissos do grupo Investimentos podem ser atrelados a um projeto.",
+    "pagina": "investimentos",
+    "fontes": [
+      "investimentos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "investimentos.empty.btn",
+    "pt_br": "+ Criar primeiro projeto",
+    "pagina": "investimentos",
+    "fontes": [
+      "investimentos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "investimentos.empty.titulo",
+    "pt_br": "Nenhum projeto ainda",
+    "pagina": "investimentos",
+    "fontes": [
+      "investimentos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "investimentos.titulo",
+    "pt_br": "Investimentos",
+    "pagina": "investimentos",
+    "fontes": [
+      "investimentos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "investimentos.toast.atualizado",
+    "pt_br": "Projeto atualizado",
+    "pagina": "investimentos",
+    "fontes": [
+      "src/js/pages/investimentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "investimentos.toast.criado",
+    "pt_br": "Projeto criado",
+    "pagina": "investimentos",
+    "fontes": [
+      "src/js/pages/investimentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "investimentos.toast.criado_com_compromisso",
+    "pt_br": "Projeto criado e compromisso vinculado",
+    "pagina": "investimentos",
+    "fontes": [
+      "src/js/pages/investimentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "investimentos.toast.erro_carregar",
+    "pt_br": "Erro ao carregar projetos",
+    "pagina": "investimentos",
+    "fontes": [
+      "src/js/pages/investimentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "investimentos.toast.saldo_atualizado",
+    "pt_br": "Saldo inicial atualizado",
+    "pagina": "investimentos",
+    "fontes": [
+      "src/js/pages/investimentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "investimentos.toast.schema_desatualizado",
+    "pt_br": "Schema desatualizado. Rode a migration 0016 + 0017 no Supabase.",
+    "pagina": "investimentos",
+    "fontes": [
+      "src/js/pages/investimentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "investimentos.validacao.aporte_obrigatorio",
+    "pt_br": "Informe o valor do aporte do compromisso",
+    "pagina": "investimentos",
+    "fontes": [
+      "src/js/pages/investimentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "investimentos.validacao.categoria_obrigatoria",
+    "pt_br": "Selecione uma categoria para o compromisso",
+    "pagina": "investimentos",
+    "fontes": [
+      "src/js/pages/investimentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "investimentos.validacao.data_aporte_obrigatoria",
+    "pt_br": "Informe a data do primeiro aporte",
+    "pagina": "investimentos",
+    "fontes": [
+      "src/js/pages/investimentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "investimentos.validacao.nome_obrigatorio",
+    "pt_br": "Informe o nome do projeto",
+    "pagina": "investimentos",
+    "fontes": [
+      "src/js/pages/investimentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "minha.chave",
+    "pt_br": "Texto pt-BR",
+    "pagina": "minha",
+    "fontes": [
+      "src/js/lib/textos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "nav.dividas",
+    "pt_br": "Dívidas",
+    "pagina": "nav",
+    "fontes": [
+      "dividas.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "pagamentos.btn.salvar_observacao",
+    "pt_br": "Salvar observação",
+    "pagina": "pagamentos",
+    "fontes": [
+      "pagamentos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "pagamentos.descricao",
+    "pt_br": "Controle do que foi pago no mês. Marque status e registre o valor real efetivamente pago.",
+    "pagina": "pagamentos",
+    "fontes": [
+      "pagamentos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "pagamentos.empty.btn",
+    "pt_br": "Ir para Compromissos",
+    "pagina": "pagamentos",
+    "fontes": [
+      "pagamentos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "pagamentos.empty.mensagem",
+    "pt_br": "Cadastre compromissos ativos pra começar a registrar pagamentos. Pagamentos são gerados automaticamente a partir do orçamento.",
+    "pagina": "pagamentos",
+    "fontes": [
+      "pagamentos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "pagamentos.empty.titulo",
+    "pt_br": "Nenhum pagamento neste mês",
+    "pagina": "pagamentos",
+    "fontes": [
+      "pagamentos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "pagamentos.titulo",
+    "pt_br": "Pagamentos",
+    "pagina": "pagamentos",
+    "fontes": [
+      "pagamentos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "pagamentos.toast.erro_limpar",
+    "pt_br": "Erro ao limpar pagamentos",
+    "pagina": "pagamentos",
+    "fontes": [
+      "src/js/pages/pagamentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "pagamentos.toast.erro_marcar_pago",
+    "pt_br": "Erro ao marcar como pago",
+    "pagina": "pagamentos",
+    "fontes": [
+      "src/js/pages/pagamentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "pagamentos.toast.limpos",
+    "pt_br": "Pagamentos pendentes limpos. Regenerando…",
+    "pagina": "pagamentos",
+    "fontes": [
+      "src/js/pages/pagamentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "pagamentos.toast.marcado_pago",
+    "pt_br": "Marcado como pago",
+    "pagina": "pagamentos",
+    "fontes": [
+      "src/js/pages/pagamentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "pagamentos.toast.regenerados",
+    "pt_br": "Blocos regenerados",
+    "pagina": "pagamentos",
+    "fontes": [
+      "src/js/pages/pagamentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "pagamentos.toast.schema_desatualizado",
+    "pt_br": "Schema desatualizado. Rode a migration 0011 no Supabase pra blocos dinâmicos.",
+    "pagina": "pagamentos",
+    "fontes": [
+      "src/js/pages/pagamentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "pagamentos.validacao.data_inicio",
+    "pt_br": "Informe a data de início",
+    "pagina": "pagamentos",
+    "fontes": [
+      "src/js/pages/pagamentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "pagamentos.validacao.valor_invalido",
+    "pt_br": "Valor inválido",
+    "pagina": "pagamentos",
+    "fontes": [
+      "src/js/pages/pagamentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  }
+]
