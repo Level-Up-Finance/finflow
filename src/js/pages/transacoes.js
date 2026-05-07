@@ -37,6 +37,7 @@ import { escapeHtml, formatDateBR, showConfirm } from '../lib/utils.js';
 import { initContatoPicker } from '../components/contato-picker.js';
 import { initColVisibility } from '../lib/col-visibility.js';
 import { fetchExchangeRate } from '../lib/currency.js';
+import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 import {
   isContaCartao,
   syncTransacaoFatura,
@@ -118,6 +119,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('transacoes');
   initTutorial('transacoes');
+  await loadStrings();
+  applyTranslationsToDom();
   initFilters();
   bindEvents();
   await loadAll();
@@ -167,7 +170,7 @@ async function loadAll() {
   ]);
 
   if (transRes.error) {
-    showToast('Erro ao carregar transações: ' + transRes.error.message, 'error', 8000);
+    showToast(`${t('transacoes.toast.erro_carregar', 'Erro ao carregar transações')}: ${transRes.error.message}`, 'error', 8000);
     document.getElementById('trans-loading').classList.add('hidden');
     return;
   }
@@ -350,8 +353,8 @@ function getFilterRange() {
   if (filterMode === 'periodo') {
     const start = document.getElementById('filter-dt-inicio').value;
     const end   = document.getElementById('filter-dt-fim').value;
-    if (!start || !end) { showToast('Informe as duas datas do período', 'warning'); return null; }
-    if (start > end)    { showToast('Data de início deve ser anterior ao fim', 'warning'); return null; }
+    if (!start || !end) { showToast(t('transacoes.validacao.datas_obrigatorias', 'Informe as duas datas do período'), 'warning'); return null; }
+    if (start > end)    { showToast(t('transacoes.validacao.datas_ordem', 'Data de início deve ser anterior ao fim'), 'warning'); return null; }
     return { start, end };
   }
   return { start: null, end: null };
@@ -401,7 +404,7 @@ async function execBulkDelete() {
   const allIds = [...new Set([...ids, ...parIds])];
 
   const { error } = await supabase.from('transacoes').delete().in('id', allIds);
-  if (error) { showToast('Erro ao excluir: ' + error.message, 'error', 8000); return; }
+  if (error) { showToast(`${t('transacoes.toast.erro_excluir', 'Erro ao excluir')}: ${error.message}`, 'error', 8000); return; }
 
   allIds.forEach((id) => {
     const idx = cachedTransacoes.findIndex((t) => t.id === id);
@@ -963,7 +966,7 @@ async function execConfirmRecon(id) {
     }
   }
 
-  showToast('Transação reconciliada', 'success');
+  showToast(t('transacoes.toast.reconciliada', 'Transação reconciliada'), 'success');
   render();
 }
 

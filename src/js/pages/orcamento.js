@@ -18,6 +18,7 @@ import { formatCurrency } from '../lib/compromissos-config.js';
 import { fetchExchangeRate, startCurrencyAutoRefresh } from '../lib/currency.js';
 import { initCurrencyWidget } from '../components/currency-widget.js';
 import { escapeHtml, isoMonth } from '../lib/utils.js';
+import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 // -----------------------------
 // State
@@ -76,6 +77,8 @@ const SUPER_BLOCOS = [
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('orcamento');
+  await loadStrings();
+  applyTranslationsToDom();
   initCurrencyWidget('currency-widget');
   bindEvents();
   await loadCategorias();
@@ -284,7 +287,7 @@ async function ensureOrcamentoForMonth(year, month) {
 
   if (error) {
     console.error('[ensureOrcamentoForMonth]', error);
-    showToast('Erro ao gerar orçamento: ' + error.message, 'error', 10000);
+    showToast(`${t('orcamento.toast.erro_gerar', 'Erro ao gerar orçamento')}: ${error.message}`, 'error', 10000);
   }
 }
 
@@ -740,7 +743,7 @@ async function saveCell(input) {
   const moeda = entry.moeda || 'BRL';
 
   if (isNaN(newValueBRL) || newValueBRL < 0) {
-    showToast('Valor inválido', 'error');
+    showToast(t('orcamento.validacao.valor_invalido', 'Valor inválido'), 'error');
     // Restaura input com BRL atual
     const valorBRLAtual = convertToBRL(oldValueOrig, moeda, entry);
     input.value = (valorBRLAtual !== null ? valorBRLAtual : oldValueOrig).toFixed(2);

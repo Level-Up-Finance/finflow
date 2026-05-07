@@ -43,6 +43,7 @@ import { typeIcon as accountTypeIcon, typeColor as accountTypeColor } from '../l
 import { escapeHtml, formatDateBR, todayISO, getInitials } from '../lib/utils.js';
 import { fetchExchangeRate } from '../lib/currency.js';
 import { initContatoPicker } from '../components/contato-picker.js';
+import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 // -----------------------------
 // State
@@ -81,6 +82,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('compromissos');
   initTutorial('compromissos');
+  await loadStrings();
+  applyTranslationsToDom();
   initCurrencyWidget('currency-widget');
 
   await loadContas();
@@ -1539,7 +1542,7 @@ async function saveQuickValor(event) {
   const motivo = document.getElementById('quick-motivo-input').value.trim() || null;
 
   if (novoValorRaw === '' || isNaN(Number(novoValorRaw))) {
-    showToast('Informe um valor válido', 'error');
+    showToast(t('compromissos.validacao.valor_invalido', 'Informe um valor válido'), 'error');
     return;
   }
 
@@ -1547,7 +1550,7 @@ async function saveQuickValor(event) {
   if (!detailsCompromisso) return;
 
   if (novoValor === Number(detailsCompromisso.valor_base)) {
-    showToast('O valor não mudou', 'info');
+    showToast(t('compromissos.toast.valor_inalterado', 'O valor não mudou'), 'info');
     return;
   }
 
@@ -1566,7 +1569,7 @@ async function saveQuickValor(event) {
 
     await logHistoryEntries(detailsCompromisso.id, detailsCompromisso, data, motivo);
 
-    showToast('Valor atualizado', 'success');
+    showToast(t('compromissos.toast.valor_atualizado', 'Valor atualizado'), 'success');
     closeModal('modal-quick-valor');
     await loadCompromissos();
   } catch (err) {
@@ -2450,7 +2453,7 @@ function openDayModal(date, events) {
 // -----------------------------
 async function saveCatDirectCompromisso() {
   const catId = editingCatId || document.getElementById('comp-cat-existente').value;
-  if (!catId) { showToast('Escolha uma categoria', 'error'); return; }
+  if (!catId) { showToast(t('compromissos.validacao.categoria_obrigatoria', 'Escolha uma categoria'), 'error'); return; }
 
   const tipo          = document.getElementById('comp-tipo').value;
   const conta_id      = document.getElementById('comp-conta').value || null;
@@ -2474,11 +2477,11 @@ async function saveCatDirectCompromisso() {
   const isDividasCat = cat?.grupo === 'dividas' || /dívida|divida/i.test(cat?.nome || '');
   const dividaRaw = isDividasCat ? (document.getElementById('comp-divida')?.value || '') : '';
 
-  if (!tipo) { showToast('Escolha o tipo', 'error'); return; }
-  if (!iniciado_em) { showToast('Informe a data de início', 'error'); return; }
+  if (!tipo) { showToast(t('compromissos.validacao.tipo_obrigatorio', 'Escolha o tipo'), 'error'); return; }
+  if (!iniciado_em) { showToast(t('compromissos.validacao.data_inicio', 'Informe a data de início'), 'error'); return; }
   if (isDividasCat && !dividaRaw) { showToast('Vincule uma dívida existente ou crie uma nova', 'error'); return; }
   if (!valorVariavel && (valorBaseRaw === '' || isNaN(Number(valorBaseRaw)) || Number(valorBaseRaw) <= 0)) {
-    showToast('Informe um valor maior que zero', 'error'); return;
+    showToast(t('compromissos.validacao.valor_maior_zero', 'Informe um valor maior que zero'), 'error'); return;
   }
 
   const usaDiaSemana = periodo === 'Semanal' || periodo === 'Quinzenal';
@@ -2622,7 +2625,7 @@ async function saveCompromisso(event) {
   if (!iniciado_em) { showToast('Informe a data de início', 'error'); return; }
   if (isDividasCat && !dividaRaw) { showToast('Vincule uma dívida existente ou crie uma nova', 'error'); return; }
   if (!valorVariavel && (valorBaseRaw === '' || isNaN(Number(valorBaseRaw)))) {
-    showToast('Informe um valor válido', 'error'); return;
+    showToast(t('compromissos.validacao.valor_invalido', 'Informe um valor válido'), 'error'); return;
   }
 
   const usaDiaSemana = periodo === 'Semanal' || periodo === 'Quinzenal';

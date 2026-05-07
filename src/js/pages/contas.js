@@ -20,6 +20,7 @@ import { checkAndCloseFaturas } from '../lib/faturas-cartao.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
 import { COLOR_PALETTE, DEFAULT_COLOR, renderColorPicker } from '../lib/color-palette.js';
 import { fetchExchangeRate } from '../lib/currency.js';
+import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 // Cache local de taxas (moeda → taxa para BRL). Reusa o cache de 5min de currency.js.
 const ratesMapLocal = new Map();
@@ -67,6 +68,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
   await initSidebar('contas');
   initTutorial('contas');
+  await loadStrings();
+  applyTranslationsToDom();
   renderTipoFilters();
   renderPickers();
   bindEvents();
@@ -941,7 +944,7 @@ async function loadContas() {
   if (error) {
     console.error('[loadContas] falhou:', error);
     container.innerHTML = '';
-    showToast('Erro ao carregar contas: ' + error.message, 'error', 10000);
+    showToast(`${t('contas.toast.erro_carregar', 'Erro ao carregar contas')}: ${error.message}`, 'error', 10000);
     return;
   }
 
@@ -1316,11 +1319,11 @@ async function saveConta(event) {
   const vencimento_raw = document.getElementById('conta-vencimento').value;
   const status         = document.getElementById('conta-status').value;
 
-  if (!nome) { showToast('Informe o nome do banco/cartão', 'error'); return; }
-  if (!desde) { showToast('Informe a data inicial (Desde)', 'error'); return; }
+  if (!nome) { showToast(t('contas.validacao.nome_obrigatorio', 'Informe o nome do banco/cartão'), 'error'); return; }
+  if (!desde) { showToast(t('contas.validacao.desde_obrigatorio', 'Informe a data inicial (Desde)'), 'error'); return; }
   if (tipo === 'Cartão de Crédito') {
     if (!fec_fatura_raw || fec_fatura_raw < 1 || fec_fatura_raw > 31) {
-      showToast('Informe o dia de fechamento da fatura (1–31)', 'error'); return;
+      showToast(t('contas.validacao.dia_fechamento', 'Informe o dia de fechamento da fatura (1–31)'), 'error'); return;
     }
     if (!vencimento_raw || vencimento_raw < 1 || vencimento_raw > 31) {
       showToast('Informe o dia de vencimento da fatura (1–31)', 'error'); return;

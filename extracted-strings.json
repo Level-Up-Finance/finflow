@@ -1,5 +1,203 @@
 [
   {
+    "chave": "compromissos.descricao",
+    "pt_br": "Suas entradas e saídas recorrentes. Organizadas em Categorias e Subcategorias.",
+    "pagina": "compromissos",
+    "fontes": [
+      "compromissos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "compromissos.empty.titulo",
+    "pt_br": "Nenhum compromisso cadastrado",
+    "pagina": "compromissos",
+    "fontes": [
+      "compromissos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "compromissos.titulo",
+    "pt_br": "Compromissos",
+    "pagina": "compromissos",
+    "fontes": [
+      "compromissos.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "compromissos.toast.valor_atualizado",
+    "pt_br": "Valor atualizado",
+    "pagina": "compromissos",
+    "fontes": [
+      "src/js/pages/compromissos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "compromissos.toast.valor_inalterado",
+    "pt_br": "O valor não mudou",
+    "pagina": "compromissos",
+    "fontes": [
+      "src/js/pages/compromissos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "compromissos.validacao.categoria_obrigatoria",
+    "pt_br": "Escolha uma categoria",
+    "pagina": "compromissos",
+    "fontes": [
+      "src/js/pages/compromissos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "compromissos.validacao.data_inicio",
+    "pt_br": "Informe a data de início",
+    "pagina": "compromissos",
+    "fontes": [
+      "src/js/pages/compromissos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "compromissos.validacao.tipo_obrigatorio",
+    "pt_br": "Escolha o tipo",
+    "pagina": "compromissos",
+    "fontes": [
+      "src/js/pages/compromissos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "compromissos.validacao.valor_invalido",
+    "pt_br": "Informe um valor válido",
+    "pagina": "compromissos",
+    "fontes": [
+      "src/js/pages/compromissos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "compromissos.validacao.valor_maior_zero",
+    "pt_br": "Informe um valor maior que zero",
+    "pagina": "compromissos",
+    "fontes": [
+      "src/js/pages/compromissos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "contas.descricao",
+    "pt_br": "Bancos, cartões, carteiras e investimentos. Alimenta as demais telas.",
+    "pagina": "contas",
+    "fontes": [
+      "contas.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "contas.empty.mensagem",
+    "pt_br": "Cadastre seu primeiro banco, cartão ou carteira pra começar a controlar suas finanças.",
+    "pagina": "contas",
+    "fontes": [
+      "contas.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "contas.empty.titulo",
+    "pt_br": "Nenhuma conta cadastrada",
+    "pagina": "contas",
+    "fontes": [
+      "contas.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "contas.titulo",
+    "pt_br": "Contas",
+    "pagina": "contas",
+    "fontes": [
+      "contas.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "contas.toast.erro_carregar",
+    "pt_br": "Erro ao carregar contas",
+    "pagina": "contas",
+    "fontes": [
+      "src/js/pages/contas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "contas.validacao.desde_obrigatorio",
+    "pt_br": "Informe a data inicial (Desde)",
+    "pagina": "contas",
+    "fontes": [
+      "src/js/pages/contas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "contas.validacao.dia_fechamento",
+    "pt_br": "Informe o dia de fechamento da fatura (1–31)",
+    "pagina": "contas",
+    "fontes": [
+      "src/js/pages/contas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "contas.validacao.nome_obrigatorio",
+    "pt_br": "Informe o nome do banco/cartão",
+    "pagina": "contas",
+    "fontes": [
+      "src/js/pages/contas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "dividas.btn_nova",
     "pt_br": "Nova dívida",
     "pagina": "dividas",
@@ -550,6 +748,50 @@
     ]
   },
   {
+    "chave": "orcamento.descricao",
+    "pt_br": "Visão financeira mensal — gerada automaticamente a partir dos seus compromissos. Edite valores específicos sem alterar a configuração base.",
+    "pagina": "orcamento",
+    "fontes": [
+      "orcamento.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "orcamento.titulo",
+    "pt_br": "Orçamento Geral",
+    "pagina": "orcamento",
+    "fontes": [
+      "orcamento.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "orcamento.toast.erro_gerar",
+    "pt_br": "Erro ao gerar orçamento",
+    "pagina": "orcamento",
+    "fontes": [
+      "src/js/pages/orcamento.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "orcamento.validacao.valor_invalido",
+    "pt_br": "Valor inválido",
+    "pagina": "orcamento",
+    "fontes": [
+      "src/js/pages/orcamento.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "pagamentos.btn.salvar_observacao",
     "pt_br": "Salvar observação",
     "pagina": "pagamentos",
@@ -698,6 +940,116 @@
     "pagina": "pagamentos",
     "fontes": [
       "src/js/pages/pagamentos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "transacoes.descricao",
+    "pt_br": "Registro real do dinheiro que entrou e saiu — diferente do orçamento (planejado) e dos pagamentos (status mensal).",
+    "pagina": "transacoes",
+    "fontes": [
+      "transacoes.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "transacoes.empty.btn",
+    "pt_br": "+ Nova transação",
+    "pagina": "transacoes",
+    "fontes": [
+      "transacoes.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "transacoes.empty.mensagem",
+    "pt_br": "Registre a primeira transação para começar seu diário financeiro.",
+    "pagina": "transacoes",
+    "fontes": [
+      "transacoes.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "transacoes.empty.titulo",
+    "pt_br": "Nenhuma transação ainda",
+    "pagina": "transacoes",
+    "fontes": [
+      "transacoes.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "transacoes.titulo",
+    "pt_br": "Transações",
+    "pagina": "transacoes",
+    "fontes": [
+      "transacoes.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "transacoes.toast.erro_carregar",
+    "pt_br": "Erro ao carregar transações",
+    "pagina": "transacoes",
+    "fontes": [
+      "src/js/pages/transacoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "transacoes.toast.erro_excluir",
+    "pt_br": "Erro ao excluir",
+    "pagina": "transacoes",
+    "fontes": [
+      "src/js/pages/transacoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "transacoes.toast.reconciliada",
+    "pt_br": "Transação reconciliada",
+    "pagina": "transacoes",
+    "fontes": [
+      "src/js/pages/transacoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "transacoes.validacao.datas_obrigatorias",
+    "pt_br": "Informe as duas datas do período",
+    "pagina": "transacoes",
+    "fontes": [
+      "src/js/pages/transacoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "transacoes.validacao.datas_ordem",
+    "pt_br": "Data de início deve ser anterior ao fim",
+    "pagina": "transacoes",
+    "fontes": [
+      "src/js/pages/transacoes.js"
     ],
     "kinds": [
       "js"
