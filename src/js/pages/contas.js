@@ -1331,7 +1331,7 @@ async function saveConta(event) {
       showToast(t('contas.validacao.dia_fechamento', 'Informe o dia de fechamento da fatura (1–31)'), 'error'); return;
     }
     if (!vencimento_raw || vencimento_raw < 1 || vencimento_raw > 31) {
-      showToast('Informe o dia de vencimento da fatura (1–31)', 'error'); return;
+      showToast(t('contas.validacao.dia_vencimento', 'Informe o dia de vencimento da fatura (1–31)'), 'error'); return;
     }
   }
 
@@ -1369,7 +1369,7 @@ async function saveConta(event) {
     }
     if (response.error) throw response.error;
 
-    showToast(editingId ? 'Conta atualizada' : 'Conta criada', 'success');
+    showToast(editingId ? t('contas.toast.atualizada', 'Conta atualizada') : t('contas.toast.criada', 'Conta criada'), 'success');
     closeModal('modal-conta');
     editingId = null;
     await loadContas();
@@ -1407,7 +1407,7 @@ async function deleteConta(id) {
     showToast('Erro ao deletar: ' + error.message, 'error', 8000);
     return;
   }
-  showToast('Conta deletada permanentemente', 'success');
+  showToast(t('contas.toast.deletada', 'Conta deletada permanentemente'), 'success');
   await loadContas();
 }
 

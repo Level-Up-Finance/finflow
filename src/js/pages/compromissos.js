@@ -38,7 +38,7 @@ import { initColVisibility } from '../lib/col-visibility.js';
 import { escapeHtml, formatDateBR, todayISO } from '../lib/utils.js';
 import { fetchExchangeRate } from '../lib/currency.js';
 import { initContatoPicker } from '../components/contato-picker.js';
-import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
+import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 import {
   occursOn,
   renderCalendar,
@@ -205,7 +205,7 @@ async function criarProjeto(nome) {
     .select()
     .single();
   if (error) {
-    showToast('Erro ao criar projeto: ' + error.message, 'error', 8000);
+    showToast(t('compromissos.toast.erro_criar_projeto', 'Erro ao criar projeto') + ': ' + error.message, 'error', 8000);
     return null;
   }
   cachedProjetos.push(data);
@@ -329,7 +329,7 @@ async function loadCategorias() {
 
   if (error) {
     console.error('[loadCategorias]', error);
-    showToast('Erro ao carregar categorias: ' + error.message, 'error', 8000);
+    showToast(t('compromissos.toast.erro_carregar_categorias', 'Erro ao carregar categorias') + ': ' + error.message, 'error', 8000);
     return;
   }
 
@@ -352,7 +352,7 @@ async function seedDefaultCategorias() {
   const { error } = await supabase.from('categorias').insert(rows);
   if (error) {
     console.error('[seedDefaultCategorias]', error);
-    showToast('Erro ao criar categorias default: ' + error.message, 'error', 10000);
+    showToast(t('compromissos.toast.erro_categoria_default', 'Erro ao criar categorias default') + ': ' + error.message, 'error', 10000);
     return;
   }
   await loadCategorias();

@@ -1031,7 +1031,7 @@ async function fetchAndFillRate() {
     updatePrevisto();
     if (statusEl) statusEl.textContent = '';
   } catch {
-    showToast('Não foi possível buscar a cotação.', 'error');
+    showToast(t('transacoes.toast.erro_cotacao', 'Não foi possível buscar a cotação.'), 'error');
     if (statusEl) statusEl.textContent = 'Erro ao buscar cotação';
   }
 }
@@ -1101,11 +1101,11 @@ async function saveTransacao() {
   const contato_id      = contatoPicker?.getValue() || null;
   const descricao       = document.getElementById('trans-descricao').value.trim() || null;
 
-  if (!data) { showToast('Informe a data', 'error'); return; }
+  if (!data) { showToast(t('transacoes.validacao.data_obrigatoria', 'Informe a data'), 'error'); return; }
   if (!valorRaw || isNaN(Number(valorRaw)) || Number(valorRaw) <= 0) {
     showToast('Informe um valor válido', 'error'); return;
   }
-  if (!conta_id) { showToast('Selecione uma conta', 'error'); return; }
+  if (!conta_id) { showToast(t('transacoes.validacao.conta_obrigatoria', 'Selecione uma conta'), 'error'); return; }
 
   if (tipo === 'Transferência') {
     const contaDestId = document.getElementById('trans-conta-destino').value || null;

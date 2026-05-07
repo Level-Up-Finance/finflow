@@ -110,6 +110,39 @@
     ]
   },
   {
+    "chave": "compromissos.toast.erro_carregar_categorias",
+    "pt_br": "Erro ao carregar categorias",
+    "pagina": "compromissos",
+    "fontes": [
+      "src/js/pages/compromissos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "compromissos.toast.erro_categoria_default",
+    "pt_br": "Erro ao criar categorias default",
+    "pagina": "compromissos",
+    "fontes": [
+      "src/js/pages/compromissos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "compromissos.toast.erro_criar_projeto",
+    "pt_br": "Erro ao criar projeto",
+    "pagina": "compromissos",
+    "fontes": [
+      "src/js/pages/compromissos.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "compromissos.toast.valor_atualizado",
     "pt_br": "Valor atualizado",
     "pagina": "compromissos",
@@ -275,6 +308,39 @@
     ]
   },
   {
+    "chave": "contas.toast.atualizada",
+    "pt_br": "Conta atualizada",
+    "pagina": "contas",
+    "fontes": [
+      "src/js/pages/contas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "contas.toast.criada",
+    "pt_br": "Conta criada",
+    "pagina": "contas",
+    "fontes": [
+      "src/js/pages/contas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "contas.toast.deletada",
+    "pt_br": "Conta deletada permanentemente",
+    "pagina": "contas",
+    "fontes": [
+      "src/js/pages/contas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "contas.toast.erro_carregar",
     "pt_br": "Erro ao carregar contas",
     "pagina": "contas",
@@ -299,6 +365,17 @@
   {
     "chave": "contas.validacao.dia_fechamento",
     "pt_br": "Informe o dia de fechamento da fatura (1–31)",
+    "pagina": "contas",
+    "fontes": [
+      "src/js/pages/contas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "contas.validacao.dia_vencimento",
+    "pt_br": "Informe o dia de vencimento da fatura (1–31)",
     "pagina": "contas",
     "fontes": [
       "src/js/pages/contas.js"
@@ -1749,6 +1826,17 @@
     ]
   },
   {
+    "chave": "transacoes.toast.erro_cotacao",
+    "pt_br": "Não foi possível buscar a cotação.",
+    "pagina": "transacoes",
+    "fontes": [
+      "src/js/pages/transacoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "transacoes.toast.erro_excluir",
     "pt_br": "Erro ao excluir",
     "pagina": "transacoes",
@@ -1762,6 +1850,28 @@
   {
     "chave": "transacoes.toast.reconciliada",
     "pt_br": "Transação reconciliada",
+    "pagina": "transacoes",
+    "fontes": [
+      "src/js/pages/transacoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "transacoes.validacao.conta_obrigatoria",
+    "pt_br": "Selecione uma conta",
+    "pagina": "transacoes",
+    "fontes": [
+      "src/js/pages/transacoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "transacoes.validacao.data_obrigatoria",
+    "pt_br": "Informe a data",
     "pagina": "transacoes",
     "fontes": [
       "src/js/pages/transacoes.js"
