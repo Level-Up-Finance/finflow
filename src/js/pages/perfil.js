@@ -9,7 +9,7 @@ import { initSidebar } from '../components/sidebar.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { escapeHtml, getInitials, showConfirm } from '../lib/utils.js';
-import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
+import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 let cachedProfile = null;
 let userId = null;
@@ -146,7 +146,7 @@ async function saveProfile() {
   cachedProfile = { ...cachedProfile, ...payload };
   btn.disabled = true;
   btn.textContent = original;
-  showToast('Perfil atualizado', 'success');
+  showToast(t('perfil.toast.atualizado', 'Perfil atualizado'), 'success');
 }
 
 // -----------------------------
@@ -157,18 +157,18 @@ async function handleFotoChange(e) {
   if (!file) return;
 
   if (!file.type.startsWith('image/')) {
-    showToast('Arquivo precisa ser uma imagem', 'error');
+    showToast(t('perfil.validacao.arquivo_imagem', 'Arquivo precisa ser uma imagem'), 'error');
     return;
   }
   if (file.size > 5 * 1024 * 1024) {
-    showToast('Imagem maior que 5 MB. Reduza antes de subir.', 'error', 6000);
+    showToast(t('perfil.validacao.imagem_tamanho', 'Imagem maior que 5 MB. Reduza antes de subir.'), 'error', 6000);
     return;
   }
 
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
   const path = `${userId}/avatar-${Date.now()}.${ext}`;
 
-  showToast('Enviando foto…', 'info', 2000);
+  showToast(t('perfil.toast.enviando_foto', 'Enviando foto…'), 'info', 2000);
 
   const { error: upError } = await supabase.storage
     .from('avatars')
@@ -182,7 +182,7 @@ async function handleFotoChange(e) {
   const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
   const fotoUrl = urlData?.publicUrl;
   if (!fotoUrl) {
-    showToast('Não foi possível gerar a URL pública da foto', 'error', 8000);
+    showToast(t('perfil.toast.erro_url_foto', 'Não foi possível gerar a URL pública da foto'), 'error', 8000);
     return;
   }
 
@@ -199,7 +199,7 @@ async function handleFotoChange(e) {
 
   cachedProfile.foto_url = fotoUrl;
   renderFotoDisplay(fotoUrl, cachedProfile.nome || cachedProfile.apelido || userEmail);
-  showToast('Foto atualizada', 'success');
+  showToast(t('perfil.toast.foto_atualizada', 'Foto atualizada'), 'success');
 
   // Reset input pra permitir re-upload do mesmo arquivo
   e.target.value = '';
@@ -210,10 +210,10 @@ async function handleFotoChange(e) {
 // -----------------------------
 async function removeFoto() {
   if (!cachedProfile?.foto_url) {
-    showToast('Você não tem foto ainda', 'info');
+    showToast(t('perfil.toast.sem_foto', 'Você não tem foto ainda'), 'info');
     return;
   }
-  if (!await showConfirm('Remover a foto do seu perfil?', { okLabel: 'Remover' })) return;
+  if (!await showConfirm(t('perfil.confirm.remover_foto', 'Remover a foto do seu perfil?'), { okLabel: 'Remover' })) return;
 
   const { error } = await supabase
     .from('profiles')
@@ -227,7 +227,7 @@ async function removeFoto() {
 
   cachedProfile.foto_url = null;
   renderFotoDisplay(null, cachedProfile.nome || cachedProfile.apelido || userEmail);
-  showToast('Foto removida', 'success');
+  showToast(t('perfil.toast.foto_removida', 'Foto removida'), 'success');
 }
 
 // -----------------------------

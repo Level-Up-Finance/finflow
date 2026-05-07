@@ -5,7 +5,7 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js';
 import { redirectIfAuthenticated } from '../lib/auth.js';
 import { showToast } from '../components/toast.js';
-import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
+import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 const HOME_PATH = '/dashboard.html';
 
@@ -63,11 +63,11 @@ async function handleLogin(event) {
 
   let hasError = false;
   if (!isValidEmail(email)) {
-    setError(form, 'email', 'Informe um email válido');
+    setError(form, 'email', t('login.validacao.email_invalido', 'Informe um email válido'));
     hasError = true;
   }
   if (!isValidPassword(password)) {
-    setError(form, 'password', 'Senha deve ter no mínimo 6 caracteres');
+    setError(form, 'password', t('login.validacao.senha_minimo', 'Senha deve ter no mínimo 6 caracteres'));
     hasError = true;
   }
   if (hasError) return;
@@ -76,16 +76,16 @@ async function handleLogin(event) {
   try {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
-    showToast('Bem-vindo de volta!', 'success');
+    showToast(t('login.toast.bem_vindo', 'Bem-vindo de volta!'), 'success');
     setTimeout(() => { window.location.href = HOME_PATH; }, 400);
   } catch (err) {
     const msg = (err.message || '').toLowerCase();
     if (msg.includes('invalid login credentials')) {
-      showToast('Email ou senha incorretos', 'error');
+      showToast(t('login.toast.credenciais_invalidas', 'Email ou senha incorretos'), 'error');
     } else if (msg.includes('email not confirmed')) {
-      showToast('Confirme seu email antes de entrar (verifique sua caixa de entrada)', 'warning', 6000);
+      showToast(t('login.toast.email_nao_confirmado', 'Confirme seu email antes de entrar (verifique sua caixa de entrada)'), 'warning', 6000);
     } else {
-      showToast(err.message || 'Erro ao fazer login', 'error');
+      showToast(err.message || t('login.toast.erro_login', 'Erro ao fazer login'), 'error');
     }
     setLoadingState(button, false);
   }
@@ -101,15 +101,15 @@ async function handleSignup(event) {
   const password = form.password.value;
 
   if (!nome) {
-    showToast('Informe seu nome', 'error');
+    showToast(t('login.validacao.nome_obrigatorio', 'Informe seu nome'), 'error');
     return;
   }
   if (!isValidEmail(email)) {
-    showToast('Informe um email válido', 'error');
+    showToast(t('login.validacao.email_invalido', 'Informe um email válido'), 'error');
     return;
   }
   if (!isValidPassword(password)) {
-    showToast('A senha precisa de no mínimo 6 caracteres', 'error');
+    showToast(t('login.validacao.senha_obrigatoria', 'A senha precisa de no mínimo 6 caracteres'), 'error');
     return;
   }
 
@@ -128,7 +128,7 @@ async function handleSignup(event) {
       setTimeout(() => { window.location.href = HOME_PATH; }, 600);
     } else {
       // Confirmation habilitada → precisa confirmar email
-      showToast('Conta criada! Verifique seu email pra confirmar antes de entrar.', 'success', 8000);
+      showToast(t('login.toast.conta_criada_confirmacao', 'Conta criada! Verifique seu email pra confirmar antes de entrar.'), 'success', 8000);
       form.reset();
       showMode('login');
       setLoadingState(button, false);
@@ -136,9 +136,9 @@ async function handleSignup(event) {
   } catch (err) {
     const msg = (err.message || '').toLowerCase();
     if (msg.includes('already registered') || msg.includes('user already')) {
-      showToast('Este email já está cadastrado. Tente fazer login.', 'error');
+      showToast(t('login.toast.email_existe', 'Este email já está cadastrado. Tente fazer login.'), 'error');
     } else {
-      showToast(err.message || 'Erro ao criar conta', 'error');
+      showToast(err.message || t('login.toast.erro_signup', 'Erro ao criar conta'), 'error');
     }
     setLoadingState(button, false);
   }
@@ -151,7 +151,7 @@ async function handleForgotPassword(event) {
 
   const email = form.email.value.trim();
   if (!isValidEmail(email)) {
-    showToast('Informe um email válido', 'error');
+    showToast(t('login.validacao.email_invalido', 'Informe um email válido'), 'error');
     return;
   }
 
@@ -161,11 +161,11 @@ async function handleForgotPassword(event) {
       redirectTo: window.location.origin + '/index.html',
     });
     if (error) throw error;
-    showToast('Link de recuperação enviado pro seu email.', 'success', 6000);
+    showToast(t('login.toast.link_enviado', 'Link de recuperação enviado pro seu email.'), 'success', 6000);
     form.reset();
     showMode('login');
   } catch (err) {
-    showToast(err.message || 'Erro ao enviar email', 'error');
+    showToast(err.message || t('login.toast.erro_email', 'Erro ao enviar email'), 'error');
   } finally {
     setLoadingState(button, false);
   }
@@ -177,7 +177,7 @@ async function handleForgotPassword(event) {
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     if (!isSupabaseConfigured()) {
-      showToast('Configure Supabase em src/js/lib/config.js', 'warning', 8000);
+      showToast(t('login.aviso.supabase_config', 'Configure Supabase em src/js/lib/config.js'), 'warning', 8000);
       return;
     }
     await redirectIfAuthenticated();

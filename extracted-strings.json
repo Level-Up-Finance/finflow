@@ -11,6 +11,17 @@
     ]
   },
   {
+    "chave": "academia.placeholder.busca",
+    "pt_br": "Buscar tutorial…",
+    "pagina": "academia",
+    "fontes": [
+      "academia.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
     "chave": "academia.titulo",
     "pt_br": "Academia FinFlow",
     "pagina": "academia",
@@ -693,11 +704,88 @@
     ]
   },
   {
+    "chave": "feedback.group.analise",
+    "pt_br": "Em análise e em andamento",
+    "pagina": "feedback",
+    "fontes": [
+      "src/js/pages/feedback.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "feedback.group.concluidas",
+    "pt_br": "Concluídas e rejeitadas",
+    "pagina": "feedback",
+    "fontes": [
+      "src/js/pages/feedback.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "feedback.group.novas",
+    "pt_br": "Novas",
+    "pagina": "feedback",
+    "fontes": [
+      "src/js/pages/feedback.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "feedback.placeholder.titulo",
+    "pt_br": "Resumo curto do que aconteceu ou da ideia",
+    "pagina": "feedback",
+    "fontes": [
+      "feedback.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
     "chave": "feedback.titulo",
     "pt_br": "Sugestões & Bugs",
     "pagina": "feedback",
     "fontes": [
       "feedback.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "feedback.toast.enviado",
+    "pt_br": "Enviado! Obrigado pelo feedback.",
+    "pagina": "feedback",
+    "fontes": [
+      "src/js/pages/feedback.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "feedback.validacao.campos_obrigatorios",
+    "pt_br": "Preencha todos os campos.",
+    "pagina": "feedback",
+    "fontes": [
+      "src/js/pages/feedback.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "feedback_publico.btn.outra_entrada",
+    "pt_br": "Enviar outra entrada",
+    "pagina": "feedback_publico",
+    "fontes": [
+      "feedback-publico.html"
     ],
     "kinds": [
       "html"
@@ -723,6 +811,17 @@
     ],
     "kinds": [
       "html"
+    ]
+  },
+  {
+    "chave": "feedback_publico.validacao.campos",
+    "pt_br": "Preencha tipo, título e descrição.",
+    "pagina": "feedback_publico",
+    "fontes": [
+      "src/js/pages/feedback-publico.js"
+    ],
+    "kinds": [
+      "js"
     ]
   },
   {
@@ -968,6 +1067,17 @@
     ]
   },
   {
+    "chave": "login.aviso.supabase_config",
+    "pt_br": "Configure Supabase em src/js/lib/config.js",
+    "pagina": "login",
+    "fontes": [
+      "src/js/pages/login.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "login.titulo_forgot",
     "pt_br": "Recuperar senha",
     "pagina": "login",
@@ -998,6 +1108,149 @@
     ],
     "kinds": [
       "html"
+    ]
+  },
+  {
+    "chave": "login.toast.bem_vindo",
+    "pt_br": "Bem-vindo de volta!",
+    "pagina": "login",
+    "fontes": [
+      "src/js/pages/login.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "login.toast.conta_criada_confirmacao",
+    "pt_br": "Conta criada! Verifique seu email pra confirmar antes de entrar.",
+    "pagina": "login",
+    "fontes": [
+      "src/js/pages/login.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "login.toast.credenciais_invalidas",
+    "pt_br": "Email ou senha incorretos",
+    "pagina": "login",
+    "fontes": [
+      "src/js/pages/login.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "login.toast.email_existe",
+    "pt_br": "Este email já está cadastrado. Tente fazer login.",
+    "pagina": "login",
+    "fontes": [
+      "src/js/pages/login.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "login.toast.email_nao_confirmado",
+    "pt_br": "Confirme seu email antes de entrar (verifique sua caixa de entrada)",
+    "pagina": "login",
+    "fontes": [
+      "src/js/pages/login.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "login.toast.erro_email",
+    "pt_br": "Erro ao enviar email",
+    "pagina": "login",
+    "fontes": [
+      "src/js/pages/login.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "login.toast.erro_login",
+    "pt_br": "Erro ao fazer login",
+    "pagina": "login",
+    "fontes": [
+      "src/js/pages/login.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "login.toast.erro_signup",
+    "pt_br": "Erro ao criar conta",
+    "pagina": "login",
+    "fontes": [
+      "src/js/pages/login.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "login.toast.link_enviado",
+    "pt_br": "Link de recuperação enviado pro seu email.",
+    "pagina": "login",
+    "fontes": [
+      "src/js/pages/login.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "login.validacao.email_invalido",
+    "pt_br": "Informe um email válido",
+    "pagina": "login",
+    "fontes": [
+      "src/js/pages/login.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "login.validacao.nome_obrigatorio",
+    "pt_br": "Informe seu nome",
+    "pagina": "login",
+    "fontes": [
+      "src/js/pages/login.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "login.validacao.senha_minimo",
+    "pt_br": "Senha deve ter no mínimo 6 caracteres",
+    "pagina": "login",
+    "fontes": [
+      "src/js/pages/login.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "login.validacao.senha_obrigatoria",
+    "pt_br": "A senha precisa de no mínimo 6 caracteres",
+    "pagina": "login",
+    "fontes": [
+      "src/js/pages/login.js"
+    ],
+    "kinds": [
+      "js"
     ]
   },
   {
@@ -1243,8 +1496,30 @@
     ]
   },
   {
+    "chave": "perfil.confirm.remover_foto",
+    "pt_br": "Remover a foto do seu perfil?",
+    "pagina": "perfil",
+    "fontes": [
+      "src/js/pages/perfil.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "perfil.descricao",
     "pt_br": "Foto, dados pessoais, redes sociais e plano de assinatura.",
+    "pagina": "perfil",
+    "fontes": [
+      "perfil.html"
+    ],
+    "kinds": [
+      "html"
+    ]
+  },
+  {
+    "chave": "perfil.hint.tipos_imagem",
+    "pt_br": "JPG, PNG, WEBP ou GIF até 5 MB.",
     "pagina": "perfil",
     "fontes": [
       "perfil.html"
@@ -1262,6 +1537,94 @@
     ],
     "kinds": [
       "html"
+    ]
+  },
+  {
+    "chave": "perfil.toast.atualizado",
+    "pt_br": "Perfil atualizado",
+    "pagina": "perfil",
+    "fontes": [
+      "src/js/pages/perfil.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "perfil.toast.enviando_foto",
+    "pt_br": "Enviando foto…",
+    "pagina": "perfil",
+    "fontes": [
+      "src/js/pages/perfil.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "perfil.toast.erro_url_foto",
+    "pt_br": "Não foi possível gerar a URL pública da foto",
+    "pagina": "perfil",
+    "fontes": [
+      "src/js/pages/perfil.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "perfil.toast.foto_atualizada",
+    "pt_br": "Foto atualizada",
+    "pagina": "perfil",
+    "fontes": [
+      "src/js/pages/perfil.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "perfil.toast.foto_removida",
+    "pt_br": "Foto removida",
+    "pagina": "perfil",
+    "fontes": [
+      "src/js/pages/perfil.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "perfil.toast.sem_foto",
+    "pt_br": "Você não tem foto ainda",
+    "pagina": "perfil",
+    "fontes": [
+      "src/js/pages/perfil.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "perfil.validacao.arquivo_imagem",
+    "pt_br": "Arquivo precisa ser uma imagem",
+    "pagina": "perfil",
+    "fontes": [
+      "src/js/pages/perfil.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "perfil.validacao.imagem_tamanho",
+    "pt_br": "Imagem maior que 5 MB. Reduza antes de subir.",
+    "pagina": "perfil",
+    "fontes": [
+      "src/js/pages/perfil.js"
+    ],
+    "kinds": [
+      "js"
     ]
   },
   {

@@ -5,7 +5,7 @@
 // =============================================================
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
-import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
+import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadStrings();
@@ -31,7 +31,7 @@ async function onSubmit(e) {
   const description = document.getElementById('feedback-description').value.trim();
 
   if (!type || !title || !description) {
-    showToast('Preencha tipo, título e descrição.', 'warning');
+    showToast(t('feedback_publico.validacao.campos', 'Preencha tipo, título e descrição.'), 'warning');
     return;
   }
 

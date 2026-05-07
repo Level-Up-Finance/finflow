@@ -7,7 +7,7 @@ import { initSidebar } from '../components/sidebar.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { escapeHtml } from '../lib/utils.js';
-import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
+import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 let userId = null;
 
@@ -63,7 +63,7 @@ async function onSubmit(e) {
   const description = document.getElementById('feedback-description').value.trim();
 
   if (!type || !title || !description) {
-    showToast('Preencha todos os campos.', 'warning');
+    showToast(t('feedback.validacao.campos_obrigatorios', 'Preencha todos os campos.'), 'warning');
     return;
   }
 
@@ -87,7 +87,7 @@ async function onSubmit(e) {
     return;
   }
 
-  showToast('Enviado! Obrigado pelo feedback.', 'success');
+  showToast(t('feedback.toast.enviado', 'Enviado! Obrigado pelo feedback.'), 'success');
   document.getElementById('form-feedback').reset();
   // Garante que o radio "sugestao" volta selecionado
   const sug = document.querySelector('input[name="type"][value="sugestao"]');
@@ -132,9 +132,9 @@ async function loadMine() {
 
 // ── Tabela agrupada ───────────────────────────────────────────
 const GROUPS = [
-  { label: 'Novas',                    statuses: ['novo'] },
-  { label: 'Em análise e em andamento', statuses: ['em_analise', 'em_progresso'] },
-  { label: 'Concluídas e rejeitadas',  statuses: ['feito', 'agora_nao'] },
+  { label: t('feedback.group.novas', 'Novas'),                    statuses: ['novo'] },
+  { label: t('feedback.group.analise', 'Em análise e em andamento'), statuses: ['em_analise', 'em_progresso'] },
+  { label: t('feedback.group.concluidas', 'Concluídas e rejeitadas'),  statuses: ['feito', 'agora_nao'] },
 ];
 
 function renderTable(items) {
