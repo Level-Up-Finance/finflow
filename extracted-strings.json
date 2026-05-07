@@ -103,7 +103,7 @@
     "pt_br": "Valor atualizado",
     "pagina": "compromissos",
     "fontes": [
-      "src/js/pages/compromissos.js"
+      "src/js/pages/compromissos/save.js"
     ],
     "kinds": [
       "js"
@@ -114,7 +114,7 @@
     "pt_br": "O valor não mudou",
     "pagina": "compromissos",
     "fontes": [
-      "src/js/pages/compromissos.js"
+      "src/js/pages/compromissos/save.js"
     ],
     "kinds": [
       "js"
@@ -125,7 +125,7 @@
     "pt_br": "Escolha uma categoria",
     "pagina": "compromissos",
     "fontes": [
-      "src/js/pages/compromissos.js"
+      "src/js/pages/compromissos/save.js"
     ],
     "kinds": [
       "js"
@@ -136,7 +136,7 @@
     "pt_br": "Informe a data de início",
     "pagina": "compromissos",
     "fontes": [
-      "src/js/pages/compromissos.js"
+      "src/js/pages/compromissos/save.js"
     ],
     "kinds": [
       "js"
@@ -147,7 +147,7 @@
     "pt_br": "Escolha o tipo",
     "pagina": "compromissos",
     "fontes": [
-      "src/js/pages/compromissos.js"
+      "src/js/pages/compromissos/save.js"
     ],
     "kinds": [
       "js"
@@ -158,7 +158,7 @@
     "pt_br": "Informe um valor válido",
     "pagina": "compromissos",
     "fontes": [
-      "src/js/pages/compromissos.js"
+      "src/js/pages/compromissos/save.js"
     ],
     "kinds": [
       "js"
@@ -169,7 +169,7 @@
     "pt_br": "Informe um valor maior que zero",
     "pagina": "compromissos",
     "fontes": [
-      "src/js/pages/compromissos.js"
+      "src/js/pages/compromissos/save.js"
     ],
     "kinds": [
       "js"
@@ -1424,6 +1424,1634 @@
     "pagina": "transacoes",
     "fontes": [
       "src/js/pages/transacoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.cat.analise",
+    "pt_br": "Análise",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.cat.cadastros",
+    "pt_br": "Cadastros",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.cat.configuracao",
+    "pt_br": "Configuração",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.cat.operacional",
+    "pt_br": "Operacional",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.cat.visao-geral",
+    "pt_br": "Visão Geral",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.compromissos.category_label",
+    "pt_br": "Cadastros",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.compromissos.section.0.title",
+    "pt_br": "O que são Compromissos?",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.compromissos.section.1.title",
+    "pt_br": "Tipos de compromisso",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.compromissos.section.2.title",
+    "pt_br": "Criando um compromisso",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.compromissos.section.3.title",
+    "pt_br": "Valor variável",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.compromissos.section.4.title",
+    "pt_br": "Indicador de limite comprometido",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.compromissos.section.5.title",
+    "pt_br": "Duplicar um compromisso",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.compromissos.section.6.title",
+    "pt_br": "Transferências",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.compromissos.section.7.title",
+    "pt_br": "Como Compromissos se conecta com outras telas",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.compromissos.tagline",
+    "pt_br": "O coração do planejamento: suas receitas e despesas recorrentes.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.compromissos.tip.0",
+    "pt_br": "Configure seus compromissos com precisão — eles são o planejamento, e Pagamentos é a execução.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.compromissos.tip.1",
+    "pt_br": "Use a <strong>Periodicidade \"Único\"</strong> para lançamentos pontuais que ainda não viraram transações.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.compromissos.tip.2",
+    "pt_br": "Vincule compromissos de dívida a uma <strong>Dívida</strong> para ver o progresso de quitação automaticamente.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.compromissos.tip.3",
+    "pt_br": "O campo <strong>Apelido</strong> aparece no lugar do nome nas listagens — use para nomes mais curtos e claros.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.compromissos.title",
+    "pt_br": "Compromissos",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.configuracoes.category_label",
+    "pt_br": "Configuração",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.configuracoes.section.0.title",
+    "pt_br": "Por que acessar Configurações primeiro?",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.configuracoes.section.1.title",
+    "pt_br": "Aba Categorias",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.configuracoes.section.2.title",
+    "pt_br": "Vínculos de categorias",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.configuracoes.section.3.body",
+    "pt_br": "A aba Contatos em Configurações oferece o mesmo gerenciamento que a tela dedicada de Contatos — você pode criar, editar e gerenciar contatos sem sair das Configurações.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.configuracoes.section.3.title",
+    "pt_br": "Aba Contatos",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.configuracoes.section.4.title",
+    "pt_br": "Aba Aparência",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.configuracoes.section.5.title",
+    "pt_br": "Aba Moedas",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.configuracoes.section.6.title",
+    "pt_br": "Como Configurações se conecta com outras telas",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.configuracoes.tagline",
+    "pt_br": "Categorias, aparência, moedas — personalize o FinFlow para você.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.configuracoes.tip.0",
+    "pt_br": "Configure as categorias <strong>antes</strong> de começar a lançar compromissos — reorganizar depois é trabalhoso.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.configuracoes.tip.1",
+    "pt_br": "Use cores diferentes para categorias principais — elas aparecem nos gráficos de Relatórios e ficam mais fáceis de identificar.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.configuracoes.tip.2",
+    "pt_br": "A opção de tema <strong>\"Automático\"</strong> é a mais conveniente para quem usa o FinFlow em múltiplos dispositivos.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.configuracoes.title",
+    "pt_br": "Configurações",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contas.category_label",
+    "pt_br": "Cadastros",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contas.section.0.title",
+    "pt_br": "Por que começar pelas Contas?",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contas.section.1.title",
+    "pt_br": "Criando uma conta",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contas.section.2.title",
+    "pt_br": "Configurações exclusivas de Cartão de Crédito",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contas.section.3.title",
+    "pt_br": "Visualizações: cards e tabela",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contas.section.4.title",
+    "pt_br": "Detalhes e ações em uma conta",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contas.section.5.title",
+    "pt_br": "Como Contas se conecta com outras telas",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contas.tagline",
+    "pt_br": "Bancos, cartões e carteiras — a base de tudo no FinFlow.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contas.tip.0",
+    "pt_br": "Cadastre <strong>todas</strong> as suas contas antes de começar a usar o sistema — isso evita retrabalho.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contas.tip.1",
+    "pt_br": "Use apelidos descritivos: \"Bradesco Salário\", \"C6 Viagens\", \"Caixa Fundo Emergência\".",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contas.tip.2",
+    "pt_br": "Ao encerrar uma conta bancária, use <strong>Arquivar</strong> em vez de deletar — isso preserva o histórico.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contas.tip.3",
+    "pt_br": "O badge de comprometimento no card aparece automaticamente quando você cadastra o limite e tem compromissos ativos no cartão.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contas.title",
+    "pt_br": "Contas",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contatos.category_label",
+    "pt_br": "Cadastros",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contatos.section.0.title",
+    "pt_br": "O que são Contatos?",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contatos.section.1.title",
+    "pt_br": "Layout em dois painéis",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contatos.section.2.title",
+    "pt_br": "Criando um contato",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contatos.section.3.title",
+    "pt_br": "Reconhecimento automático de extrato",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contatos.section.4.title",
+    "pt_br": "Histórico de transações",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contatos.section.5.title",
+    "pt_br": "Proteção contra exclusão",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contatos.section.6.title",
+    "pt_br": "Como Contatos se conecta com outras telas",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contatos.tagline",
+    "pt_br": "Clientes, fornecedores e o motor de reconhecimento automático de extrato.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contatos.tip.0",
+    "pt_br": "Preencha o <strong>Nome no extrato</strong> com o texto exato do seu banco — copie e cole do extrato para evitar erros.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contatos.tip.1",
+    "pt_br": "Cadastre fornecedores recorrentes antes de importar extratos para aproveitar o reconhecimento automático.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contatos.tip.2",
+    "pt_br": "Use o tipo <strong>\"Ambos\"</strong> para contatos que às vezes pagam e às vezes recebem.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.contatos.title",
+    "pt_br": "Contatos",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dashboard.category_label",
+    "pt_br": "Visão Geral",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dashboard.section.0.title",
+    "pt_br": "O que é o Dashboard?",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dashboard.section.1.title",
+    "pt_br": "KPIs do mês",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dashboard.section.2.title",
+    "pt_br": "Widgets disponíveis",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dashboard.section.3.title",
+    "pt_br": "Como personalizar o Dashboard",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dashboard.section.4.title",
+    "pt_br": "Como o Dashboard se conecta com outras telas",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dashboard.tagline",
+    "pt_br": "Sua central de controle financeiro em tempo real.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dashboard.tip.0",
+    "pt_br": "Deixe os widgets que você mais usa no topo — os indicadores BCB e câmbio são ótimos para quem tem investimentos no exterior.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dashboard.tip.1",
+    "pt_br": "O saldo realizado só inclui o que foi <strong>pago/recebido</strong>. Para ver o planejado, acesse Pagamentos.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dashboard.tip.2",
+    "pt_br": "Use os atalhos rápidos como ponto de partida do seu dia financeiro.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dashboard.title",
+    "pt_br": "Dashboard",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dividas.category_label",
+    "pt_br": "Cadastros",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dividas.section.0.title",
+    "pt_br": "O que é a tela de Dívidas?",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dividas.section.1.title",
+    "pt_br": "KPIs de dívidas",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dividas.section.2.title",
+    "pt_br": "Criando uma dívida",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dividas.section.3.title",
+    "pt_br": "Registrando um pagamento",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dividas.section.4.title",
+    "pt_br": "Visualizações disponíveis",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dividas.section.5.title",
+    "pt_br": "Como Dívidas se conecta com outras telas",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dividas.tagline",
+    "pt_br": "Acompanhe o progresso de cada dívida em direção à quitação.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dividas.tip.0",
+    "pt_br": "Crie um <strong>Compromisso de despesa</strong> para cada parcela mensal e vincule-o à dívida correspondente — o progresso será atualizado automaticamente.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dividas.tip.1",
+    "pt_br": "Use o status <strong>\"Negociando\"</strong> para dívidas em processo de renegociação.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dividas.tip.2",
+    "pt_br": "A visualização <strong>Gantt</strong> ajuda a planejar quitações quando você tem múltiplas dívidas simultâneas.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.dividas.title",
+    "pt_br": "Dívidas",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.importar.category_label",
+    "pt_br": "Operacional",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.importar.section.0.title",
+    "pt_br": "O que é a importação de extrato?",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.importar.section.1.title",
+    "pt_br": "Etapa 1 — Arquivo e conta",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.importar.section.2.title",
+    "pt_br": "Etapa 2 — Mapeamento de colunas",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.importar.section.3.title",
+    "pt_br": "Etapa 3 — Revisão e importação",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.importar.section.4.title",
+    "pt_br": "Reconhecimento automático na importação",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.importar.section.5.title",
+    "pt_br": "Como Importar se conecta com outras telas",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.importar.tagline",
+    "pt_br": "Importe seu extrato bancário e categorize em segundos.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.importar.tip.0",
+    "pt_br": "A maioria dos bancos brasileiros oferece exportação em CSV no aplicativo ou site — procure por \"Exportar extrato\" ou \"Baixar histórico\".",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.importar.tip.1",
+    "pt_br": "Importe por períodos curtos (1 mês) para facilitar a revisão antes de importar.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.importar.tip.2",
+    "pt_br": "Após importar, vá para Transações e categorize os lançamentos sem subcategoria — isso melhora os relatórios.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.importar.title",
+    "pt_br": "Importar Extrato",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.investimentos.category_label",
+    "pt_br": "Cadastros",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.investimentos.section.0.title",
+    "pt_br": "O que são Projetos de Investimento?",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.investimentos.section.1.title",
+    "pt_br": "KPIs de investimentos",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.investimentos.section.2.title",
+    "pt_br": "Criando um projeto",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.investimentos.section.3.title",
+    "pt_br": "Como o progresso é calculado",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.investimentos.section.4.title",
+    "pt_br": "Visualizações disponíveis",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.investimentos.section.5.title",
+    "pt_br": "Como Investimentos se conecta com outras telas",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.investimentos.tagline",
+    "pt_br": "Defina seus projetos e acompanhe o progresso rumo às suas metas.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.investimentos.tip.0",
+    "pt_br": "Crie um compromisso de aporte mensal para cada projeto e vincule-o ao projeto — o progresso atualiza sozinho ao marcar como pago.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.investimentos.tip.1",
+    "pt_br": "Use o <strong>Saldo inicial</strong> para registrar o que você já tem investido antes de começar no FinFlow.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.investimentos.tip.2",
+    "pt_br": "Projetos <strong>Concluídos</strong> ainda aparecem no histórico — você pode ver quanto levou para atingir a meta.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.investimentos.title",
+    "pt_br": "Investimentos",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.pagamentos.category_label",
+    "pt_br": "Operacional",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.pagamentos.section.0.title",
+    "pt_br": "O que é a tela de Pagamentos?",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.pagamentos.section.1.title",
+    "pt_br": "Navegação por mês",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.pagamentos.section.2.title",
+    "pt_br": "Blocos quinzenais",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.pagamentos.section.3.title",
+    "pt_br": "Status de pagamento",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.pagamentos.section.4.title",
+    "pt_br": "Registrar valor real pago",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.pagamentos.section.5.title",
+    "pt_br": "Pagamento parcial",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.pagamentos.section.6.title",
+    "pt_br": "Filtros de status",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.pagamentos.section.7.title",
+    "pt_br": "Como Pagamentos se conecta com outras telas",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.pagamentos.tagline",
+    "pt_br": "A execução mensal do seu orçamento — marque, controle, acompanhe.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.pagamentos.tip.0",
+    "pt_br": "Crie o hábito de abrir Pagamentos uma vez por semana e marcar o que foi executado.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.pagamentos.tip.1",
+    "pt_br": "Use o filtro <strong>\"Atrasados\"</strong> para nunca deixar passar uma conta vencida.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.pagamentos.tip.2",
+    "pt_br": "O campo <strong>Observação</strong> em cada entrada é útil para anotar número de protocolo, comprovante ou nota.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.pagamentos.tip.3",
+    "pt_br": "Navegue para meses futuros para ter uma prévia do que está programado.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.pagamentos.title",
+    "pt_br": "Pagamentos",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.relatorios.category_label",
+    "pt_br": "Análise",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.relatorios.section.0.title",
+    "pt_br": "O que você encontra em Relatórios?",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.relatorios.section.1.title",
+    "pt_br": "Filtro de período",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.relatorios.section.2.title",
+    "pt_br": "Relatório 1: Fluxo de Caixa",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.relatorios.section.3.title",
+    "pt_br": "Relatório 2: Previsto vs. Real",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.relatorios.section.4.title",
+    "pt_br": "Relatório 3: Categorias",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.relatorios.section.5.title",
+    "pt_br": "Exportação",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.relatorios.section.6.title",
+    "pt_br": "Como Relatórios se conecta com outras telas",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.relatorios.tagline",
+    "pt_br": "Analise seu histórico financeiro com gráficos e exportações.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.relatorios.tip.0",
+    "pt_br": "Use <strong>Previsto vs. Real</strong> mensalmente para ver se seu orçamento está sendo respeitado.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.relatorios.tip.1",
+    "pt_br": "O relatório <strong>Categorias</strong> com período \"Ano\" revela padrões anuais de gastos que não aparecem na visão mensal.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.relatorios.tip.2",
+    "pt_br": "Exporte para <strong>Excel</strong> para fazer análises personalizadas fora do FinFlow.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.relatorios.title",
+    "pt_br": "Relatórios",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.transacoes.category_label",
+    "pt_br": "Operacional",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.transacoes.section.0.title",
+    "pt_br": "Transações vs. Pagamentos — qual a diferença?",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.transacoes.section.1.title",
+    "pt_br": "KPIs de período",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.transacoes.section.2.title",
+    "pt_br": "Registrando uma transação",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.transacoes.section.3.title",
+    "pt_br": "Filtros e busca",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.transacoes.section.4.title",
+    "pt_br": "Reconciliação",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.transacoes.section.5.title",
+    "pt_br": "Ações em lote",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.transacoes.section.6.title",
+    "pt_br": "Como Transações se conecta com outras telas",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.transacoes.tagline",
+    "pt_br": "Registre movimentações reais e mantenha seu extrato reconciliado.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.transacoes.tip.0",
+    "pt_br": "Vincule a Subcategoria sempre que possível — isso enriquece os relatórios de Previsto vs. Real.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.transacoes.tip.1",
+    "pt_br": "Para quem usa importação de extrato, o trabalho em Transações é principalmente revisar e categorizar os lançamentos importados.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.transacoes.tip.2",
+    "pt_br": "Reconcilie semanalmente para manter o controle em dia.",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tutorial.transacoes.title",
+    "pt_br": "Transações",
+    "pagina": "tutorial",
+    "fontes": [
+      "src/js/lib/tutorial-content.js"
     ],
     "kinds": [
       "js"
