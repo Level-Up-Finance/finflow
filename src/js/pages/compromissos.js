@@ -46,11 +46,7 @@ import {
   openDayModal,
 } from './compromissos/calendar.js';
 import { renderDre } from './compromissos/dre.js';
-import {
-  showVinculoPopover,
-  hideVinculoPopover,
-  showInfoPopup,
-} from './compromissos/popovers.js';
+import { showInfoPopup } from './compromissos/popovers.js';
 import {
   populateValoresMensaisGrid,
   collectValoresMensais,
@@ -61,6 +57,7 @@ import {
   bindRowClicks,
   monthLabelFromIso,
 } from './compromissos/table.js';
+import { bindAllEvents } from './compromissos/event-binders.js';
 
 // -----------------------------
 // State
@@ -110,7 +107,52 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderCategoriaFilters();
   renderTipoSelector();
   renderModalDropdowns();
-  bindEvents();
+  bindAllEvents({
+    // state setters
+    setFilterSearch:    (v) => { filterSearch    = v; },
+    setViewMode:        (v) => { viewMode        = v; },
+    setFilterStatus:    (v) => { filterStatus    = v; },
+    setFilterConfig:    (v) => { filterConfig    = v; },
+    setFilterCategorias:(v) => { filterCategorias = v; },
+    setEditingCatId:    (v) => { editingCatId    = v; },
+    setPendingAction:   (v) => { pendingAction   = v; },
+    // state getters
+    getFilterCategorias:    () => filterCategorias,
+    getEditingId:           () => editingId,
+    getDetailsCompromisso:  () => detailsCompromisso,
+    getPendingAction:       () => pendingAction,
+    getCachedCompromissos:  () => cachedCompromissos,
+    // modal openers
+    openCompromissoModal,
+    openValorUpdateModal,
+    openEncerrarModal,
+    duplicateCompromisso,
+    // save / status
+    saveCompromisso,
+    saveQuickValor,
+    changeStatus,
+    deleteCompromisso,
+    confirmarEncerrar,
+    // toggles / lookups
+    setNivelMode,
+    toggleDividaField,
+    toggleProjetoField,
+    toggleVencimentoFields,
+    toggleValorVariavelFields,
+    toggleRendaPrincipalRow,
+    toggleTransferFields,
+    updateLimiteInfo,
+    getConta,
+    getProjeto,
+    getDivida,
+    displayName,
+    populateValoresMensaisGrid,
+    criarProjeto,
+    renderProjetoOptions,
+    syncCategoriaFilterUI,
+    renderCompromissos,
+    showConfirm,
+  });
 
   colVisEl = initColVisibility({
     storageKey: 'compromissos',
@@ -484,253 +526,6 @@ function toggleProjetoField() {
   }
 }
 
-// -----------------------------
-// Event bindings
-// -----------------------------
-function bindEvents() {
-  document.getElementById('btn-novo-compromisso').addEventListener('click', () => openCompromissoModal());
-  document.querySelector('[data-trigger-novo]')?.addEventListener('click', () => openCompromissoModal());
-
-  document.getElementById('search-compromissos').addEventListener('input', (e) => {
-    filterSearch = e.target.value.toLowerCase().trim();
-    renderCompromissos();
-  });
-
-  // View toggle (Tabela / DRE)
-  document.getElementById('view-toggle').addEventListener('click', (e) => {
-    const btn = e.target.closest('.view-toggle-btn');
-    if (!btn) return;
-    document.querySelectorAll('#view-toggle .view-toggle-btn').forEach((b) => b.classList.remove('active'));
-    btn.classList.add('active');
-    viewMode = btn.dataset.view;
-    renderCompromissos();
-  });
-
-  // Filtro: status
-  document.getElementById('status-filters').addEventListener('click', (e) => {
-    const btn = e.target.closest('.filter-pill');
-    if (!btn) return;
-    document.querySelectorAll('#status-filters .filter-pill').forEach((p) => p.classList.remove('active'));
-    btn.classList.add('active');
-    filterStatus = btn.dataset.status;
-    renderCompromissos();
-  });
-
-  // Filtro: configurado / sem compromisso
-  document.getElementById('config-filters').addEventListener('click', (e) => {
-    const btn = e.target.closest('.filter-pill');
-    if (!btn) return;
-    document.querySelectorAll('#config-filters .filter-pill').forEach((p) => p.classList.remove('active'));
-    btn.classList.add('active');
-    filterConfig = btn.dataset.config;
-    renderCompromissos();
-  });
-
-  // Filtro: categoria (multi)
-  document.getElementById('categoria-filters').addEventListener('click', (e) => {
-    const btn = e.target.closest('.filter-pill');
-    if (!btn) return;
-    const id = btn.dataset.categoria;
-    if (id === 'all') {
-      filterCategorias = new Set(['all']);
-    } else {
-      filterCategorias.delete('all');
-      if (filterCategorias.has(id)) filterCategorias.delete(id);
-      else filterCategorias.add(id);
-      if (filterCategorias.size === 0) filterCategorias = new Set(['all']);
-    }
-    syncCategoriaFilterUI();
-    renderCompromissos();
-  });
-
-  // Nivel toggle (Nova subcategoria / Categoria existente)
-  document.getElementById('nivel-segmented').addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-nivel]');
-    if (!btn) return;
-    setNivelMode(btn.dataset.nivel);
-  });
-
-  // Categoria existente → sync com comp-categoria e re-toggle campos
-  document.getElementById('comp-cat-existente').addEventListener('change', (e) => {
-    document.getElementById('comp-categoria').value = e.target.value;
-    toggleDividaField();
-    toggleProjetoField();
-  });
-
-  // Tipo selector
-  document.getElementById('tipo-selector').addEventListener('click', (e) => {
-    const btn = e.target.closest('.tipo-btn');
-    if (!btn) return;
-    document.querySelectorAll('.tipo-btn').forEach((b) => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('comp-tipo').value = btn.dataset.tipo;
-    toggleRendaPrincipalRow();
-    toggleTransferFields();
-  });
-
-  // Conta origin → limit info + auto-set tipo_pagamento se cartão de crédito
-  document.getElementById('comp-conta').addEventListener('change', (e) => {
-    updateLimiteInfo(e.target.value);
-    const conta = getConta(e.target.value);
-    if (conta?.tipo === 'Cartão de Crédito') {
-      document.getElementById('comp-tipo-pagamento').value = 'Crédito';
-    }
-  });
-
-  // Período → mostra/esconde dia mês ou dia semana
-  document.getElementById('comp-periodo').addEventListener('change', toggleVencimentoFields);
-
-  // Categoria muda → mostra/esconde campos de projeto e dívida
-  document.getElementById('comp-categoria').addEventListener('change', () => {
-    toggleProjetoField();
-    toggleDividaField();
-  });
-
-  // Select de projeto: "__new__" abre prompt pra criar inline
-  document.getElementById('comp-projeto').addEventListener('change', async (e) => {
-    if (e.target.value !== '__new__') {
-      e.target.dataset.lastGood = e.target.value;
-      return;
-    }
-    const prev = e.target.dataset.lastGood || '';
-    e.target.value = '';
-    const nome = window.prompt('Nome do novo projeto de investimento:');
-    if (!nome || !nome.trim()) { e.target.value = prev; return; }
-    const novo = await criarProjeto(nome.trim());
-    if (novo) {
-      renderProjetoOptions();
-      e.target.value = novo.id;
-    } else {
-      e.target.value = prev;
-    }
-  });
-
-  // Select de dívida: "__new__" mantém placeholder; a criação real acontece no save
-  document.getElementById('comp-divida')?.addEventListener('change', (e) => {
-    if (e.target.value === '__new__') {
-      // Deixa "__new__" selecionado — no save auto-criamos a dívida com os dados do compromisso
-    }
-  });
-
-  // Checkbox "valor variável"
-  document.getElementById('comp-valor-variavel').addEventListener('change', () => {
-    toggleValorVariavelFields();
-    if (document.getElementById('comp-valor-variavel').checked) {
-      const c = editingId ? cachedCompromissos.find((x) => x.id === editingId) : null;
-      populateValoresMensaisGrid(c);
-    }
-  });
-
-  // Sincroniza moeda entre os 2 selects (modo fixo / modo variável)
-  const moedaFixa = document.getElementById('comp-moeda');
-  const moedaVar  = document.getElementById('comp-moeda-var');
-  if (moedaFixa && moedaVar) {
-    moedaFixa.addEventListener('change', () => { moedaVar.value = moedaFixa.value; });
-    moedaVar.addEventListener('change', () => { moedaFixa.value = moedaVar.value; });
-  }
-
-  // Status segmented
-  document.getElementById('status-segmented').addEventListener('click', (e) => {
-    const btn = e.target.closest('.segmented-btn');
-    if (!btn) return;
-    document.querySelectorAll('#status-segmented .segmented-btn').forEach((b) => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('comp-status').value = btn.dataset.status;
-  });
-
-  // Form submit
-  document.getElementById('form-compromisso').addEventListener('submit', saveCompromisso);
-
-  // Close modals
-  document.querySelectorAll('[data-close-modal]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      if (btn.dataset.closeModal === 'modal-compromisso') {
-        editingCatId = null;
-      }
-      closeModal(btn.dataset.closeModal);
-    });
-  });
-
-  // Details modal buttons
-  document.getElementById('btn-editar').addEventListener('click', () => {
-    if (!detailsCompromisso) return;
-    closeModal('modal-details');
-    openCompromissoModal(detailsCompromisso);
-  });
-
-  document.getElementById('btn-duplicar').addEventListener('click', () => {
-    if (!detailsCompromisso) return;
-    closeModal('modal-details');
-    duplicateCompromisso(detailsCompromisso);
-  });
-
-  document.getElementById('btn-atualizar-valor').addEventListener('click', () => {
-    if (!detailsCompromisso) return;
-    openValorUpdateModal(detailsCompromisso);
-  });
-
-  document.getElementById('form-quick-valor').addEventListener('submit', saveQuickValor);
-  document.getElementById('btn-arquivar').addEventListener('click', () => {
-    if (!detailsCompromisso) return;
-    pendingAction = { type: 'arquivar', id: detailsCompromisso.id };
-    showConfirm(
-      'Arquivar compromisso?',
-      `Arquivar <strong>${escapeHtml(displayName(detailsCompromisso))}</strong>? Ele não vai mais aparecer nas listagens ativas.`,
-      'Arquivar'
-    );
-  });
-  document.getElementById('btn-deletar').addEventListener('click', () => {
-    if (!detailsCompromisso) return;
-    pendingAction = { type: 'delete', id: detailsCompromisso.id };
-    showConfirm(
-      'Deletar permanentemente?',
-      `Tem certeza que quer deletar <strong>${escapeHtml(displayName(detailsCompromisso))}</strong> definitivamente? <br><br><strong style="color: var(--color-danger);">Esta ação não pode ser desfeita.</strong>`,
-      'Deletar'
-    );
-  });
-
-  document.getElementById('btn-encerrar').addEventListener('click', () => {
-    if (!detailsCompromisso) return;
-    openEncerrarModal(detailsCompromisso);
-  });
-
-  document.getElementById('btn-confirmar-encerrar').addEventListener('click', confirmarEncerrar);
-
-  // Confirmar
-  document.getElementById('btn-confirmar-acao').addEventListener('click', async () => {
-    if (!pendingAction) return;
-    const { type, id } = pendingAction;
-    closeModal('modal-confirmar');
-    if (type === 'arquivar') {
-      await changeStatus(id, 'arquivada');
-      closeModal('modal-details');
-    } else if (type === 'delete') {
-      await deleteCompromisso(id);
-      closeModal('modal-details');
-    }
-    pendingAction = null;
-  });
-
-  // Popover de vínculo — cria elemento uma vez no DOM
-  const pop = document.createElement('div');
-  pop.id = 'vinculo-popover';
-  pop.className = 'vinculo-popover hidden';
-  document.body.appendChild(pop);
-  pop.addEventListener('mouseleave', hideVinculoPopover);
-
-  // Delegação: mostra/oculta popover ao passar mouse em badges
-  document.addEventListener('mouseover', (e) => {
-    const badge = e.target.closest('.vinculo-badge');
-    if (badge) showVinculoPopover(badge, { getProjeto, getDivida });
-  });
-  document.addEventListener('mouseout', (e) => {
-    const badge = e.target.closest('.vinculo-badge');
-    if (!badge) return;
-    if (!e.relatedTarget?.closest('#vinculo-popover') && !e.relatedTarget?.closest('.vinculo-badge')) {
-      hideVinculoPopover();
-    }
-  });
-}
 
 
 function syncCategoriaFilterUI() {
