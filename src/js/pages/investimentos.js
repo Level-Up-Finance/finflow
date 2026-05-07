@@ -1314,9 +1314,20 @@ async function confirmarAcaoProjeto() {
         .from('subcategorias')
         .delete()
         .eq('projeto_id', p.id);
-      if (subErr) console.warn('[arquivar] falha ao remover subcategoria', subErr);
 
-      showToast(`Projeto "${p.nome}" arquivado — movido para Terminado`, 'success');
+      if (subErr) {
+        // Projeto já foi arquivado (status atualizado), mas a remoção da
+        // subcategoria falhou — ela vai ficar órfã se o usuário não souber.
+        // Avisa explicitamente em vez de só logar no console.
+        console.warn('[arquivar] falha ao remover subcategoria', subErr);
+        showToast(
+          `Projeto "${p.nome}" arquivado, mas o compromisso vinculado não foi removido: ${subErr.message}. Remova manualmente em Compromissos.`,
+          'warning',
+          12000
+        );
+      } else {
+        showToast(`Projeto "${p.nome}" arquivado — movido para Terminado`, 'success');
+      }
 
     } else {
       // Hard delete — aportes_projeto cascadeiam automaticamente
