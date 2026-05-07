@@ -1,11 +1,9 @@
 // =============================================================
-// TODO refactor: dividir este arquivo (~3000 linhas) em:
-//   compromissos/calendar.js  — renderCalendar + renderCalendarPopover + occursOn + navigateCalendar + openDayModal (~250L)
-//   compromissos/dre.js       — renderDre + renderDreBlock + renderDreItem + renderDreSummary + bindDreClicks (~160L)
-//   compromissos/table.js     — renderFlatTable + renderUnifiedRow + render*Cell helpers (~200L)
-//   compromissos/modals.js    — openCompromissoModal + openCatDirectModal + openDetailsModal + openValorUpdateModal (~600L)
-//   compromissos/save.js      — saveCompromisso + saveCatDirectCompromisso + saveQuickValor (~400L)
-// Acoplamento forte de estado: requer dependency injection (passar getters/setters).
+// TODO refactor (continuação): mais ainda a extrair:
+//   compromissos/dre.js       — renderDre + renderDreBlock + renderDreItem + renderDreSummary (~160L)
+//   compromissos/popovers.js  — vinculo-popover + showInfoPopup (~100L)
+//   compromissos/valores-mensais.js — populate/collect/save grid (~100L)
+// Já extraído: compromissos/calendar.js (renderCalendar + occursOn + openDayModal)
 // =============================================================
 // FinFlow — Página: Compromissos (antes "Categorias")
 //
@@ -42,6 +40,23 @@ import { escapeHtml, formatDateBR, todayISO, getInitials } from '../lib/utils.js
 import { fetchExchangeRate } from '../lib/currency.js';
 import { initContatoPicker } from '../components/contato-picker.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
+import {
+  occursOn,
+  renderCalendar,
+  bindCalendarClicks,
+  openDayModal,
+} from './compromissos/calendar.js';
+import { renderDre } from './compromissos/dre.js';
+import {
+  showVinculoPopover,
+  hideVinculoPopover,
+  showInfoPopup,
+} from './compromissos/popovers.js';
+import {
+  populateValoresMensaisGrid,
+  collectValoresMensais,
+  saveValoresMensaisToOrcamento,
+} from './compromissos/valores-mensais.js';
 
 // -----------------------------
 // State
@@ -702,7 +717,7 @@ function bindEvents() {
   // Delegação: mostra/oculta popover ao passar mouse em badges
   document.addEventListener('mouseover', (e) => {
     const badge = e.target.closest('.vinculo-badge');
-    if (badge) showVinculoPopover(badge);
+    if (badge) showVinculoPopover(badge, { getProjeto, getDivida });
   });
   document.addEventListener('mouseout', (e) => {
     const badge = e.target.closest('.vinculo-badge');
@@ -713,75 +728,6 @@ function bindEvents() {
   });
 }
 
-// -----------------------------
-// Popover de vínculo (dívida / projeto)
-// -----------------------------
-function showVinculoPopover(badge) {
-  const pop = document.getElementById('vinculo-popover');
-  if (!pop) return;
-  const html = buildVinculoPopoverContent(badge.dataset.vinculoType, badge.dataset.vinculoId);
-  if (!html) return;
-
-  pop.innerHTML = html;
-  pop.classList.remove('hidden');
-
-  const rect = badge.getBoundingClientRect();
-  pop.style.top  = `${rect.bottom + 8 + window.scrollY}px`;
-  pop.style.left = `${rect.left   + window.scrollX}px`;
-
-  // Ajusta se sair da viewport à direita
-  const pr = pop.getBoundingClientRect();
-  if (pr.right > window.innerWidth - 12) {
-    pop.style.left = `${rect.right - pr.width + window.scrollX}px`;
-  }
-}
-
-function hideVinculoPopover() {
-  document.getElementById('vinculo-popover')?.classList.add('hidden');
-}
-
-function buildVinculoPopoverContent(type, id) {
-  if (type === 'projeto') {
-    const p = getProjeto(id);
-    if (!p) return null;
-    const meta = Number(p.meta_valor) || 0;
-    return `
-      <div class="vp-header">
-        <span class="vp-type-label vp-type-projeto">Investimento</span>
-        <strong class="vp-title">${escapeHtml(p.nome)}</strong>
-      </div>
-      <div class="vp-body">
-        ${meta ? `<div class="vp-row"><span>Meta</span><strong>${formatCurrency(meta)}</strong></div>` : ''}
-        ${p.saldo_inicial ? `<div class="vp-row"><span>Saldo inicial</span><strong>${formatCurrency(Number(p.saldo_inicial))}</strong></div>` : ''}
-      </div>
-      <a class="vp-link" href="/investimentos.html">Ver investimentos →</a>`;
-  }
-
-  if (type === 'divida') {
-    const d = getDivida(id);
-    const total    = d ? Number(d.valor_total) : 0;
-    const pago     = d ? Number(d.valor_pago)  : 0;
-    const restante = Math.max(0, total - pago);
-    const pct      = total > 0 ? Math.min(100, (pago / total) * 100) : 0;
-    const stCors   = { Ativa: 'var(--color-primary)', Atrasada: 'var(--color-danger)', Negociando: 'var(--color-warning)', Quitada: 'var(--color-success)' };
-    const stCor    = stCors[d?.status] || 'var(--color-primary)';
-    return `
-      <div class="vp-header">
-        <span class="vp-type-label vp-type-divida">Dívida</span>
-        <strong class="vp-title">${d ? escapeHtml(d.nome) : '—'}</strong>
-      </div>
-      <div class="vp-body">
-        ${d?.credor  ? `<div class="vp-row"><span>Credor</span><strong>${escapeHtml(d.credor)}</strong></div>` : ''}
-        ${d?.status  ? `<div class="vp-row"><span>Status</span><strong style="color:${stCor}">${d.status}</strong></div>` : ''}
-        ${total      ? `<div class="vp-row"><span>Total</span><strong>${formatCurrency(total)}</strong></div>` : ''}
-        ${d          ? `<div class="vp-row"><span>Pago</span><strong style="color:var(--color-success)">${formatCurrency(pago)} (${pct.toFixed(0)}%)</strong></div>` : ''}
-        ${d          ? `<div class="vp-row"><span>Restante</span><strong style="color:var(--color-danger)">${formatCurrency(restante)}</strong></div>` : ''}
-      </div>
-      <a class="vp-link" href="/dividas.html">Ver dívidas →</a>`;
-  }
-
-  return null;
-}
 
 function syncCategoriaFilterUI() {
   document.querySelectorAll('#categoria-filters .filter-pill').forEach((p) => {
@@ -909,103 +855,6 @@ async function updateLimiteInfo(contaId) {
   `;
 }
 
-// Renderiza grid com 12 meses futuros, pré-preenchendo com valores existentes
-async function populateValoresMensaisGrid(c, catId = null) {
-  const grid = document.getElementById('valores-mensais-grid');
-  const months = nextNMonths(12);
-
-  let existingMap = new Map();
-  const lookupId = catId || c?.id;
-  if (lookupId) {
-    const startMesAno = months[0].mesAno;
-    const endMesAno = months[months.length - 1].mesAno;
-    const col = catId ? 'categoria_id' : 'subcategoria_id';
-    const { data, error } = await supabase
-      .from('orcamento_geral')
-      .select('mes_ano, valor_previsto')
-      .eq(col, lookupId)
-      .gte('mes_ano', startMesAno)
-      .lte('mes_ano', endMesAno);
-    if (!error) {
-      for (const row of data || []) {
-        existingMap.set(row.mes_ano, Number(row.valor_previsto) || 0);
-      }
-    }
-  }
-
-  grid.innerHTML = months.map((m) => {
-    const valor = existingMap.has(m.mesAno) ? existingMap.get(m.mesAno) : '';
-    return `
-      <div class="valor-mensal-item">
-        <span class="valor-mensal-label">${m.label}</span>
-        <input type="number" step="0.01" min="0" class="valor-mensal-input" data-mes-ano="${m.mesAno}" value="${valor}" placeholder="0,00">
-      </div>
-    `;
-  }).join('');
-}
-
-function collectValoresMensais() {
-  const inputs = document.querySelectorAll('.valor-mensal-input');
-  const items = [];
-  inputs.forEach((inp) => {
-    const v = inp.value.trim();
-    if (v === '') return;
-    const num = Number(v);
-    if (isNaN(num) || num < 0) return;
-    items.push({ mes_ano: inp.dataset.mesAno, valor_previsto: num });
-  });
-  return items;
-}
-
-async function saveValoresMensaisToOrcamento(subcategoriaId, moeda, items, categoriaId = null) {
-  if (items.length === 0) return;
-  const user = await getCurrentUser();
-  if (!user) return;
-
-  if (categoriaId) {
-    // Índice parcial não suporta ON CONFLICT — usa DELETE + INSERT
-    const mesAnos = items.map((it) => it.mes_ano);
-    const { error: delErr } = await supabase
-      .from('orcamento_geral')
-      .delete()
-      .eq('categoria_id', categoriaId)
-      .in('mes_ano', mesAnos);
-    if (delErr) { console.error('[saveValoresMensais delete]', delErr); }
-
-    const rows = items.map((it) => ({
-      user_id: user.id,
-      categoria_id: categoriaId,
-      mes_ano: it.mes_ano,
-      valor_previsto: it.valor_previsto,
-      moeda,
-      updated_at: new Date().toISOString(),
-    }));
-    const { error } = await supabase.from('orcamento_geral').insert(rows);
-    if (error) {
-      console.error('[saveValoresMensaisToOrcamento cat]', error);
-      showToast('Erro ao salvar valores mensais: ' + error.message, 'error', 8000);
-    }
-    return;
-  }
-
-  const rows = items.map((it) => ({
-    user_id: user.id,
-    subcategoria_id: subcategoriaId,
-    mes_ano: it.mes_ano,
-    valor_previsto: it.valor_previsto,
-    moeda,
-    updated_at: new Date().toISOString(),
-  }));
-
-  const { error } = await supabase
-    .from('orcamento_geral')
-    .upsert(rows, { onConflict: 'user_id,subcategoria_id,mes_ano' });
-
-  if (error) {
-    console.error('[saveValoresMensaisToOrcamento sub]', error);
-    showToast('Erro ao salvar valores mensais: ' + error.message, 'error', 8000);
-  }
-}
 
 // -----------------------------
 // Display name
@@ -1609,18 +1458,6 @@ async function loadProxValores() {
   }
 }
 
-// Próximos N meses como [{year, month, mesAno, label}, ...]
-function nextNMonths(n = 12) {
-  const now = new Date();
-  const out = [];
-  for (let i = 0; i < n; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    const mesAno = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
-    const label = d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }).replace('.', '');
-    out.push({ year: d.getFullYear(), month: d.getMonth(), mesAno, label });
-  }
-  return out;
-}
 
 // Retorna {valor, moeda, isVariavel, mesAno?} pra exibição na lista/DRE/calendar.
 // proxKey permite sobrescrever a chave usada em cachedProxValores (ex: 'cat_' + id para categorias).
@@ -1732,11 +1569,35 @@ function renderCompromissos() {
 
   if (viewMode === 'calendar') {
     const calItems = filtered.filter((r) => r._type === 'sub' && isRowConfigured(r));
-    container.innerHTML = renderCalendar(calItems, calendarYear, calendarMonth);
-    bindCalendarClicks(calItems);
+    const calDeps = {
+      displayName,
+      getDisplayValor,
+      getCompromissoById: (id) => cachedCompromissos.find((x) => x.id === id),
+      openDetailsModal,
+    };
+    container.innerHTML = renderCalendar(calItems, calendarYear, calendarMonth, calDeps);
+    bindCalendarClicks({
+      onPrev:  () => navigateCalendar(-1),
+      onNext:  () => navigateCalendar(1),
+      onToday: () => {
+        const t0 = new Date();
+        calendarYear  = t0.getFullYear();
+        calendarMonth = t0.getMonth();
+        renderCompromissos();
+      },
+      onDayClick: (day) => {
+        const date = new Date(calendarYear, calendarMonth, day);
+        const events = calItems.filter((c) => occursOn(c, date));
+        openDayModal(date, events, calDeps);
+      },
+    });
   } else if (viewMode === 'dre') {
     const dreItems = filtered.filter((r) => r._type === 'sub' && isRowConfigured(r));
-    container.innerHTML = renderDre(dreItems);
+    container.innerHTML = renderDre(
+      dreItems,
+      { cachedCategorias, filterCategorias },
+      { displayName, getDisplayValor, compareByVencimento, diaSemanaLabel },
+    );
   } else {
     container.innerHTML = renderFlatTable(filtered);
     bindRowClicks();
@@ -1961,342 +1822,7 @@ function bindRowClicks() {
   });
 }
 
-// -----------------------------
-// Render: DRE view (agrupado por Categoria)
-// -----------------------------
-function renderDre(filteredCompromissos) {
-  // Categorias a mostrar: respeita filtro de categoria
-  // Se filtro = "all", mostra todas (incluindo vazias). Senão, só as filtradas.
-  const showAllCategorias = filterCategorias.has('all');
-  const categoriasToShow = showAllCategorias
-    ? cachedCategorias
-    : cachedCategorias.filter((c) => filterCategorias.has(c.id));
 
-  // Agrupa compromissos por categoria_id
-  const groupedByCategoria = new Map();
-  categoriasToShow.forEach((cat) => groupedByCategoria.set(cat.id, []));
-  const orphans = []; // sem categoria_id (categoria deletada)
-  filteredCompromissos.forEach((c) => {
-    if (groupedByCategoria.has(c.categoria_id)) {
-      groupedByCategoria.get(c.categoria_id).push(c);
-    } else if (showAllCategorias) {
-      orphans.push(c);
-    }
-  });
-
-  // Ordena cada grupo por dia de vencimento
-  for (const arr of groupedByCategoria.values()) {
-    arr.sort(compareByVencimento);
-  }
-  orphans.sort(compareByVencimento);
-
-  // Calcular totais (usa próximo valor pra valor_variavel)
-  let totalReceitas = 0;
-  let totalDespesas = 0;
-  filteredCompromissos.forEach((c) => {
-    const v = getDisplayValor(c).valor;
-    if (c.tipo === 'Receita') totalReceitas += v;
-    else totalDespesas += v;
-  });
-  const resultado = totalReceitas - totalDespesas;
-
-  // Render blocos
-  const blocks = [];
-  for (const cat of categoriasToShow) {
-    const items = groupedByCategoria.get(cat.id) || [];
-    blocks.push(renderDreBlock(cat, items));
-  }
-  if (orphans.length > 0) {
-    blocks.push(renderDreBlock(
-      { id: null, nome: 'Sem categoria', cor: '#9CA3AF' },
-      orphans
-    ));
-  }
-
-  // Empty state geral
-  if (blocks.length === 0) {
-    return '<div class="empty-state"><p class="empty-state-message">Nenhuma categoria pra mostrar.</p></div>';
-  }
-
-  return `
-    <div class="dre-view">
-      ${blocks.join('')}
-      ${renderDreSummary(totalReceitas, totalDespesas, resultado)}
-    </div>
-  `;
-}
-
-function renderDreBlock(cat, items) {
-  // Calcula total da categoria (signed: Receita +, Despesa -)
-  let categoriaTotal = 0;
-  items.forEach((c) => {
-    const v = getDisplayValor(c).valor;
-    categoriaTotal += (c.tipo === 'Receita') ? v : -v;
-  });
-
-  const totalSign = categoriaTotal > 0 ? '+' : (categoriaTotal < 0 ? '-' : '');
-  const totalClass = categoriaTotal > 0 ? 'dre-positive' : (categoriaTotal < 0 ? 'dre-negative' : 'dre-zero');
-  const totalDisplay = `${totalSign}${formatCurrency(Math.abs(categoriaTotal), 'BRL')}`;
-
-  const itemsHtml = items.length === 0
-    ? '<div class="dre-empty">Sem compromissos nesta categoria</div>'
-    : `<div class="dre-items">${items.map(renderDreItem).join('')}</div>`;
-
-  return `
-    <div class="dre-categoria">
-      <header class="dre-categoria-header">
-        <span class="dre-categoria-color" style="background: ${cat.cor};"></span>
-        <h3 class="dre-categoria-name">${escapeHtml(cat.nome)}</h3>
-        <span class="dre-categoria-count">${items.length} ${items.length === 1 ? 'item' : 'itens'}</span>
-      </header>
-      ${itemsHtml}
-      <footer class="dre-categoria-total">
-        <span>Total ${escapeHtml(cat.nome)}</span>
-        <span class="${totalClass}">${totalDisplay}</span>
-      </footer>
-    </div>
-  `;
-}
-
-function renderDreItem(c) {
-  const dv = getDisplayValor(c);
-  const sign = c.tipo === 'Receita' ? '+' : '-';
-  const colorClass = c.tipo === 'Receita' ? 'dre-positive' : 'dre-negative';
-  const valueDisplay = `${sign}${formatCurrency(dv.valor, dv.moeda)}${dv.isVariavel ? ' <span class="valor-variavel-tag">varia</span>' : ''}`;
-
-  // Meta: período + vencimento
-  let venc = '';
-  if (c.periodo === 'Semanal' || c.periodo === 'Quinzenal') {
-    venc = (c.dia_semana !== null && c.dia_semana !== undefined) ? diaSemanaLabel(c.dia_semana) : '';
-  } else if (c.vencimento_dia) {
-    venc = `Dia ${c.vencimento_dia}`;
-  }
-  const meta = `${c.periodo}${venc ? ' · ' + venc : ''}`;
-
-  const isInactive = c.status !== 'ativa';
-  const inactiveClass = isInactive ? (c.status === 'arquivada' ? 'arquivada' : 'inactive') : '';
-
-  return `
-    <div class="dre-item ${inactiveClass}" data-id="${c.id}">
-      <div>
-        <div class="dre-item-name">${escapeHtml(displayName(c))}</div>
-        <div class="dre-item-meta">${meta}${isInactive ? ` · ${c.status}` : ''}</div>
-      </div>
-      <span class="dre-item-value ${colorClass}">${valueDisplay}</span>
-    </div>
-  `;
-}
-
-function renderDreSummary(totalReceitas, totalDespesas, resultado) {
-  const resultClass = resultado > 0 ? 'dre-positive' : (resultado < 0 ? 'dre-negative' : 'dre-zero');
-  const resultSign = resultado > 0 ? '+' : (resultado < 0 ? '-' : '');
-  return `
-    <div class="dre-result">
-      <div class="dre-summary-row">
-        <span>Total Receitas</span>
-        <strong class="dre-positive">+${formatCurrency(totalReceitas, 'BRL')}</strong>
-      </div>
-      <div class="dre-summary-row">
-        <span>Total Despesas</span>
-        <strong class="dre-negative">-${formatCurrency(totalDespesas, 'BRL')}</strong>
-      </div>
-      <div class="dre-summary-row dre-net">
-        <span>Resultado Líquido</span>
-        <span class="${resultClass}">${resultSign}${formatCurrency(Math.abs(resultado), 'BRL')}</span>
-      </div>
-    </div>
-  `;
-}
-
-// -----------------------------
-// Render: Calendar view
-// -----------------------------
-const WEEKDAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-const MONTH_LABELS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-
-// Popover (hover) com detalhes dos compromissos do dia no calendário
-function renderCalendarPopover(events, day, month, _year) {
-  const sorted = [...events].sort((a, b) => {
-    if (a.tipo !== b.tipo) return a.tipo === 'Receita' ? -1 : 1;
-    return displayName(a).localeCompare(displayName(b), 'pt-BR');
-  });
-
-  let totalReceitas = 0, totalDespesas = 0;
-  const items = sorted.map((c) => {
-    const dv = getDisplayValor(c);
-    const sign = c.tipo === 'Receita' ? '+' : '-';
-    const cls = c.tipo === 'Receita' ? 'dre-positive' : 'dre-negative';
-    if (c.tipo === 'Receita') totalReceitas += dv.valor;
-    else totalDespesas += dv.valor;
-    const variaTag = dv.isVariavel ? ' <span class="valor-variavel-tag">varia</span>' : '';
-    return `
-      <li class="calendar-popover-item">
-        <span class="calendar-popover-name">${escapeHtml(displayName(c))}</span>
-        <span class="calendar-popover-value ${cls}">${sign}${formatCurrency(dv.valor, dv.moeda)}${variaTag}</span>
-      </li>
-    `;
-  }).join('');
-
-  const net = totalReceitas - totalDespesas;
-  const netSign = net > 0 ? '+' : (net < 0 ? '-' : '');
-  const netCls = net > 0 ? 'dre-positive' : (net < 0 ? 'dre-negative' : 'dre-zero');
-
-  return `
-    <div class="calendar-day-popover" role="tooltip">
-      <div class="calendar-popover-title">${day} de ${MONTH_LABELS[month]}</div>
-      <ul class="calendar-popover-list">${items}</ul>
-      <div class="calendar-popover-summary">
-        <span class="calendar-popover-summary-label">Saldo do dia</span>
-        <span class="${netCls}">${netSign}${formatCurrency(Math.abs(net), 'BRL')}</span>
-      </div>
-    </div>
-  `;
-}
-
-/**
- * Verifica se um compromisso tem ocorrência num dia específico.
- */
-function occursOn(c, date) {
-  const target = new Date(date);
-  target.setHours(0, 0, 0, 0);
-
-  const start = c.iniciado_em ? new Date(c.iniciado_em + 'T00:00:00') : null;
-  if (start && target < start) return false;
-
-  if (c.terminado_em) {
-    const term = new Date(c.terminado_em + 'T00:00:00');
-    if (target > term) return false;
-  }
-
-  if (c.periodo === 'Único') {
-    return start && target.getTime() === start.getTime();
-  }
-  if (c.periodo === 'Mensal') {
-    return c.vencimento_dia === target.getDate();
-  }
-  if (c.periodo === 'Anual') {
-    return start
-      && c.vencimento_dia === target.getDate()
-      && start.getMonth() === target.getMonth();
-  }
-  if (c.periodo === 'Semanal') {
-    if (c.dia_semana !== target.getDay()) return false;
-    const n = Number(c.intervalo_semanas) || 1;
-    if (n <= 1) return true;
-    if (!start) return true;
-    const diff = Math.round((target - start) / (24 * 60 * 60 * 1000));
-    return diff >= 0 && diff % (n * 7) === 0;
-  }
-  if (c.periodo === 'Quinzenal') {
-    if (!start || c.dia_semana !== target.getDay()) return false;
-    const diff = Math.round((target - start) / (24 * 60 * 60 * 1000));
-    return diff >= 0 && diff % 14 === 0;
-  }
-  return false;
-}
-
-function renderCalendar(compromissos, year, month) {
-  const firstDay = new Date(year, month, 1);
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDayOfWeek = firstDay.getDay(); // 0 = Domingo
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  // Calcula compromissos por dia
-  const compsByDay = {};
-  for (let day = 1; day <= daysInMonth; day++) {
-    const d = new Date(year, month, day);
-    compsByDay[day] = compromissos.filter((c) => occursOn(c, d));
-  }
-
-  // Header com mês + nav
-  const monthLabel = `${MONTH_LABELS[month]} ${year}`;
-
-  // Weekday headers
-  const weekdayCells = WEEKDAY_LABELS.map((w) => `<div class="calendar-weekday">${w}</div>`).join('');
-
-  // Empty cells antes do dia 1
-  const emptyCells = Array.from({ length: firstDayOfWeek }, () =>
-    '<div class="calendar-day empty"></div>'
-  ).join('');
-
-  // Day cells
-  const dayCells = [];
-  for (let day = 1; day <= daysInMonth; day++) {
-    const d = new Date(year, month, day);
-    const isToday = d.getFullYear() === today.getFullYear()
-                 && d.getMonth() === today.getMonth()
-                 && d.getDate() === today.getDate();
-    const events = compsByDay[day];
-    const hasEvents = events.length > 0;
-
-    // Separa em Receitas (verde) e Despesas (vermelho)
-    const receitaCount = events.filter((c) => c.tipo === 'Receita').length;
-    const despesaCount = events.filter((c) => c.tipo === 'Despesa').length;
-
-    const badges = [];
-    if (receitaCount > 0) {
-      badges.push(`<span class="calendar-badge calendar-badge-receita">+${receitaCount}</span>`);
-    }
-    if (despesaCount > 0) {
-      badges.push(`<span class="calendar-badge calendar-badge-despesa">-${despesaCount}</span>`);
-    }
-    const badgeHtml = badges.length > 0 ? `<div class="calendar-badges">${badges.join('')}</div>` : '';
-
-    const popoverHtml = hasEvents ? renderCalendarPopover(events, day, month, year) : '';
-
-    dayCells.push(`
-      <div class="calendar-day ${isToday ? 'today' : ''} ${hasEvents ? 'has-events' : ''}" data-day="${day}">
-        <span class="calendar-day-num">${day}</span>
-        ${badgeHtml}
-        ${popoverHtml}
-      </div>
-    `);
-  }
-
-  return `
-    <div class="calendar">
-      <header class="calendar-header">
-        <h2 class="calendar-title">${monthLabel}</h2>
-        <div class="calendar-nav-group">
-          <button class="calendar-nav" id="cal-today" type="button" title="Hoje" style="width: auto; padding: 0 var(--space-3); font-size: var(--fs-xs); font-weight: var(--fw-semibold);">Hoje</button>
-          <button class="calendar-nav" id="cal-prev" type="button" aria-label="Mês anterior">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          </button>
-          <button class="calendar-nav" id="cal-next" type="button" aria-label="Próximo mês">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
-        </div>
-      </header>
-      <div class="calendar-grid">
-        ${weekdayCells}
-        ${emptyCells}
-        ${dayCells.join('')}
-      </div>
-    </div>
-  `;
-}
-
-function bindCalendarClicks(filteredCompromissos) {
-  document.getElementById('cal-prev').addEventListener('click', () => navigateCalendar(-1));
-  document.getElementById('cal-next').addEventListener('click', () => navigateCalendar(1));
-  document.getElementById('cal-today').addEventListener('click', () => {
-    const t = new Date();
-    calendarYear = t.getFullYear();
-    calendarMonth = t.getMonth();
-    renderCompromissos();
-  });
-
-  document.querySelectorAll('.calendar-day.has-events').forEach((dayEl) => {
-    dayEl.addEventListener('click', () => {
-      const day = Number(dayEl.dataset.day);
-      const date = new Date(calendarYear, calendarMonth, day);
-      const events = filteredCompromissos.filter((c) => occursOn(c, date));
-      openDayModal(date, events);
-    });
-  });
-}
 
 function navigateCalendar(delta) {
   calendarMonth += delta;
@@ -2310,66 +1836,6 @@ function navigateCalendar(delta) {
   renderCompromissos();
 }
 
-function openDayModal(date, events) {
-  // Title
-  const title = `${date.getDate()} de ${MONTH_LABELS[date.getMonth()]} de ${date.getFullYear()}`;
-  document.getElementById('modal-day-title').textContent = title;
-
-  // Summary: total receitas / despesas no dia (usa próximo valor pra valor_variavel)
-  let totalReceitas = 0, totalDespesas = 0;
-  events.forEach((c) => {
-    const v = getDisplayValor(c).valor;
-    if (c.tipo === 'Receita') totalReceitas += v;
-    else totalDespesas += v;
-  });
-  const net = totalReceitas - totalDespesas;
-  const netSign = net >= 0 ? '+' : '-';
-  const netClass = net > 0 ? 'dre-positive' : (net < 0 ? 'dre-negative' : 'dre-zero');
-
-  document.getElementById('day-summary').innerHTML = `
-    <div style="flex: 1;"><span style="color: var(--color-text-muted);">Receitas:</span> <strong class="dre-positive">+${formatCurrency(totalReceitas, 'BRL')}</strong></div>
-    <div style="flex: 1;"><span style="color: var(--color-text-muted);">Despesas:</span> <strong class="dre-negative">-${formatCurrency(totalDespesas, 'BRL')}</strong></div>
-    <div style="flex: 1;"><span style="color: var(--color-text-muted);">Saldo:</span> <strong class="${netClass}">${netSign}${formatCurrency(Math.abs(net), 'BRL')}</strong></div>
-  `;
-
-  // Lista (ordem alfabética)
-  const sorted = [...events].sort((a, b) =>
-    displayName(a).localeCompare(displayName(b), 'pt-BR')
-  );
-  const listEl = document.getElementById('day-list');
-  if (sorted.length === 0) {
-    listEl.innerHTML = '<p style="text-align: center; color: var(--color-text-muted); padding: var(--space-4);">Nenhum compromisso neste dia.</p>';
-  } else {
-    listEl.innerHTML = sorted.map((c) => {
-      const dv = getDisplayValor(c);
-      const sign = c.tipo === 'Receita' ? '+' : '-';
-      const colorClass = c.tipo === 'Receita' ? 'dre-positive' : 'dre-negative';
-      const valueDisplay = `${sign}${formatCurrency(dv.valor, dv.moeda)}${dv.isVariavel ? ' <span class="valor-variavel-tag">varia</span>' : ''}`;
-      return `
-        <div class="day-item" data-id="${c.id}">
-          <div class="day-item-info">
-            <div class="day-item-name">${escapeHtml(displayName(c))}</div>
-            <div class="day-item-meta">${tipoPill(c.tipo)} · ${c.periodo}</div>
-          </div>
-          <div class="day-item-value ${colorClass}">${valueDisplay}</div>
-        </div>
-      `;
-    }).join('');
-
-    // Bind click → details
-    listEl.querySelectorAll('.day-item').forEach((item) => {
-      item.addEventListener('click', () => {
-        const c = cachedCompromissos.find((x) => x.id === item.dataset.id);
-        if (c) {
-          closeModal('modal-day');
-          openDetailsModal(c);
-        }
-      });
-    });
-  }
-
-  openModal('modal-day');
-}
 
 // -----------------------------
 // Save (insert / update)
@@ -2806,37 +2272,6 @@ async function confirmarEncerrar() {
   await loadCompromissos();
 }
 
-// =============================================================
-// Popup informativo de subcategoria (fecha apenas com OK)
-// =============================================================
-function showInfoPopup(title, message) {
-  let dialog = document.getElementById('subcategoria-info-dialog');
-  if (!dialog) {
-    dialog = document.createElement('div');
-    dialog.id = 'subcategoria-info-dialog';
-    dialog.className = 'modal-backdrop';
-    dialog.innerHTML = `
-      <div class="modal modal-sm">
-        <div class="modal-header">
-          <h2 class="modal-title" id="info-dialog-title"></h2>
-        </div>
-        <div class="modal-body">
-          <p id="info-dialog-msg" style="color: var(--color-text-secondary);"></p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-primary" id="btn-info-dialog-ok">Entendi</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(dialog);
-    dialog.querySelector('#btn-info-dialog-ok').addEventListener('click', () => {
-      dialog.classList.add('hidden');
-    });
-  }
-  dialog.querySelector('#info-dialog-title').textContent = title;
-  dialog.querySelector('#info-dialog-msg').textContent = message;
-  dialog.classList.remove('hidden');
-}
 
 
 // Definição dos super-blocos (mesma usada no orçamento, mas duplicada aqui pra
