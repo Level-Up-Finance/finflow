@@ -8,7 +8,7 @@ import { supabase }                     from '../lib/supabase.js';
 import { showToast }                    from '../components/toast.js';
 import { formatCurrency }               from '../lib/compromissos-config.js';
 import { escapeHtml, formatDateBR } from '../lib/utils.js';
-import { fetchCnpjData, isValidCnpj, formatCnpj, digitsOnly, googleCnpjSearchUrl, inferLogoUrl, checkImageExists } from '../lib/cnpj-lookup.js';
+import { fetchCnpjData, isValidCnpj, digitsOnly, googleCnpjSearchUrl, inferLogoUrl, checkImageExists } from '../lib/cnpj-lookup.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 // ── State ─────────────────────────────────────────────────────

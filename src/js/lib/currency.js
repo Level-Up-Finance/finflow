@@ -68,31 +68,9 @@ export async function getFrozenRate(mesAno, moeda) {
 }
 
 /**
- * Converte um valor em moeda estrangeira para BRL.
- * Se houver câmbio congelado pro mes_ano, usa esse valor; senão usa a taxa live.
- */
-export async function calcBRLValue(valor, moeda, mesAno) {
-  if (moeda === 'BRL') return valor;
-  const frozen = await getFrozenRate(mesAno, moeda);
-  if (frozen) return valor * frozen;
-  const live = await fetchExchangeRate(moeda, 'BRL');
-  return valor * live;
-}
-
-/**
  * Inicia setInterval que executa callback a cada N ms (default 5min).
  * @returns {number}  intervalId, pra clearInterval depois
  */
 export function startCurrencyAutoRefresh(callback, intervalMs = CACHE_TTL_MS) {
   return setInterval(callback, intervalMs);
-}
-
-/**
- * Limpa caches (útil em dev / testes).
- */
-export function clearCurrencyCache() {
-  memCache.clear();
-  for (const key of Object.keys(localStorage)) {
-    if (key.startsWith('fx:')) localStorage.removeItem(key);
-  }
 }

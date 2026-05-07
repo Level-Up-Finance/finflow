@@ -17,12 +17,6 @@ export const CURRENCIES = [
   { code: 'CHF', label: 'Franco Suíço'      },
 ];
 
-export function currencyOptions(selected = 'BRL') {
-  return CURRENCIES
-    .map((c) => `<option value="${c.code}" ${c.code === selected ? 'selected' : ''}>${c.code} — ${c.label}</option>`)
-    .join('');
-}
-
 // Reads the user's configured currencies from localStorage (set by configuracoes).
 // Falls back to BRL + USD + EUR if not configured.
 export function getUserCurrencies() {

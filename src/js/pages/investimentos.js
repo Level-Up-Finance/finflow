@@ -14,7 +14,7 @@ import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
 import { initColVisibility } from '../lib/col-visibility.js';
-import { escapeHtml, formatDateBR, isoMonth, showConfirm } from '../lib/utils.js';
+import { escapeHtml, formatDateBR, isoMonth } from '../lib/utils.js';
 import { DEFAULT_COLOR, renderColorPicker, setActiveColor } from '../lib/color-palette.js';
 import { initContatoPicker } from '../components/contato-picker.js';
 import { parseDecimal, formatDecimal, autoAttachDecimalInputs } from '../lib/number-format.js';

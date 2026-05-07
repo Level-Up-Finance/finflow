@@ -12,7 +12,6 @@ import { supabase } from '../lib/supabase.js';
 import { getCurrentUser, logout } from '../lib/auth.js';
 import { escapeHtml, getInitials } from '../lib/utils.js';
 
-let cachedProfile = null;
 let dropdownOpen = false;
 let docListenersAttached = false;
 
@@ -51,7 +50,6 @@ export async function mountHeaderUserMenu() {
       .select('nome, apelido, foto_url')
       .eq('id', user.id)
       .maybeSingle();
-    cachedProfile = { ...(data || {}), email };
     render(host, {
       email,
       nome: data?.nome || fallbackName,

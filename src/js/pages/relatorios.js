@@ -3,7 +3,7 @@
 // Fluxo de Caixa · Previsto vs Real · Categorias
 // Exportação CSV / Excel / PDF
 // =============================================================
-import { guardSession, getCurrentUser } from '../lib/auth.js';
+import { guardSession } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';

@@ -2,7 +2,6 @@
 // FinFlow — Sidebar
 // =============================================================
 import { initTheme } from '../lib/theme.js';
-import { showToast } from './toast.js';
 import { mountHeaderUserMenu } from './header-user-menu.js';
 import { CHANGELOG } from '../lib/changelog.js';
 

@@ -58,17 +58,6 @@ export async function upsertRule(contatoId, subcategoriaId) {
 }
 
 /**
- * Remove uma regra pelo id.
- */
-export async function deleteRule(ruleId) {
-  const { error } = await supabase
-    .from('regras_reconciliacao')
-    .delete()
-    .eq('id', ruleId);
-  return error ? { ok: false, error: error.message } : { ok: true };
-}
-
-/**
  * Sugere uma subcategoria para um contato baseado no histórico.
  * Heurística: pega todas as transações passadas com esse contato_id
  * que tenham subcategoria_id setada. Retorna a mais frequente — desde

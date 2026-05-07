@@ -100,10 +100,6 @@ export const MOEDAS = [
 
 const MOEDA_BY_CODE = Object.fromEntries(MOEDAS.map((m) => [m.code, m]));
 
-export function getMoeda(code) {
-  return MOEDA_BY_CODE[code] || null;
-}
-
 /**
  * Formata um valor monetário com a convenção oficial da moeda:
  *   BRL → "R$ 1.234,56"

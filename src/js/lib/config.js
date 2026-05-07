@@ -16,7 +16,5 @@
 export const SUPABASE_URL = 'https://meapbdsthewyuugbavzl.supabase.co';
 export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lYXBiZHN0aGV3eXV1Z2JhdnpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1ODc2NjgsImV4cCI6MjA5MzE2MzY2OH0.7CnTn1Zxd9W1d6fLeKLJEGbriPlzKO6dnKwBYSiUpS8';
 
-// Defaults que podem ser sobrescritos depois ----------------
-export const DEFAULT_CURRENCY = 'BRL';
-export const DEFAULT_WIDGET_CURRENCIES = ['USD', 'EUR', 'GBP'];
-export const CURRENCY_REFRESH_MS = 5 * 60 * 1000; // 5 min
+// Refresh de cotações (Frankfurter) — 5 min
+export const CURRENCY_REFRESH_MS = 5 * 60 * 1000;

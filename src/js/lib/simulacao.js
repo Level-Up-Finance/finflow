@@ -74,26 +74,3 @@ export function aporteNecessario(pv, i, n, fv) {
   return (fv - proj) * i / (fator - 1);
 }
 
-/**
- * Gera projeção mês-a-mês para gráfico/tabela.
- * Retorna array de { n, saldo, aportes_acum, juros_acum }.
- */
-export function projecaoMensal(pv, pmt, i, n) {
-  pv = Number(pv) || 0;
-  pmt = Number(pmt) || 0;
-  i = Number(i) || 0;
-  n = Number(n) || 0;
-  const rows = [];
-  let saldo = pv;
-  let aportes = 0;
-  let juros = 0;
-  rows.push({ n: 0, saldo, aportes_acum: 0, juros_acum: 0 });
-  for (let k = 1; k <= n; k++) {
-    const j = saldo * i;
-    juros += j;
-    saldo = saldo + j + pmt;
-    aportes += pmt;
-    rows.push({ n: k, saldo, aportes_acum: aportes, juros_acum: juros });
-  }
-  return rows;
-}

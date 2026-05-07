@@ -25,7 +25,6 @@ import { openModal, closeModal } from '../components/modal.js';
 import { initCurrencyWidget } from '../components/currency-widget.js';
 import {
   TIPOS,
-  getTipo,
   tipoIcon,
   tipoColor,
   tipoPill,
@@ -39,7 +38,6 @@ import {
 } from '../lib/compromissos-config.js';
 import { findBank, logoUrl } from '../lib/banks.js';
 import { initColVisibility } from '../lib/col-visibility.js';
-import { typeIcon as accountTypeIcon, typeColor as accountTypeColor } from '../lib/account-types.js';
 import { escapeHtml, formatDateBR, todayISO, getInitials } from '../lib/utils.js';
 import { fetchExchangeRate } from '../lib/currency.js';
 import { initContatoPicker } from '../components/contato-picker.js';
