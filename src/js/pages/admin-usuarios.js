@@ -6,7 +6,7 @@ import { initSidebar }             from '../components/sidebar.js';
 import { supabase }                from '../lib/supabase.js';
 import { showToast }               from '../components/toast.js';
 import { escapeHtml, formatDateBR, getInitials } from '../lib/utils.js';
-import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
+import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 // ── Estado ────────────────────────────────────────────────────
 let cachedUsers  = [];
@@ -190,7 +190,7 @@ async function savePlano() {
     document.getElementById('modal-usr-meta').innerHTML =
       `<span class="plano-badge plano-${plano}">${PLANO_LABELS[plano]}</span>`;
   }
-  showToast('Plano atualizado.', 'success');
+  showToast(t('admin.usuarios.toast.plano_atualizado', 'Plano atualizado.'), 'success');
   renderTable();
 }
 

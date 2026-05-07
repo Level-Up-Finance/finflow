@@ -6,7 +6,7 @@ import { initSidebar }                    from '../components/sidebar.js';
 import { supabase }                       from '../lib/supabase.js';
 import { showToast }                      from '../components/toast.js';
 import { escapeHtml, formatDateBR }       from '../lib/utils.js';
-import { loadStrings as loadTextos, applyTranslationsToDom } from '../lib/textos.js';
+import { t, loadStrings as loadTextos, applyTranslationsToDom } from '../lib/textos.js';
 
 // ── Estado ────────────────────────────────────────────────────
 let cachedStrings  = [];
@@ -361,7 +361,7 @@ async function saveCreate({ pt_br, en, es, fr }, _motivo) {
   const descricao  = (document.getElementById('i18n-new-descricao').value  || '').trim() || null;
 
   if (!chave) {
-    showToast('Chave é obrigatória.', 'error');
+    showToast(t('admin.idiomas.validacao.chave_obrigatoria', 'Chave é obrigatória.'), 'error');
     return;
   }
 
@@ -386,7 +386,7 @@ async function saveCreate({ pt_br, en, es, fr }, _motivo) {
 
   cachedStrings.unshift(data);
   updateCount();
-  showToast('String criada.', 'success');
+  showToast(t('admin.idiomas.toast.string_criada', 'String criada.'), 'success');
   closeEditModal();
   renderTable();
 }
@@ -475,7 +475,7 @@ function handleCSVFile(file) {
   reader.onload = (e) => {
     const parsed = parseCSV(e.target.result);
     if (!parsed.length) {
-      showToast('CSV vazio ou formato inválido.', 'error');
+      showToast(t('admin.idiomas.validacao.csv_invalido', 'CSV vazio ou formato inválido.'), 'error');
       return;
     }
 

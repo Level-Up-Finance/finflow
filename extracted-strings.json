@@ -55,6 +55,39 @@
     ]
   },
   {
+    "chave": "admin.feedback.toast.excluido",
+    "pt_br": "Excluído.",
+    "pagina": "admin",
+    "fontes": [
+      "src/js/pages/admin-feedback.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "admin.feedback.toast.salvo",
+    "pt_br": "Salvo.",
+    "pagina": "admin",
+    "fontes": [
+      "src/js/pages/admin-feedback.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "admin.feedback.toast.vinculado_changelog",
+    "pt_br": "Vinculado ao changelog.",
+    "pagina": "admin",
+    "fontes": [
+      "src/js/pages/admin-feedback.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "admin.idiomas.descricao",
     "pt_br": "Gerencie as traduções da interface do FinFlow em PT-BR, EN, ES e FR.",
     "pagina": "admin",
@@ -66,6 +99,39 @@
     ]
   },
   {
+    "chave": "admin.idiomas.toast.string_criada",
+    "pt_br": "String criada.",
+    "pagina": "admin",
+    "fontes": [
+      "src/js/pages/admin-i18n.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "admin.idiomas.validacao.chave_obrigatoria",
+    "pt_br": "Chave é obrigatória.",
+    "pagina": "admin",
+    "fontes": [
+      "src/js/pages/admin-i18n.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "admin.idiomas.validacao.csv_invalido",
+    "pt_br": "CSV vazio ou formato inválido.",
+    "pagina": "admin",
+    "fontes": [
+      "src/js/pages/admin-i18n.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "admin.usuarios.descricao",
     "pt_br": "Todos os usuários cadastrados no FinFlow, planos e informações de perfil.",
     "pagina": "admin",
@@ -74,6 +140,17 @@
     ],
     "kinds": [
       "html"
+    ]
+  },
+  {
+    "chave": "admin.usuarios.toast.plano_atualizado",
+    "pt_br": "Plano atualizado.",
+    "pagina": "admin",
+    "fontes": [
+      "src/js/pages/admin-usuarios.js"
+    ],
+    "kinds": [
+      "js"
     ]
   },
   {
@@ -1144,8 +1221,30 @@
     ]
   },
   {
+    "chave": "importar.toast.carregando_sheetjs",
+    "pt_br": "Carregando SheetJS para ler Excel…",
+    "pagina": "importar",
+    "fontes": [
+      "src/js/pages/importar.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "importar.toast.formato_nao_suportado",
     "pt_br": "Formato não suportado. Use CSV, XLSX ou XLS.",
+    "pagina": "importar",
+    "fontes": [
+      "src/js/pages/importar.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "importar.toast.parser_falhou",
+    "pt_br": "Não foi possível carregar o parser Excel. Verifique sua conexão.",
     "pagina": "importar",
     "fontes": [
       "src/js/pages/importar.js"
@@ -1903,8 +2002,41 @@
     ]
   },
   {
+    "chave": "relatorios.toast.carregando_sheetjs",
+    "pt_br": "Carregando SheetJS…",
+    "pagina": "relatorios",
+    "fontes": [
+      "src/js/pages/relatorios.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "relatorios.toast.csv_exportado",
     "pt_br": "CSV exportado",
+    "pagina": "relatorios",
+    "fontes": [
+      "src/js/pages/relatorios.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "relatorios.toast.sheetjs_falhou",
+    "pt_br": "Não foi possível carregar SheetJS para exportar XLSX",
+    "pagina": "relatorios",
+    "fontes": [
+      "src/js/pages/relatorios.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "relatorios.toast.xlsx_exportado",
+    "pt_br": "Excel (.xlsx) exportado",
     "pagina": "relatorios",
     "fontes": [
       "src/js/pages/relatorios.js"

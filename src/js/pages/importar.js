@@ -113,7 +113,7 @@ async function handleFileSelect(file) {
     } else if (['xlsx', 'xls', 'ods'].includes(ext)) {
       const ok = await loadSheetJs();
       if (!ok) {
-        showToast('Não foi possível carregar o parser Excel. Verifique sua conexão.', 'error', 6000);
+        showToast(t('importar.toast.parser_falhou', 'Não foi possível carregar o parser Excel. Verifique sua conexão.'), 'error', 6000);
         return;
       }
       rawRows = await parseExcel(file);
@@ -184,7 +184,7 @@ function parseCSV(text) {
 // ── Excel Parser (SheetJS via CDN) ───────────────────────────
 async function loadSheetJs() {
   if (window.XLSX) return true;
-  showToast('Carregando SheetJS para ler Excel…', 'info', 3000);
+  showToast(t('importar.toast.carregando_sheetjs', 'Carregando SheetJS para ler Excel…'), 'info', 3000);
   return new Promise((resolve) => {
     const s = document.createElement('script');
     s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';

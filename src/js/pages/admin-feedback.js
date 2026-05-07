@@ -10,7 +10,7 @@ import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { escapeHtml } from '../lib/utils.js';
 import { CHANGELOG } from '../lib/changelog.js';
-import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
+import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 let cachedFeedback = [];
 let editingId      = null;
@@ -650,7 +650,7 @@ async function saveEdit() {
     );
   }
 
-  showToast('Salvo.', 'success');
+  showToast(t('admin.feedback.toast.salvo', 'Salvo.'), 'success');
   const justFinishedId = (newStatus === 'feito' && wasNotDone && !newChangelogId) ? editingId : null;
   closeEditModal();
   await load();
@@ -685,7 +685,7 @@ async function confirmDelete() {
     return;
   }
 
-  showToast('Excluído.', 'success');
+  showToast(t('admin.feedback.toast.excluido', 'Excluído.'), 'success');
   closeDeleteConfirm();
   closeEditModal();
   await load();
@@ -727,7 +727,7 @@ async function saveLinkChangelog() {
     return;
   }
 
-  showToast('Vinculado ao changelog.', 'success');
+  showToast(t('admin.feedback.toast.vinculado_changelog', 'Vinculado ao changelog.'), 'success');
   closeLinkChangelogModal();
   await load();
 }

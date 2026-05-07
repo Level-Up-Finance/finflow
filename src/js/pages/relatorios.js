@@ -819,7 +819,7 @@ async function exportExcel() {
 
   const ok = await loadSheetJs();
   if (!ok || !window.XLSX) {
-    showToast('Não foi possível carregar SheetJS para exportar XLSX', 'error', 6000);
+    showToast(t('relatorios.toast.sheetjs_falhou', 'Não foi possível carregar SheetJS para exportar XLSX'), 'error', 6000);
     return;
   }
 
@@ -827,12 +827,12 @@ async function exportExcel() {
   const ws = window.XLSX.utils.table_to_sheet(table);
   window.XLSX.utils.book_append_sheet(wb, ws, activeTab);
   window.XLSX.writeFile(wb, `finflow-${activeTab}-${toISODate(today)}.xlsx`);
-  showToast('Excel (.xlsx) exportado', 'success');
+  showToast(t('relatorios.toast.xlsx_exportado', 'Excel (.xlsx) exportado'), 'success');
 }
 
 async function loadSheetJs() {
   if (window.XLSX) return true;
-  showToast('Carregando SheetJS…', 'info', 3000);
+  showToast(t('relatorios.toast.carregando_sheetjs', 'Carregando SheetJS…'), 'info', 3000);
   return new Promise((resolve) => {
     const s = document.createElement('script');
     s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
