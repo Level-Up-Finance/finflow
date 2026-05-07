@@ -186,7 +186,7 @@ export async function saveCatDirectCompromisso(deps) {
       await saveValoresMensaisToOrcamento(null, moeda, items, catId);
     }
 
-    showToast('Compromisso salvo', 'success');
+    showToast(t('compromissos.toast.salvo', 'Compromisso salvo'), 'success');
     closeModal('modal-compromisso');
     deps.setEditingCatId(null);
     await deps.loadCategorias();
@@ -241,8 +241,8 @@ export async function saveCompromisso(event, deps) {
   const descricao      = document.getElementById('comp-descricao').value.trim() || null;
   const status         = document.getElementById('comp-status').value;
 
-  if (!nome) { showToast('Informe o nome do compromisso', 'error'); return; }
-  if (!categoria_id) { showToast('Escolha uma categoria', 'error'); return; }
+  if (!nome) { showToast(t('compromissos.validacao.nome_obrigatorio', 'Informe o nome do compromisso'), 'error'); return; }
+  if (!categoria_id) { showToast(t('compromissos.validacao.cat_obrigatoria', 'Escolha uma categoria'), 'error'); return; }
   if (!iniciado_em) { showToast('Informe a data de início', 'error'); return; }
   if (isDividasCat && !dividaRaw) { showToast('Vincule uma dívida existente ou crie uma nova', 'error'); return; }
   if (!valorVariavel && (valorBaseRaw === '' || isNaN(Number(valorBaseRaw)))) {
@@ -370,7 +370,7 @@ export async function saveCompromisso(event, deps) {
       await supabase.from('subcategorias').update({ divida_id: resolvedDividaId }).eq('id', response.data.id);
     }
 
-    showToast(editingId ? 'Compromisso atualizado' : 'Compromisso criado', 'success');
+    showToast(editingId ? t('compromissos.toast.atualizado', 'Compromisso atualizado') : t('compromissos.toast.criado', 'Compromisso criado'), 'success');
     if (subcategoriaMsg) showInfoPopup('Subcategoria', subcategoriaMsg);
 
     closeModal('modal-compromisso');
@@ -407,7 +407,7 @@ export async function deleteCompromisso(id, deps) {
     showToast('Erro ao deletar: ' + error.message, 'error', 8000);
     return;
   }
-  showToast('Compromisso deletado permanentemente', 'success');
+  showToast(t('compromissos.toast.deletado', 'Compromisso deletado permanentemente'), 'success');
   await deps.loadCompromissos();
 }
 

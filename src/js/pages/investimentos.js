@@ -947,7 +947,7 @@ async function saveProjeto(event) {
     const categoria  = document.getElementById('proj-comp-categoria').value;
     if (!valor || valor <= 0)   { showToast(t('investimentos.validacao.aporte_obrigatorio', 'Informe o valor do aporte do compromisso'), 'error'); return; }
     if (!dataInicio)            { showToast(t('investimentos.validacao.data_aporte_obrigatoria', 'Informe a data do primeiro aporte'), 'error'); return; }
-    if (!categoria)             { showToast(t('investimentos.validacao.categoria_obrigatoria', 'Selecione uma categoria para o compromisso'), 'error'); return; }
+    if (!categoria)             { showToast(t('investimentos.validacao.categoria_obrigatoria', t('investimentos.validacao.categoria_obrigatoria', 'Selecione uma categoria para o compromisso')), 'error'); return; }
     compromissoData = { valor, periodo, dataInicio, categoria_id: categoria };
   }
 

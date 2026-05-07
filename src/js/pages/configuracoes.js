@@ -450,7 +450,7 @@ async function saveCat() {
     const cat = cachedCategorias.find((c) => c.id === editingCatId);
     const overrideOn = document.getElementById('cat-override-bloco').checked;
     if (cat && grupo !== cat.grupo && !overrideOn) {
-      showToast('Esta categoria tem histórico vinculado. Marque "Mover mesmo assim" para confirmar.', 'error', 8000);
+      showToast(t('configuracoes.toast.cat_com_historico', 'Esta categoria tem histórico vinculado. Marque "Mover mesmo assim" para confirmar.'), 'error', 8000);
       return;
     }
   }
@@ -574,7 +574,7 @@ async function saveSub() {
     if (selVal) resolvedCatId = selVal;
   }
   if (!resolvedCatId && !editingSubId) {
-    showToast('Selecione uma categoria', 'error');
+    showToast(t('configuracoes.validacao.cat_obrigatoria', 'Selecione uma categoria'), 'error');
     return;
   }
 
@@ -585,7 +585,7 @@ async function saveSub() {
     const targetCat  = cachedCategorias.find((c) => c.id === resolvedCatId);
     const overrideOn = document.getElementById('sub-override-bloco').checked;
     if (currentCat && targetCat && currentCat.grupo !== targetCat.grupo && !overrideOn) {
-      showToast('Esta subcategoria tem histórico vinculado. Marque "Mover mesmo assim" para confirmar.', 'error', 8000);
+      showToast(t('configuracoes.toast.sub_com_historico', 'Esta subcategoria tem histórico vinculado. Marque "Mover mesmo assim" para confirmar.'), 'error', 8000);
       return;
     }
   }
@@ -631,7 +631,7 @@ async function saveSub() {
 
   if (error) { showToast('Erro: ' + error.message, 'error', 8000); return; }
 
-  showToast(editingSubId ? 'Subcategoria atualizada' : 'Subcategoria criada', 'success');
+  showToast(editingSubId ? t('configuracoes.toast.sub_atualizada', 'Subcategoria atualizada') : t('configuracoes.toast.sub_criada', 'Subcategoria criada'), 'success');
   const savedNome = nome;
   closeSubModal();
   await reloadAll();
@@ -673,7 +673,7 @@ async function execDelete() {
   if (type === 'cat') {
     const hasSubs = cachedSubcategorias.some((s) => s.categoria_id === id);
     if (hasSubs) {
-      showToast('Não é possível excluir: existem subcategorias nessa categoria.', 'error', 8000);
+      showToast(t('configuracoes.toast.excluir_com_subs', 'Não é possível excluir: existem subcategorias nessa categoria.'), 'error', 8000);
       return;
     }
     ({ error } = await supabase.from('categorias').delete().eq('id', id));
@@ -683,7 +683,7 @@ async function execDelete() {
 
   if (error) { showToast('Erro ao excluir: ' + error.message, 'error', 8000); return; }
 
-  showToast(type === 'cat' ? 'Categoria excluída' : 'Subcategoria excluída', 'success');
+  showToast(type === 'cat' ? t('configuracoes.toast.cat_excluida', 'Categoria excluída') : t('configuracoes.toast.sub_excluida', 'Subcategoria excluída'), 'success');
   await reloadAll();
 }
 
@@ -871,7 +871,7 @@ function bindIdiomaEvents() {
       localStorage.setItem('finflow.idioma', idioma);
       syncIdiomaButtons();
       await saveProfileSettings({ idioma });
-      showToast('Idioma salvo. Será aplicado quando as traduções estiverem disponíveis.', 'info', 5000);
+      showToast(t('configuracoes.toast.idioma_salvo', 'Idioma salvo. Será aplicado quando as traduções estiverem disponíveis.'), 'info', 5000);
     });
   });
 }
@@ -915,7 +915,7 @@ function renderSistemaPanel() {
     localStorage.setItem('finflow.moeda_padrao',  newPadrao);
     localStorage.setItem('finflow.moedas_widget', JSON.stringify(newMoedas));
     await saveProfileSettings({ moeda_padrao: newPadrao, moedas_widget: newMoedas });
-    showToast('Configurações salvas.', 'success');
+    showToast(t('configuracoes.toast.salvas', 'Configurações salvas.'), 'success');
   });
 
   // When moeda_padrao changes, auto-check it in the grid

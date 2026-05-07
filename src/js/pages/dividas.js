@@ -1422,7 +1422,7 @@ async function saveParcela() {
   if (!data) { showToast(t('dividas.validacao.data_pagamento', 'Informe a data de pagamento'), 'error'); return; }
 
   const contaIdPgto = document.getElementById('pagar-transacao-conta').value;
-  if (!contaIdPgto) { showToast(t('dividas.validacao.conta_obrigatoria', 'Selecione a conta debitada — pagamento sempre é registrado em Transações.'), 'error'); return; }
+  if (!contaIdPgto) { showToast(t('dividas.validacao.conta_obrigatoria', t('dividas.validacao.conta_debitada', 'Selecione a conta debitada — pagamento sempre é registrado em Transações.')), 'error'); return; }
 
   const pagas     = d.parcelas_pagas || 0;
   const n         = d.n_parcelas;

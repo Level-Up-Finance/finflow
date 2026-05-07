@@ -110,6 +110,39 @@
     ]
   },
   {
+    "chave": "compromissos.toast.atualizado",
+    "pt_br": "Compromisso atualizado",
+    "pagina": "compromissos",
+    "fontes": [
+      "src/js/pages/compromissos/save.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "compromissos.toast.criado",
+    "pt_br": "Compromisso criado",
+    "pagina": "compromissos",
+    "fontes": [
+      "src/js/pages/compromissos/save.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "compromissos.toast.deletado",
+    "pt_br": "Compromisso deletado permanentemente",
+    "pagina": "compromissos",
+    "fontes": [
+      "src/js/pages/compromissos/save.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "compromissos.toast.erro_carregar_categorias",
     "pt_br": "Erro ao carregar categorias",
     "pagina": "compromissos",
@@ -143,6 +176,17 @@
     ]
   },
   {
+    "chave": "compromissos.toast.salvo",
+    "pt_br": "Compromisso salvo",
+    "pagina": "compromissos",
+    "fontes": [
+      "src/js/pages/compromissos/save.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "compromissos.toast.valor_atualizado",
     "pt_br": "Valor atualizado",
     "pagina": "compromissos",
@@ -165,6 +209,17 @@
     ]
   },
   {
+    "chave": "compromissos.validacao.cat_obrigatoria",
+    "pt_br": "Escolha uma categoria",
+    "pagina": "compromissos",
+    "fontes": [
+      "src/js/pages/compromissos/save.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "compromissos.validacao.categoria_obrigatoria",
     "pt_br": "Escolha uma categoria",
     "pagina": "compromissos",
@@ -178,6 +233,17 @@
   {
     "chave": "compromissos.validacao.data_inicio",
     "pt_br": "Informe a data de início",
+    "pagina": "compromissos",
+    "fontes": [
+      "src/js/pages/compromissos/save.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "compromissos.validacao.nome_obrigatorio",
+    "pt_br": "Informe o nome do compromisso",
     "pagina": "compromissos",
     "fontes": [
       "src/js/pages/compromissos/save.js"
@@ -231,6 +297,17 @@
     ]
   },
   {
+    "chave": "configuracoes.toast.cat_com_historico",
+    "pt_br": "Esta categoria tem histórico vinculado. Marque \"Mover mesmo assim\" para confirmar.",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "configuracoes.toast.cat_criada",
     "pt_br": "Categoria criada",
     "pagina": "configuracoes",
@@ -242,8 +319,107 @@
     ]
   },
   {
+    "chave": "configuracoes.toast.cat_excluida",
+    "pt_br": "Categoria excluída",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "configuracoes.toast.excluir_com_subs",
+    "pt_br": "Não é possível excluir: existem subcategorias nessa categoria.",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "configuracoes.toast.idioma_salvo",
+    "pt_br": "Idioma salvo. Será aplicado quando as traduções estiverem disponíveis.",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "configuracoes.toast.salvas",
+    "pt_br": "Configurações salvas.",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "configuracoes.toast.sub_atualizada",
+    "pt_br": "Subcategoria atualizada",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "configuracoes.toast.sub_com_historico",
+    "pt_br": "Esta subcategoria tem histórico vinculado. Marque \"Mover mesmo assim\" para confirmar.",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "configuracoes.toast.sub_criada",
+    "pt_br": "Subcategoria criada",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "configuracoes.toast.sub_excluida",
+    "pt_br": "Subcategoria excluída",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "configuracoes.validacao.cat_nome_obrigatorio",
     "pt_br": "Informe o nome da categoria",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "configuracoes.validacao.cat_obrigatoria",
+    "pt_br": "Selecione uma categoria",
     "pagina": "configuracoes",
     "fontes": [
       "src/js/pages/configuracoes.js"
@@ -660,7 +836,7 @@
     ]
   },
   {
-    "chave": "dividas.validacao.conta_obrigatoria",
+    "chave": "dividas.validacao.conta_debitada",
     "pt_br": "Selecione a conta debitada — pagamento sempre é registrado em Transações.",
     "pagina": "dividas",
     "fontes": [
