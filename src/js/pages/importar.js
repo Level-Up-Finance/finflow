@@ -347,7 +347,7 @@ function processRows() {
     const isoDate  = parseDate(dateStr, colMap.dateFmt);
     if (!isoDate || !descStr) continue;
 
-    let tipo = 'Despesa', valor = 0;
+    let tipo, valor;
 
     if (colMap.modo === 'single') {
       const raw = parseValue(row[Number(colMap.valor)] ?? '');
@@ -491,7 +491,7 @@ function parseDate(str, fmt) {
 
 function parseValue(str) {
   if (str === null || str === undefined) return null;
-  str = String(str).trim().replace(/[R$\s ]/g, '').replace(/−/g, '-').replace(/–/g, '-');
+  str = String(str).trim().replace(/[R$\s]/g, '').replace(/−/g, '-').replace(/–/g, '-');
   if (!str || str === '-') return null;
 
   const lastDot   = str.lastIndexOf('.');

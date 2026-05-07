@@ -550,7 +550,7 @@ function openEditModal(id) {
     day: '2-digit', month: 'long', year: 'numeric',
   });
 
-  let submitterText = '';
+  let submitterText;
   if (fb.submitter_name || fb.submitter_email) {
     const parts = [fb.submitter_name, fb.submitter_email].filter(Boolean);
     submitterText = `Enviado por ${parts.join(' · ')} (público)`;

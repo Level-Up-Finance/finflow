@@ -3002,8 +3002,8 @@ function renderNextDueCell(c) {
   const days = daysFromToday(next);
   const dateStr = formatDateBR(next.toISOString().slice(0, 10));
 
-  let badgeStyle = '';
-  let label = '';
+  let badgeStyle;
+  let label;
 
   if (days < 0) {
     badgeStyle = 'background: var(--color-danger-bg); color: #991B1B;';

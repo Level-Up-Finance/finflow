@@ -979,7 +979,7 @@ async function saveDivida(e) {
   // se o usuário só digitou um nome livre sem escolher, salvamos o texto e contato_id = null.
   const credorContatoId = credorPicker?.getValue() || null;
   const credorTexto     = (document.getElementById('div-credor-search')?.value || '').trim();
-  let credor = null;
+  let credor;
   if (credorContatoId) {
     const ct = cachedContatos.find((c) => c.id === credorContatoId);
     credor = ct?.nome || credorTexto || null;
