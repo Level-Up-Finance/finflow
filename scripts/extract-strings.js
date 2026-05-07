@@ -27,7 +27,6 @@ const ROOT       = path.resolve(__dirname, '..');
 
 // Diretórios e arquivos a varrer
 const SCAN_DIRS  = ['src/js'];
-const SCAN_FILES_AT_ROOT = []; // arquivos HTML soltos preenchidos abaixo
 const HTML_GLOB  = /\.html$/;
 const JS_GLOB    = /\.js$/;
 const SKIP_DIRS  = new Set(['node_modules', '.git', 'dist', 'build', '.supabase']);

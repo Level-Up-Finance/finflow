@@ -25,7 +25,6 @@ let cachedCategorias    = [];
 let cachedRules         = [];
 let selectedContaId     = '';
 let previewData  = [];   // [{date, desc, tipo, valor, subId, contatoId}]
-let currentStep  = 1;
 
 let colMap = {
   date:      '',
@@ -237,10 +236,6 @@ function renderStep2() {
   const skip = Number(colMap.skipRows) || 0;
   headers  = (rawRows[skip] || []).map(String);
   dataRows = rawRows.slice(skip + 1).filter((r) => r.some((c) => c !== ''));
-
-  const colOpts = ['<option value="">— Selecionar —</option>']
-    .concat(headers.map((h, i) => `<option value="${i}">${escapeHtml(h) || `Coluna ${i + 1}`}</option>`))
-    .join('');
 
   ['step2-col-date', 'step2-col-desc', 'step2-col-id', 'step2-col-valor', 'step2-col-debito', 'step2-col-credito'].forEach((elId) => {
     const el = document.getElementById(elId);
@@ -746,7 +741,6 @@ async function doImport() {
 function goToStep(n) {
   if (n === 2) renderStep2();
   if (n === 3) renderStep3();
-  currentStep = n;
 
   document.querySelectorAll('.import-panel').forEach((p) => p.classList.add('hidden'));
   document.getElementById(`step-${n}`).classList.remove('hidden');

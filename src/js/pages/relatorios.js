@@ -250,8 +250,6 @@ function renderFluxo() {
   const totalDespesas      = months.reduce((s, k) => s + byMonth[k].despesas,      0);
   const totalTransferencias = months.reduce((s, k) => s + byMonth[k].transferencias, 0);
   const saldoTotal         = totalReceitas - totalDespesas;
-  const nMeses             = months.length || 1;
-  const mediaDesp          = totalDespesas / nMeses;
 
   document.getElementById('fluxo-kpis').innerHTML = [
     kpiCard('Total Receitas',    formatCurrency(totalReceitas,  'BRL'), 'success', '+'),
@@ -384,8 +382,6 @@ function renderPrevisto() {
   const totDespP = sumP(despesas), totDespR = sumR(despesas);
   const totalP = totRecP + totDespP;
   const totalR = totRecR + totDespR;
-  const saldoPrev  = totRecP  - totDespP;
-  const saldoReal  = totRecR  - totDespR;
   const pctExec    = totDespP > 0 ? (totDespR / totDespP) * 100 : 0;
 
   document.getElementById('previsto-kpis').innerHTML = [

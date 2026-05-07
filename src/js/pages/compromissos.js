@@ -55,7 +55,6 @@ let cachedContatos = [];       // clientes/fornecedores do usuário
 let cachedProxValores = new Map(); // subcategoria_id → {valor_previsto, moeda, mes_ano} (próximo mês com valor)
 let editingId    = null;
 let editingCatId = null;
-let nivelMode    = 'subcategoria'; // 'subcategoria' | 'categoria'
 let detailsCompromisso = null;
 let pendingAction = null;
 let filterStatus = 'todas';
@@ -222,10 +221,6 @@ async function loadContatos() {
     return;
   }
   cachedContatos = data || [];
-}
-
-function getContato(id) {
-  return cachedContatos.find((c) => c.id === id) || null;
 }
 
 let contatoPicker = null;
@@ -429,7 +424,6 @@ function renderCatExistenteOptions() {
 }
 
 function setNivelMode(mode) {
-  nivelMode = mode;
   document.getElementById('comp-nivel').value = mode;
   document.querySelectorAll('#nivel-segmented .segmented-btn').forEach((b) =>
     b.classList.toggle('active', b.dataset.nivel === mode)
@@ -1108,66 +1102,6 @@ function openCompromissoModal(c = null) {
   } else {
     document.getElementById('valores-mensais-grid').innerHTML = '';
   }
-
-  openModal('modal-compromisso');
-}
-
-// Opens the edit modal for a categoria-direct commitment
-function openCatDirectModal(cat) {
-  editingId    = null;
-  editingCatId = cat.id;
-
-  document.getElementById('modal-compromisso-title').textContent = 'Editar compromisso — ' + cat.nome;
-  document.getElementById('btn-salvar-compromisso').textContent = 'Salvar alterações';
-
-  document.getElementById('form-compromisso').reset();
-  renderModalDropdowns();
-
-  // Lock in categoria mode, hide the toggle
-  setNivelMode('categoria');
-  document.getElementById('nivel-field').classList.add('hidden');
-  document.getElementById('comp-cat-existente').value = cat.id;
-
-  const tipo   = cat.tipo   || DEFAULT_TIPO;
-  const status = cat.status || 'ativa';
-
-  document.getElementById('comp-tipo').value           = tipo;
-  document.getElementById('comp-conta').value          = cat.conta_id       || '';
-  document.getElementById('comp-tipo-pagamento').value = cat.tipo_pagamento || '';
-  document.getElementById('comp-periodo').value        = cat.periodo        || 'Mensal';
-  document.getElementById('comp-vencimento-dia').value = cat.vencimento_dia || '';
-  document.getElementById('comp-vencimento-data-anual').value = anualDateFromCompromisso(cat);
-  document.getElementById('comp-dia-semana').value     = cat.dia_semana     ?? '';
-  document.getElementById('comp-valor-base').value     = cat.valor_base     ?? '';
-  document.getElementById('comp-moeda').value          = cat.moeda          || 'BRL';
-  document.getElementById('comp-iniciado-em').value    = cat.iniciado_em    || todayISO();
-  document.getElementById('comp-terminado-em').value   = cat.terminado_em   || '';
-  document.getElementById('comp-descricao').value      = cat.descricao      || '';
-  initContatoPickerOnce();
-  contatoPicker?.setValue(cat.contato_id || '');
-  document.getElementById('comp-status').value         = status;
-  document.getElementById('motivo-field').classList.add('hidden');
-
-  // Sync comp-categoria so toggleDividaField / toggleProjetoField work
-  document.getElementById('comp-categoria').value = cat.id;
-  if (cat.divida_id) document.getElementById('comp-divida').value = cat.divida_id;
-
-  document.querySelectorAll('.tipo-btn').forEach((b) => b.classList.toggle('active', b.dataset.tipo === tipo));
-  document.querySelectorAll('#status-segmented .segmented-btn').forEach((b) => b.classList.toggle('active', b.dataset.status === status));
-
-  document.getElementById('comp-valor-variavel').checked = !!cat.valor_variavel;
-  const moedaVarElCat = document.getElementById('comp-moeda-var');
-  if (moedaVarElCat) moedaVarElCat.value = cat.moeda || 'BRL';
-  toggleVencimentoFields();
-  toggleValorVariavelFields();
-  if (cat.valor_variavel) {
-    populateValoresMensaisGrid(null, cat.id);
-  } else {
-    document.getElementById('valores-mensais-grid').innerHTML = '';
-  }
-  toggleDividaField();
-  toggleProjetoField();
-  updateLimiteInfo(cat.conta_id || '');
 
   openModal('modal-compromisso');
 }
@@ -2174,15 +2108,6 @@ function renderDreSummary(totalReceitas, totalDespesas, resultado) {
   `;
 }
 
-function bindDreClicks() {
-  document.querySelectorAll('.dre-item').forEach((item) => {
-    item.addEventListener('click', () => {
-      const c = cachedCompromissos.find((x) => x.id === item.dataset.id);
-      if (c) openDetailsModal(c);
-    });
-  });
-}
-
 // -----------------------------
 // Render: Calendar view
 // -----------------------------
@@ -2190,7 +2115,7 @@ const WEEKDAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTH_LABELS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 // Popover (hover) com detalhes dos compromissos do dia no calendário
-function renderCalendarPopover(events, day, month, year) {
+function renderCalendarPopover(events, day, month, _year) {
   const sorted = [...events].sort((a, b) => {
     if (a.tipo !== b.tipo) return a.tipo === 'Receita' ? -1 : 1;
     return displayName(a).localeCompare(displayName(b), 'pt-BR');

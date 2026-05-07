@@ -82,8 +82,6 @@ function setRegime(regime) {
 
 /** Helpers para classificar juros_tipo (lê semântica unificada). */
 function isManualTipo(t)        { return t === 'manual_fixo' || t === 'manual_variavel'; }
-function isIndexedTipo(t)       { return t && !isManualTipo(t); }
-function isVariableTipo(t)      { return t === 'manual_variavel' || isIndexedTipo(t); }
 
 async function setJurosTipo(tipo) {
   const t = tipo || 'manual_fixo';
@@ -701,7 +699,6 @@ function bindEvents() {
     const btnEl   = document.getElementById('btn-confirmar-excluir');
     const msgEl   = document.getElementById('confirmar-msg');
     const nome    = escapeHtml(d?.nome || '');
-    const plural  = (n) => (n === 1 ? '' : 's');
     const item    = (n, sing, pluralForm) => `${n} ${n === 1 ? sing : (pluralForm || sing + 's')}`;
 
     if (nPagamentos > 0) {
@@ -1395,7 +1392,6 @@ function renderPagarCard() {
   if (desconto > 0) document.getElementById('pagar-parcela-desconto-val').textContent = `− ${formatCurrency(desconto)}`;
 
   // Auto-fill valor real (= total sugerido) se usuário não editou
-  const valorRealInput = document.getElementById('pagar-valor-real');
   if (!pagarValorRealEditado) {
     writeDecimal('pagar-valor-real', totalPmt, 2);
     document.getElementById('pagar-valor-real-delta').textContent = '';
@@ -1515,8 +1511,6 @@ function openTabelaAmort(id) {
   const d = cachedDividas.find((x) => x.id === id);
   if (!d || !d.regime || !d.n_parcelas) return;
 
-  const principal = Number(d.valor_total);
-  const taxa      = Number(d.juros_percentual || 0) / 100;
   const n         = d.n_parcelas;
   const pagas     = d.parcelas_pagas || 0;
 

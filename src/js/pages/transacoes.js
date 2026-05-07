@@ -528,26 +528,6 @@ function renderTableShell() {
     </table>`;
 }
 
-function buildSubcategoriaOptions() {
-  const byCat = new Map();
-  for (const sub of cachedSubcategorias) {
-    const arr = byCat.get(sub.categoria_id) || [];
-    arr.push(sub);
-    byCat.set(sub.categoria_id, arr);
-  }
-  const parts = ['<option value="">— Sem vínculo —</option>'];
-  for (const cat of cachedCategorias) {
-    const subs = byCat.get(cat.id) || [];
-    if (!subs.length) continue;
-    parts.push(`<optgroup label="${escapeHtml(cat.nome)}">`);
-    for (const sub of subs) {
-      parts.push(`<option value="${sub.id}">${escapeHtml(sub.apelido || sub.nome)}</option>`);
-    }
-    parts.push('</optgroup>');
-  }
-  return parts.join('');
-}
-
 function renderDataRows(items) {
   if (items.length === 0) {
     return `<tr class="trans-empty-row"><td colspan="12">Nenhuma transação encontrada com os filtros atuais.</td></tr>`;
@@ -1469,11 +1449,6 @@ function onSyncSkip() {
 // -----------------------------
 function toISODate(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function currentMonthInput() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
 function todayInput() {

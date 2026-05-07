@@ -24,7 +24,6 @@ let pendingDeleteId     = null;
 let filterTipo          = 'all';   // 'all' | 'cliente' | 'fornecedor' | 'arquivados'
 let filterPessoa        = new Set(); // subset de {'fisica', 'juridica'} (vazio = todos)
 let searchQuery         = '';
-let activeTab           = 'dados';
 
 const TIPO_LABELS = { cliente: 'Cliente', fornecedor: 'Fornecedor', ambos: 'Cliente / Fornecedor' };
 const TIPO_COLORS = { cliente: '#3b82f6', fornecedor: '#8b5cf6', ambos: '#64748b' };
@@ -454,7 +453,6 @@ async function loadTransacoesTab(contatoId) {
 
 // ── Tabs ──────────────────────────────────────────────────────
 function switchTab(tab) {
-  activeTab = tab;
   document.querySelectorAll('.ctp-tab').forEach((t) => t.classList.toggle('is-active', t.dataset.tab === tab));
   document.querySelectorAll('.ctp-tab-panel').forEach((p) => p.classList.toggle('hidden', p.dataset.tab !== tab));
 }

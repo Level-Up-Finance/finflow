@@ -771,7 +771,7 @@ async function loadAndRenderFaturas(conta) {
   renderFaturasHistorico(fechadas, pagamentos, transacoes);
 }
 
-function renderFaturaAberta(abertas, conta) {
+function renderFaturaAberta(abertas, _conta) {
   const host = document.getElementById('cartao-fatura-aberta');
   if (abertas.length === 0) {
     host.innerHTML = '<p class="cartao-faturas-empty">Sem fatura aberta no momento.</p>';

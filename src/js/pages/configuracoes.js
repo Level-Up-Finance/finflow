@@ -25,9 +25,6 @@ let editingCatId  = null; // null = nova, string = editar existente
 let editingSubId  = null; // null = nova, string = editar existente
 let newSubCatId   = null; // categoria_id pra nova subcategoria
 let pendingDelete = null; // { type: 'cat'|'sub', id }
-let activeTab     = 'categorias'; // categorias | aparencia | sistema
-
-// Import state
 
 // Histórico (categorias/subcategorias com vínculos a registros reais)
 let historicoSubIds = new Set();
@@ -45,19 +42,9 @@ const SUPER_BLOCOS = [
   { id: 'custo_vida',   label: 'Custo de vida', grupos: ['custo_vida'],          accent: 'var(--color-secondary)' },
 ];
 
-const GRUPO_LABELS = {
-  receitas:      'Receitas',
-  dividas:       'Dívidas',
-  investimentos: 'Investimentos',
-  custo_vida:    'Custo de vida',
-};
-
-// SVG icons inline
-const ICON_LINK  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
+// SVG icons inline (apenas os usados)
 const ICON_EDIT  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
 const ICON_TRASH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
-const ICON_PLUS  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
-const ICON_EYE   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
 // Quadrado arredondado preenchido com "+" branco — usado nos headings de categoria/subcategoria
 const ICON_PLUS_BLOCO = `<svg viewBox="0 0 24 24" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="5" fill="currentColor"/><path d="M12 7v10M7 12h10" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>`;
 
@@ -759,7 +746,6 @@ function bindTabEvents() {
   document.querySelectorAll('.cfg-sidenav-item').forEach((item) => {
     item.addEventListener('click', () => {
       const target = item.dataset.tab;
-      activeTab = target;
 
       document.querySelectorAll('.cfg-sidenav-item').forEach((t) => {
         t.classList.toggle('active', t === item);

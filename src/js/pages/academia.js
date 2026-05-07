@@ -232,7 +232,7 @@ function detailHTML(t) {
   `;
 }
 
-function bindSectionNav(inner, t) {
+function bindSectionNav(inner, _t) {
   // Smooth scroll TOC links
   inner.querySelectorAll('.academia-toc-link').forEach(link => {
     link.addEventListener('click', e => {

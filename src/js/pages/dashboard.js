@@ -27,7 +27,6 @@ const viewMonth  = today.getMonth();
 const ratesMap   = new Map();
 
 let cachedProfile    = null;
-let cachedCategorias = [];
 let cachedOrcamento  = [];
 let cachedPagamentos = [];
 let cachedTransacoes = [];
@@ -489,9 +488,8 @@ async function loadAll() {
 
   const mesAno = isoMonth(viewYear, viewMonth);
 
-  const [profile, categorias, orcamento, pagamentos, transacoes] = await Promise.all([
+  const [profile, orcamento, pagamentos, transacoes] = await Promise.all([
     supabase.from('profiles').select('nome, apelido').eq('id', user.id).maybeSingle(),
-    supabase.from('categorias').select('*').eq('ativo', true),
     supabase.from('orcamento_geral').select('*, subcategorias(*, categorias(*))').eq('mes_ano', mesAno),
     supabase.from('pagamentos')
       .select('*, subcategorias(*, categorias(*))')
@@ -505,7 +503,6 @@ async function loadAll() {
   ]);
 
   cachedProfile    = profile.data || {};
-  cachedCategorias = categorias.data || [];
   cachedOrcamento  = (orcamento.data  || []).filter((e) => e.subcategorias?.status === 'ativa');
   cachedPagamentos = (pagamentos.data || []).filter((p) => p.subcategorias?.status === 'ativa');
   cachedTransacoes = transacoes.data || [];

@@ -583,10 +583,7 @@ function renderBloco(num, title, period, items) {
     }
   }
 
-  const sign = saldoBRL > 0 ? '+' : (saldoBRL < 0 ? '-' : '');
-  const cls = saldoBRL > 0 ? 'dre-positive' : (saldoBRL < 0 ? 'dre-negative' : 'dre-zero');
   const alertCls = saldoBRL <= 0 ? 'alerta-negativo' : '';
-  const subtotalDisplay = `${sign}${formatCurrency(Math.abs(saldoBRL), 'BRL')}`;
 
   // Agrupa items por categoria parent
   const groups = new Map();
@@ -680,8 +677,6 @@ function renderPagamentoRow(p, catColor) {
   const isCancelado = p.status === 'Cancelado';
   const hasObs = !!(p.observacao && p.observacao.trim());
   const atrasadoFlag = isAtrasado(p);
-  const isPaid = ['Pago', 'Transferido', 'Cartão', 'Parcial'].includes(p.status);
-
   // Valor (input em BRL) — começa preenchido com valor_real (que veio do auto-gen
   // como valor_previsto). User pode alterar antes de mudar o status.
   let valorInputValue = '';

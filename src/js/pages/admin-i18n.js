@@ -199,36 +199,6 @@ function openEditModal(id) {
   loadHistory(id);
 }
 
-function openCreateModal() {
-  editingId      = null;
-  originalValues = {};
-
-  document.getElementById('i18n-modal-chave').textContent = 'Nova string';
-  document.getElementById('i18n-modal-meta').textContent  = '';
-
-  document.getElementById('i18n-create-form').classList.remove('hidden');
-  document.getElementById('i18n-history-section').classList.add('hidden');
-
-  // Reset campos
-  ['i18n-new-chave', 'i18n-new-pagina', 'i18n-new-descricao'].forEach((id) => {
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('i18n-new-categoria').value   = 'ui';
-  document.getElementById('i18n-new-visibilidade').value = 'usuario';
-
-  document.getElementById('i18n-edit-ptbr').value  = '';
-  document.getElementById('i18n-edit-en').value    = '';
-  document.getElementById('i18n-edit-es').value    = '';
-  document.getElementById('i18n-edit-fr').value    = '';
-  document.getElementById('i18n-edit-motivo').value = '';
-
-  for (const lang of LANGS) {
-    renderBadge(lang, 'pendente');
-  }
-
-  document.getElementById('modal-i18n').classList.remove('hidden');
-}
-
 function closeEditModal() {
   document.getElementById('modal-i18n').classList.add('hidden');
   editingId = null;
@@ -383,7 +353,7 @@ async function saveEdit(updated, motivo, extras = {}) {
   renderTable();
 }
 
-async function saveCreate({ pt_br, en, es, fr }, motivo) {
+async function saveCreate({ pt_br, en, es, fr }, _motivo) {
   const chave      = (document.getElementById('i18n-new-chave').value      || '').trim();
   const pagina     = (document.getElementById('i18n-new-pagina').value     || '').trim() || null;
   const categoria  = document.getElementById('i18n-new-categoria').value;

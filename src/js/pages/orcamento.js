@@ -37,7 +37,6 @@ let realizadoByProjetoOrc = new Map(); // projeto_id → realizado (BRL) pra col
 // Câmbio
 const ALL_FOREIGN_CURRENCIES = ['USD', 'EUR', 'GBP']; // sempre exibidas no widget
 const ratesMap = new Map();      // 'USD' → 5.15 (1 USD = X BRL)
-let lastRatesFetch = null;
 let autoRefreshHandle = null;
 
 // View mode
@@ -314,30 +313,7 @@ async function refreshRates() {
       console.warn('[refreshRates] falhou:', r.reason);
     }
   }
-  lastRatesFetch = new Date();
   // Widget é renderizado pelo componente compartilhado (initCurrencyWidget)
-}
-
-function renderCurrencyWidget() {
-  const widget = document.getElementById('currency-widget');
-  if (!widget) return;
-  if (ratesMap.size === 0) {
-    widget.classList.add('hidden');
-    return;
-  }
-  widget.classList.remove('hidden');
-
-  const ratesEl = document.getElementById('currency-widget-rates');
-  const items = [];
-  for (const [currency, rate] of ratesMap.entries()) {
-    items.push(`<span class="currency-rate">1 <strong>${currency}</strong> = ${formatCurrency(rate, 'BRL')}</span>`);
-  }
-  ratesEl.innerHTML = items.join(' ');
-
-  if (lastRatesFetch) {
-    const time = lastRatesFetch.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    document.getElementById('currency-widget-time').textContent = `atualizado às ${time}`;
-  }
 }
 
 /**
