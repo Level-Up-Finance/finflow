@@ -80,10 +80,11 @@ export function attachDecimalInput(el, { decimals = 2 } = {}) {
   if (!el.getAttribute('inputmode')) el.setAttribute('inputmode', 'decimal');
 
   el.addEventListener('input', () => {
-    // Permite apenas dígitos, vírgula, ponto e sinal de menos no início
-    const cleaned = el.value
-      .replace(/[^0-9.,-]/g, '')
-      .replace(/-(?!^)/g, ''); // menos só no início
+    // Permite apenas dígitos, vírgula, ponto e UM sinal de menos no início.
+    // Implementação correta (a versão anterior com /-(?!^)/g removia
+    // TODOS os hífens — o lookahead (?!^) é sempre verdadeiro após o '-').
+    const negative = el.value.trimStart().startsWith('-');
+    const cleaned = (negative ? '-' : '') + el.value.replace(/[^0-9.,]/g, '');
     if (cleaned !== el.value) el.value = cleaned;
   });
 
