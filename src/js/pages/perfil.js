@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await loadProfile();
   bindEvents();
+  bindDangerZoneEvents();
 });
 
 // -----------------------------
@@ -203,6 +204,118 @@ async function handleFotoChange(e) {
 
   // Reset input pra permitir re-upload do mesmo arquivo
   e.target.value = '';
+}
+
+// -----------------------------
+// Zona de perigo
+// -----------------------------
+const DANGER_CONFIG = {
+  reset: {
+    step1Title: 'Restaurar conta do zero',
+    step2Title: 'Confirmação final — restaurar',
+    step2Note:  'Todos os seus dados financeiros serão apagados permanentemente.',
+    consequences: [
+      'Todas as transações serão apagadas',
+      'Todas as contas bancárias serão removidas',
+      'Todas as categorias e subcategorias personalizadas serão excluídas',
+      'Todos os compromissos, dívidas e investimentos serão deletados',
+      'Seu perfil (nome, foto, bio) voltará ao estado inicial',
+      'Seu e-mail e senha são mantidos — você não será deslogado',
+    ],
+  },
+  delete: {
+    step1Title: 'Excluir conta permanentemente',
+    step2Title: 'Confirmação final — excluir conta',
+    step2Note:  'Sua conta será removida para sempre. Você será deslogado imediatamente.',
+    consequences: [
+      'Todos os seus dados financeiros serão apagados para sempre',
+      'Seu perfil, configurações e histórico serão removidos',
+      'Você será deslogado imediatamente após a confirmação',
+      'O e-mail ficará livre para criar uma nova conta do zero',
+      'Não há backup — não é possível recuperar nada',
+    ],
+  },
+};
+
+let currentDangerAction = null;
+
+function openDangerStep1(action) {
+  const cfg = DANGER_CONFIG[action];
+  currentDangerAction = action;
+  document.getElementById('danger-step1-title').textContent = cfg.step1Title;
+  document.getElementById('danger-step1-consequences').innerHTML =
+    cfg.consequences.map((c) => `<li>${escapeHtml(c)}</li>`).join('');
+  document.getElementById('modal-danger-step1').classList.remove('hidden');
+}
+
+function closeDangerStep1() {
+  document.getElementById('modal-danger-step1').classList.add('hidden');
+  currentDangerAction = null;
+}
+
+function openDangerStep2() {
+  const cfg = DANGER_CONFIG[currentDangerAction];
+  document.getElementById('danger-step2-title').textContent = cfg.step2Title;
+  document.getElementById('danger-step2-note').textContent  = cfg.step2Note;
+  document.getElementById('danger-email-confirm').value     = '';
+  document.getElementById('btn-danger-step2-confirm').disabled = true;
+  document.getElementById('modal-danger-step1').classList.add('hidden');
+  document.getElementById('modal-danger-step2').classList.remove('hidden');
+}
+
+function closeDangerStep2() {
+  document.getElementById('modal-danger-step2').classList.add('hidden');
+  currentDangerAction = null;
+}
+
+async function executeDangerAction() {
+  const action = currentDangerAction;
+  const btn = document.getElementById('btn-danger-step2-confirm');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Aguarde…';
+
+  try {
+    if (action === 'reset') {
+      const { error } = await supabase.rpc('user_reset_account');
+      if (error) throw error;
+      closeDangerStep2();
+      showToast('Conta restaurada. Todos os dados foram apagados.', 'success', 6000);
+      await loadProfile();
+    } else if (action === 'delete') {
+      const { error } = await supabase.rpc('user_delete_account');
+      if (error) throw error;
+      await supabase.auth.signOut();
+      window.location.href = '/index.html';
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Confirmar';
+    showToast('Erro: ' + err.message, 'error', 8000);
+  }
+}
+
+function bindDangerZoneEvents() {
+  document.getElementById('btn-danger-reset').addEventListener('click',  () => openDangerStep1('reset'));
+  document.getElementById('btn-danger-delete').addEventListener('click', () => openDangerStep1('delete'));
+
+  document.getElementById('btn-close-danger-step1').addEventListener('click',  closeDangerStep1);
+  document.getElementById('btn-danger-step1-cancel').addEventListener('click', closeDangerStep1);
+  document.getElementById('btn-danger-step1-next').addEventListener('click',   openDangerStep2);
+
+  document.getElementById('btn-close-danger-step2').addEventListener('click',  closeDangerStep2);
+  document.getElementById('btn-danger-step2-cancel').addEventListener('click', closeDangerStep2);
+  document.getElementById('btn-danger-step2-confirm').addEventListener('click', executeDangerAction);
+
+  document.getElementById('danger-email-confirm').addEventListener('input', (e) => {
+    const match = e.target.value.trim().toLowerCase() === (userEmail || '').toLowerCase();
+    document.getElementById('btn-danger-step2-confirm').disabled = !match;
+  });
+
+  ['modal-danger-step1', 'modal-danger-step2'].forEach((id) => {
+    document.getElementById(id).addEventListener('click', (e) => {
+      if (e.target.id === id) { closeDangerStep1(); closeDangerStep2(); }
+    });
+  });
 }
 
 // -----------------------------

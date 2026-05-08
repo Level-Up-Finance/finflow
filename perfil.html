@@ -151,6 +151,34 @@
         </section>
 
         <!-- ============================================================
+             SEÇÃO: Zona de perigo
+             ============================================================ -->
+        <section class="perfil-section perfil-section--danger">
+          <header class="perfil-section-header">
+            <h2 class="perfil-section-title">Zona de perigo</h2>
+            <p class="perfil-section-hint">Ações irreversíveis. Leia com atenção antes de continuar.</p>
+          </header>
+
+          <div class="perfil-section-body">
+            <div class="perfil-danger-row">
+              <div class="perfil-danger-info">
+                <strong>Restaurar conta do zero</strong>
+                <p class="field-hint">Apaga todos os seus dados financeiros (transações, contas, categorias, compromissos, dívidas, investimentos) e zera seu perfil. Seu e-mail e senha são mantidos — você não será deslogado.</p>
+              </div>
+              <button type="button" class="btn btn-warning" id="btn-danger-reset">Restaurar do zero</button>
+            </div>
+
+            <div class="perfil-danger-row">
+              <div class="perfil-danger-info">
+                <strong>Cancelar assinatura e excluir conta</strong>
+                <p class="field-hint">Remove sua conta permanentemente. Todos os dados são apagados, você é deslogado imediatamente e o e-mail fica livre para criar uma nova conta.</p>
+              </div>
+              <button type="button" class="btn btn-danger" id="btn-danger-delete">Excluir minha conta</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================
              Footer fixo: ações
              ============================================================ -->
         <div class="perfil-footer">
@@ -159,6 +187,45 @@
         </div>
       </form>
     </main>
+  </div>
+
+  <!-- ── Modal Zona de Perigo — Etapa 1: consequências ── -->
+  <div class="modal-backdrop hidden" id="modal-danger-step1" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title" id="danger-step1-title"></h2>
+        <button type="button" class="modal-close" id="btn-close-danger-step1" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="danger-warning-badge">⚠ Esta ação não tem volta</div>
+        <ul class="danger-consequences-list" id="danger-step1-consequences"></ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-danger-step1-cancel">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btn-danger-step1-next">Entendo — continuar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal Zona de Perigo — Etapa 2: confirmação com email ── -->
+  <div class="modal-backdrop hidden" id="modal-danger-step2" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title" id="danger-step2-title"></h2>
+        <button type="button" class="modal-close" id="btn-close-danger-step2" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="danger-warning-badge danger-warning-badge--final">⛔ Última confirmação</div>
+        <p class="danger-step2-hint">Para confirmar, digite seu e-mail abaixo:</p>
+        <input type="email" class="input" id="danger-email-confirm"
+               placeholder="seu@email.com" autocomplete="off" autocorrect="off" spellcheck="false">
+        <p class="field-hint" id="danger-step2-note" style="margin-top:var(--space-2)"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-danger-step2-cancel">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btn-danger-step2-confirm" disabled>Confirmar</button>
+      </div>
+    </div>
   </div>
 
   <div id="toast-container" class="toast-container"></div>
