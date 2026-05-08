@@ -83,13 +83,16 @@ function renderTable() {
     const avatar   = u.foto_url
       ? `<img src="${escapeHtml(u.foto_url)}" alt="" class="adm-usr-avatar-img" onerror="this.remove()"><span class="adm-usr-avatar-initials">${escapeHtml(initials)}</span>`
       : escapeHtml(initials);
+    const suspensoBadge = u.suspenso
+      ? `<span class="plano-badge" style="background:var(--color-error-subtle,#fee2e2);color:var(--color-error,#dc2626);margin-left:4px;">Suspenso</span>`
+      : '';
     return `
-      <tr class="adm-usr-row" data-id="${u.id}" tabindex="0" role="button">
+      <tr class="adm-usr-row${u.suspenso ? ' adm-usr-row--suspenso' : ''}" data-id="${u.id}" tabindex="0" role="button">
         <td>
           <div class="adm-usr-cell-user">
             <div class="adm-usr-avatar">${avatar}</div>
             <div>
-              <div class="adm-usr-name">${escapeHtml(nome)}</div>
+              <div class="adm-usr-name">${escapeHtml(nome)}${suspensoBadge}</div>
               ${u.apelido && u.nome ? `<div class="adm-usr-sub">${escapeHtml(u.apelido)}</div>` : ''}
             </div>
           </div>
@@ -128,6 +131,11 @@ function openModal(userId) {
     `<span class="plano-badge plano-${plano}">${PLANO_LABELS[plano] || plano}</span>`;
   document.getElementById('modal-usr-plano-select').value = plano;
   document.getElementById('modal-usr-body').innerHTML    = renderModalBody(u);
+
+  const btnSuspend = document.getElementById('btn-toggle-suspend');
+  btnSuspend.textContent = u.suspenso ? 'Reativar conta' : 'Suspender';
+  btnSuspend.classList.toggle('btn-warning', !u.suspenso);
+  btnSuspend.classList.toggle('btn-success', u.suspenso);
 
   document.getElementById('modal-usuario').classList.remove('hidden');
 }
@@ -168,6 +176,54 @@ function renderModalBody(u) {
 function closeModal() {
   document.getElementById('modal-usuario').classList.add('hidden');
   openUserId = null;
+}
+
+async function toggleSuspend() {
+  if (!openUserId) return;
+  const u = cachedUsers.find((x) => x.id === openUserId);
+  if (!u) return;
+  const suspender = !u.suspenso;
+  const btn = document.getElementById('btn-toggle-suspend');
+  btn.disabled = true;
+
+  const { error } = await supabase.rpc('admin_suspend_user', {
+    target_user_id: openUserId,
+    suspender,
+  });
+
+  btn.disabled = false;
+  if (error) { showToast('Erro: ' + error.message, 'error'); return; }
+
+  u.suspenso = suspender;
+  btn.textContent = suspender ? 'Reativar conta' : 'Suspender';
+  btn.classList.toggle('btn-warning', !suspender);
+  btn.classList.toggle('btn-success', suspender);
+  showToast(suspender ? 'Usuário suspenso.' : 'Conta reativada.', 'success');
+  renderTable();
+}
+
+async function deleteUser() {
+  if (!openUserId) return;
+  const u = cachedUsers.find((x) => x.id === openUserId);
+  if (!u) return;
+  const nome = u.nome || u.email || 'este usuário';
+  if (!window.confirm(`Excluir permanentemente a conta de ${nome}? Esta ação não pode ser desfeita.`)) return;
+
+  const btn = document.getElementById('btn-delete-user');
+  btn.disabled = true;
+
+  const { error } = await supabase.rpc('admin_delete_user', {
+    target_user_id: openUserId,
+  });
+
+  btn.disabled = false;
+  if (error) { showToast('Erro: ' + error.message, 'error'); return; }
+
+  cachedUsers = cachedUsers.filter((x) => x.id !== openUserId);
+  closeModal();
+  updateCount();
+  renderTable();
+  showToast('Conta excluída.', 'success');
 }
 
 async function savePlano() {
@@ -216,6 +272,8 @@ function bindEvents() {
     if (e.target === document.getElementById('modal-usuario')) closeModal();
   });
   document.getElementById('btn-save-plano').addEventListener('click', savePlano);
+  document.getElementById('btn-toggle-suspend').addEventListener('click', toggleSuspend);
+  document.getElementById('btn-delete-user').addEventListener('click', deleteUser);
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeModal();

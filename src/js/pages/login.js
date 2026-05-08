@@ -190,6 +190,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
     await redirectIfAuthenticated();
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('suspenso')) {
+      showToast('Sua conta está suspensa. Entre em contato com o suporte.', 'error', 8000);
+    }
   } finally {
     document.body.style.visibility = 'visible';
   }

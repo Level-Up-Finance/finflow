@@ -28,6 +28,16 @@ export async function guardSession() {
     window.location.href = LOGIN_PATH;
     return null;
   }
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('suspenso')
+    .eq('id', session.user.id)
+    .single();
+  if (profile?.suspenso) {
+    await supabase.auth.signOut();
+    window.location.href = LOGIN_PATH + '?suspenso=1';
+    return null;
+  }
   return session;
 }
 
