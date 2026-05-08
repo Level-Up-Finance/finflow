@@ -10,6 +10,7 @@ alter table public.profiles
   add column if not exists suspenso boolean not null default false;
 
 -- ── Recria get_admin_users incluindo suspenso ──
+drop function if exists public.get_admin_users();
 create or replace function public.get_admin_users()
 returns table (
   id               uuid,
