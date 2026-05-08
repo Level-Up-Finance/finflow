@@ -118,7 +118,10 @@ async function handleSignup(event) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { nome } }
+      options: {
+        data: { nome },
+        emailRedirectTo: window.location.origin + '/index.html',
+      },
     });
     if (error) throw error;
 
@@ -180,6 +183,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       showToast(t('login.aviso.supabase_config', 'Configure Supabase em src/js/lib/config.js'), 'warning', 8000);
       return;
     }
+    // Captura o redirect pós-confirmação de email (PKCE: ?code=xxx na URL)
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        window.location.href = HOME_PATH;
+      }
+    });
     await redirectIfAuthenticated();
   } finally {
     document.body.style.visibility = 'visible';
