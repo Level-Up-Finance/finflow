@@ -31,12 +31,7 @@
   top: 0;
   display: flex;
   flex-direction: column;
-  /* overflow visible pra deixar o tooltip dos links aparecer fora da sidebar.
-     CSS spec: se overflow-y: auto, o overflow-x vira auto automaticamente
-     (clipping) — então precisamos manter o eixo Y também visible.
-     ~10 itens de nav cabem em qualquer altura razoável; se virar problema,
-     refatoro pra tooltip em position:fixed via JS. */
-  overflow: visible;
+  overflow: hidden;
   z-index: var(--z-sidebar);
 }
 
@@ -86,7 +81,10 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  overflow-y: auto;
+  scrollbar-width: none;
 }
+.sidebar-nav::-webkit-scrollbar { display: none; }
 
 .sidebar-divider {
   border: none;
@@ -121,39 +119,10 @@
 
 /* Span do label vira o próprio tooltip — mais robusto que attr() + ::after.
    Posicionado absoluto à direita do link, escondido até hover. */
+/* Desktop collapsed: label é só texto visível no mobile aberto.
+   Tooltip é gerenciado via JS (position:fixed) em sidebar.js. */
 .sidebar-link-label {
-  position: absolute;
-  left: calc(100% + 12px);
-  top: 50%;
-  margin-top: -14px;
-  padding: 6px 10px;
-  background: var(--color-text-main);
-  color: var(--color-surface);
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-semibold);
-  border-radius: var(--radius-sm);
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  z-index: 9999;
-  box-shadow: var(--shadow-md);
-  transition: opacity 0.12s ease;
-}
-
-/* Setinha (triangulinho) pra esquerda do tooltip */
-.sidebar-link-label::before {
-  content: '';
-  position: absolute;
-  left: -6px;
-  top: 50%;
-  margin-top: -6px;
-  border: 6px solid transparent;
-  border-right-color: var(--color-text-main);
-}
-
-.sidebar-link:hover .sidebar-link-label,
-.sidebar-link:focus-visible .sidebar-link-label {
-  opacity: 1;
+  display: none;
 }
 
 .sidebar-link-icon {
@@ -255,12 +224,7 @@
   white-space: nowrap;
 }
 
-/* O .sidebar-link-label dentro do .sidebar-config se comporta igual aos do nav,
-   aparecendo como tooltip absoluto no hover. */
-.sidebar .sidebar-config:hover .sidebar-link-label,
-.sidebar .sidebar-config:focus-visible .sidebar-link-label {
-  opacity: 1;
-}
+/* sidebar-config label: também oculto no desktop; JS cuida do tooltip. */
 
 .sidebar-config:hover {
   background: rgba(109, 94, 245, 0.1);
@@ -533,20 +497,9 @@
   }
   .app-sidebar.open .sidebar-link .sidebar-link-label,
   .app-sidebar.open .sidebar-config .sidebar-link-label {
-    position: static;
-    opacity: 1;
-    background: transparent;
+    display: inline;
     color: inherit;
-    box-shadow: none;
-    padding: 0;
-    margin-top: 0;
-    pointer-events: auto;
     font-size: var(--fs-sm);
-    transition: none;
-  }
-  .app-sidebar.open .sidebar-link .sidebar-link-label::before,
-  .app-sidebar.open .sidebar-config .sidebar-link-label::before {
-    display: none;
   }
 
   /* Mostra hambúrguer e ativa overlay no mobile */

@@ -148,6 +148,37 @@ export async function initSidebar(activePage) {
     if (e.key === 'Escape' && container.classList.contains('open')) closeSidebar();
   });
 
+  // ── Tooltip via position:fixed (sidebar-nav tem overflow-y:auto) ─
+  let tip = document.getElementById('sidebar-tip');
+  if (!tip) {
+    tip = document.createElement('div');
+    tip.id = 'sidebar-tip';
+    Object.assign(tip.style, {
+      position: 'fixed', zIndex: '9999',
+      background: 'var(--color-text-main)', color: 'var(--color-surface)',
+      fontSize: '12px', fontWeight: '600', fontFamily: 'inherit',
+      padding: '5px 10px', borderRadius: '4px',
+      whiteSpace: 'nowrap', pointerEvents: 'none',
+      opacity: '0', transition: 'opacity 0.12s ease',
+      boxShadow: '0 2px 8px rgba(0,0,0,.18)',
+    });
+    document.body.appendChild(tip);
+  }
+
+  container.querySelectorAll('.sidebar-link, .sidebar-config').forEach((link) => {
+    link.addEventListener('mouseenter', () => {
+      if (container.classList.contains('open')) return; // mobile expandido mostra label
+      const label = link.getAttribute('aria-label') || link.querySelector('.sidebar-link-label')?.textContent || '';
+      if (!label) return;
+      const rect = link.getBoundingClientRect();
+      tip.textContent = label;
+      tip.style.left = (rect.right + 10) + 'px';
+      tip.style.top  = Math.round(rect.top + rect.height / 2 - 13) + 'px';
+      tip.style.opacity = '1';
+    });
+    link.addEventListener('mouseleave', () => { tip.style.opacity = '0'; });
+  });
+
   // Sincroniza tema com profiles em background (não bloqueia render)
   initTheme();
 
