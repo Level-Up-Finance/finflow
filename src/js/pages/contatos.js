@@ -139,7 +139,7 @@ function renderList() {
       ${showF ? '<span class="ctp-tipo-letter fornecedor" title="Fornecedor">F</span>' : ''}
     `;
     const avatarInner = c.logo_url
-      ? `<span class="ctp-avatar-initials">${initials}</span><img src="${escapeHtml(c.logo_url)}" alt="" onerror="this.remove()">`
+      ? `<img src="${escapeHtml(c.logo_url)}" alt="" onerror="this.remove()">`
       : initials;
     const meta = [TIPO_LABELS[c.tipo] || c.tipo, isArq ? 'Arquivado' : null].filter(Boolean).join(' · ');
     html += `<div class="ctp-list-item ${c.id === selectedId ? 'is-selected' : ''} ${isArq ? 'is-archived' : ''}"
@@ -194,7 +194,7 @@ function renderDetailHeader(c) {
   const avatarEl = document.getElementById('ct-detail-avatar');
   avatarEl.style.background = color;
   if (c.logo_url) {
-    avatarEl.innerHTML = `<span class="ctp-avatar-initials">${initials}</span><img src="${escapeHtml(c.logo_url)}" alt="" onerror="this.remove()">`;
+    avatarEl.innerHTML = `<img src="${escapeHtml(c.logo_url)}" alt="" onerror="this.remove()">`;
   } else {
     avatarEl.textContent = initials;
   }
@@ -275,7 +275,9 @@ function renderDadosTab(c) {
     ] : []),
     { label: 'Aniversário', value: aniversarioDM(c.aniversario) },
     { label: 'Endereço',    value: c.endereco, full: true },
-    { label: 'Observação',  value: c.observacao, full: true },
+    { label: 'Twitter/X',  value: c.twitter,
+      html: c.twitter ? `<a href="${escapeHtml(c.twitter)}" target="_blank" rel="noopener">${escapeHtml(c.twitter)}</a>` : null },
+    { label: 'Bio',  value: c.bio, full: true },
   ];
 
   document.getElementById('ct-dados-content').innerHTML = fields.map((f) => `
@@ -581,9 +583,9 @@ function closeConfirmar() {
 const MODAL_FIELDS = [
   'nome', 'nome_extrato', 'tipo', 'pessoa_tipo',
   'email', 'telefone', 'whatsapp', 'website',
-  'linkedin', 'instagram',
+  'linkedin', 'instagram', 'twitter',
   'documento', 'empresa', 'cargo',
-  'endereco', 'aniversario', 'observacao',
+  'endereco', 'aniversario', 'bio',
 ];
 // logo_url é gerenciado fora do form (auto-preenchido pela busca CNPJ)
 let modalLogoUrl = null;

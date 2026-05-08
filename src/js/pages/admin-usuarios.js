@@ -81,7 +81,7 @@ function renderTable() {
     const initials = getInitials(u.nome || u.apelido, u.email);
     const plano    = u.plano || 'free';
     const avatar   = u.foto_url
-      ? `<img src="${escapeHtml(u.foto_url)}" alt="" class="adm-usr-avatar-img" onerror="this.remove()"><span class="adm-usr-avatar-initials">${escapeHtml(initials)}</span>`
+      ? `<img src="${escapeHtml(u.foto_url)}" alt="" class="adm-usr-avatar-img">`
       : escapeHtml(initials);
     const suspensoBadge = u.suspenso
       ? `<span class="plano-badge" style="background:var(--color-error-subtle,#fee2e2);color:var(--color-error,#dc2626);margin-left:4px;">Suspenso</span>`
