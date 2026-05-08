@@ -69,6 +69,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   bindCategoryDragDrop();
   window.addEventListener('resize', updateStickyThTop);
   loadProfileSettings();  // async, non-blocking
+
+  const validCfgTabs = new Set(['categorias', 'aparencia', 'sistema']);
+  const hashTab = location.hash.slice(1);
+  if (validCfgTabs.has(hashTab) && hashTab !== 'categorias') {
+    document.querySelector(`.cfg-sidenav-item[data-tab="${hashTab}"]`)?.click();
+  }
 });
 
 // -----------------------------
@@ -746,6 +752,7 @@ function bindTabEvents() {
   document.querySelectorAll('.cfg-sidenav-item').forEach((item) => {
     item.addEventListener('click', () => {
       const target = item.dataset.tab;
+      history.replaceState(null, '', '#' + target);
 
       document.querySelectorAll('.cfg-sidenav-item').forEach((t) => {
         t.classList.toggle('active', t === item);

@@ -37,7 +37,7 @@
           </button>
           <button class="cfg-sidenav-item" data-tab="idiomas" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            Idiomas
+            Texto & Tradução
           </button>
         </nav>
 
@@ -268,12 +268,12 @@
 
           </div><!-- /#admin-panel-usuarios -->
 
-          <!-- Panel: Idiomas -->
+          <!-- Panel: Texto & Tradução -->
           <div class="cfg-panel hidden" id="admin-panel-idiomas">
 
             <div class="page-header">
               <div class="page-header-content">
-                <h1 class="page-title">Idiomas <span class="adm-usr-count hidden" id="i18n-count"></span></h1>
+                <h1 class="page-title">Texto & Tradução <span class="adm-usr-count hidden" id="i18n-count"></span></h1>
                 <p class="page-description">Gerencie as traduções da interface do FinFlow em PT-BR, EN, ES e FR.</p>
               </div>
               <div class="page-header-actions">
@@ -492,9 +492,11 @@
             <option value="premium">Premium</option>
           </select>
         </div>
-        <div style="display:flex; gap:var(--space-2);">
+        <div style="display:flex; gap:var(--space-2); flex-wrap:wrap; justify-content:flex-end;">
           <button type="button" class="btn btn-ghost" id="btn-cancel-modal-usr">Fechar</button>
           <button type="button" class="btn btn-primary" id="btn-save-plano">Salvar plano</button>
+          <button type="button" class="btn btn-warning" id="btn-toggle-suspend">Suspender</button>
+          <button type="button" class="btn btn-danger"  id="btn-delete-user">Excluir conta</button>
         </div>
       </div>
     </div>

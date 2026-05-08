@@ -6,6 +6,7 @@ import { initSidebar } from '../components/sidebar.js';
 import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 const initialized = { feedback: false, usuarios: false, idiomas: false };
+const VALID_TABS   = new Set(['feedback', 'usuarios', 'idiomas']);
 
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
@@ -14,7 +15,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyTranslationsToDom();
 
   bindTabEvents();
-  await activateTab('feedback');
+  const hash = location.hash.slice(1);
+  await activateTab(VALID_TABS.has(hash) ? hash : 'feedback');
 });
 
 function bindTabEvents() {
@@ -26,6 +28,7 @@ function bindTabEvents() {
 }
 
 async function activateTab(tab) {
+  history.replaceState(null, '', '#' + tab);
   document.querySelectorAll('#admin-sidenav [data-tab]').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.tab === tab);
   });
