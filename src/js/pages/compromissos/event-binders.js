@@ -61,9 +61,9 @@ export function bindAllEvents(deps) {
 
   // Filtro: status
   document.getElementById('status-filters').addEventListener('click', (e) => {
-    const btn = e.target.closest('.filter-pill');
+    const btn = e.target.closest('.cf-status-tab');
     if (!btn) return;
-    document.querySelectorAll('#status-filters .filter-pill').forEach((p) => p.classList.remove('active'));
+    document.querySelectorAll('#status-filters .cf-status-tab').forEach((p) => p.classList.remove('active'));
     btn.classList.add('active');
     d.setFilterStatus(btn.dataset.status);
     d.renderCompromissos();
@@ -71,9 +71,9 @@ export function bindAllEvents(deps) {
 
   // Filtro: configurado / sem compromisso
   document.getElementById('config-filters').addEventListener('click', (e) => {
-    const btn = e.target.closest('.filter-pill');
+    const btn = e.target.closest('.cf-status-tab');
     if (!btn) return;
-    document.querySelectorAll('#config-filters .filter-pill').forEach((p) => p.classList.remove('active'));
+    document.querySelectorAll('#config-filters .cf-status-tab').forEach((p) => p.classList.remove('active'));
     btn.classList.add('active');
     d.setFilterConfig(btn.dataset.config);
     d.renderCompromissos();
@@ -81,7 +81,7 @@ export function bindAllEvents(deps) {
 
   // Filtro: categoria (multi)
   document.getElementById('categoria-filters').addEventListener('click', (e) => {
-    const btn = e.target.closest('.filter-pill');
+    const btn = e.target.closest('.cf-tipo-chip');
     if (!btn) return;
     const id = btn.dataset.categoria;
     let filterCategorias = d.getFilterCategorias();

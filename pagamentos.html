@@ -50,22 +50,27 @@
       </div>
 
       <!-- Filtros -->
-      <div class="filter-pills" id="status-filters">
-        <button class="filter-pill active" data-filter="todos" type="button">
-          Todos <span class="filter-count" data-count="todos">0</span>
-        </button>
-        <button class="filter-pill" data-filter="pendentes" type="button">
-          Pendentes <span class="filter-count" data-count="pendentes">0</span>
-        </button>
-        <button class="filter-pill" data-filter="atrasados" type="button">
-          Atrasados <span class="filter-count" data-count="atrasados">0</span>
-        </button>
-        <button class="filter-pill" data-filter="pagos" type="button">
-          Pagos <span class="filter-count" data-count="pagos">0</span>
-        </button>
-        <button class="filter-pill" data-filter="cancelados" type="button">
-          Cancelados <span class="filter-count" data-count="cancelados">0</span>
-        </button>
+      <div class="conta-filterbar">
+        <div class="conta-filterbar-row">
+          <span class="conta-filterbar-label">Status</span>
+          <div class="cf-status-tabs" id="status-filters">
+            <button class="cf-status-tab active" data-filter="todos" type="button">
+              Todos <span class="cf-tab-count" data-count="todos">0</span>
+            </button>
+            <button class="cf-status-tab" data-filter="pendentes" type="button">
+              Pendentes <span class="cf-tab-count" data-count="pendentes">0</span>
+            </button>
+            <button class="cf-status-tab" data-filter="atrasados" type="button">
+              Atrasados <span class="cf-tab-count" data-count="atrasados">0</span>
+            </button>
+            <button class="cf-status-tab" data-filter="pagos" type="button">
+              Pagos <span class="cf-tab-count" data-count="pagos">0</span>
+            </button>
+            <button class="cf-status-tab" data-filter="cancelados" type="button">
+              Cancelados <span class="cf-tab-count" data-count="cancelados">0</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Container dos blocos -->
@@ -158,6 +163,36 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-ghost" data-close-modal="modal-parcial-novo-comp">Cancelar</button>
         <button type="button" class="btn btn-primary" id="btn-pns-criar">Criar compromisso</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Finalizados do bloco
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-finalizados" role="dialog" aria-modal="true">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-finalizados-title">Finalizados</h2>
+        <button type="button" class="modal-close" id="btn-close-finalizados" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body" style="padding: 0;">
+        <div class="pagamento-bloco-scroll" style="max-height: 70vh;">
+          <table class="pagamento-bloco-table" id="modal-finalizados-table">
+            <thead>
+              <tr>
+                <th>Compromisso</th>
+                <th class="text-center">Vto</th>
+                <th class="text-right">Valor</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="modal-finalizados-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-cancel-finalizados">Fechar</button>
       </div>
     </div>
   </div>

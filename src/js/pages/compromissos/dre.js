@@ -7,7 +7,7 @@
 // `deps` deve fornecer: { displayName, getDisplayValor, compareByVencimento, diaSemanaLabel }
 // =============================================================
 import { escapeHtml } from '../../lib/utils.js';
-import { formatCurrency } from '../../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML } from '../../lib/compromissos-config.js';
 
 export function renderDre(filteredCompromissos, ctx, deps) {
   const { cachedCategorias, filterCategorias } = ctx;
@@ -78,9 +78,8 @@ function renderDreBlock(cat, items, deps) {
     categoriaTotal += (c.tipo === 'Receita') ? v : -v;
   });
 
-  const totalSign = categoriaTotal > 0 ? '+' : (categoriaTotal < 0 ? '-' : '');
   const totalClass = categoriaTotal > 0 ? 'dre-positive' : (categoriaTotal < 0 ? 'dre-negative' : 'dre-zero');
-  const totalDisplay = `${totalSign}${formatCurrency(Math.abs(categoriaTotal), 'BRL')}`;
+  const totalDisplay = formatCurrencyHTML(categoriaTotal, 'BRL');
 
   const itemsHtml = items.length === 0
     ? '<div class="dre-empty">Sem compromissos nesta categoria</div>'
@@ -108,7 +107,7 @@ function renderDreItem(c, deps) {
   const dv = getDisplayValor(c);
   const sign = c.tipo === 'Receita' ? '+' : '-';
   const colorClass = c.tipo === 'Receita' ? 'dre-positive' : 'dre-negative';
-  const valueDisplay = `${sign}${formatCurrency(dv.valor, dv.moeda)}${dv.isVariavel ? ' <span class="valor-variavel-tag">varia</span>' : ''}`;
+  const valueDisplay = `${sign}${formatCurrencyHTML(dv.valor, dv.moeda)}${dv.isVariavel ? ' <span class="valor-variavel-tag">varia</span>' : ''}`;
 
   let venc = '';
   if (c.periodo === 'Semanal' || c.periodo === 'Quinzenal') {
@@ -134,20 +133,19 @@ function renderDreItem(c, deps) {
 
 function renderDreSummary(totalReceitas, totalDespesas, resultado) {
   const resultClass = resultado > 0 ? 'dre-positive' : (resultado < 0 ? 'dre-negative' : 'dre-zero');
-  const resultSign = resultado > 0 ? '+' : (resultado < 0 ? '-' : '');
   return `
     <div class="dre-result">
       <div class="dre-summary-row">
         <span>Total Receitas</span>
-        <strong class="dre-positive">+${formatCurrency(totalReceitas, 'BRL')}</strong>
+        <strong class="dre-positive">${formatCurrencyHTML(totalReceitas, 'BRL')}</strong>
       </div>
       <div class="dre-summary-row">
         <span>Total Despesas</span>
-        <strong class="dre-negative">-${formatCurrency(totalDespesas, 'BRL')}</strong>
+        <strong class="dre-negative">${formatCurrencyHTML(-totalDespesas, 'BRL')}</strong>
       </div>
       <div class="dre-summary-row dre-net">
         <span>Resultado Líquido</span>
-        <span class="${resultClass}">${resultSign}${formatCurrency(Math.abs(resultado), 'BRL')}</span>
+        <span class="${resultClass}">${formatCurrencyHTML(resultado, 'BRL')}</span>
       </div>
     </div>
   `;

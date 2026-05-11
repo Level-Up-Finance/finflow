@@ -5,7 +5,7 @@
 // showInfoPopup: dialog modal "Entendi" pra avisos
 // =============================================================
 import { escapeHtml } from '../../lib/utils.js';
-import { formatCurrency } from '../../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML } from '../../lib/compromissos-config.js';
 
 /**
  * Mostra popover ancorado num badge .data-vinculo-* element.
@@ -51,8 +51,8 @@ function buildVinculoPopoverContent(type, id, lookups) {
         <strong class="vp-title">${escapeHtml(p.nome)}</strong>
       </div>
       <div class="vp-body">
-        ${meta ? `<div class="vp-row"><span>Meta</span><strong>${formatCurrency(meta)}</strong></div>` : ''}
-        ${p.saldo_inicial ? `<div class="vp-row"><span>Saldo inicial</span><strong>${formatCurrency(Number(p.saldo_inicial))}</strong></div>` : ''}
+        ${meta ? `<div class="vp-row"><span>Meta</span><strong>${formatCurrencyHTML(meta)}</strong></div>` : ''}
+        ${p.saldo_inicial ? `<div class="vp-row"><span>Saldo inicial</span><strong>${formatCurrencyHTML(Number(p.saldo_inicial))}</strong></div>` : ''}
       </div>
       <a class="vp-link" href="/investimentos.html">Ver investimentos →</a>`;
   }
@@ -73,9 +73,9 @@ function buildVinculoPopoverContent(type, id, lookups) {
       <div class="vp-body">
         ${d?.credor  ? `<div class="vp-row"><span>Credor</span><strong>${escapeHtml(d.credor)}</strong></div>` : ''}
         ${d?.status  ? `<div class="vp-row"><span>Status</span><strong style="color:${stCor}">${d.status}</strong></div>` : ''}
-        ${total      ? `<div class="vp-row"><span>Total</span><strong>${formatCurrency(total)}</strong></div>` : ''}
-        ${d          ? `<div class="vp-row"><span>Pago</span><strong style="color:var(--color-success)">${formatCurrency(pago)} (${pct.toFixed(0)}%)</strong></div>` : ''}
-        ${d          ? `<div class="vp-row"><span>Restante</span><strong style="color:var(--color-danger)">${formatCurrency(restante)}</strong></div>` : ''}
+        ${total      ? `<div class="vp-row"><span>Total</span><strong>${formatCurrencyHTML(total)}</strong></div>` : ''}
+        ${d          ? `<div class="vp-row"><span>Pago</span><strong style="color:var(--color-success)">${formatCurrencyHTML(pago)} (${pct.toFixed(0)}%)</strong></div>` : ''}
+        ${d          ? `<div class="vp-row"><span>Restante</span><strong style="color:var(--color-danger)">${formatCurrencyHTML(restante)}</strong></div>` : ''}
       </div>
       <a class="vp-link" href="/dividas.html">Ver dívidas →</a>`;
   }

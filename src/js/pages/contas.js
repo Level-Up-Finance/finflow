@@ -15,9 +15,9 @@ import { openModal, closeModal } from '../components/modal.js';
 import { ACCOUNT_TYPES, typeIcon, typeColor, typePill } from '../lib/account-types.js';
 import { findBank, logoUrl, searchBanks } from '../lib/banks.js';
 import { initColVisibility } from '../lib/col-visibility.js';
-import { escapeHtml, formatDateBR, todayISO } from '../lib/utils.js';
+import { escapeHtml, formatDateBR, todayISO, parseUserNumber } from '../lib/utils.js';
 import { checkAndCloseFaturas } from '../lib/faturas-cartao.js';
-import { formatCurrency } from '../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.js';
 import { COLOR_PALETTE, DEFAULT_COLOR, renderColorPicker } from '../lib/color-palette.js';
 import { fetchExchangeRate } from '../lib/currency.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
@@ -57,6 +57,7 @@ let detailsConta = null;        // conta sendo exibida no modal de detalhes
 let pendingAction = null;       // { type, id, label }
 let filterStatus = 'todas';
 let filterTipos = new Set(['all']);
+let cachedSaldos = new Map(); // conta_id → saldo number
 let userManuallyChangedColor = false;
 let viewMode = 'cards';         // 'cards' | 'table'
 let colVisEl = null;
@@ -99,8 +100,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 function renderTipoFilters() {
   const container = document.getElementById('tipo-filters');
   const html = ACCOUNT_TYPES.map((t) => `
-    <button class="filter-pill" data-tipo="${t.value}" type="button">
-      <span style="display:inline-flex; width: 12px; height: 12px; color: ${t.color};">${t.icon}</span>
+    <button class="cf-tipo-chip" data-tipo="${t.value}" type="button" style="--tipo-c:${t.color};">
+      <span style="display:inline-flex;width:12px;height:12px;color:${t.color};">${t.icon}</span>
       ${t.label}
     </button>
   `).join('');
@@ -144,9 +145,9 @@ function bindEvents() {
 
   // Filtro: status
   document.getElementById('status-filters').addEventListener('click', (e) => {
-    const btn = e.target.closest('.filter-pill');
+    const btn = e.target.closest('.cf-status-tab');
     if (!btn) return;
-    document.querySelectorAll('#status-filters .filter-pill').forEach((p) => p.classList.remove('active'));
+    document.querySelectorAll('#status-filters .cf-status-tab').forEach((p) => p.classList.remove('active'));
     btn.classList.add('active');
     filterStatus = btn.dataset.status;
     renderContas();
@@ -154,7 +155,7 @@ function bindEvents() {
 
   // Filtro: tipo (multi)
   document.getElementById('tipo-filters').addEventListener('click', (e) => {
-    const btn = e.target.closest('.filter-pill');
+    const btn = e.target.closest('.cf-tipo-chip');
     if (!btn) return;
     const tipo = btn.dataset.tipo;
     if (tipo === 'all') {
@@ -165,6 +166,7 @@ function bindEvents() {
       else filterTipos.add(tipo);
       if (filterTipos.size === 0) filterTipos = new Set(['all']);
     }
+    cachedSaldos = new Map(); // reset saldos when filter changes
     syncTipoFilterUI();
     renderContas();
   });
@@ -269,9 +271,34 @@ function bindEvents() {
 }
 
 function syncTipoFilterUI() {
-  document.querySelectorAll('#tipo-filters .filter-pill').forEach((p) => {
+  document.querySelectorAll('#tipo-filters .cf-tipo-chip').forEach((p) => {
     p.classList.toggle('active', filterTipos.has(p.dataset.tipo));
   });
+}
+
+// -----------------------------
+// Saldo loader
+// -----------------------------
+async function loadSaldos(contaIds) {
+  if (!contaIds.length) return;
+  const { data, error } = await supabase
+    .from('transacoes')
+    .select('conta_id, tipo, valor, conta_destino_id, transferencia_par_id')
+    .in('conta_id', contaIds);
+  if (error) { console.error('[loadSaldos]', error); return; }
+
+  // Initialize all accounts at 0
+  for (const id of contaIds) cachedSaldos.set(id, 0);
+
+  for (const tr of (data || [])) {
+    const cur = cachedSaldos.get(tr.conta_id) ?? 0;
+    const isEntrada = tr.tipo === 'Receita'
+      || (tr.tipo === 'Transferência' && tr.transferencia_par_id && !tr.conta_destino_id);
+    const isSaida = tr.tipo === 'Despesa'
+      || (tr.tipo === 'Transferência' && !!tr.conta_destino_id);
+    if (isEntrada) cachedSaldos.set(tr.conta_id, cur + Number(tr.valor || 0));
+    else if (isSaida) cachedSaldos.set(tr.conta_id, cur - Number(tr.valor || 0));
+  }
 }
 
 // -----------------------------
@@ -646,7 +673,7 @@ async function loadAndRenderCompromissosLimite(conta) {
     resumoEl.innerHTML = `
       <div class="clc-resumo clc-resumo--sem-limite">
         <span>Comprometido com compromissos ativos:</span>
-        <strong>${formatCurrency(comprometido)}</strong>
+        <strong>${formatCurrencyHTML(comprometido)}</strong>
         <span class="clc-hint">Configure o limite total em <em>Editar</em> para ver o percentual.</span>
       </div>`;
   } else {
@@ -658,15 +685,15 @@ async function loadAndRenderCompromissosLimite(conta) {
         <div class="clc-resumo-valores">
           <div class="clc-val-item">
             <span class="clc-val-label">Limite total</span>
-            <strong class="clc-val-num">${formatCurrency(limite)}</strong>
+            <strong class="clc-val-num">${formatCurrencyHTML(limite)}</strong>
           </div>
           <div class="clc-val-item clc-val-item--comprometido">
             <span class="clc-val-label">Comprometido</span>
-            <strong class="clc-val-num" style="color:${barColor}">${formatCurrency(comprometido)} <span class="clc-pct">${pct.toFixed(0)}%</span></strong>
+            <strong class="clc-val-num" style="color:${barColor}">${formatCurrencyHTML(comprometido)} <span class="clc-pct">${pct.toFixed(0)}%</span></strong>
           </div>
           <div class="clc-val-item">
             <span class="clc-val-label">Disponível</span>
-            <strong class="clc-val-num">${formatCurrency(disponivel)}</strong>
+            <strong class="clc-val-num">${formatCurrencyHTML(disponivel)}</strong>
           </div>
         </div>
         <div class="clc-bar-track">
@@ -697,7 +724,7 @@ async function loadAndRenderCompromissosLimite(conta) {
           const display = c.apelido?.trim() || c.nome;
           const valorStr = c.valor_variavel
             ? '<span style="color:var(--color-text-muted);font-style:italic;">varia</span>'
-            : formatCurrency(Number(c.valor_base), c.moeda);
+            : formatCurrencyHTML(Number(c.valor_base), c.moeda);
           const vencLabel = c.vencimento_dia ? `· dia ${c.vencimento_dia}` : '';
           return `
             <tr>
@@ -788,7 +815,7 @@ function renderFaturaAberta(abertas, _conta) {
           <span class="cartao-fatura-mes">${labelMesReferencia(f.mes_referencia)}</span>
           <span class="cartao-fatura-status status-aberta">Aberta</span>
         </div>
-        <div class="cartao-fatura-aberta-valor">${formatCurrency(Number(f.valor_total))}</div>
+        <div class="cartao-fatura-aberta-valor">${formatCurrencyHTML(Number(f.valor_total))}</div>
         <div class="cartao-fatura-aberta-info">
           <div><span class="cf-label">Fechamento</span><span class="cf-value">${formatDateBR(f.data_fechamento)} <span class="cf-sub">(${labelFechar})</span></span></div>
           <div><span class="cf-label">Vencimento</span><span class="cf-value">${formatDateBR(f.data_vencimento)}</span></div>
@@ -828,7 +855,7 @@ function renderFaturasHistorico(fechadas, pagamentos, transacoes) {
     return `
       <tr>
         <td class="cf-td-mes">${labelMesReferencia(f.mes_referencia)}</td>
-        <td class="cf-td-valor tabular">${formatCurrency(Number(f.valor_total))}</td>
+        <td class="cf-td-valor tabular">${formatCurrencyHTML(Number(f.valor_total))}</td>
         <td class="cf-td-data tabular">${formatDateBR(f.data_vencimento)}</td>
         <td class="cf-td-data tabular">${dataRealHtml}</td>
         <td class="cf-td-status">${statusHtml}</td>
@@ -995,6 +1022,24 @@ function renderContas() {
     filtered = filtered.filter((c) => filterTipos.has(c.tipo));
   }
 
+  // In individual (specific tipo) view, load saldos asynchronously then re-render cards
+  const isIndividualView = !filterTipos.has('all');
+  if (isIndividualView && viewMode === 'cards' && filtered.length > 0) {
+    const ids = filtered.map((c) => c.id);
+    // Only fetch if saldos not yet loaded for these accounts
+    const needsLoad = ids.some((id) => !cachedSaldos.has(id));
+    if (needsLoad) {
+      loadSaldos(ids).then(() => {
+        const container = document.getElementById('contas-container');
+        if (container) {
+          container.innerHTML = renderContasCards(filtered);
+          bindCardClicks();
+          attachImageErrorHandlers(container);
+        }
+      });
+    }
+  }
+
   if (filtered.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
@@ -1154,11 +1199,19 @@ function renderContaCard(conta) {
   const faturaBadge = faturaAbertaValor
     ? `<div class="conta-fatura-badge">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-        Fatura aberta: ${formatCurrency(faturaAbertaValor)}
+        Fatura aberta: ${formatCurrencyHTML(faturaAbertaValor)}
        </div>`
     : '';
 
   const comprometidoBadge = renderComprometidoBadge(conta);
+
+  const saldo = cachedSaldos.has(conta.id) ? cachedSaldos.get(conta.id) : null;
+  const saldoHtml = saldo !== null && conta.tipo !== 'Cartão de Crédito'
+    ? `<div class="conta-card-saldo ${saldo < 0 ? 'conta-card-saldo--negativo' : saldo === 0 ? 'conta-card-saldo--zero' : ''}">
+        <span class="conta-card-saldo-label">Saldo atual</span>
+        <span class="conta-card-saldo-valor">${formatCurrencyHTML(saldo, conta.moeda)}</span>
+       </div>`
+    : '';
 
   return `
     <div class="conta-card-v2 ${isInactive ? 'inactive' : ''} ${conta.status === 'arquivada' ? 'arquivada' : ''}" data-id="${conta.id}" tabindex="0" role="button" aria-label="Ver detalhes de ${escapeHtml(display)}">
@@ -1183,6 +1236,7 @@ function renderContaCard(conta) {
         </div>
         ${conta.descricao ? `<p class="conta-card-desc">${escapeHtml(conta.descricao)}</p>` : ''}
         ${dates.length ? `<div class="conta-card-dates">${dates.join('')}</div>` : ''}
+        ${saldoHtml}
         ${faturaBadge}
         ${comprometidoBadge}
       </div>
@@ -1218,7 +1272,7 @@ function renderComprometidoBadge(conta) {
   const data = cachedCompromissosContas.get(conta.id);
   if (!data || data.comprometido === 0) return '';
   const { comprometido, count } = data;
-  const label = `${count} compromisso${count > 1 ? 's' : ''}: ${formatCurrency(comprometido)}`;
+  const label = `${count} compromisso${count > 1 ? 's' : ''}: ${formatCurrencyHTML(comprometido)}`;
   if (conta.limite) {
     const pct = Math.min(100, Math.round((comprometido / conta.limite) * 100));
     return `
@@ -1242,11 +1296,11 @@ function renderComprometidoCell(conta) {
     const pct = Math.min(100, Math.round((comprometido / conta.limite) * 100));
     return `
       <div class="ccb-table-cell">
-        <span class="ccb-table-val">${formatCurrency(comprometido)} <span class="ccb-table-pct">${pct}%</span></span>
+        <span class="ccb-table-val">${formatCurrencyHTML(comprometido)} <span class="ccb-table-pct">${pct}%</span></span>
         <div class="ccb-bar-track" style="margin-top:4px;"><div class="ccb-bar-fill" style="width:${pct}%; background:${comprometidoBarColor(pct)};"></div></div>
       </div>`;
   }
-  return `<span>${formatCurrency(comprometido)}</span>`;
+  return `<span>${formatCurrencyHTML(comprometido)}</span>`;
 }
 
 // -----------------------------
@@ -1337,7 +1391,7 @@ async function saveConta(event) {
 
   const moeda = document.getElementById('conta-moeda').value || 'BRL';
   const limiteRaw = document.getElementById('conta-limite').value;
-  const limite = (tipo === 'Cartão de Crédito' && limiteRaw !== '') ? Number(limiteRaw) : null;
+  const limite = (tipo === 'Cartão de Crédito' && limiteRaw !== '') ? parseUserNumber(limiteRaw) : null;
 
   const payload = {
     nome,

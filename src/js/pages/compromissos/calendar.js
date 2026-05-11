@@ -8,7 +8,7 @@
 // Para openDayModal também: { getCompromissoById, openDetailsModal }
 // =============================================================
 import { escapeHtml } from '../../lib/utils.js';
-import { formatCurrency, tipoPill } from '../../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML, tipoPill } from '../../lib/compromissos-config.js';
 import { openModal, closeModal } from '../../components/modal.js';
 
 const WEEKDAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -64,21 +64,20 @@ function renderCalendarPopover(events, day, month, deps) {
   let totalReceitas = 0, totalDespesas = 0;
   const items = sorted.map((c) => {
     const dv = getDisplayValor(c);
-    const sign = c.tipo === 'Receita' ? '+' : '-';
     const cls = c.tipo === 'Receita' ? 'dre-positive' : 'dre-negative';
+    const signedValor = c.tipo === 'Receita' ? dv.valor : -dv.valor;
     if (c.tipo === 'Receita') totalReceitas += dv.valor;
     else totalDespesas += dv.valor;
     const variaTag = dv.isVariavel ? ' <span class="valor-variavel-tag">varia</span>' : '';
     return `
       <li class="calendar-popover-item">
         <span class="calendar-popover-name">${escapeHtml(displayName(c))}</span>
-        <span class="calendar-popover-value ${cls}">${sign}${formatCurrency(dv.valor, dv.moeda)}${variaTag}</span>
+        <span class="calendar-popover-value ${cls}">${formatCurrencyHTML(signedValor, dv.moeda)}${variaTag}</span>
       </li>
     `;
   }).join('');
 
   const net = totalReceitas - totalDespesas;
-  const netSign = net > 0 ? '+' : (net < 0 ? '-' : '');
   const netCls = net > 0 ? 'dre-positive' : (net < 0 ? 'dre-negative' : 'dre-zero');
 
   return `
@@ -87,7 +86,7 @@ function renderCalendarPopover(events, day, month, deps) {
       <ul class="calendar-popover-list">${items}</ul>
       <div class="calendar-popover-summary">
         <span class="calendar-popover-summary-label">Saldo do dia</span>
-        <span class="${netCls}">${netSign}${formatCurrency(Math.abs(net), 'BRL')}</span>
+        <span class="${netCls}">${formatCurrencyHTML(net, 'BRL')}</span>
       </div>
     </div>
   `;
@@ -195,13 +194,12 @@ export function openDayModal(date, events, deps) {
     else totalDespesas += v;
   });
   const net = totalReceitas - totalDespesas;
-  const netSign = net >= 0 ? '+' : '-';
   const netClass = net > 0 ? 'dre-positive' : (net < 0 ? 'dre-negative' : 'dre-zero');
 
   document.getElementById('day-summary').innerHTML = `
-    <div style="flex: 1;"><span style="color: var(--color-text-muted);">Receitas:</span> <strong class="dre-positive">+${formatCurrency(totalReceitas, 'BRL')}</strong></div>
-    <div style="flex: 1;"><span style="color: var(--color-text-muted);">Despesas:</span> <strong class="dre-negative">-${formatCurrency(totalDespesas, 'BRL')}</strong></div>
-    <div style="flex: 1;"><span style="color: var(--color-text-muted);">Saldo:</span> <strong class="${netClass}">${netSign}${formatCurrency(Math.abs(net), 'BRL')}</strong></div>
+    <div style="flex: 1;"><span style="color: var(--color-text-muted);">Receitas:</span> <strong class="dre-positive">${formatCurrencyHTML(totalReceitas, 'BRL')}</strong></div>
+    <div style="flex: 1;"><span style="color: var(--color-text-muted);">Despesas:</span> <strong class="dre-negative">${formatCurrencyHTML(-totalDespesas, 'BRL')}</strong></div>
+    <div style="flex: 1;"><span style="color: var(--color-text-muted);">Saldo:</span> <strong class="${netClass}">${formatCurrencyHTML(net, 'BRL')}</strong></div>
   `;
 
   const sorted = [...events].sort((a, b) => displayName(a).localeCompare(displayName(b), 'pt-BR'));
@@ -211,9 +209,9 @@ export function openDayModal(date, events, deps) {
   } else {
     listEl.innerHTML = sorted.map((c) => {
       const dv = getDisplayValor(c);
-      const sign = c.tipo === 'Receita' ? '+' : '-';
       const colorClass = c.tipo === 'Receita' ? 'dre-positive' : 'dre-negative';
-      const valueDisplay = `${sign}${formatCurrency(dv.valor, dv.moeda)}${dv.isVariavel ? ' <span class="valor-variavel-tag">varia</span>' : ''}`;
+      const signedValor = c.tipo === 'Receita' ? dv.valor : -dv.valor;
+      const valueDisplay = `${formatCurrencyHTML(signedValor, dv.moeda)}${dv.isVariavel ? ' <span class="valor-variavel-tag">varia</span>' : ''}`;
       return `
         <div class="day-item" data-id="${c.id}">
           <div class="day-item-info">

@@ -12,9 +12,9 @@ import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
-import { formatCurrency } from '../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.js';
 import { initColVisibility } from '../lib/col-visibility.js';
-import { escapeHtml, formatDateBR, isoMonth } from '../lib/utils.js';
+import { escapeHtml, formatDateBR, isoMonth, parseUserNumber } from '../lib/utils.js';
 import { DEFAULT_COLOR, renderColorPicker, setActiveColor } from '../lib/color-palette.js';
 import { initContatoPicker } from '../components/contato-picker.js';
 import { parseDecimal, formatDecimal, autoAttachDecimalInputs } from '../lib/number-format.js';
@@ -424,11 +424,11 @@ function renderCard(p) {
       <div class="projeto-card-stats">
         <div class="projeto-card-stat">
           <span class="projeto-card-stat-label">Realizado</span>
-          <span class="projeto-card-stat-value">${formatCurrency(realizado, 'BRL')}</span>
+          <span class="projeto-card-stat-value">${formatCurrencyHTML(realizado, 'BRL')}</span>
         </div>
         <div class="projeto-card-stat">
           <span class="projeto-card-stat-label">Previsto este mês</span>
-          <span class="projeto-card-stat-value">${formatCurrency(previstoMes, 'BRL')}</span>
+          <span class="projeto-card-stat-value">${formatCurrencyHTML(previstoMes, 'BRL')}</span>
         </div>
       </div>
 
@@ -494,13 +494,13 @@ function renderProjetoGrafico(p, realizado, meta) {
     const pct = Math.min(100, (realizado / meta) * 100);
     const restante = Math.max(0, meta - realizado);
     const restanteHint = restante > 0
-      ? `Faltam ${formatCurrency(restante, 'BRL')}`
+      ? `Faltam ${formatCurrencyHTML(restante, 'BRL')}`
       : '🎯 Meta alcançada';
     return `
       <div class="projeto-card-grafico projeto-card-grafico-meta">
         ${renderDonutSVG(pct, p.cor, 'sm')}
         <div class="projeto-card-grafico-meta-info">
-          <div class="projeto-card-grafico-meta-amount">${formatCurrency(realizado, 'BRL')} de ${formatCurrency(meta, 'BRL')}</div>
+          <div class="projeto-card-grafico-meta-amount">${formatCurrencyHTML(realizado, 'BRL')} de ${formatCurrencyHTML(meta, 'BRL')}</div>
           <div class="projeto-card-progress-hint">${restanteHint}</div>
         </div>
       </div>
@@ -581,7 +581,7 @@ function renderTable(projetos) {
     const meta = Number(p.meta_valor) || 0;
     const pct = meta > 0 ? Math.min(100, (realizado / meta) * 100) : null;
     const termino = p.data_alvo ? formatDateBR(p.data_alvo) : '<span class="text-muted">—</span>';
-    const metaCell = meta > 0 ? formatCurrency(meta, 'BRL') : '<span class="text-muted">—</span>';
+    const metaCell = meta > 0 ? formatCurrencyHTML(meta, 'BRL') : '<span class="text-muted">—</span>';
     const pctCell = pct !== null
       ? `<span class="projeto-tabela-pct" style="--projeto-cor: ${p.cor};">
            <span class="projeto-tabela-pct-bar"><span class="projeto-tabela-pct-fill" style="width: ${pct}%;"></span></span>
@@ -600,8 +600,8 @@ function renderTable(projetos) {
           <span class="projeto-card-status status-${p.status}">${STATUS_LABELS[p.status] || p.status}</span>
           ${(p.status === 'concluido' || p.status === 'arquivado') && meta > 0 && realizado < meta ? `<span class="tag-parcial" title="Encerrado antes de atingir a meta">Parcial</span>` : ''}
         </td>
-        <td data-col="realizado" class="text-right tabular text-bold">${formatCurrency(realizado, 'BRL')}</td>
-        <td data-col="previsto-mes" class="text-right tabular">${formatCurrency(previstoMes, 'BRL')}</td>
+        <td data-col="realizado" class="text-right tabular text-bold">${formatCurrencyHTML(realizado, 'BRL')}</td>
+        <td data-col="previsto-mes" class="text-right tabular">${formatCurrencyHTML(previstoMes, 'BRL')}</td>
         <td data-col="meta" class="text-right tabular">${metaCell}</td>
         <td data-col="pct-meta">${pctCell}</td>
         <td data-col="termino" class="tabular">${termino}</td>
@@ -931,9 +931,9 @@ async function saveProjeto(event) {
     descricao:   document.getElementById('proj-descricao').value.trim() || null,
     cor:         document.getElementById('proj-cor').value,
     status:      document.getElementById('proj-status').value,
-    meta_valor:  parseNum(document.getElementById('proj-meta-valor').value),
+    meta_valor:  parseUserNumber(document.getElementById('proj-meta-valor').value) || null,
     data_alvo:   document.getElementById('proj-data-alvo').value || null,
-    saldo_inicial: parseNum(document.getElementById('proj-saldo-inicial').value) || 0,
+    saldo_inicial: parseUserNumber(document.getElementById('proj-saldo-inicial').value) || 0,
     contato_id:  contatoPicker?.getValue() || null,
   };
 
@@ -1049,17 +1049,17 @@ function openDetailsModal(id) {
     <div class="proj-details-resumo-grid">
       <div class="proj-details-stat">
         <span class="proj-details-stat-label">Realizado</span>
-        <span class="proj-details-stat-value">${formatCurrency(realizado, 'BRL')}</span>
-        ${p.saldo_inicial ? `<span class="proj-details-stat-sub">Inclui saldo inicial: ${formatCurrency(Number(p.saldo_inicial), 'BRL')}</span>` : ''}
+        <span class="proj-details-stat-value">${formatCurrencyHTML(realizado, 'BRL')}</span>
+        ${p.saldo_inicial ? `<span class="proj-details-stat-sub">Inclui saldo inicial: ${formatCurrencyHTML(Number(p.saldo_inicial), 'BRL')}</span>` : ''}
       </div>
       <div class="proj-details-stat">
         <span class="proj-details-stat-label">Previsto este mês</span>
-        <span class="proj-details-stat-value">${formatCurrency(previsto, 'BRL')}</span>
+        <span class="proj-details-stat-value">${formatCurrencyHTML(previsto, 'BRL')}</span>
       </div>
       ${meta > 0 ? `
         <div class="proj-details-stat">
           <span class="proj-details-stat-label">Meta</span>
-          <span class="proj-details-stat-value">${formatCurrency(meta, 'BRL')}</span>
+          <span class="proj-details-stat-value">${formatCurrencyHTML(meta, 'BRL')}</span>
           <span class="proj-details-stat-sub">${pctMeta.toFixed(0)}% alcançado</span>
         </div>
       ` : ''}
@@ -1082,7 +1082,7 @@ function openDetailsModal(id) {
       : `<div class="proj-details-subs-list">${subs.map((s) => `
           <div class="proj-details-sub-row">
             <span class="proj-details-sub-name">${escapeHtml(s.apelido?.trim() || s.nome)}</span>
-            <span class="proj-details-sub-valor">${formatCurrency(Number(s.valor_base) || 0, s.moeda || 'BRL')}</span>
+            <span class="proj-details-sub-valor">${formatCurrencyHTML(Number(s.valor_base) || 0, s.moeda || 'BRL')}</span>
           </div>
         `).join('')}</div>`
     }
@@ -1117,7 +1117,7 @@ function openDetailsModal(id) {
       <div class="proj-hist-row proj-hist-row-saldo">
         <span class="proj-hist-date">—</span>
         <span class="proj-hist-name">Saldo inicial</span>
-        <span class="proj-hist-value">${formatCurrency(Number(p.saldo_inicial), 'BRL')}</span>
+        <span class="proj-hist-value">${formatCurrencyHTML(Number(p.saldo_inicial), 'BRL')}</span>
       </div>
     `);
   }
@@ -1127,7 +1127,7 @@ function openDetailsModal(id) {
       <div class="proj-hist-row ${e.cls}">
         <span class="proj-hist-date">${d}</span>
         <span class="proj-hist-name">${escapeHtml(e.label)} ${e.tag}</span>
-        <span class="proj-hist-value">${formatCurrency(e.value, 'BRL')}</span>
+        <span class="proj-hist-value">${formatCurrencyHTML(e.value, 'BRL')}</span>
       </div>
     `);
   }
@@ -1417,7 +1417,7 @@ function makeHistRow(entry = null) {
   div.className = 'hist-row';
   div.innerHTML = `
     <input type="date" class="input hist-row-data" value="${entry?.data || ''}">
-    <input type="number" class="input hist-row-valor" value="${entry?.valor ?? ''}" step="0.01" min="0.01" placeholder="Valor (R$)">
+    <input type="text" inputmode="decimal" class="input hist-row-valor" value="${entry?.valor ?? ''}" placeholder="Valor (R$)">
     <input type="text" class="input hist-row-desc" value="${escapeHtml(entry?.descricao || '')}" placeholder="Descrição (opcional)" maxlength="100">
     <button type="button" class="hist-row-del" title="Remover">×</button>
   `;
@@ -1482,7 +1482,7 @@ function openHistoricoViewInvest(projetoId) {
         <div class="proj-hist-row proj-hist-row-aporte">
           <span class="proj-hist-date">${fmtDate(a.data)}</span>
           <span class="proj-hist-name">${escapeHtml(a.descricao || 'Aporte')} <span class="proj-hist-tag">Aporte</span></span>
-          <span class="proj-hist-value">${formatCurrency(a.valor)}</span>
+          <span class="proj-hist-value">${formatCurrencyHTML(a.valor)}</span>
         </div>`);
     }
     if (saldoInicial > 0) {
@@ -1490,14 +1490,14 @@ function openHistoricoViewInvest(projetoId) {
         <div class="proj-hist-row proj-hist-row-saldo">
           <span class="proj-hist-date">—</span>
           <span class="proj-hist-name">Saldo inicial</span>
-          <span class="proj-hist-value">${formatCurrency(saldoInicial)}</span>
+          <span class="proj-hist-value">${formatCurrencyHTML(saldoInicial)}</span>
         </div>`);
     }
     const total = aportes.reduce((s, a) => s + Number(a.valor), 0) + saldoInicial;
     content.innerHTML = `
       <div class="proj-hist-list">${rows.join('')}</div>
       <div style="display:flex;justify-content:flex-end;padding:var(--space-3) var(--space-4);font-weight:var(--fw-bold);font-size:var(--fs-sm);border-top:1px solid var(--color-border);">
-        Total investido: ${formatCurrency(total)}
+        Total investido: ${formatCurrencyHTML(total)}
       </div>`;
   }
 
@@ -1512,7 +1512,7 @@ async function saveHistoricoInvest() {
 
   try {
     if (mode === 'saldo') {
-      const valor = parseNum(document.getElementById('hist-invest-saldo-valor').value) ?? 0;
+      const valor = parseUserNumber(document.getElementById('hist-invest-saldo-valor').value) || 0;
       const { error } = await supabase
         .from('projetos_investimento')
         .update({ saldo_inicial: valor })
@@ -1524,7 +1524,7 @@ async function saveHistoricoInvest() {
       const rows = [];
       document.querySelectorAll('#hist-invest-extrato-list .hist-row').forEach((rowEl) => {
         const data = rowEl.querySelector('.hist-row-data').value;
-        const valor = parseNum(rowEl.querySelector('.hist-row-valor').value);
+        const valor = parseUserNumber(rowEl.querySelector('.hist-row-valor').value);
         const descricao = rowEl.querySelector('.hist-row-desc').value.trim() || null;
         if (data && valor && valor > 0) rows.push({ data, valor, descricao });
       });

@@ -33,7 +33,7 @@
           <p class="page-description" data-i18n-key="compromissos.descricao">Suas entradas e saídas recorrentes. Organizadas em Categorias e Subcategorias.</p>
         </div>
         <button class="btn btn-primary" id="btn-novo-compromisso" type="button">
-          <span style="font-size: 1.25em; line-height: 0.8;">+</span> Novo compromisso
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg> Novo compromisso
         </button>
       </div>
 
@@ -51,31 +51,43 @@
       </div>
 
       <!-- Filtros -->
-      <div id="filters-wrapper">
-        <div class="filter-pills" id="config-filters">
-          <button class="filter-pill active" data-config="todas" type="button">Todas</button>
-          <button class="filter-pill" data-config="configurado" type="button">Configurados</button>
-          <button class="filter-pill" data-config="sem-compromisso" type="button">Sem compromisso</button>
+      <div class="conta-filterbar" id="filters-wrapper">
+        <!-- Exibição -->
+        <div class="conta-filterbar-row">
+          <span class="conta-filterbar-label">Exibição</span>
+          <div class="cf-status-tabs" id="config-filters">
+            <button class="cf-status-tab active" data-config="todas" type="button">Todas</button>
+            <button class="cf-status-tab" data-config="configurado" type="button">Configurados</button>
+            <button class="cf-status-tab" data-config="sem-compromisso" type="button">Sem compromisso</button>
+          </div>
         </div>
 
-        <div class="filter-pills" id="status-filters" style="margin-top: -8px;">
-          <button class="filter-pill active" data-status="todas" type="button">
-            Todos <span class="filter-count" data-count-status="todas">0</span>
-          </button>
-          <button class="filter-pill" data-status="ativa" type="button">
-            Ativos <span class="filter-count" data-count-status="ativa">0</span>
-          </button>
-          <button class="filter-pill" data-status="inativa" type="button">
-            Inativos <span class="filter-count" data-count-status="inativa">0</span>
-          </button>
-          <button class="filter-pill" data-status="arquivada" type="button">
-            Arquivados <span class="filter-count" data-count-status="arquivada">0</span>
-          </button>
+        <!-- Status -->
+        <div class="conta-filterbar-row">
+          <span class="conta-filterbar-label">Status</span>
+          <div class="cf-status-tabs" id="status-filters">
+            <button class="cf-status-tab active" data-status="todas" type="button">
+              Todos <span class="cf-tab-count" data-count-status="todas">0</span>
+            </button>
+            <button class="cf-status-tab" data-status="ativa" type="button">
+              Ativos <span class="cf-tab-count" data-count-status="ativa">0</span>
+            </button>
+            <button class="cf-status-tab" data-status="inativa" type="button">
+              Inativos <span class="cf-tab-count" data-count-status="inativa">0</span>
+            </button>
+            <button class="cf-status-tab" data-status="arquivada" type="button">
+              Arquivados <span class="cf-tab-count" data-count-status="arquivada">0</span>
+            </button>
+          </div>
         </div>
 
-        <div class="filter-pills" id="categoria-filters" style="margin-top: -8px;">
-          <button class="filter-pill active" data-categoria="all" type="button">Todas as categorias</button>
-          <!-- pills geradas pelo JS -->
+        <!-- Categoria -->
+        <div class="conta-filterbar-row">
+          <span class="conta-filterbar-label">Categoria</span>
+          <div class="cf-tipo-chips" id="categoria-filters">
+            <button class="cf-tipo-chip active" data-categoria="all" type="button">Todas</button>
+            <!-- chips geradas pelo JS -->
+          </div>
         </div>
       </div>
 
@@ -90,7 +102,7 @@
         <h2 class="empty-state-title" data-i18n-key="compromissos.empty.titulo">Nenhum compromisso cadastrado</h2>
         <p class="empty-state-message">Cadastre seus compromissos recorrentes (salário, aluguel, internet, mercado, etc) pra começar a organizar suas finanças.</p>
         <button class="btn btn-primary" type="button" data-trigger-novo>
-          <span style="font-size: 1.25em; line-height: 0.8;">+</span> Novo compromisso
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg> Novo compromisso
         </button>
       </div>
     </main>
@@ -222,7 +234,14 @@
         <!-- Banco/Cartão -->
         <div class="field" id="comp-conta-field">
           <label class="field-label" for="comp-conta" id="comp-conta-label">Banco / Cartão (opcional)</label>
-          <select id="comp-conta" name="conta_id" class="select"></select>
+          <div class="conta-picker" id="comp-conta-picker">
+            <button type="button" class="conta-picker-btn" id="comp-conta-btn">
+              <div id="comp-conta-avatar-wrap"><div class="bank-avatar size-sm"><div class="bank-avatar-fallback" style="background:#9CA3AF;">?</div></div></div>
+              <span class="conta-picker-name" id="comp-conta-name">Banco / Cartão (opcional)…</span>
+              <svg class="conta-picker-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <input type="hidden" id="comp-conta" name="conta_id" value="">
+          </div>
           <div id="comp-conta-limite-info" class="limite-info hidden"></div>
           <p class="field-hint" id="comp-conta-hint">Pode deixar em branco e preencher depois.</p>
         </div>
@@ -230,7 +249,14 @@
         <!-- Conta destino (Transferência) -->
         <div class="field hidden" id="comp-conta-destino-field">
           <label class="field-label" for="comp-conta-destino">Para (destino) <span class="required">*</span></label>
-          <select id="comp-conta-destino" name="conta_destino_id" class="select"></select>
+          <div class="conta-picker" id="comp-conta-destino-picker">
+            <button type="button" class="conta-picker-btn" id="comp-conta-destino-btn">
+              <div id="comp-conta-destino-avatar-wrap"><div class="bank-avatar size-sm"><div class="bank-avatar-fallback" style="background:#9CA3AF;">?</div></div></div>
+              <span class="conta-picker-name" id="comp-conta-destino-name">Selecione a conta destino…</span>
+              <svg class="conta-picker-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <input type="hidden" id="comp-conta-destino" name="conta_destino_id" value="">
+          </div>
           <p class="field-hint">Conta que vai receber o valor transferido.</p>
         </div>
 
@@ -312,7 +338,7 @@
           <div class="field-group">
             <div class="field">
               <label class="field-label" for="comp-valor-base">Valor <span class="required">*</span></label>
-              <input type="number" step="0.01" min="0" id="comp-valor-base" name="valor_base" class="input" required placeholder="0,00">
+              <input type="text" inputmode="decimal" id="comp-valor-base" name="valor_base" class="input" required placeholder="0,00">
             </div>
             <div class="field">
               <label class="field-label" for="comp-moeda">Moeda</label>
@@ -406,7 +432,7 @@
 
         <div class="field">
           <label class="field-label" for="quick-valor-input">Novo valor (<span id="quick-valor-moeda">BRL</span>) <span class="required">*</span></label>
-          <input type="number" step="0.01" min="0" id="quick-valor-input" class="input" required>
+          <input type="text" inputmode="decimal" id="quick-valor-input" class="input" required>
         </div>
 
         <div class="field">

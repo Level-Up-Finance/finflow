@@ -18,7 +18,7 @@ import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
-import { formatCurrency } from '../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML, renderMoedaOptions, moedaInputPlaceholder } from '../lib/compromissos-config.js';
 import {
   findMatchingPagamento,
   findTransacaoLinkedToPagamento,
@@ -33,7 +33,8 @@ import {
   upsertRule,
   suggestSubcategoriaFromHistory,
 } from '../lib/regras-reconciliacao.js';
-import { escapeHtml, formatDateBR, showConfirm } from '../lib/utils.js';
+import { escapeHtml, formatDateBR, showConfirm, parseUserNumber, renderContaOptions } from '../lib/utils.js';
+import { createContaPicker, contaAvatarHtml } from '../lib/conta-picker.js';
 import { initContatoPicker } from '../components/contato-picker.js';
 import { initColVisibility } from '../lib/col-visibility.js';
 import { fetchExchangeRate } from '../lib/currency.js';
@@ -86,6 +87,841 @@ let filterConta         = '';
 let filterTipo          = '';
 let filterBusca         = '';
 let filterReconciliacao = '';     // '' | 'importado'
+let activeTagFilters    = new Set(); // tags ativas como filtro
+
+// Splits — cache global e estado do modal
+let cachedSplits     = [];
+let splitsByTransId  = new Map(); // Map<transacao_id, split[]>
+let currentSplits    = [];        // splits em edição no modal
+let splitEnabled     = false;     // toggle de divisão no modal
+
+// Tags do modal em edição
+let currentTags = [];
+
+function normalizeTag(raw) {
+  return raw.replace(/^#/, '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-áàâãéèêíïóôõöúüçñ]/gi, '');
+}
+
+function _hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+const _TAG_PALETTE = ['#6D5EF5','#10B981','#3B82F6','#F59E0B','#EC4899','#8B5CF6','#06B6D4','#EF4444','#14B8A6','#F97316'];
+function tagColor(tag) { return _TAG_PALETTE[_hashStr(String(tag)) % _TAG_PALETTE.length]; }
+
+function getKnownTags() {
+  const tags = new Set();
+  cachedTransacoes.forEach((tr) => (tr.tags || []).forEach((tag) => tags.add(tag)));
+  return [...tags].sort();
+}
+
+function renderModalTags() {
+  const container = document.getElementById('trans-tags-container');
+  const input = document.getElementById('trans-tag-input');
+  if (!container || !input) return;
+  container.querySelectorAll('.tag-chip-modal').forEach((el) => el.remove());
+  currentTags.forEach((tag, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'tag-chip-modal';
+    chip.style.setProperty('--tag-color', tagColor(tag));
+    chip.innerHTML = `<span class="tag-chip-text">#${escapeHtml(tag)}</span><button class="tag-chip-remove" data-index="${i}" type="button" tabindex="-1" aria-label="Remover tag">×</button>`;
+    container.insertBefore(chip, input);
+  });
+}
+
+function initTagInput() {
+  const container = document.getElementById('trans-tags-container');
+  const input = document.getElementById('trans-tag-input');
+  const autocomplete = document.getElementById('trans-tag-autocomplete');
+  if (!container || !input || container._tagBound) return;
+  container._tagBound = true;
+
+  container.addEventListener('click', (e) => {
+    const btn = e.target.closest('.tag-chip-remove');
+    if (btn) {
+      currentTags.splice(parseInt(btn.dataset.index, 10), 1);
+      renderModalTags();
+      input.focus();
+      return;
+    }
+    if (!e.target.closest('.tag-chip-modal')) input.focus();
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if ((e.key === 'Enter' || e.key === ',') && input.value.trim()) {
+      e.preventDefault();
+      addTagFromInput();
+      return;
+    }
+    if (e.key === 'Backspace' && !input.value && currentTags.length > 0) {
+      currentTags.pop();
+      renderModalTags();
+      return;
+    }
+    if (e.key === 'Escape') hideTagAutocomplete();
+  });
+
+  input.addEventListener('blur', () => {
+    if (input.value.trim()) addTagFromInput();
+    setTimeout(hideTagAutocomplete, 150);
+  });
+
+  input.addEventListener('input', () => {
+    const q = normalizeTag(input.value);
+    if (!q || q.length < 1) { hideTagAutocomplete(); return; }
+    const matches = getKnownTags().filter((tg) => tg.includes(q) && !currentTags.includes(tg));
+    if (matches.length === 0) { hideTagAutocomplete(); return; }
+    autocomplete.innerHTML = matches.slice(0, 8).map((tg) =>
+      `<div class="tag-autocomplete-item" data-tag="${escapeHtml(tg)}">#${escapeHtml(tg)}</div>`
+    ).join('');
+    autocomplete.classList.remove('hidden');
+  });
+
+  autocomplete.addEventListener('mousedown', (e) => {
+    const item = e.target.closest('.tag-autocomplete-item');
+    if (!item) return;
+    e.preventDefault();
+    const tag = item.dataset.tag;
+    if (tag && !currentTags.includes(tag)) { currentTags.push(tag); renderModalTags(); }
+    input.value = '';
+    hideTagAutocomplete();
+  });
+}
+
+function addTagFromInput() {
+  const input = document.getElementById('trans-tag-input');
+  if (!input) return;
+  const tag = normalizeTag(input.value);
+  if (tag && !currentTags.includes(tag)) { currentTags.push(tag); renderModalTags(); }
+  input.value = '';
+  hideTagAutocomplete();
+}
+
+function hideTagAutocomplete() {
+  document.getElementById('trans-tag-autocomplete')?.classList.add('hidden');
+}
+
+function renderTagFilters() {
+  const el = document.getElementById('trans-tag-filters');
+  if (!el) return;
+  if (activeTagFilters.size === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = [...activeTagFilters].map((tag) =>
+    `<span class="trans-active-tag">#${escapeHtml(tag)}<button class="trans-active-tag-remove" data-tag="${escapeHtml(tag)}" type="button" title="Remover filtro">×</button></span>`
+  ).join('');
+}
+
+// =============================================================
+// Splits — divisão de transação em múltiplas partes
+// =============================================================
+
+function buildSplitCatOptions(selectedCatId = '') {
+  const byCat = new Map();
+  for (const sub of cachedSubcategorias) {
+    const arr = byCat.get(sub.categoria_id) || [];
+    arr.push(sub);
+    byCat.set(sub.categoria_id, arr);
+  }
+  let html = '<option value="">— Categoria —</option>';
+  for (const cat of cachedCategorias) {
+    if (!byCat.has(cat.id)) continue;
+    const sel = cat.id === selectedCatId ? ' selected' : '';
+    html += `<option value="${cat.id}"${sel}>${escapeHtml(cat.nome)}</option>`;
+  }
+  return html;
+}
+
+function buildSplitSubOptions(catId = '', selectedSubId = '') {
+  let html = '<option value="">— Subcategoria —</option>';
+  if (!catId) return html;
+  const subs = cachedSubcategorias.filter((s) => s.categoria_id === catId);
+  for (const s of subs) {
+    const sel = s.id === selectedSubId ? ' selected' : '';
+    html += `<option value="${s.id}"${sel}>${escapeHtml(s.apelido || s.nome)}</option>`;
+  }
+  return html;
+}
+
+function buildSplitRowHtml(idx, split) {
+  const catId    = split.categoria_id    || '';
+  const subId    = split.subcategoria_id || '';
+  const cat      = catId ? cachedCategorias.find((c) => c.id === catId) : null;
+  const sub      = subId ? cachedSubcategorias.find((s) => s.id === subId) : null;
+  const catName  = cat ? escapeHtml(cat.nome) : '— Categoria —';
+  const catColor = cat?.cor || '';
+  const subName  = sub ? escapeHtml(sub.apelido || sub.nome) : '';
+  const tagsHtml = (split.tags || []).map((tag, ti) =>
+    `<span class="tag-chip-modal" data-split="${idx}" data-tidx="${ti}" style="--tag-color:${tagColor(tag)}"><span class="tag-chip-text">#${escapeHtml(tag)}</span><button class="tag-chip-remove" data-split="${idx}" data-tidx="${ti}" type="button" tabindex="-1">×</button></span>`
+  ).join('');
+  return `
+    <div class="trans-split-row" data-idx="${idx}">
+      <div class="split-row-header">
+        <span class="split-row-num">Parte ${idx + 1}</span>
+        <button type="button" class="btn-icon split-remove-btn" data-idx="${idx}" title="Remover parte">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="split-fields">
+        <div class="field-group split-field-row">
+          <div class="field">
+            <label class="field-label-sm">Valor</label>
+            <input class="input input-sm split-valor" type="text" inputmode="decimal" placeholder="0,00" value="${split.valor != null ? split.valor : ''}">
+          </div>
+          <div class="field">
+            <label class="field-label-sm">Categoria</label>
+            <div class="split-cat-picker-wrap">
+              <button type="button" class="split-cat-btn" data-split-idx="${idx}">
+                ${catColor ? `<span class="split-cat-dot" style="background:${catColor};"></span>` : `<span class="split-cat-dot split-cat-dot--empty"></span>`}
+                <span class="split-cat-name">${catName}</span>
+                <svg class="split-cat-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <input type="hidden" class="split-categoria" value="${catId}">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label-sm">Subcategoria</label>
+            <div class="split-sub-picker-wrap">
+              <input type="text" class="input input-sm split-sub-search" placeholder="— Subcategoria —" autocomplete="off" spellcheck="false" value="${subName}" data-split-idx="${idx}">
+              <input type="hidden" class="split-subcategoria" value="${subId}">
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label-sm">Tags desta parte</label>
+          <div class="tag-chips-input split-tags-input" data-split-idx="${idx}">
+            ${tagsHtml}
+            <input type="text" class="tag-input-field split-tag-input" data-split-idx="${idx}" placeholder="#tag" maxlength="60" autocomplete="off">
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label-sm">Descrição desta parte</label>
+          <input type="text" class="input input-sm split-descricao" placeholder="Anotação opcional…" maxlength="200" value="${escapeHtml(split.descricao || '')}">
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderSplits() {
+  const list = document.getElementById('trans-splits-list');
+  if (!list) return;
+  list.innerHTML = currentSplits.map((s, i) => buildSplitRowHtml(i, s)).join('');
+  updateSplitTotals();
+  bindSplitEvents();
+}
+
+function addSplit() {
+  currentSplits.push({ valor: null, categoria_id: '', subcategoria_id: '', tags: [], descricao: '' });
+  renderSplits();
+}
+
+function removeSplit(idx) {
+  currentSplits.splice(idx, 1);
+  renderSplits();
+}
+
+function updateSplitTotals() {
+  const total     = parseUserNumber(document.getElementById('trans-valor')?.value || '0') || 0;
+  const allocated = currentSplits.reduce((sum, s) => sum + (parseUserNumber(String(s.valor || '0')) || 0), 0);
+  const allocEl   = document.getElementById('splits-allocated');
+  const totalEl   = document.getElementById('splits-total-val');
+  const warnEl    = document.getElementById('splits-warn');
+  if (allocEl) allocEl.textContent = formatCurrency(allocated);
+  if (totalEl) totalEl.textContent = formatCurrency(total);
+  const diff = Math.abs(allocated - total);
+  if (warnEl) warnEl.classList.toggle('hidden', diff < 0.01 || currentSplits.length === 0);
+}
+
+function bindSplitEvents() {
+  const list = document.getElementById('trans-splits-list');
+  if (!list) return;
+
+  // Remove split
+  list.querySelectorAll('.split-remove-btn').forEach((btn) => {
+    btn.addEventListener('click', () => removeSplit(Number(btn.dataset.idx)));
+  });
+
+  // Valor change
+  list.querySelectorAll('.split-valor').forEach((input, i) => {
+    input.addEventListener('input', () => {
+      currentSplits[i].valor = parseUserNumber(input.value) || null;
+      updateSplitTotals();
+    });
+  });
+
+  // Split categoria button
+  list.querySelectorAll('.split-cat-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = Number(btn.dataset.splitIdx);
+      if (_splitCatOpenIdx === idx) { _closeSplitCatPicker(); } else { _openSplitCatPicker(idx, ''); }
+    });
+  });
+
+  // Split subcategoria search
+  list.querySelectorAll('.split-sub-search').forEach((inp) => {
+    const idx = Number(inp.dataset.splitIdx);
+    inp.addEventListener('focus', () => _openSplitSubPicker(idx, inp.value));
+    inp.addEventListener('input', () => {
+      currentSplits[idx].subcategoria_id = '';
+      const row = inp.closest('.trans-split-row');
+      const hiddenSub = row?.querySelector('.split-subcategoria');
+      if (hiddenSub) hiddenSub.value = '';
+      _openSplitSubPicker(idx, inp.value);
+    });
+    inp.addEventListener('keydown', async (e) => {
+      if (e.key === 'Escape') { _closeSplitSubPicker(); inp.blur(); }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const catId = currentSplits[idx]?.categoria_id || '';
+        const q = inp.value.trim().toLowerCase();
+        const match = cachedSubcategorias.find((s) =>
+          (s.categoria_id === catId || !catId) &&
+          (s.apelido || s.nome).toLowerCase() === q
+        );
+        if (match) { _selectSplitSub(idx, match.id); _closeSplitSubPicker(); }
+        else if (inp.value.trim() && catId) { await _doCreateSplitSub(idx, inp.value.trim()); }
+      }
+    });
+  });
+
+  // Descrição change
+  list.querySelectorAll('.split-descricao').forEach((inp, i) => {
+    inp.addEventListener('input', () => { currentSplits[i].descricao = inp.value; });
+  });
+
+  // Tags: remove chip
+  list.querySelectorAll('.tag-chip-remove').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const si  = Number(btn.dataset.split);
+      const ti  = Number(btn.dataset.tidx);
+      currentSplits[si].tags.splice(ti, 1);
+      renderSplits();
+    });
+  });
+
+  // Tags: input (Enter / comma to add)
+  list.querySelectorAll('.split-tag-input').forEach((input) => {
+    const si = Number(input.dataset.splitIdx);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        const tag = normalizeTag(input.value);
+        if (tag && !(currentSplits[si].tags || []).includes(tag)) {
+          currentSplits[si].tags = [...(currentSplits[si].tags || []), tag];
+          renderSplits();
+        } else { input.value = ''; }
+      }
+      if (e.key === 'Backspace' && !input.value && (currentSplits[si].tags || []).length > 0) {
+        currentSplits[si].tags.pop();
+        renderSplits();
+      }
+    });
+    input.addEventListener('blur', () => {
+      const tag = normalizeTag(input.value);
+      if (tag && !(currentSplits[si].tags || []).includes(tag)) {
+        currentSplits[si].tags = [...(currentSplits[si].tags || []), tag];
+        renderSplits();
+      }
+    });
+  });
+}
+
+function setSplitButtonState(active) {
+  const toggleBtn = document.getElementById('btn-splits-toggle');
+  const hintEl    = document.getElementById('valor-total-hint');
+  if (!toggleBtn) return;
+  const splitSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="3" x2="12" y2="10"/><polyline points="8 7 12 3 16 7"/><line x1="12" y1="21" x2="12" y2="14"/><polyline points="8 17 12 21 16 17"/><line x1="4" y1="12" x2="20" y2="12"/></svg>`;
+  if (active) {
+    toggleBtn.classList.add('valor-dividir-btn--active');
+    toggleBtn.innerHTML = splitSvg;
+    if (hintEl) hintEl.classList.remove('hidden');
+  } else {
+    toggleBtn.classList.remove('valor-dividir-btn--active');
+    toggleBtn.innerHTML = splitSvg;
+    if (hintEl) hintEl.classList.add('hidden');
+  }
+}
+
+function initSplitsSection(existingSplits = []) {
+  const container = document.getElementById('trans-splits-container');
+  if (!container) return;
+
+  if (existingSplits.length > 0) {
+    splitEnabled   = true;
+    currentSplits  = existingSplits.map((s) => ({
+      valor: s.valor,
+      categoria_id: s.categoria_id || '',
+      subcategoria_id: s.subcategoria_id || '',
+      tags: s.tags || [],
+      descricao: s.descricao || '',
+    }));
+    container.classList.remove('hidden');
+    setSplitButtonState(true);
+    document.getElementById('trans-cat-section')?.classList.add('hidden');
+    document.getElementById('trans-bloco-field')?.classList.add('hidden');
+    document.getElementById('trans-descricao')?.closest('.field')?.classList.add('hidden');
+  } else {
+    splitEnabled  = false;
+    currentSplits = [];
+    container.classList.add('hidden');
+    setSplitButtonState(false);
+    document.getElementById('trans-cat-section')?.classList.remove('hidden');
+    document.getElementById('trans-bloco-field')?.classList.remove('hidden');
+    document.getElementById('trans-descricao')?.closest('.field')?.classList.remove('hidden');
+  }
+  renderSplits();
+}
+
+async function saveSplits(transacaoId, userId) {
+  // Always delete existing, then insert new ones if any
+  await supabase.from('transacao_splits').delete().eq('transacao_id', transacaoId);
+  if (!splitEnabled || currentSplits.length === 0) return;
+  const rows = currentSplits
+    .filter((s) => s.valor != null && s.valor > 0)
+    .map((s, i) => ({
+      transacao_id:    transacaoId,
+      user_id:         userId,
+      valor:           parseUserNumber(String(s.valor || '0')) || 0,
+      categoria_id:    s.categoria_id    || null,
+      subcategoria_id: s.subcategoria_id || null,
+      tags:            s.tags || [],
+      descricao:       s.descricao || null,
+      ordem:           i,
+    }));
+  if (rows.length > 0) {
+    const { error } = await supabase.from('transacao_splits').insert(rows);
+    if (error) console.error('[saveSplits]', error);
+  }
+}
+
+// ── Conta Picker ──────────────────────────────────────────
+let _transContaPicker = null;
+
+// ── Filter Conta Picker ────────────────────────────────────
+let _filterContaPicker = null;
+
+// ── Subcategoria picker ────────────────────────────────────
+let _subPickerDropdownEl = null;
+let _subPickerIsOpen = false;
+
+// ── Categoria picker ───────────────────────────────────────
+let _catPickerDropdownEl = null;
+let _catPickerIsOpen = false;
+let _catAllowedGroups = null; // null = all, array = filtered grupos (from bloco)
+
+// ── Split cat/sub shared pickers ──────────────────────────
+let _splitCatDropdownEl = null;
+let _splitCatOpenIdx = -1;
+let _splitSubDropdownEl = null;
+let _splitSubOpenIdx = -1;
+
+function initSubcategoriaPicker() {
+  const inputEl = document.getElementById('trans-subcategoria-search');
+  if (!inputEl || inputEl._spBound) return;
+  inputEl._spBound = true;
+
+  if (_subPickerDropdownEl) { _subPickerDropdownEl.remove(); }
+  _subPickerDropdownEl = document.createElement('div');
+  _subPickerDropdownEl.className = 'sub-picker-dropdown hidden';
+  document.body.appendChild(_subPickerDropdownEl);
+
+  inputEl.addEventListener('focus', () => _openSubPicker(inputEl.value));
+  inputEl.addEventListener('input', () => {
+    document.getElementById('trans-subcategoria').value = '';
+    _openSubPicker(inputEl.value);
+  });
+  inputEl.addEventListener('keydown', async (e) => {
+    if (e.key === 'Escape') { _closeSubPicker(); inputEl.blur(); }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const q = (inputEl.value || '').trim().toLowerCase();
+      const catId = document.getElementById('trans-categoria')?.value || '';
+      const match = cachedSubcategorias.find((s) =>
+        (s.categoria_id === catId || !catId) &&
+        (s.apelido || s.nome).toLowerCase() === q
+      );
+      if (match) { _selectSub(match.id); _closeSubPicker(); }
+      else if (inputEl.value.trim() && catId) { await _doCreateSub(inputEl.value.trim()); }
+    }
+  });
+}
+
+function _openSubPicker(q) {
+  _renderSubPickerDropdown(q);
+  const inputEl = document.getElementById('trans-subcategoria-search');
+  if (!inputEl || !_subPickerDropdownEl) return;
+  const rect = inputEl.getBoundingClientRect();
+  const spaceBelow = window.innerHeight - rect.bottom - 8;
+  const maxH = Math.min(300, Math.max(160, spaceBelow));
+  const w = Math.max(rect.width, 280);
+  let left = rect.left;
+  if (left + w > window.innerWidth - 16) left = Math.max(8, window.innerWidth - w - 16);
+  _subPickerDropdownEl.style.cssText = `position:fixed;top:${rect.bottom + 4}px;left:${left}px;width:${w}px;max-height:${maxH}px;overflow-y:auto;z-index:9999;`;
+  _subPickerDropdownEl.classList.remove('hidden');
+  _subPickerIsOpen = true;
+}
+
+function _closeSubPicker() {
+  _subPickerDropdownEl?.classList.add('hidden');
+  _subPickerIsOpen = false;
+}
+
+function _renderSubPickerDropdown(q = '') {
+  if (!_subPickerDropdownEl) return;
+  const catId = document.getElementById('trans-categoria')?.value || '';
+  const currentId = document.getElementById('trans-subcategoria')?.value || '';
+  const cat = catId ? cachedCategorias.find((c) => c.id === catId) : null;
+  const cor = cat?.cor || '#9CA3AF';
+  const qn = (q || '').toLowerCase();
+
+  let subs = catId
+    ? cachedSubcategorias.filter((s) => s.categoria_id === catId && s.status !== 'arquivada')
+    : cachedSubcategorias.filter((s) => s.status !== 'arquivada');
+  if (qn) subs = subs.filter((s) => (s.apelido || s.nome || '').toLowerCase().includes(qn));
+
+  let html = `<button type="button" class="sub-picker-item sub-picker-clear" data-clear>— Sem vínculo —</button>`;
+  for (const s of subs) {
+    const sel = s.id === currentId ? ' sub-picker-item--selected' : '';
+    html += `<button type="button" class="sub-picker-item${sel}" data-id="${s.id}">
+      <span class="sub-picker-dot" style="background:${cor};"></span>
+      <span class="sub-picker-name">${escapeHtml(s.apelido || s.nome)}</span>
+    </button>`;
+  }
+  const trimmed = (q || '').trim();
+  if (trimmed && catId && !subs.some((s) => (s.apelido || s.nome).toLowerCase() === trimmed.toLowerCase())) {
+    html += `<button type="button" class="sub-picker-create" data-create="${escapeHtml(trimmed)}">
+      <span class="sub-picker-create-icon">+</span> Nova subcategoria "${escapeHtml(trimmed)}"
+    </button>`;
+  } else if (!catId) {
+    html += '<div class="sub-picker-hint">Selecione uma categoria para filtrar</div>';
+  } else if (subs.length === 0 && !trimmed) {
+    html += '<div class="sub-picker-hint">Nenhuma subcategoria. Digite para criar.</div>';
+  }
+
+  _subPickerDropdownEl.innerHTML = html;
+  _subPickerDropdownEl.addEventListener('mousedown', (e) => e.preventDefault(), { once: true });
+  _subPickerDropdownEl.addEventListener('click', async (e) => {
+    if (e.target.closest('[data-clear]')) { _selectSub(''); _closeSubPicker(); return; }
+    const idBtn = e.target.closest('[data-id]');
+    if (idBtn) { _selectSub(idBtn.dataset.id); _closeSubPicker(); return; }
+    const createBtn = e.target.closest('[data-create]');
+    if (createBtn) { await _doCreateSub(createBtn.dataset.create); }
+  });
+}
+
+function _selectSub(subId) {
+  const hidden = document.getElementById('trans-subcategoria');
+  const inputEl = document.getElementById('trans-subcategoria-search');
+  if (hidden) hidden.value = subId || '';
+  const s = subId ? cachedSubcategorias.find((x) => x.id === subId) : null;
+  if (inputEl) inputEl.value = s ? (s.apelido || s.nome) : '';
+  hidden?.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+async function _doCreateSub(nome) {
+  const catId = document.getElementById('trans-categoria')?.value;
+  if (!catId) { showToast('Selecione uma categoria antes de criar a subcategoria', 'error'); return; }
+  const user = await getCurrentUser();
+  if (!user) return;
+  const { data, error } = await supabase.from('subcategorias').insert({
+    nome: nome.trim(), categoria_id: catId, user_id: user.id, status: 'ativa',
+  }).select().single();
+  if (error) { showToast('Erro ao criar subcategoria: ' + error.message, 'error'); return; }
+  cachedSubcategorias.push(data);
+  cachedSubcategorias.sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
+  _selectSub(data.id);
+  _closeSubPicker();
+  showToast('Subcategoria criada!', 'success');
+}
+
+// ── Categoria picker (main modal) ─────────────────────────
+function initCategoriaPicker() {
+  const btn = document.getElementById('trans-cat-btn');
+  if (!btn || btn._cpBound) return;
+  btn._cpBound = true;
+
+  if (_catPickerDropdownEl) { _catPickerDropdownEl.remove(); }
+  _catPickerDropdownEl = document.createElement('div');
+  _catPickerDropdownEl.className = 'cat-picker-dropdown hidden';
+  document.body.appendChild(_catPickerDropdownEl);
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    _catPickerIsOpen ? _closeCatPicker() : _openCatPicker('');
+  });
+  document.addEventListener('mousedown', (e) => {
+    if (_catPickerIsOpen && !_catPickerDropdownEl?.contains(e.target) && !btn.contains(e.target)) {
+      _closeCatPicker();
+    }
+  });
+}
+
+function _openCatPicker(q) {
+  _renderCatPickerDropdown(q);
+  const btn = document.getElementById('trans-cat-btn');
+  if (!btn || !_catPickerDropdownEl) return;
+  const rect = btn.getBoundingClientRect();
+  const spaceBelow = window.innerHeight - rect.bottom - 8;
+  const maxH = Math.min(320, Math.max(160, spaceBelow));
+  const w = Math.max(rect.width, 260);
+  let left = rect.left;
+  if (left + w > window.innerWidth - 16) left = Math.max(8, window.innerWidth - w - 16);
+  _catPickerDropdownEl.style.cssText = `position:fixed;top:${rect.bottom + 4}px;left:${left}px;width:${w}px;max-height:${maxH}px;overflow-y:auto;z-index:9999;`;
+  _catPickerDropdownEl.classList.remove('hidden');
+  _catPickerIsOpen = true;
+  document.getElementById('trans-cat-btn')?.classList.add('is-open');
+  _catPickerDropdownEl.querySelector('.cat-picker-search')?.focus();
+}
+
+function _closeCatPicker() {
+  _catPickerDropdownEl?.classList.add('hidden');
+  _catPickerIsOpen = false;
+  document.getElementById('trans-cat-btn')?.classList.remove('is-open');
+}
+
+function _renderCatPickerDropdown(q = '') {
+  if (!_catPickerDropdownEl) return;
+  const currentId = document.getElementById('trans-categoria')?.value || '';
+  const qn = (q || '').toLowerCase();
+  let cats = _catAllowedGroups
+    ? cachedCategorias.filter((c) => _catAllowedGroups.includes(c.grupo))
+    : cachedCategorias;
+  if (qn) cats = cats.filter((c) => (c.nome || '').toLowerCase().includes(qn));
+
+  let html = `<div class="cat-picker-search-wrap"><input class="cat-picker-search" placeholder="Buscar categoria…" value="${escapeHtml(q)}" autocomplete="off"></div>`;
+  const blankSel = !currentId ? ' cat-picker-item--selected' : '';
+  html += `<button type="button" class="cat-picker-item cat-picker-blank${blankSel}" data-id="">— Todas as categorias —</button>`;
+  for (const c of cats) {
+    const sel = c.id === currentId ? ' cat-picker-item--selected' : '';
+    html += `<button type="button" class="cat-picker-item${sel}" data-id="${c.id}">
+      <span class="cat-picker-dot-item" style="background:${c.cor || '#9CA3AF'};"></span>
+      <span>${escapeHtml(c.nome)}</span>
+    </button>`;
+  }
+  if (!cats.length && qn) html += '<div class="cat-picker-empty">Nenhuma categoria encontrada</div>';
+
+  _catPickerDropdownEl.innerHTML = html;
+  _catPickerDropdownEl.querySelector('.cat-picker-search')?.addEventListener('input', (e) => _renderCatPickerDropdown(e.target.value));
+  _catPickerDropdownEl.querySelectorAll('.cat-picker-item').forEach((itemBtn) => {
+    itemBtn.addEventListener('click', () => {
+      _selectCat(itemBtn.dataset.id);
+      _closeCatPicker();
+    });
+  });
+}
+
+function _selectCat(catId) {
+  const hidden = document.getElementById('trans-categoria');
+  const nameEl = document.getElementById('trans-cat-name');
+  const dotEl  = document.getElementById('trans-cat-dot');
+  if (hidden) hidden.value = catId || '';
+  const cat = catId ? cachedCategorias.find((c) => c.id === catId) : null;
+  if (nameEl) nameEl.textContent = cat ? cat.nome : '— Todas as categorias —';
+  if (dotEl) {
+    if (cat) {
+      dotEl.style.background = cat.cor || '#9CA3AF';
+      dotEl.classList.remove('hidden');
+    } else {
+      dotEl.classList.add('hidden');
+    }
+  }
+  hidden?.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+// ── Split Categoria shared picker ─────────────────────────
+function _initSplitCatDropdown() {
+  if (_splitCatDropdownEl) return;
+  _splitCatDropdownEl = document.createElement('div');
+  _splitCatDropdownEl.className = 'cat-picker-dropdown hidden';
+  document.body.appendChild(_splitCatDropdownEl);
+  document.addEventListener('mousedown', (e) => {
+    if (_splitCatOpenIdx < 0) return;
+    const btn = document.querySelector(`.split-cat-btn[data-split-idx="${_splitCatOpenIdx}"]`);
+    if (!_splitCatDropdownEl.contains(e.target) && btn && !btn.contains(e.target)) {
+      _closeSplitCatPicker();
+    }
+  });
+}
+
+function _openSplitCatPicker(idx, q = '') {
+  _initSplitCatDropdown();
+  _splitCatOpenIdx = idx;
+  _renderSplitCatDropdown(idx, q);
+  const btn = document.querySelector(`.split-cat-btn[data-split-idx="${idx}"]`);
+  if (!btn || !_splitCatDropdownEl) return;
+  const rect = btn.getBoundingClientRect();
+  const spaceBelow = window.innerHeight - rect.bottom - 8;
+  const maxH = Math.min(320, Math.max(160, spaceBelow));
+  const w = Math.max(rect.width, 220);
+  let left = rect.left;
+  if (left + w > window.innerWidth - 16) left = Math.max(8, window.innerWidth - w - 16);
+  _splitCatDropdownEl.style.cssText = `position:fixed;top:${rect.bottom + 4}px;left:${left}px;width:${w}px;max-height:${maxH}px;overflow-y:auto;z-index:9999;`;
+  _splitCatDropdownEl.classList.remove('hidden');
+}
+
+function _closeSplitCatPicker() {
+  _splitCatDropdownEl?.classList.add('hidden');
+  _splitCatOpenIdx = -1;
+}
+
+function _renderSplitCatDropdown(idx, q = '') {
+  if (!_splitCatDropdownEl) return;
+  const currentCatId = currentSplits[idx]?.categoria_id || '';
+  const qn = (q || '').toLowerCase();
+  let cats = cachedCategorias;
+  if (qn) cats = cats.filter((c) => (c.nome || '').toLowerCase().includes(qn));
+
+  let html = `<div class="cat-picker-search-wrap"><input class="cat-picker-search" placeholder="Buscar categoria…" value="${escapeHtml(q)}" autocomplete="off"></div>`;
+  const blankSel = !currentCatId ? ' cat-picker-item--selected' : '';
+  html += `<button type="button" class="cat-picker-item cat-picker-blank${blankSel}" data-id="">— Categoria —</button>`;
+  for (const c of cats) {
+    const sel = c.id === currentCatId ? ' cat-picker-item--selected' : '';
+    html += `<button type="button" class="cat-picker-item${sel}" data-id="${c.id}">
+      <span class="cat-picker-dot-item" style="background:${c.cor || '#9CA3AF'};"></span>
+      <span>${escapeHtml(c.nome)}</span>
+    </button>`;
+  }
+  if (!cats.length && qn) html += '<div class="cat-picker-empty">Nenhuma categoria encontrada</div>';
+
+  _splitCatDropdownEl.innerHTML = html;
+  _splitCatDropdownEl.querySelector('.cat-picker-search')?.addEventListener('input', (e) => _renderSplitCatDropdown(idx, e.target.value));
+  _splitCatDropdownEl.querySelectorAll('.cat-picker-item').forEach((itemBtn) => {
+    itemBtn.addEventListener('click', () => {
+      _selectSplitCat(idx, itemBtn.dataset.id);
+      _closeSplitCatPicker();
+    });
+  });
+}
+
+function _selectSplitCat(idx, catId) {
+  if (!currentSplits[idx]) return;
+  currentSplits[idx].categoria_id    = catId || '';
+  currentSplits[idx].subcategoria_id = '';
+  // Update hidden input
+  const row = document.querySelector(`.trans-split-row[data-idx="${idx}"]`);
+  if (!row) { renderSplits(); return; }
+  const hiddenCat = row.querySelector('.split-categoria');
+  if (hiddenCat) hiddenCat.value = catId || '';
+  const cat = catId ? cachedCategorias.find((c) => c.id === catId) : null;
+  const btn = row.querySelector('.split-cat-btn');
+  if (btn) {
+    btn.innerHTML = `${cat ? `<span class="split-cat-dot" style="background:${cat.cor || '#9CA3AF'};"></span>` : `<span class="split-cat-dot split-cat-dot--empty"></span>`}<span class="split-cat-name">${cat ? escapeHtml(cat.nome) : '— Categoria —'}</span><svg class="split-cat-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+  }
+  // Clear sub
+  const hiddenSub = row.querySelector('.split-subcategoria');
+  if (hiddenSub) hiddenSub.value = '';
+  const subSearch = row.querySelector('.split-sub-search');
+  if (subSearch) subSearch.value = '';
+  if (_splitSubOpenIdx === idx) _renderSplitSubDropdown(idx, '');
+}
+
+// ── Split Subcategoria shared picker ──────────────────────
+function _initSplitSubDropdown() {
+  if (_splitSubDropdownEl) return;
+  _splitSubDropdownEl = document.createElement('div');
+  _splitSubDropdownEl.className = 'sub-picker-dropdown hidden';
+  document.body.appendChild(_splitSubDropdownEl);
+  document.addEventListener('mousedown', (e) => {
+    if (_splitSubOpenIdx < 0) return;
+    const inp = document.querySelector(`.split-sub-search[data-split-idx="${_splitSubOpenIdx}"]`);
+    if (!_splitSubDropdownEl.contains(e.target) && inp && !inp.contains(e.target)) {
+      _closeSplitSubPicker();
+    }
+  });
+}
+
+function _openSplitSubPicker(idx, q = '') {
+  _initSplitSubDropdown();
+  _splitSubOpenIdx = idx;
+  _renderSplitSubDropdown(idx, q);
+  const inp = document.querySelector(`.split-sub-search[data-split-idx="${idx}"]`);
+  if (!inp || !_splitSubDropdownEl) return;
+  const rect = inp.getBoundingClientRect();
+  const spaceBelow = window.innerHeight - rect.bottom - 8;
+  const maxH = Math.min(300, Math.max(160, spaceBelow));
+  const w = Math.max(rect.width, 220);
+  let left = rect.left;
+  if (left + w > window.innerWidth - 16) left = Math.max(8, window.innerWidth - w - 16);
+  _splitSubDropdownEl.style.cssText = `position:fixed;top:${rect.bottom + 4}px;left:${left}px;width:${w}px;max-height:${maxH}px;overflow-y:auto;z-index:9999;`;
+  _splitSubDropdownEl.classList.remove('hidden');
+}
+
+function _closeSplitSubPicker() {
+  _splitSubDropdownEl?.classList.add('hidden');
+  _splitSubOpenIdx = -1;
+}
+
+function _renderSplitSubDropdown(idx, q = '') {
+  if (!_splitSubDropdownEl) return;
+  const catId     = currentSplits[idx]?.categoria_id || '';
+  const currentId = currentSplits[idx]?.subcategoria_id || '';
+  const cat       = catId ? cachedCategorias.find((c) => c.id === catId) : null;
+  const cor       = cat?.cor || '#9CA3AF';
+  const qn        = (q || '').toLowerCase();
+
+  let subs = catId
+    ? cachedSubcategorias.filter((s) => s.categoria_id === catId && s.status !== 'arquivada')
+    : cachedSubcategorias.filter((s) => s.status !== 'arquivada');
+  if (qn) subs = subs.filter((s) => (s.apelido || s.nome || '').toLowerCase().includes(qn));
+
+  let html = `<button type="button" class="sub-picker-item sub-picker-clear" data-clear>— Sem vínculo —</button>`;
+  for (const s of subs) {
+    const sel = s.id === currentId ? ' sub-picker-item--selected' : '';
+    html += `<button type="button" class="sub-picker-item${sel}" data-id="${s.id}">
+      <span class="sub-picker-dot" style="background:${cor};"></span>
+      <span class="sub-picker-name">${escapeHtml(s.apelido || s.nome)}</span>
+    </button>`;
+  }
+  const trimmed = (q || '').trim();
+  if (trimmed && catId && !subs.some((s) => (s.apelido || s.nome).toLowerCase() === trimmed.toLowerCase())) {
+    html += `<button type="button" class="sub-picker-create" data-create="${escapeHtml(trimmed)}">
+      <span class="sub-picker-create-icon">+</span> Nova subcategoria "${escapeHtml(trimmed)}"
+    </button>`;
+  } else if (!catId) {
+    html += '<div class="sub-picker-hint">Selecione uma categoria primeiro</div>';
+  } else if (subs.length === 0 && !trimmed) {
+    html += '<div class="sub-picker-hint">Nenhuma subcategoria. Digite para criar.</div>';
+  }
+
+  _splitSubDropdownEl.innerHTML = html;
+  _splitSubDropdownEl.addEventListener('mousedown', (e) => e.preventDefault(), { once: true });
+  _splitSubDropdownEl.addEventListener('click', async (e) => {
+    if (e.target.closest('[data-clear]')) { _selectSplitSub(idx, ''); _closeSplitSubPicker(); return; }
+    const idBtn = e.target.closest('[data-id]');
+    if (idBtn) { _selectSplitSub(idx, idBtn.dataset.id); _closeSplitSubPicker(); return; }
+    const createBtn = e.target.closest('[data-create]');
+    if (createBtn) { await _doCreateSplitSub(idx, createBtn.dataset.create); }
+  });
+}
+
+function _selectSplitSub(idx, subId) {
+  if (!currentSplits[idx]) return;
+  currentSplits[idx].subcategoria_id = subId || '';
+  const row = document.querySelector(`.trans-split-row[data-idx="${idx}"]`);
+  if (!row) return;
+  const hiddenSub = row.querySelector('.split-subcategoria');
+  if (hiddenSub) hiddenSub.value = subId || '';
+  const s = subId ? cachedSubcategorias.find((x) => x.id === subId) : null;
+  const inp = row.querySelector('.split-sub-search');
+  if (inp) inp.value = s ? (s.apelido || s.nome) : '';
+}
+
+async function _doCreateSplitSub(idx, nome) {
+  const catId = currentSplits[idx]?.categoria_id;
+  if (!catId) { showToast('Selecione uma categoria antes de criar a subcategoria', 'error'); return; }
+  const user = await getCurrentUser();
+  if (!user) return;
+  const { data, error } = await supabase.from('subcategorias').insert({
+    nome: nome.trim(), categoria_id: catId, user_id: user.id, status: 'ativa',
+  }).select().single();
+  if (error) { showToast('Erro ao criar subcategoria: ' + error.message, 'error'); return; }
+  cachedSubcategorias.push(data);
+  cachedSubcategorias.sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
+  _selectSplitSub(idx, data.id);
+  _closeSplitSubPicker();
+  showToast('Subcategoria criada!', 'success');
+}
 
 // Estado do modal de sync
 let syncModalState = null;
@@ -123,6 +959,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyTranslationsToDom();
   initFilters();
   bindEvents();
+  populateMoedaSelect();
   await loadAll();
   render();
 });
@@ -139,7 +976,7 @@ async function loadAll() {
     .then((n) => { if (n > 0) showToast(`${n} fatura${n > 1 ? 's' : ''} de cartão fechada${n > 1 ? 's' : ''} — confira em Pagamentos`, 'success', 5000); })
     .catch((e) => console.warn('[checkAndCloseFaturas]', e));
 
-  const [transRes, contRes, subRes, catRes, contatosRes, divRes] = await Promise.all([
+  const [transRes, contRes, subRes, catRes, contatosRes, divRes, splitsRes] = await Promise.all([
     supabase
       .from('transacoes')
       .select('*, pagamento:pagamentos(data_vencimento, status)')
@@ -167,6 +1004,11 @@ async function loadAll() {
     supabase
       .from('dividas')
       .select('id, nome, status'),
+    supabase
+      .from('transacao_splits')
+      .select('*')
+      .order('transacao_id')
+      .order('ordem'),
   ]);
 
   if (transRes.error) {
@@ -182,6 +1024,20 @@ async function loadAll() {
   // Dívidas (silencioso se erro — campo divida_id pode não existir antes da migration 0063)
   if (divRes && !divRes.error) cachedDividas = divRes.data || [];
   else cachedDividas = [];
+
+  // Splits (silencioso se erro — migration 0078 pode não ter rodado ainda)
+  if (splitsRes && !splitsRes.error) {
+    cachedSplits = splitsRes.data || [];
+    splitsByTransId = new Map();
+    for (const s of cachedSplits) {
+      const arr = splitsByTransId.get(s.transacao_id) || [];
+      arr.push(s);
+      splitsByTransId.set(s.transacao_id, arr);
+    }
+  } else {
+    cachedSplits = [];
+    splitsByTransId = new Map();
+  }
 
   if (contatosRes.error) {
     if (!/relation.*contatos|column.*contatos/i.test(contatosRes.error.message)) {
@@ -205,17 +1061,35 @@ async function loadAll() {
 // -----------------------------
 // Selects population
 // -----------------------------
-function populateContaSelects() {
-  const opts = ['<option value="">Todas</option>']
-    .concat(cachedContas.map((c) => `<option value="${c.id}">${escapeHtml(c.apelido || c.nome)}</option>`))
-    .join('');
-  document.getElementById('filter-conta').innerHTML = opts;
+function populateMoedaSelect(selectedCode = 'BRL') {
+  const sel = document.getElementById('trans-moeda');
+  if (!sel) return;
+  sel.innerHTML = renderMoedaOptions(selectedCode);
+  document.getElementById('trans-valor').placeholder = moedaInputPlaceholder(selectedCode);
+}
 
-  const formOpts = ['<option value="">Selecione…</option>']
-    .concat(cachedContas.map((c) => `<option value="${c.id}">${escapeHtml(c.apelido || c.nome)}</option>`))
-    .join('');
-  document.getElementById('trans-conta').innerHTML = formOpts;
-  document.getElementById('trans-conta-destino').innerHTML = formOpts;
+function populateContaSelects() {
+  // filter-conta is now a visual picker (hidden input) — init once, no innerHTML needed
+  if (!_filterContaPicker) {
+    _filterContaPicker = createContaPicker({
+      triggerBtnId:  'filter-conta-btn',
+      hiddenInputId: 'filter-conta',
+      avatarWrapId:  'filter-conta-avatar-wrap',
+      nameElId:      'filter-conta-name',
+      getContas:     () => cachedContas,
+      placeholder:   'Todas',
+      allowBlank:    true,
+      blankLabel:    'Todas as contas',
+      avatarSize:    'xs',
+      onChange: (contaId) => {
+        filterConta = contaId || '';
+        render();
+      },
+    });
+    _filterContaPicker.init();
+  }
+  document.getElementById('trans-conta-destino').innerHTML =
+    renderContaOptions(cachedContas, '', { blankLabel: 'Selecione…' });
 }
 
 let contatoPicker = null;
@@ -235,49 +1109,23 @@ function populateSubcategoriaSelect() {
   filterSubForModal('', '');
 }
 
-// Preenche o select de categoria filtrado pelo bloco selecionado.
+// Preenche o picker de categoria filtrado pelo bloco selecionado.
 function populateCategoriaForModal(blocoId, currentCatId = '') {
   const grupos = BLOCO_GRUPOS[blocoId] || null;
-  const cats   = grupos
-    ? cachedCategorias.filter((c) => grupos.includes(c.grupo))
-    : cachedCategorias;
-  const catEl  = document.getElementById('trans-categoria');
-  if (!catEl) return;
-  catEl.innerHTML = '<option value="">— Todas as categorias —</option>'
-    + cats.map((c) => `<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join('');
-  if (currentCatId) catEl.value = currentCatId;
+  _catAllowedGroups = grupos;
+  _selectCat(currentCatId || '');
+  if (_catPickerIsOpen) _renderCatPickerDropdown('');
 }
 
-// Preenche/filtra o select de subcategoria. Sem categoriaId = mostra todas (agrupadas).
+// Preenche/filtra o picker de subcategoria. Mantém assinatura antiga para compatibilidade.
 function filterSubForModal(categoriaId, currentSubId = '') {
-  const sel = document.getElementById('trans-subcategoria');
-  if (!sel) return;
-
-  if (categoriaId) {
-    const subs = cachedSubcategorias.filter((s) => s.categoria_id === categoriaId);
-    sel.innerHTML = '<option value="">— Sem vínculo —</option>'
-      + subs.map((s) => `<option value="${s.id}">${escapeHtml(s.apelido || s.nome)}</option>`).join('');
+  if (currentSubId) {
+    _selectSub(currentSubId);
   } else {
-    const byCat = new Map();
-    for (const sub of cachedSubcategorias) {
-      const arr = byCat.get(sub.categoria_id) || [];
-      arr.push(sub);
-      byCat.set(sub.categoria_id, arr);
-    }
-    const parts = ['<option value="">— Sem vínculo —</option>'];
-    for (const cat of cachedCategorias) {
-      const subs = byCat.get(cat.id) || [];
-      if (!subs.length) continue;
-      parts.push(`<optgroup label="${escapeHtml(cat.nome)}">`);
-      for (const sub of subs) {
-        parts.push(`<option value="${sub.id}">${escapeHtml(sub.apelido || sub.nome)}</option>`);
-      }
-      parts.push('</optgroup>');
-    }
-    sel.innerHTML = parts.join('');
+    _selectSub('');
+    const searchEl = document.getElementById('trans-subcategoria-search');
+    if (searchEl) searchEl.value = '';
   }
-
-  if (currentSubId) sel.value = currentSubId;
 }
 
 // -----------------------------
@@ -443,6 +1291,10 @@ function render() {
   dataTbody.innerHTML = renderDataRows(filtered);
   bindRowEvents();
   updateSelectionBar();
+
+  // Saldo: só exibe quando uma única conta está filtrada
+  const table = document.querySelector('.trans-table');
+  if (table) table.classList.toggle('saldo-hidden', !filterConta);
 }
 
 function applyFilters(items) {
@@ -460,9 +1312,42 @@ function applyFilters(items) {
     if (filterConta && t.conta_id !== filterConta) return false;
     if (filterTipo  && t.tipo     !== filterTipo)  return false;
     if (buscaNorm) {
-      const contato = t.contato_id ? cachedContatos.find((c) => c.id === t.contato_id) : null;
-      const haystack = `${t.descricao || ''} ${t.estabelecimento || ''} ${contato?.nome || ''}`.toLowerCase();
+      const contato   = t.contato_id ? cachedContatos.find((c) => c.id === t.contato_id) : null;
+      const conta     = cachedContas.find((c) => c.id === t.conta_id);
+      const sub       = cachedSubcategorias.find((s) => s.id === t.subcategoria_id);
+      const cat       = sub ? cachedCategorias.find((c) => c.id === sub.categoria_id) : null;
+      const blocoLabel = getBlocoFromSub(sub)?.label || '';
+      // tags: include both "tag" and "#tag" forms so user can search with or without #
+      const tagsStr   = (t.tags || []).map((tag) => `${tag} #${tag}`).join(' ');
+      // also search inside splits: their categoria, subcategoria and tags
+      const splitsStr = (splitsByTransId.get(t.id) || []).map((s) => {
+        const sSub = cachedSubcategorias.find((x) => x.id === s.subcategoria_id);
+        const sCat = sSub ? cachedCategorias.find((x) => x.id === sSub.categoria_id) : null;
+        const sBlocoLabel = getBlocoFromSub(sSub)?.label || '';
+        const sTags = (s.tags || []).map((tag) => `${tag} #${tag}`).join(' ');
+        return `${sCat?.nome || ''} ${sSub?.nome || ''} ${sSub?.apelido || ''} ${sBlocoLabel} ${sTags} ${s.descricao || ''}`;
+      }).join(' ');
+      const haystack = [
+        t.descricao || '',
+        t.estabelecimento || '',
+        t.banco_desc || '',
+        contato?.nome || '',
+        conta?.nome || '',
+        conta?.apelido || '',
+        cat?.nome || '',
+        sub?.nome || '',
+        sub?.apelido || '',
+        blocoLabel,
+        t.tipo || '',
+        String(t.valor || ''),
+        tagsStr,
+        splitsStr,
+      ].join(' ').toLowerCase();
       if (!haystack.includes(buscaNorm)) return false;
+    }
+    if (activeTagFilters.size > 0) {
+      const tTags = t.tags || [];
+      if (![...activeTagFilters].every((ft) => tTags.includes(ft))) return false;
     }
     return true;
   });
@@ -475,9 +1360,9 @@ function renderWidgets(items) {
   const despesas = desItems.reduce((s, t) => s + Number(t.valor || 0), 0);
   const saldo    = receitas - despesas;
 
-  document.getElementById('kpi-receitas-value').textContent = formatCurrency(receitas);
-  document.getElementById('kpi-despesas-value').textContent = formatCurrency(despesas);
-  document.getElementById('kpi-saldo-value').textContent    = formatCurrency(saldo);
+  document.getElementById('kpi-receitas-value').innerHTML = formatCurrencyHTML(receitas);
+  document.getElementById('kpi-despesas-value').innerHTML = formatCurrencyHTML(despesas);
+  document.getElementById('kpi-saldo-value').innerHTML    = formatCurrencyHTML(saldo);
 
   document.getElementById('kpi-receitas-sub').textContent = `${recItems.length} ${recItems.length === 1 ? 'transação' : 'transações'}`;
   document.getElementById('kpi-despesas-sub').textContent = `${desItems.length} ${desItems.length === 1 ? 'transação' : 'transações'}`;
@@ -557,17 +1442,26 @@ function renderDataRows(items) {
     const tipoCls = t.tipo === 'Receita' ? 'trans-tipo-receita' : t.tipo === 'Despesa' ? 'trans-tipo-despesa' : 'trans-tipo-transferencia';
     const sinal   = (t.tipo === 'Receita' || isTransferEntrada) ? '+' : '−';
 
-    const blocoHtml = (!isTransfer && bloco)
-      ? `<span class="trans-bloco-pill" style="--bloco-color:${bloco.color};">${escapeHtml(bloco.label)}</span>`
-      : '<span class="trans-bloco-empty">—</span>';
+    const splits   = splitsByTransId.get(t.id) || [];
+    const hasSplits = splits.length > 0;
+
+    const blocoHtml = isTransfer
+      ? '<span class="trans-bloco-empty">—</span>'
+      : hasSplits
+        ? `<button class="trans-varios-pill" data-expand="${t.id}" type="button">Vários <svg class="splits-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>`
+        : (bloco ? `<span class="trans-bloco-pill" style="--bloco-color:${bloco.color};">${escapeHtml(bloco.label)}</span>` : '<span class="trans-bloco-empty">—</span>');
 
     const catHtml = isTransfer
       ? '<span class="trans-cat-transfer">Transferência</span>'
-      : (cat ? `<span class="trans-cat-name">${escapeHtml(cat.nome)}</span>` : '<span class="trans-cat-empty">—</span>');
+      : hasSplits
+        ? `<span class="trans-varios-cell">${splits.length} partes</span>`
+        : (cat ? `<span class="trans-cat-pill" style="--cat-cor:${cat.cor || '#6B7280'};">${escapeHtml(cat.nome)}</span>` : '<span class="trans-cat-empty">—</span>');
 
     const subHtml = isTransfer
       ? `<span class="trans-transfer-side">${isTransferEntrada ? 'entrada' : 'saída'}</span>`
-      : (sub ? `<span class="trans-sub-name">${escapeHtml(sub.apelido || sub.nome)}</span>` : '<span class="trans-sub-empty">—</span>');
+      : hasSplits
+        ? '<span class="trans-varios-cell">—</span>'
+        : (sub ? `<span class="trans-sub-name">${escapeHtml(sub.apelido || sub.nome)}</span>` : '<span class="trans-sub-empty">—</span>');
 
     // Identificador: ID único do banco (banco_id)
     const bancoIdHtml = t.banco_id
@@ -588,7 +1482,10 @@ function renderDataRows(items) {
           <span>${escapeHtml(divida.nome.length > 18 ? divida.nome.slice(0, 18) + '…' : divida.nome)}</span>
         </a>`
       : '';
-    const descColHtml = `${bancoDescHtml}${dividaBadge}`;
+    const tagsHtml = (t.tags && t.tags.length > 0)
+      ? `<div class="trans-row-tags">${t.tags.map((tag) => `<button class="trans-tag-chip" data-tag="${escapeHtml(tag)}" type="button" style="--tag-color:${tagColor(tag)}" title="Filtrar por #${escapeHtml(tag)}">#${escapeHtml(tag)}</button>`).join('')}</div>`
+      : '';
+    const descColHtml = `<div class="trans-desc-wrap">${bancoDescHtml}${dividaBadge}</div>${tagsHtml}`;
 
     // Cliente/Fornecedor: prefere contato vinculado → fallback banco_desc → fallback legado
     let contatoHtml;
@@ -630,7 +1527,6 @@ function renderDataRows(items) {
 
     const saldoVal = runningBalances.get(t.id) ?? 0;
     const saldoColor = saldoVal < 0 ? 'color: var(--color-danger)' : '';
-    const saldoSinal = saldoVal >= 0 ? '+' : '−';
 
     const reconStatus = t.reconciliacao_status || 'manual';
     const isImportado  = reconStatus === 'importado';
@@ -649,13 +1545,21 @@ function renderDataRows(items) {
     let contaSpan;
     if (isTransferSaida) {
       const contaDest = cachedContas.find((c) => c.id === t.conta_destino_id);
-      contaSpan = `<span class="trans-transfer-flow"><span class="trans-transfer-flow-src">${escapeHtml(conta ? (conta.apelido || conta.nome) : '?')}</span><span class="trans-transfer-flow-arrow"> → </span><span class="trans-transfer-flow-dst">${escapeHtml(contaDest ? (contaDest.apelido || contaDest.nome) : '?')}</span></span>`;
+      contaSpan = `<span class="trans-transfer-flow">
+        <span class="trans-conta-with-avatar">${contaAvatarHtml(conta || null, 'xs')}<span class="trans-transfer-flow-src">${escapeHtml(conta ? (conta.apelido || conta.nome) : '?')}</span></span>
+        <span class="trans-transfer-flow-arrow">→</span>
+        <span class="trans-conta-with-avatar">${contaAvatarHtml(contaDest || null, 'xs')}<span class="trans-transfer-flow-dst">${escapeHtml(contaDest ? (contaDest.apelido || contaDest.nome) : '?')}</span></span>
+      </span>`;
     } else if (isTransferEntrada) {
       const parTrans = parById.get(t.transferencia_par_id);
       const contaOrigem = parTrans ? cachedContas.find((c) => c.id === parTrans.conta_id) : null;
-      contaSpan = `<span class="trans-transfer-flow"><span class="trans-transfer-flow-src">${escapeHtml(contaOrigem ? (contaOrigem.apelido || contaOrigem.nome) : '?')}</span><span class="trans-transfer-flow-arrow"> → </span><span class="trans-transfer-flow-dst">${escapeHtml(conta ? (conta.apelido || conta.nome) : '?')}</span></span>`;
+      contaSpan = `<span class="trans-transfer-flow">
+        <span class="trans-conta-with-avatar">${contaAvatarHtml(contaOrigem || null, 'xs')}<span class="trans-transfer-flow-src">${escapeHtml(contaOrigem ? (contaOrigem.apelido || contaOrigem.nome) : '?')}</span></span>
+        <span class="trans-transfer-flow-arrow">→</span>
+        <span class="trans-conta-with-avatar">${contaAvatarHtml(conta || null, 'xs')}<span class="trans-transfer-flow-dst">${escapeHtml(conta ? (conta.apelido || conta.nome) : '?')}</span></span>
+      </span>`;
     } else {
-      contaSpan = `<span>${escapeHtml(conta ? (conta.apelido || conta.nome) : '—')}</span>`;
+      contaSpan = `<div class="trans-conta-with-avatar">${contaAvatarHtml(conta || null, 'xs')}<span>${escapeHtml(conta ? (conta.apelido || conta.nome) : '—')}</span></div>`;
     }
     const rowTypeCls = t.tipo === 'Receita' ? 'trans-row-receita' : t.tipo === 'Despesa' ? 'trans-row-despesa' : `trans-row-transfer${isTransferEntrada ? ' trans-row-transfer--entrada' : ''}`;
     const editId = isTransferEntrada && t.transferencia_par_id ? t.transferencia_par_id : t.id;
@@ -676,8 +1580,8 @@ function renderDataRows(items) {
             ${reconBadge}${parcialIcon}
           </div>
         </td>
-        <td class="trans-td-valor tabular ${tipoCls}" data-col="valor">${sinal} ${formatCurrency(Number(t.valor || 0), t.moeda)}</td>
-        <td class="trans-td-saldo tabular" data-col="saldo" style="${saldoColor}">${saldoSinal} ${formatCurrency(Math.abs(saldoVal))}</td>
+        <td class="trans-td-valor tabular ${tipoCls}" data-col="valor">${formatCurrencyHTML((t.tipo === 'Receita' || isTransferEntrada) ? Number(t.valor || 0) : -Number(t.valor || 0), t.moeda)}</td>
+        <td class="trans-td-saldo tabular" data-col="saldo" style="${saldoColor}">${formatCurrencyHTML(saldoVal)}</td>
         <td class="trans-td-actions">
           <div class="trans-actions-col">
             <input type="checkbox" class="trans-row-check" data-id="${t.id}"
@@ -688,7 +1592,8 @@ function renderDataRows(items) {
             </button>
           </div>
         </td>
-      </tr>`;
+      </tr>
+      ${hasSplits ? renderSplitsDetailRow(t.id, splits) : ''}`;
   }).join('');
 
   // Footer: totais do período filtrado
@@ -696,22 +1601,219 @@ function renderDataRows(items) {
   const totalDespesas = items.filter((t) => t.tipo === 'Despesa').reduce((s, t) => s + Number(t.valor || 0), 0);
   const saldoMes = totalReceitas - totalDespesas;
   const saldoMesColor = saldoMes < 0 ? 'color: var(--color-danger)' : '';
-  const saldoMesSinal = saldoMes >= 0 ? '+' : '−';
 
   const footer = `
     <tr class="trans-footer-row">
       <td colspan="10" class="trans-footer-label">
         ${items.length} transaç${items.length === 1 ? 'ão' : 'ões'}
         &nbsp;·&nbsp;
-        <span class="trans-tipo-receita">+ ${formatCurrency(totalReceitas)}</span>
+        <span class="trans-tipo-receita">${formatCurrencyHTML(totalReceitas)}</span>
         &nbsp;
-        <span class="trans-tipo-despesa">− ${formatCurrency(totalDespesas)}</span>
+        <span class="trans-tipo-despesa">${formatCurrencyHTML(-totalDespesas)}</span>
       </td>
-      <td class="trans-td-saldo tabular trans-footer-saldo" data-col="saldo" style="${saldoMesColor}">${saldoMesSinal} ${formatCurrency(Math.abs(saldoMes))}</td>
+      <td class="trans-td-saldo tabular trans-footer-saldo" data-col="saldo" style="${saldoMesColor}">${formatCurrencyHTML(saldoMes)}</td>
       <td></td>
     </tr>`;
 
   return rows + footer;
+}
+
+// Linha de detalhe das divisões (inicialmente oculta, toggle pelo botão "Vários")
+function renderSplitsDetailRow(transId, splits) {
+  const rows = splits.map((s, i) => {
+    const sSub = cachedSubcategorias.find((x) => x.id === s.subcategoria_id);
+    const sCat = sSub ? cachedCategorias.find((x) => x.id === sSub.categoria_id) : null;
+    const sBloco = getBlocoFromSub(sSub);
+    const tagsHtml = (s.tags || []).length > 0
+      ? s.tags.map((tag) => `<span class="split-detail-tag">#${escapeHtml(tag)}</span>`).join('')
+      : '<span class="trans-sub-empty">—</span>';
+    return `
+      <tr class="splits-detail-subrow">
+        <td class="splits-detail-num">Parte ${i + 1}</td>
+        <td class="splits-detail-bloco">${sBloco ? `<span class="trans-bloco-pill" style="--bloco-color:${sBloco.color};">${escapeHtml(sBloco.label)}</span>` : '<span class="trans-bloco-empty">—</span>'}</td>
+        <td class="splits-detail-cat">${sCat ? `<span class="trans-cat-name">${escapeHtml(sCat.nome)}</span>` : '<span class="trans-cat-empty">—</span>'}</td>
+        <td class="splits-detail-sub">${sSub ? `<span class="trans-sub-name">${escapeHtml(sSub.apelido || sSub.nome)}</span>` : '<span class="trans-sub-empty">—</span>'}</td>
+        <td class="splits-detail-valor tabular">${formatCurrencyHTML(s.valor || 0)}</td>
+        <td class="splits-detail-tags">${tagsHtml}</td>
+        <td class="splits-detail-desc">${s.descricao ? escapeHtml(s.descricao) : '<span class="trans-sub-empty">—</span>'}</td>
+      </tr>`;
+  }).join('');
+
+  return `
+    <tr class="trans-splits-detail-row hidden" data-splits-for="${transId}">
+      <td colspan="12" class="splits-detail-cell">
+        <div class="splits-detail-wrap">
+          <table class="splits-detail-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Bloco</th>
+                <th>Categoria</th>
+                <th>Subcategoria</th>
+                <th>Valor</th>
+                <th>Tags</th>
+                <th>Descrição</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </td>
+    </tr>`;
+}
+
+// =============================================================
+// Export — CSV e PDF
+// =============================================================
+
+function exportCSV(items) {
+  const headers = ['Data', 'Tipo', 'Conta', 'Bloco', 'Categoria', 'Subcategoria', 'Valor', 'Moeda', 'Descrição', 'Contato', 'Tags'];
+  const csvRows = items.map((tr) => {
+    const conta  = cachedContas.find((c) => c.id === tr.conta_id);
+    const sub    = cachedSubcategorias.find((s) => s.id === tr.subcategoria_id);
+    const cat    = sub ? cachedCategorias.find((c) => c.id === sub.categoria_id) : null;
+    const bloco  = getBlocoFromSub(sub);
+    const contato = tr.contato_id ? cachedContatos.find((c) => c.id === tr.contato_id) : null;
+    const splits  = splitsByTransId.get(tr.id) || [];
+    // If has splits, emit one CSV row per split
+    if (splits.length > 0) {
+      return splits.map((s) => {
+        const sSub  = cachedSubcategorias.find((x) => x.id === s.subcategoria_id);
+        const sCat  = sSub ? cachedCategorias.find((x) => x.id === sSub.categoria_id) : null;
+        const sBloco = getBlocoFromSub(sSub);
+        return [
+          tr.data, tr.tipo,
+          conta?.apelido || conta?.nome || '',
+          sBloco?.label || '',
+          sCat?.nome || '',
+          sSub?.apelido || sSub?.nome || '',
+          s.valor,
+          tr.moeda || 'BRL',
+          s.descricao || tr.descricao || tr.banco_desc || '',
+          contato?.nome || tr.banco_desc || '',
+          (s.tags || []).map((tag) => '#' + tag).join(' '),
+        ].map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',');
+      }).join('\n');
+    }
+    return [
+      tr.data, tr.tipo,
+      conta?.apelido || conta?.nome || '',
+      bloco?.label || '',
+      cat?.nome || '',
+      sub?.apelido || sub?.nome || '',
+      tr.valor,
+      tr.moeda || 'BRL',
+      tr.descricao || tr.banco_desc || '',
+      contato?.nome || tr.banco_desc || '',
+      (tr.tags || []).map((tag) => '#' + tag).join(' '),
+    ].map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',');
+  });
+
+  const csv = [headers.join(','), ...csvRows].join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  const today = new Date().toISOString().slice(0, 10);
+  a.download = `transacoes-${today}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportPDF(items) {
+  const dateRange = (() => {
+    if (!items.length) return '';
+    const dates = items.map((t) => t.data).sort();
+    if (dates[0] === dates[dates.length - 1]) return dates[0];
+    return `${dates[0]} a ${dates[dates.length - 1]}`;
+  })();
+
+  const rowsHtml = items.map((tr) => {
+    const conta   = cachedContas.find((c) => c.id === tr.conta_id);
+    const sub     = cachedSubcategorias.find((s) => s.id === tr.subcategoria_id);
+    const cat     = sub ? cachedCategorias.find((c) => c.id === sub.categoria_id) : null;
+    const bloco   = getBlocoFromSub(sub);
+    const contato = tr.contato_id ? cachedContatos.find((c) => c.id === tr.contato_id) : null;
+    const splits  = splitsByTransId.get(tr.id) || [];
+    const tipoCls = tr.tipo === 'Receita' ? 'pdf-receita' : tr.tipo === 'Despesa' ? 'pdf-despesa' : '';
+    const sinal   = tr.tipo === 'Receita' ? '+' : (tr.tipo === 'Despesa' ? '−' : '');
+    const tagsStr = (tr.tags || []).map((tag) => `#${tag}`).join(' ');
+
+    const mainRow = `<tr>
+      <td>${tr.data}</td>
+      <td>${escapeHtml(tr.tipo)}</td>
+      <td>${escapeHtml(conta?.apelido || conta?.nome || '—')}</td>
+      <td>${escapeHtml(bloco?.label || (splits.length > 0 ? 'Vários' : '—'))}</td>
+      <td>${escapeHtml(cat?.nome || (splits.length > 0 ? 'Vários' : '—'))}</td>
+      <td>${escapeHtml(sub?.apelido || sub?.nome || (splits.length > 0 ? 'Vários' : '—'))}</td>
+      <td class="${tipoCls}">${sinal}${formatCurrency(tr.valor, tr.moeda)}</td>
+      <td>${escapeHtml(contato?.nome || tr.banco_desc || tr.descricao || '—')}</td>
+      <td>${escapeHtml(tagsStr)}</td>
+    </tr>`;
+
+    const splitRows = splits.map((s) => {
+      const sSub  = cachedSubcategorias.find((x) => x.id === s.subcategoria_id);
+      const sCat  = sSub ? cachedCategorias.find((x) => x.id === sSub.categoria_id) : null;
+      const sBloco = getBlocoFromSub(sSub);
+      const sTags = (s.tags || []).map((tag) => `#${tag}`).join(' ');
+      return `<tr class="pdf-split-row">
+        <td colspan="3" style="padding-left:20px;">↳ parte</td>
+        <td>${escapeHtml(sBloco?.label || '—')}</td>
+        <td>${escapeHtml(sCat?.nome || '—')}</td>
+        <td>${escapeHtml(sSub?.apelido || sSub?.nome || '—')}</td>
+        <td>${formatCurrency(s.valor)}</td>
+        <td>${escapeHtml(s.descricao || '—')}</td>
+        <td>${escapeHtml(sTags)}</td>
+      </tr>`;
+    }).join('');
+
+    return mainRow + splitRows;
+  }).join('');
+
+  const totalRec  = items.filter((t) => t.tipo === 'Receita').reduce((s, t) => s + Number(t.valor || 0), 0);
+  const totalDesp = items.filter((t) => t.tipo === 'Despesa').reduce((s, t) => s + Number(t.valor || 0), 0);
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+    <title>Relatório de Transações</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { font-family: Arial, sans-serif; font-size: 11px; color: #111; margin: 0; padding: 16px; }
+      h1 { font-size: 16px; margin: 0 0 4px; }
+      .subtitle { color: #555; font-size: 11px; margin-bottom: 12px; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { border: 1px solid #ddd; padding: 4px 6px; text-align: left; vertical-align: middle; }
+      th { background: #f5f5f5; font-weight: 600; }
+      tr:nth-child(even) { background: #fafafa; }
+      .pdf-receita { color: #059669; }
+      .pdf-despesa { color: #dc2626; }
+      .pdf-split-row td { background: #f9fafb; color: #555; }
+      .summary { margin-top: 14px; font-size: 12px; display: flex; gap: 24px; }
+      .sum-item { display: flex; flex-direction: column; }
+      .sum-label { color: #666; font-size: 10px; }
+      .sum-val { font-weight: 700; font-size: 14px; }
+      @media print { body { padding: 0; } }
+    </style>
+  </head><body>
+    <h1>Relatório de Transações — FinFlow</h1>
+    <div class="subtitle">${dateRange ? `Período: ${dateRange} · ` : ''}${items.length} transaç${items.length === 1 ? 'ão' : 'ões'} · Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th><th>Tipo</th><th>Conta</th><th>Bloco</th><th>Categoria</th><th>Subcategoria</th><th>Valor</th><th>Contato / Descrição</th><th>Tags</th>
+        </tr>
+      </thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+    <div class="summary">
+      <div class="sum-item"><span class="sum-label">Receitas</span><span class="sum-val pdf-receita">+${formatCurrency(totalRec)}</span></div>
+      <div class="sum-item"><span class="sum-label">Despesas</span><span class="sum-val pdf-despesa">−${formatCurrency(totalDesp)}</span></div>
+      <div class="sum-item"><span class="sum-label">Saldo</span><span class="sum-val" style="color:${(totalRec-totalDesp)>=0?'#059669':'#dc2626'}">${formatCurrency(totalRec - totalDesp)}</span></div>
+    </div>
+    <script>window.print();<\/script>
+  </body></html>`;
+
+  const win = window.open('', '_blank');
+  if (win) { win.document.write(html); win.document.close(); }
 }
 
 // Diferença em dias entre data real e data planejada (positivo = pago em atraso)
@@ -745,12 +1847,22 @@ function bindEvents() {
   document.getElementById('filter-ano').addEventListener('change', applyPeriodAndRender);
   document.getElementById('btn-trans-aplicar').addEventListener('click', applyPeriodAndRender);
 
+  // filter-conta: driven by _filterContaPicker via onChange callback above
+  // (hidden input change event kept as fallback)
   document.getElementById('filter-conta').addEventListener('change', (e) => {
     filterConta = e.target.value;
     render();
   });
-  document.getElementById('filter-tipo').addEventListener('change', (e) => {
-    filterTipo = e.target.value;
+
+  // filter-tipo: chips
+  document.getElementById('filter-tipo-chips')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.tf-tipo-chip');
+    if (!btn) return;
+    document.querySelectorAll('#filter-tipo-chips .tf-tipo-chip').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    const hidden = document.getElementById('filter-tipo');
+    if (hidden) hidden.value = btn.dataset.tipo;
+    filterTipo = btn.dataset.tipo;
     render();
   });
   document.getElementById('filter-busca').addEventListener('input', (e) => {
@@ -764,9 +1876,60 @@ function bindEvents() {
     render();
   });
 
+  document.getElementById('trans-tag-filters').addEventListener('click', (e) => {
+    const btn = e.target.closest('.trans-active-tag-remove');
+    if (btn) {
+      activeTagFilters.delete(btn.dataset.tag);
+      renderTagFilters();
+      render();
+    }
+  });
+
+  // Exportar
+  document.getElementById('btn-export-csv')?.addEventListener('click', () => {
+    const filtered = applyFilters(cachedTransacoes);
+    if (!filtered.length) { showToast('Nenhuma transação para exportar.', 'info'); return; }
+    exportCSV(filtered);
+  });
+  document.getElementById('btn-export-pdf')?.addEventListener('click', () => {
+    const filtered = applyFilters(cachedTransacoes);
+    if (!filtered.length) { showToast('Nenhuma transação para exportar.', 'info'); return; }
+    exportPDF(filtered);
+  });
+
+  // Splits toggle no modal
+  document.getElementById('btn-splits-toggle')?.addEventListener('click', () => {
+    splitEnabled = !splitEnabled;
+    const container = document.getElementById('trans-splits-container');
+    container?.classList.toggle('hidden', !splitEnabled);
+    document.getElementById('trans-cat-section')?.classList.toggle('hidden', splitEnabled);
+    document.getElementById('trans-bloco-field')?.classList.toggle('hidden', splitEnabled);
+    document.getElementById('trans-descricao')?.closest('.field')?.classList.toggle('hidden', splitEnabled);
+    setSplitButtonState(splitEnabled);
+    if (splitEnabled) {
+      if (currentSplits.length === 0) addSplit();
+    } else {
+      currentSplits = [];
+      renderSplits();
+    }
+  });
+  document.getElementById('btn-split-add')?.addEventListener('click', addSplit);
+
+  // Update splits totals when main valor changes
+  document.getElementById('trans-valor')?.addEventListener('input', () => {
+    if (splitEnabled) updateSplitTotals();
+  });
+
   // Modal close handlers (genérico — usa data-close-modal)
   document.querySelectorAll('[data-close-modal]').forEach((btn) => {
-    btn.addEventListener('click', () => closeModal(btn.dataset.closeModal));
+    btn.addEventListener('click', () => {
+      if (btn.dataset.closeModal === 'modal-transacao') {
+        _closeCatPicker();
+        _closeSplitCatPicker();
+        _closeSplitSubPicker();
+      }
+      closeModal(btn.dataset.closeModal);
+    });
   });
 
   // Form submit
@@ -782,8 +1945,9 @@ function bindEvents() {
   });
 
   // Transferência — atualizar par de câmbio ao mudar moeda
-  document.getElementById('trans-moeda').addEventListener('change', () => {
+  document.getElementById('trans-moeda').addEventListener('change', (e) => {
     updateCambioPar();
+    document.getElementById('trans-valor').placeholder = moedaInputPlaceholder(e.target.value);
     if (document.getElementById('trans-tipo').value === 'Transferência') {
       fetchAndFillRate();
     }
@@ -793,7 +1957,7 @@ function bindEvents() {
   document.getElementById('trans-conta').addEventListener('change', (e) => {
     const conta = cachedContas.find((c) => c.id === e.target.value);
     if (conta?.moeda) {
-      document.getElementById('trans-moeda').value = conta.moeda;
+      populateMoedaSelect(conta.moeda);
       updateCambioPar();
       if (document.getElementById('trans-tipo').value === 'Transferência') fetchAndFillRate();
     }
@@ -813,6 +1977,7 @@ function bindEvents() {
   document.getElementById('btn-deletar-transacao').addEventListener('click', () => {
     if (!editingId) return;
     pendingDeleteId = editingId;
+    _closeCatPicker(); _closeSplitCatPicker(); _closeSplitSubPicker();
     closeModal('modal-transacao');
     openModal('modal-confirmar');
   });
@@ -851,8 +2016,8 @@ function bindEvents() {
         const subId = rule
           ? rule.subcategoria_id
           : suggestSubcategoriaFromHistory(cachedTransacoes, e.target.value);
-        if (subId && Array.from(subEl.options).some((o) => o.value === subId)) {
-          subEl.value = subId;
+        if (subId && cachedSubcategorias.some((s) => s.id === subId)) {
+          _selectSub(subId);
           // Dispara o handler de subcategoria pra preencher descrição
           subEl.dispatchEvent(new Event('change'));
         }
@@ -861,13 +2026,27 @@ function bindEvents() {
   });
 
   // Cascade bloco → categoria → subcategoria
-  document.getElementById('trans-bloco').addEventListener('change', (e) => {
-    populateCategoriaForModal(e.target.value, '');
-    filterSubForModal('', '');
+  // Bloco is now a segmented picker — bind clicks on #trans-bloco-picker buttons
+  document.getElementById('trans-bloco-picker')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.bloco-seg-btn');
+    if (!btn) return;
+    document.querySelectorAll('#trans-bloco-picker .bloco-seg-btn').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    const blocoVal = btn.dataset.bloco;
+    const hidden = document.getElementById('trans-bloco');
+    if (hidden) hidden.value = blocoVal;
+    populateCategoriaForModal(blocoVal, '');
+    _selectSub('');
+    const searchEl = document.getElementById('trans-subcategoria-search');
+    if (searchEl) searchEl.value = '';
+    _renderSubPickerDropdown('');
   });
 
   document.getElementById('trans-categoria').addEventListener('change', (e) => {
-    filterSubForModal(e.target.value, '');
+    _selectSub('');
+    const searchEl = document.getElementById('trans-subcategoria-search');
+    if (searchEl) searchEl.value = '';
+    if (_subPickerIsOpen) _renderSubPickerDropdown('');
   });
 
   // Modal: ao escolher subcategoria, auto-preencher descrição/contato (se vazios)
@@ -882,6 +2061,16 @@ function bindEvents() {
     }
     if (sub.contato_id && contatoPicker && !contatoPicker.getValue()) {
       contatoPicker.setValue(sub.contato_id);
+    }
+  });
+
+  // Sub picker: click-outside to close
+  document.addEventListener('mousedown', (e) => {
+    if (_subPickerIsOpen) {
+      const input = document.getElementById('trans-subcategoria-search');
+      if (!_subPickerDropdownEl?.contains(e.target) && !input?.contains(e.target)) {
+        _closeSubPicker();
+      }
     }
   });
 }
@@ -900,6 +2089,26 @@ function bindRowEvents() {
 
       const reconBtn = e.target.closest('[data-confirm-recon]');
       if (reconBtn) { execConfirmRecon(reconBtn.dataset.confirmRecon); return; }
+
+      const tagChip = e.target.closest('.trans-tag-chip');
+      if (tagChip) {
+        activeTagFilters.add(tagChip.dataset.tag);
+        renderTagFilters();
+        render();
+        return;
+      }
+
+      // Splits expand toggle
+      const expandBtn = e.target.closest('[data-expand]');
+      if (expandBtn) {
+        const transId   = expandBtn.dataset.expand;
+        const detailRow = tbody.querySelector(`[data-splits-for="${transId}"]`);
+        if (detailRow) {
+          const isHidden = detailRow.classList.toggle('hidden');
+          expandBtn.querySelector('.splits-chevron')?.classList.toggle('splits-chevron--open', !isHidden);
+        }
+        return;
+      }
     });
 
     tbody.addEventListener('change', (e) => {
@@ -979,6 +2188,15 @@ function toggleTransferSection(show) {
   document.getElementById('trans-cat-fields').classList.toggle('field--faded', show);
   document.getElementById('trans-sub-field').classList.toggle('field--faded', show);
   document.getElementById('trans-contato-field').classList.toggle('field--faded', show);
+  document.getElementById('trans-bloco-field')?.classList.toggle('hidden', show);
+  // Splits não fazem sentido em transferências — oculta o botão e o painel
+  document.getElementById('trans-splits-section')?.classList.toggle('hidden', show);
+  if (show) {
+    document.getElementById('trans-splits-container')?.classList.add('hidden');
+    splitEnabled = false;
+    currentSplits = [];
+    setSplitButtonState(false);
+  }
   if (show) fetchAndFillRate();
 }
 
@@ -992,8 +2210,8 @@ function updateCambioPar() {
 }
 
 function updateEfetiva() {
-  const valor         = parseFloat(document.getElementById('trans-valor').value) || 0;
-  const valorDestino  = parseFloat(document.getElementById('trans-valor-destino').value) || 0;
+  const valor         = parseUserNumber(document.getElementById('trans-valor').value) || 0;
+  const valorDestino  = parseUserNumber(document.getElementById('trans-valor-destino').value) || 0;
   const wrapEl        = document.getElementById('trans-taxa-efetiva-wrap');
   const valEl         = document.getElementById('trans-taxa-efetiva-value');
   if (valor > 0 && valorDestino > 0) {
@@ -1006,7 +2224,7 @@ function updateEfetiva() {
 }
 
 function updatePrevisto() {
-  const valor  = parseFloat(document.getElementById('trans-valor').value) || 0;
+  const valor  = parseUserNumber(document.getElementById('trans-valor').value) || 0;
   const taxa   = parseFloat(document.getElementById('trans-taxa-oficial').value) || 0;
   const prevEl = document.getElementById('trans-valor-previsto');
   const destEl = document.getElementById('trans-valor-destino');
@@ -1041,15 +2259,37 @@ function openTransacaoModal(id = null) {
   const t = id ? cachedTransacoes.find((x) => x.id === id) : null;
 
   initContatoPickerOnce();
+  if (!_transContaPicker) {
+    _transContaPicker = createContaPicker({
+      triggerBtnId: 'trans-conta-btn',
+      hiddenInputId: 'trans-conta',
+      avatarWrapId:  'trans-conta-avatar-wrap',
+      nameElId:      'trans-conta-name',
+      getContas:     () => cachedContas,
+      placeholder:   'Selecione uma conta…',
+      allowBlank:    false,
+    });
+    _transContaPicker.init();
+  }
+  initSubcategoriaPicker();
+  initCategoriaPicker();
 
   document.getElementById('modal-transacao-title').textContent = t ? 'Editar transação' : 'Nova transação';
   document.getElementById('trans-data').value      = t?.data       || todayInput();
   document.getElementById('trans-tipo').value      = t?.tipo       || 'Despesa';
   document.getElementById('trans-valor').value     = t?.valor != null ? Number(t.valor) : '';
-  document.getElementById('trans-moeda').value     = t?.moeda      || 'BRL';
-  document.getElementById('trans-conta').value     = t?.conta_id   || '';
+  const moedaCode = t?.moeda || 'BRL';
+  populateMoedaSelect(moedaCode);
+  _transContaPicker.setValue(t?.conta_id || '');
   contatoPicker?.setValue(t?.contato_id || '');
   document.getElementById('trans-descricao').value = t?.descricao  || '';
+  currentTags = [...(t?.tags || [])];
+  renderModalTags();
+  initTagInput();
+
+  // Splits: init with existing splits (or empty)
+  const existingSplits = id ? (splitsByTransId.get(id) || []) : [];
+  initSplitsSection(existingSplits);
 
   // Cascade: sub → categoria → bloco
   const sub    = t?.subcategoria_id ? cachedSubcategorias.find((s) => s.id === t.subcategoria_id) : null;
@@ -1057,7 +2297,12 @@ function openTransacaoModal(id = null) {
   const blocoId = cat
     ? (Object.entries(BLOCO_GRUPOS).find(([, grupos]) => grupos.includes(cat.grupo))?.[0] || '')
     : '';
-  document.getElementById('trans-bloco').value = blocoId;
+  // Update bloco segmented picker active state
+  document.querySelectorAll('#trans-bloco-picker .bloco-seg-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.bloco === blocoId);
+  });
+  const blocoHidden = document.getElementById('trans-bloco');
+  if (blocoHidden) blocoHidden.value = blocoId;
   populateCategoriaForModal(blocoId, cat?.id || '');
   filterSubForModal(cat?.id || '', t?.subcategoria_id || '');
 
@@ -1100,9 +2345,11 @@ async function saveTransacao() {
   const subcategoria_id = document.getElementById('trans-subcategoria').value || null;
   const contato_id      = contatoPicker?.getValue() || null;
   const descricao       = document.getElementById('trans-descricao').value.trim() || null;
+  const tags            = currentTags.length > 0 ? currentTags : [];
 
   if (!data) { showToast(t('transacoes.validacao.data_obrigatoria', 'Informe a data'), 'error'); return; }
-  if (!valorRaw || isNaN(Number(valorRaw)) || Number(valorRaw) <= 0) {
+  const valorParsed = parseUserNumber(valorRaw);
+  if (!valorRaw || isNaN(valorParsed) || valorParsed <= 0) {
     showToast('Informe um valor válido', 'error'); return;
   }
   if (!conta_id) { showToast(t('transacoes.validacao.conta_obrigatoria', 'Selecione uma conta'), 'error'); return; }
@@ -1125,15 +2372,15 @@ async function saveTransacao() {
     if (tipo === 'Transferência') {
       const conta_destino_id   = document.getElementById('trans-conta-destino').value || null;
       const taxa_cambio_oficial = parseFloat(document.getElementById('trans-taxa-oficial').value) || null;
-      const valor_destino       = parseFloat(document.getElementById('trans-valor-destino').value) || null;
-      const taxa_cambio_efetiva = (valor_destino && Number(valorRaw)) ? valor_destino / Number(valorRaw) : null;
+      const valor_destino       = parseUserNumber(document.getElementById('trans-valor-destino').value) || null;
+      const taxa_cambio_efetiva = (valor_destino && valorParsed) ? valor_destino / valorParsed : null;
       savedTr = await handleTransferSave({
-        editingId, data, descricao, valor: Number(valorRaw), moeda, conta_id,
+        editingId, data, descricao, tags, valor: valorParsed, moeda, conta_id,
         conta_destino_id, taxa_cambio_oficial, valor_destino, taxa_cambio_efetiva,
       });
     } else {
       const payload = {
-        data, tipo, valor: Number(valorRaw), moeda, conta_id, subcategoria_id, contato_id, descricao,
+        data, tipo, valor: valorParsed, moeda, conta_id, subcategoria_id, contato_id, descricao, tags,
         ...(markRecon ? { reconciliacao_status: 'reconciliado' } : {}),
       };
       let response;
@@ -1165,7 +2412,14 @@ async function saveTransacao() {
       upsertContatoBancoDesc(contato_id, savedTr.banco_desc, subcategoria_id).catch(() => {});
     }
 
+    // Salva splits (silencioso se migration não rodou ainda)
+    const currentUser = await getCurrentUser();
+    if (currentUser) {
+      await saveSplits(savedTr.id, currentUser.id).catch((e) => console.warn('[saveSplits]', e));
+    }
+
     showToast(editingId ? 'Transação atualizada' : 'Transação criada', 'success');
+    _closeCatPicker(); _closeSplitCatPicker(); _closeSplitSubPicker();
     closeModal('modal-transacao');
     editingId = null;
     await loadAll();
@@ -1188,7 +2442,7 @@ async function saveTransacao() {
   }
 }
 
-async function handleTransferSave({ editingId, data, descricao, valor, moeda, conta_id, conta_destino_id, taxa_cambio_oficial, valor_destino, taxa_cambio_efetiva }) {
+async function handleTransferSave({ editingId, data, descricao, tags, valor, moeda, conta_id, conta_destino_id, taxa_cambio_oficial, valor_destino, taxa_cambio_efetiva }) {
   const user = await getCurrentUser();
   if (!user) throw new Error('Sessão expirada. Faça login novamente.');
 
@@ -1200,7 +2454,7 @@ async function handleTransferSave({ editingId, data, descricao, valor, moeda, co
     const existing = cachedTransacoes.find((x) => x.id === editingId);
     const { data: saida, error: saidaErr } = await supabase
       .from('transacoes')
-      .update({ data, descricao, valor, moeda, conta_id, conta_destino_id, taxa_cambio_oficial, valor_destino: valorEntrada, taxa_cambio_efetiva })
+      .update({ data, descricao, tags, valor, moeda, conta_id, conta_destino_id, taxa_cambio_oficial, valor_destino: valorEntrada, taxa_cambio_efetiva })
       .eq('id', editingId)
       .select().single();
     if (saidaErr) throw saidaErr;
@@ -1216,7 +2470,7 @@ async function handleTransferSave({ editingId, data, descricao, valor, moeda, co
   // Nova transferência: inserir saída
   const { data: saida, error: saidaErr } = await supabase.from('transacoes').insert({
     data, tipo: 'Transferência', user_id: user.id,
-    conta_id, valor, moeda, descricao,
+    conta_id, valor, moeda, descricao, tags,
     conta_destino_id, taxa_cambio_oficial, valor_destino: valorEntrada, taxa_cambio_efetiva,
   }).select().single();
   if (saidaErr) throw saidaErr;
@@ -1366,8 +2620,8 @@ function showSyncPromptModal({ scenario, transacao, pagamento, linkedTr }) {
   const sub      = cachedSubcategorias.find((s) => s.id === transacao.subcategoria_id);
   const subName  = sub ? (sub.apelido || sub.nome) : 'compromisso';
   const mes      = monthLabelBR(transacao.data);
-  const valorPag = formatCurrency(Number(pagamento.valor_real ?? pagamento.valor_previsto ?? 0));
-  const valorTr  = formatCurrency(Number(transacao.valor || 0), transacao.moeda);
+  const valorPag = formatCurrencyHTML(Number(pagamento.valor_real ?? pagamento.valor_previsto ?? 0));
+  const valorTr  = formatCurrencyHTML(Number(transacao.valor || 0), transacao.moeda);
 
   const titleEl   = document.getElementById('sync-title');
   const msgEl     = document.getElementById('sync-message');

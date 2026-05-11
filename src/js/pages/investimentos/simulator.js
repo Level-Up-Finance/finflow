@@ -6,6 +6,7 @@ import { openModal, closeModal } from '../../components/modal.js';
 import { saldoFinal, tempoNecessario, aporteNecessario } from '../../lib/simulacao.js';
 import { fetchIndicadores, anualToMensal } from '../../lib/indicadores.js';
 import { parseDecimal, formatDecimal } from '../../lib/number-format.js';
+import { formatCurrency, formatCurrencyHTML } from '../../lib/compromissos-config.js';
 
 let simModo = 'saldo';
 let lastSimulacao = null; // { meta_valor, aporte_mensal, anos, pv } — pra "+ Criar projeto"
@@ -138,8 +139,8 @@ function calcularSimulacao() {
     detalhesEl.innerHTML = `
       <div><span>Período</span><strong>${formatDecimal(anos, 1)} anos (${n} meses)</strong></div>
       <div><span>Taxa mensal</span><strong>${formatDecimal(i * 100, 4)}% a.m.</strong></div>
-      <div><span>Aportes totais</span><strong>${formatBRL(aportesTotais)}</strong></div>
-      <div><span>Juros acumulados</span><strong>${formatBRL(jurosTotais)}</strong></div>
+      <div><span>Aportes totais</span><strong>${formatCurrencyHTML(aportesTotais, 'BRL')}</strong></div>
+      <div><span>Juros acumulados</span><strong>${formatCurrencyHTML(jurosTotais, 'BRL')}</strong></div>
     `;
     lastSimulacao = { modo: 'saldo', meta_valor: fv, aporte_mensal: pmt, meses: n, pv };
   } else if (simModo === 'tempo') {
@@ -162,8 +163,8 @@ function calcularSimulacao() {
     detalhesEl.innerHTML = `
       <div><span>Em meses</span><strong>${formatDecimal(meses, 1)} meses</strong></div>
       <div><span>Taxa mensal</span><strong>${formatDecimal(i * 100, 4)}% a.m.</strong></div>
-      <div><span>Aportes totais</span><strong>${formatBRL(aportesTotais)}</strong></div>
-      <div><span>Juros acumulados</span><strong>${formatBRL(Math.max(0, jurosTotais))}</strong></div>
+      <div><span>Aportes totais</span><strong>${formatCurrencyHTML(aportesTotais, 'BRL')}</strong></div>
+      <div><span>Juros acumulados</span><strong>${formatCurrencyHTML(Math.max(0, jurosTotais), 'BRL')}</strong></div>
     `;
     lastSimulacao = { modo: 'tempo', meta_valor: meta, aporte_mensal: pmt, meses, pv };
   } else if (simModo === 'aporte') {
@@ -184,8 +185,8 @@ function calcularSimulacao() {
     detalhesEl.innerHTML = `
       <div><span>Período</span><strong>${formatDecimal(anos, 1)} anos (${n} meses)</strong></div>
       <div><span>Taxa mensal</span><strong>${formatDecimal(i * 100, 4)}% a.m.</strong></div>
-      <div><span>Aportes totais</span><strong>${formatBRL(aportesTotais)}</strong></div>
-      <div><span>Juros acumulados</span><strong>${formatBRL(Math.max(0, jurosTotais))}</strong></div>
+      <div><span>Aportes totais</span><strong>${formatCurrencyHTML(aportesTotais, 'BRL')}</strong></div>
+      <div><span>Juros acumulados</span><strong>${formatCurrencyHTML(Math.max(0, jurosTotais), 'BRL')}</strong></div>
     `;
     lastSimulacao = { modo: 'aporte', meta_valor: meta, aporte_mensal: pmt, meses: n, pv };
   }
@@ -194,5 +195,5 @@ function calcularSimulacao() {
 }
 
 function formatBRL(n) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n) || 0);
+  return formatCurrency(n, 'BRL');
 }

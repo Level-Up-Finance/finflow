@@ -242,9 +242,14 @@
             </div>
             <div class="field">
               <label class="field-label" for="div-conta">Conta vinculada</label>
-              <select class="select" id="div-conta">
-                <option value="">Nenhuma</option>
-              </select>
+              <div class="conta-picker" id="div-conta-picker">
+                <button type="button" class="conta-picker-btn" id="div-conta-btn">
+                  <div id="div-conta-avatar-wrap"><div class="bank-avatar size-sm"><div class="bank-avatar-fallback" style="background:#9CA3AF;">?</div></div></div>
+                  <span class="conta-picker-name" id="div-conta-name">Nenhuma</span>
+                  <svg class="conta-picker-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <input type="hidden" id="div-conta" value="">
+              </div>
             </div>
           </div>
 
@@ -452,7 +457,14 @@
             Conta debitada *
             <span class="field-label-hint">(obrigatório — pagamento sempre é registrado em Transações)</span>
           </label>
-          <select class="select" id="pagar-transacao-conta" required></select>
+          <div class="conta-picker" id="pagar-transacao-conta-picker">
+            <button type="button" class="conta-picker-btn" id="pagar-transacao-conta-btn">
+              <div id="pagar-transacao-conta-avatar-wrap"><div class="bank-avatar size-sm"><div class="bank-avatar-fallback" style="background:#9CA3AF;">?</div></div></div>
+              <span class="conta-picker-name" id="pagar-transacao-conta-name">Selecionar conta…</span>
+              <svg class="conta-picker-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <input type="hidden" id="pagar-transacao-conta" value="">
+          </div>
         </div>
         <input type="hidden" id="pagar-criar-transacao" checked>
 

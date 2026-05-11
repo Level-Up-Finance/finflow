@@ -12,6 +12,7 @@ import { showToast } from '../components/toast.js';
 import { loadRules, findRule } from '../lib/regras-reconciliacao.js';
 import { formatCurrency } from '../lib/compromissos-config.js';
 import { escapeHtml } from '../lib/utils.js';
+import { createContaPicker } from '../lib/conta-picker.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 // ── State ─────────────────────────────────────────────────────
@@ -52,7 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadData() {
   const [contasRes, contatosRes, subRes, catRes] = await Promise.all([
-    supabase.from('contas').select('id, nome, apelido').neq('status', 'arquivada').order('nome'),
+    supabase.from('contas').select('id, nome, apelido, tipo, icone_cor, moeda').neq('status', 'arquivada').order('nome'),
     supabase.from('contatos').select('id, nome, nome_extrato').order('nome'),
     supabase.from('subcategorias').select('id, nome, apelido, categoria_id').neq('status', 'arquivada').order('nome'),
     supabase.from('categorias').select('id, nome, grupo').order('nome'),
@@ -63,9 +64,17 @@ async function loadData() {
   cachedCategorias    = catRes.data      || [];
   cachedRules         = await loadRules();
 
-  const sel = document.getElementById('import-conta');
-  sel.innerHTML = '<option value="">Selecione a conta…</option>'
-    + cachedContas.map((c) => `<option value="${c.id}">${escapeHtml(c.apelido || c.nome)}</option>`).join('');
+  // Initialize conta picker
+  const importContaPicker = createContaPicker({
+    triggerBtnId: 'import-conta-btn',
+    hiddenInputId: 'import-conta',
+    avatarWrapId:  'import-conta-avatar-wrap',
+    nameElId:      'import-conta-name',
+    getContas:     () => cachedContas,
+    placeholder:   'Selecione a conta…',
+    allowBlank:    false,
+  });
+  importContaPicker.init();
 }
 
 // ── Step 1: Upload + Conta ────────────────────────────────────

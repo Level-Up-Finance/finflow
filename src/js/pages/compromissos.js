@@ -33,9 +33,12 @@ import {
   MOEDAS,
   formatCurrency,
   CATEGORIAS_DEFAULT,
+  renderMoedaOptions,
+  moedaInputPlaceholder,
 } from '../lib/compromissos-config.js';
 import { initColVisibility } from '../lib/col-visibility.js';
 import { escapeHtml, formatDateBR, todayISO } from '../lib/utils.js';
+import { createContaPicker } from '../lib/conta-picker.js';
 import { fetchExchangeRate } from '../lib/currency.js';
 import { initContatoPicker } from '../components/contato-picker.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
@@ -61,6 +64,8 @@ import * as saveModule from './compromissos/save.js';
 let cachedCompromissos = [];   // subcategorias do usuário
 let cachedCategorias = [];     // categorias parent do usuário
 let cachedContas = [];         // bancos/cartões
+let compContaPicker = null;
+let compContaDestinoPicker = null;
 let cachedProjetos = [];       // projetos de investimento do usuário
 let cachedDividas = [];        // dívidas do usuário (para vínculo)
 let cachedContatos = [];       // clientes/fornecedores do usuário
@@ -293,13 +298,41 @@ function initContatoPickerOnce() {
   });
 }
 
+function initContaPickersOnce() {
+  if (!compContaPicker) {
+    compContaPicker = createContaPicker({
+      triggerBtnId: 'comp-conta-btn',
+      hiddenInputId: 'comp-conta',
+      avatarWrapId:  'comp-conta-avatar-wrap',
+      nameElId:      'comp-conta-name',
+      getContas:     () => cachedContas,
+      placeholder:   'Banco / Cartão (opcional)…',
+      allowBlank:    true,
+      blankLabel:    '— Sem banco (preencher depois) —',
+    });
+    compContaPicker.init();
+  }
+  if (!compContaDestinoPicker) {
+    compContaDestinoPicker = createContaPicker({
+      triggerBtnId: 'comp-conta-destino-btn',
+      hiddenInputId: 'comp-conta-destino',
+      avatarWrapId:  'comp-conta-destino-avatar-wrap',
+      nameElId:      'comp-conta-destino-name',
+      getContas:     () => cachedContas,
+      placeholder:   'Selecione a conta destino…',
+      allowBlank:    false,
+    });
+    compContaDestinoPicker.init();
+  }
+}
+
 // -----------------------------
 // Load contas (pro select opcional)
 // -----------------------------
 async function loadContas() {
   let { data, error } = await supabase
     .from('contas')
-    .select('id, nome, apelido, tipo, icone_cor, status, limite')
+    .select('id, nome, apelido, tipo, icone_cor, moeda, status, limite')
     .neq('status', 'arquivada')
     .order('nome');
 
@@ -307,7 +340,7 @@ async function loadContas() {
   if (error && /column.*limite|limite.*column/i.test(error.message)) {
     ({ data, error } = await supabase
       .from('contas')
-      .select('id, nome, apelido, tipo, icone_cor, status')
+      .select('id, nome, apelido, tipo, icone_cor, moeda, status')
       .neq('status', 'arquivada')
       .order('nome'));
   }
@@ -381,13 +414,11 @@ function renderCategoriaFilters() {
 
     cats.forEach((cat) => {
       const btn = document.createElement('button');
-      btn.className = 'filter-pill';
+      btn.className = 'cf-tipo-chip';
       btn.dataset.categoria = cat.id;
       btn.type = 'button';
-      btn.innerHTML = `
-        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${cat.cor};"></span>
-        ${escapeHtml(cat.nome)}
-      `;
+      if (cat.cor) btn.style.setProperty('--tipo-c', cat.cor);
+      btn.innerHTML = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${cat.cor || '#9CA3AF'};flex-shrink:0;"></span>${escapeHtml(cat.nome)}`;
       container.appendChild(btn);
     });
   }
@@ -420,16 +451,8 @@ function renderModalDropdowns() {
   }).join('');
   selCat.innerHTML = '<option value="">— Escolha uma categoria —</option>' + optgroupHtml;
 
-  // Banco/Cartão (opcional)
-  const contaOptions = '<option value="">— Sem banco (preencher depois) —</option>' +
-    cachedContas.map((c) => {
-      const display = c.apelido?.trim() || c.nome;
-      return `<option value="${c.id}">${escapeHtml(display)} (${c.tipo})</option>`;
-    }).join('');
-  const selConta = document.getElementById('comp-conta');
-  selConta.innerHTML = contaOptions;
-  const selContaDest = document.getElementById('comp-conta-destino');
-  if (selContaDest) selContaDest.innerHTML = contaOptions;
+  // Banco/Cartão (opcional) — now uses conta-picker
+  initContaPickersOnce();
 
   // Tipo de pagamento
   const selTipoPag = document.getElementById('comp-tipo-pagamento');
@@ -449,14 +472,16 @@ function renderModalDropdowns() {
       `<option value="${d.value}">${d.label}</option>`
     ).join('');
 
-  // Moeda — popula os 2 selects (modo fixo + modo variável)
-  const moedaOptions = MOEDAS.map((m) =>
-    `<option value="${m.code}">${m.label}</option>`
-  ).join('');
+  // Moeda — popula os 2 selects (modo fixo + modo variável) com BRL como padrão inicial.
+  // O modal ajusta o selected ao abrir via openCompromissoModal.
   const selMoeda = document.getElementById('comp-moeda');
-  selMoeda.innerHTML = moedaOptions;
+  selMoeda.innerHTML = renderMoedaOptions('BRL');
   const selMoedaVar = document.getElementById('comp-moeda-var');
-  if (selMoedaVar) selMoedaVar.innerHTML = moedaOptions;
+  if (selMoedaVar) selMoedaVar.innerHTML = renderMoedaOptions('BRL');
+  document.getElementById('comp-valor-base').placeholder = moedaInputPlaceholder('BRL');
+  selMoeda.addEventListener('change', (e) => {
+    document.getElementById('comp-valor-base').placeholder = moedaInputPlaceholder(e.target.value);
+  });
 
   // Projetos (só relevante quando categoria é do grupo Investimentos)
   renderProjetoOptions();
@@ -525,7 +550,7 @@ function toggleProjetoField() {
 
 
 function syncCategoriaFilterUI() {
-  document.querySelectorAll('#categoria-filters .filter-pill').forEach((p) => {
+  document.querySelectorAll('#categoria-filters .cf-tipo-chip').forEach((p) => {
     p.classList.toggle('active', filterCategorias.has(p.dataset.categoria));
   });
 }
@@ -705,7 +730,8 @@ function openCompromissoModal(c = null) {
   document.getElementById('comp-divida').value  = c?.divida_id  || '';
   initContatoPickerOnce();
   contatoPicker?.setValue(c?.contato_id || '');
-  document.getElementById('comp-conta').value = c?.conta_id || '';
+  initContaPickersOnce();
+  compContaPicker.setValue(c?.conta_id || '');
   document.getElementById('comp-tipo-pagamento').value = c?.tipo_pagamento || '';
   document.getElementById('comp-periodo').value = c?.periodo || 'Mensal';
   document.getElementById('comp-vencimento-dia').value = c?.vencimento_dia || '';
@@ -713,9 +739,11 @@ function openCompromissoModal(c = null) {
   document.getElementById('comp-dia-semana').value = c?.dia_semana ?? '';
   document.getElementById('comp-intervalo-semanas').value = c?.intervalo_semanas || 1;
   document.getElementById('comp-valor-base').value = c?.valor_base ?? '';
-  document.getElementById('comp-moeda').value = c?.moeda || 'BRL';
+  const openMoedaCode = c?.moeda || 'BRL';
+  document.getElementById('comp-moeda').innerHTML = renderMoedaOptions(openMoedaCode);
+  document.getElementById('comp-valor-base').placeholder = moedaInputPlaceholder(openMoedaCode);
   const moedaVarEl = document.getElementById('comp-moeda-var');
-  if (moedaVarEl) moedaVarEl.value = c?.moeda || 'BRL';
+  if (moedaVarEl) moedaVarEl.innerHTML = renderMoedaOptions(openMoedaCode);
   document.getElementById('comp-iniciado-em').value = c?.iniciado_em || todayISO();
   document.getElementById('comp-terminado-em').value = c?.terminado_em || '';
   document.getElementById('comp-descricao').value = c?.descricao || '';
@@ -731,8 +759,7 @@ function openCompromissoModal(c = null) {
   document.querySelectorAll('.tipo-btn').forEach((b) => b.classList.toggle('active', b.dataset.tipo === tipo));
   document.querySelectorAll('#status-segmented .segmented-btn').forEach((b) => b.classList.toggle('active', b.dataset.status === status));
 
-  const contaDestinoEl = document.getElementById('comp-conta-destino');
-  if (contaDestinoEl) contaDestinoEl.value = c?.conta_destino_id || '';
+  compContaDestinoPicker?.setValue(c?.conta_destino_id || '');
 
   toggleVencimentoFields();
   toggleValorVariavelFields();

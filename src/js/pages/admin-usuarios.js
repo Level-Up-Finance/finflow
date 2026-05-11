@@ -123,7 +123,7 @@ function openModal(userId) {
   const avatarEl = document.getElementById('modal-usr-avatar');
   avatarEl.style.background = 'var(--color-primary)';
   avatarEl.innerHTML = u.foto_url
-    ? `<img src="${escapeHtml(u.foto_url)}" alt="" class="adm-usr-avatar-img" onerror="this.remove()"><span class="adm-usr-avatar-initials">${escapeHtml(initials)}</span>`
+    ? `<img src="${escapeHtml(u.foto_url)}" alt="" class="adm-usr-avatar-img" onerror="this.parentElement.textContent='${escapeHtml(initials)}';">`
     : escapeHtml(initials);
 
   document.getElementById('modal-usr-name').textContent  = nome;

@@ -6,7 +6,7 @@ import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { fetchExchangeRate } from '../lib/currency.js';
-import { formatCurrency } from '../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.js';
 import { isPaidStatus } from '../lib/transacao-pagamento-sync.js';
 import { escapeHtml, isoMonth } from '../lib/utils.js';
 import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
@@ -581,7 +581,6 @@ function renderKPIs() {
   const saldoReal = receitasRealBRL - despesasRealBRL;
 
   const saldoCls  = saldoReal > 0 ? 'dre-positive' : saldoReal < 0 ? 'dre-negative' : 'dre-zero';
-  const saldoSign = saldoReal > 0 ? '+' : saldoReal < 0 ? '−' : '';
 
   // Oportunidade (bloco Contribuição)
   let oportunidade = 0;
@@ -593,7 +592,6 @@ function renderKPIs() {
     oportunidade += e.subcategorias?.tipo === 'Receita' ? vBRL : -vBRL;
   }
   const oportCls  = oportunidade > 0 ? 'dre-positive' : oportunidade < 0 ? 'dre-negative' : 'dre-zero';
-  const oportSign = oportunidade > 0 ? '+' : oportunidade < 0 ? '−' : '';
 
   // Despesas pagas %
   let realPagoBRL = 0, totalPrevistoBRL = 0;
@@ -622,20 +620,20 @@ function renderKPIs() {
   container.innerHTML = `
     <div class="dash-kpi" style="--kpi-accent: var(--color-primary);">
       <div class="dash-kpi-label">Saldo realizado</div>
-      <div class="dash-kpi-value ${saldoCls}">${saldoSign}${formatCurrency(Math.abs(saldoReal), 'BRL')}</div>
+      <div class="dash-kpi-value ${saldoCls}">${formatCurrencyHTML(saldoReal, 'BRL')}</div>
       <div class="dash-kpi-sub">
-        <span class="dre-positive">+${formatCurrency(receitasRealBRL, 'BRL')}</span>
+        <span class="dre-positive">${formatCurrencyHTML(receitasRealBRL, 'BRL')}</span>
         <span class="text-muted"> · </span>
-        <span class="dre-negative">−${formatCurrency(despesasRealBRL, 'BRL')}</span>
+        <span class="dre-negative">${formatCurrencyHTML(-despesasRealBRL, 'BRL')}</span>
       </div>
       <div class="dash-kpi-sub dash-kpi-prev">
-        Previsto: <span class="${saldoPrev >= 0 ? 'dre-positive' : 'dre-negative'}">${saldoPrev >= 0 ? '+' : '−'}${formatCurrency(Math.abs(saldoPrev), 'BRL')}</span>
+        Previsto: <span class="${saldoPrev >= 0 ? 'dre-positive' : 'dre-negative'}">${formatCurrencyHTML(saldoPrev, 'BRL')}</span>
       </div>
     </div>
 
     <div class="dash-kpi" style="--kpi-accent: var(--color-success);">
       <div class="dash-kpi-label">Oportunidade de investimento</div>
-      <div class="dash-kpi-value ${oportCls}">${oportSign}${formatCurrency(Math.abs(oportunidade), 'BRL')}</div>
+      <div class="dash-kpi-value ${oportCls}">${formatCurrencyHTML(oportunidade, 'BRL')}</div>
       <div class="dash-kpi-sub">Sobra do bloco Contribuição</div>
     </div>
 
@@ -645,7 +643,7 @@ function renderKPIs() {
       <div class="dash-kpi-progress">
         <div class="dash-kpi-progress-fill" style="width: ${pctPago}%; background: ${pctColor};"></div>
       </div>
-      <div class="dash-kpi-sub">${formatCurrency(realPagoBRL, 'BRL')} de ${formatCurrency(totalPrevistoBRL, 'BRL')}</div>
+      <div class="dash-kpi-sub">${formatCurrencyHTML(realPagoBRL, 'BRL')} de ${formatCurrencyHTML(totalPrevistoBRL, 'BRL')}</div>
     </div>
 
     <div class="dash-kpi" style="--kpi-accent: var(--color-secondary);">
@@ -694,8 +692,8 @@ function renderBlocosBars() {
     const value = bloco.id === 'contribuicao' ? t.signed : t.absDespesa;
     const pct = (Math.abs(value) / maxValue) * 100;
     const display = bloco.id === 'contribuicao'
-      ? `${value > 0 ? '+' : value < 0 ? '−' : ''}${formatCurrency(Math.abs(value), 'BRL')}`
-      : formatCurrency(Math.abs(value), 'BRL');
+      ? formatCurrencyHTML(value, 'BRL')
+      : formatCurrencyHTML(value, 'BRL');
     const valueCls = bloco.id === 'contribuicao' ? (value > 0 ? 'dre-positive' : value < 0 ? 'dre-negative' : '') : '';
     return `
       <div class="dash-bloco-bar" style="--bloco-accent: ${bloco.accent};">
@@ -740,7 +738,7 @@ function renderAtrasados() {
   container.innerHTML = `
     <div class="dash-alert-header">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
-      <span class="dash-alert-summary">${atrasados.length} pagamento${atrasados.length > 1 ? 's' : ''} em atraso — ${formatCurrency(totalBRL, 'BRL')} total</span>
+      <span class="dash-alert-summary">${atrasados.length} pagamento${atrasados.length > 1 ? 's' : ''} em atraso — ${formatCurrencyHTML(totalBRL, 'BRL')} total</span>
       <a href="/pagamentos.html" class="dash-alert-link">Ver em Pagamentos →</a>
     </div>
     <div class="dash-alert-list">${atrasados.map(renderAtrasadoRow).join('')}</div>`;
@@ -751,7 +749,7 @@ function renderAtrasadoRow(p) {
   const sub   = p.subcategorias;
   const display = sub?.apelido?.trim() || sub?.nome || '—';
   const vBRL  = convertToBRL(Number(p.valor_previsto) || 0, p.moeda, p);
-  const valor = vBRL !== null ? formatCurrency(vBRL, 'BRL') : formatCurrency(Number(p.valor_previsto), p.moeda);
+  const valor = vBRL !== null ? formatCurrencyHTML(vBRL, 'BRL') : formatCurrencyHTML(Number(p.valor_previsto), p.moeda);
   const cat   = sub?.categorias;
   const d     = new Date(p.data_vencimento + 'T00:00:00');
   const dia   = String(d.getDate()).padStart(2, '0');
@@ -800,7 +798,7 @@ function renderProximosVencimentos() {
     const display = sub?.apelido?.trim() || sub?.nome || '—';
     const v     = Number(p.valor_previsto) || 0;
     const vBRL  = convertToBRL(v, p.moeda, p);
-    const valor = vBRL !== null ? formatCurrency(vBRL, 'BRL') : formatCurrency(v, p.moeda);
+    const valor = vBRL !== null ? formatCurrencyHTML(vBRL, 'BRL') : formatCurrencyHTML(v, p.moeda);
     const cat   = sub?.categorias;
     const tipo  = sub?.tipo;
     const sign  = tipo === 'Receita' ? '+' : '−';
@@ -947,7 +945,7 @@ function renderTopGastos() {
         <div class="dash-top-gastos-label">
           <span class="dash-venc-dot" style="background: ${cat.cor};"></span>
           <span class="dash-top-gastos-name">${escapeHtml(cat.nome)}</span>
-          <span class="dash-top-gastos-value">${formatCurrency(cat.total, 'BRL')}</span>
+          <span class="dash-top-gastos-value">${formatCurrencyHTML(cat.total, 'BRL')}</span>
         </div>
         <div class="dash-bloco-bar-track" style="height: 8px;">
           <div class="dash-bloco-bar-fill" style="width: ${pct}%; background: ${cat.cor};"></div>
@@ -987,7 +985,7 @@ function renderTransacoesRecentes() {
     const isReceita = t.tipo === 'Receita';
     const sign  = isReceita ? '+' : '−';
     const cls   = isReceita ? 'dre-positive' : 'dre-negative';
-    const valor = formatCurrency(Number(t.valor) || 0, 'BRL');
+    const valor = formatCurrencyHTML(Number(t.valor) || 0, 'BRL');
     const d     = new Date(t.data + 'T00:00:00');
     const dia   = String(d.getDate()).padStart(2, '0');
     const mes   = String(d.getMonth() + 1).padStart(2, '0');

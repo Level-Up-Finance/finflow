@@ -8,6 +8,7 @@
 import { supabase } from '../../lib/supabase.js';
 import { showToast } from '../../components/toast.js';
 import { getCurrentUser } from '../../lib/auth.js';
+import { parseUserNumber } from '../../lib/utils.js';
 
 /** Próximos N meses como [{year, month, mesAno, label}, ...] */
 export function nextNMonths(n = 12) {
@@ -54,7 +55,7 @@ export async function populateValoresMensaisGrid(c, catId = null) {
     return `
       <div class="valor-mensal-item">
         <span class="valor-mensal-label">${m.label}</span>
-        <input type="number" step="0.01" min="0" class="valor-mensal-input" data-mes-ano="${m.mesAno}" value="${valor}" placeholder="0,00">
+        <input type="text" inputmode="decimal" class="valor-mensal-input" data-mes-ano="${m.mesAno}" value="${valor}" placeholder="0,00">
       </div>
     `;
   }).join('');
@@ -67,7 +68,7 @@ export function collectValoresMensais() {
   inputs.forEach((inp) => {
     const v = inp.value.trim();
     if (v === '') return;
-    const num = Number(v);
+    const num = parseUserNumber(v);
     if (isNaN(num) || num < 0) return;
     items.push({ mes_ano: inp.dataset.mesAno, valor_previsto: num });
   });

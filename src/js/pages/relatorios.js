@@ -8,7 +8,7 @@ import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
-import { formatCurrency } from '../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.js';
 import { escapeHtml, formatDateBR } from '../lib/utils.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
@@ -285,11 +285,11 @@ function renderFluxo() {
     const label = `${MONTH_LABELS_LONG[Number(mo) - 1]} ${y}`;
     return `<tr>
       <td>${escapeHtml(label)}</td>
-      <td class="relat-td-num relat-text-success">${formatCurrency(receitas,      'BRL')}</td>
-      <td class="relat-td-num relat-text-danger"> ${formatCurrency(despesas,      'BRL')}</td>
-      <td class="relat-td-num ${saldo >= 0 ? 'relat-text-success' : 'relat-text-danger'}">${formatCurrency(saldo, 'BRL')}</td>
-      <td class="relat-td-num ${saldoAcum >= 0 ? 'relat-text-success' : 'relat-text-danger'}">${formatCurrency(saldoAcum, 'BRL')}</td>
-      <td class="relat-td-num relat-text-muted">${transferencias > 0 ? formatCurrency(transferencias, 'BRL') : '—'}</td>
+      <td class="relat-td-num relat-text-success">${formatCurrencyHTML(receitas,      'BRL')}</td>
+      <td class="relat-td-num relat-text-danger"> ${formatCurrencyHTML(despesas,      'BRL')}</td>
+      <td class="relat-td-num ${saldo >= 0 ? 'relat-text-success' : 'relat-text-danger'}">${formatCurrencyHTML(saldo, 'BRL')}</td>
+      <td class="relat-td-num ${saldoAcum >= 0 ? 'relat-text-success' : 'relat-text-danger'}">${formatCurrencyHTML(saldoAcum, 'BRL')}</td>
+      <td class="relat-td-num relat-text-muted">${transferencias > 0 ? formatCurrencyHTML(transferencias, 'BRL') : '—'}</td>
     </tr>`;
   });
 
@@ -298,11 +298,11 @@ function renderFluxo() {
 
   document.getElementById('fluxo-tfoot').innerHTML = `<tr class="relat-total-row">
     <td><strong>Total</strong></td>
-    <td class="relat-td-num relat-text-success"><strong>${formatCurrency(totalReceitas, 'BRL')}</strong></td>
-    <td class="relat-td-num relat-text-danger"><strong>${formatCurrency(totalDespesas, 'BRL')}</strong></td>
-    <td class="relat-td-num ${saldoTotal >= 0 ? 'relat-text-success' : 'relat-text-danger'}"><strong>${formatCurrency(saldoTotal, 'BRL')}</strong></td>
+    <td class="relat-td-num relat-text-success"><strong>${formatCurrencyHTML(totalReceitas, 'BRL')}</strong></td>
+    <td class="relat-td-num relat-text-danger"><strong>${formatCurrencyHTML(totalDespesas, 'BRL')}</strong></td>
+    <td class="relat-td-num ${saldoTotal >= 0 ? 'relat-text-success' : 'relat-text-danger'}"><strong>${formatCurrencyHTML(saldoTotal, 'BRL')}</strong></td>
     <td></td>
-    <td class="relat-td-num relat-text-muted"><strong>${totalTransferencias > 0 ? formatCurrency(totalTransferencias, 'BRL') : '—'}</strong></td>
+    <td class="relat-td-num relat-text-muted"><strong>${totalTransferencias > 0 ? formatCurrencyHTML(totalTransferencias, 'BRL') : '—'}</strong></td>
   </tr>`;
 
   // Atualiza cabeçalho da tabela para incluir coluna de transferências
@@ -407,9 +407,9 @@ function renderPrevisto() {
     const pct    = c.previsto > 0 ? (c.realizado / c.previsto) * 100 : (c.realizado > 0 ? 100 : 0);
     return `<tr>
       <td style="padding-left:var(--space-5)"><span class="cat-dot" style="background:${escapeHtml(c.cor)}"></span>${escapeHtml(c.nome)}</td>
-      <td class="relat-td-num">${formatCurrency(c.previsto,  'BRL')}</td>
-      <td class="relat-td-num">${formatCurrency(c.realizado, 'BRL')}</td>
-      <td class="relat-td-num ${desvio <= 0 ? 'relat-text-success' : 'relat-text-danger'}">${formatCurrency(desvio, 'BRL')}</td>
+      <td class="relat-td-num">${formatCurrencyHTML(c.previsto,  'BRL')}</td>
+      <td class="relat-td-num">${formatCurrencyHTML(c.realizado, 'BRL')}</td>
+      <td class="relat-td-num ${desvio <= 0 ? 'relat-text-success' : 'relat-text-danger'}">${formatCurrencyHTML(desvio, 'BRL')}</td>
       <td class="relat-td-num">${pct.toFixed(1)}%</td>
     </tr>`;
   }).join('');
@@ -421,9 +421,9 @@ function renderPrevisto() {
     const d = r - p;
     return `<tr class="relat-total-row relat-subtotal-row">
       <td><strong>${label}</strong></td>
-      <td class="relat-td-num"><strong>${formatCurrency(p, 'BRL')}</strong></td>
-      <td class="relat-td-num"><strong>${formatCurrency(r, 'BRL')}</strong></td>
-      <td class="relat-td-num ${d <= 0 ? 'relat-text-success' : 'relat-text-danger'}"><strong>${formatCurrency(d, 'BRL')}</strong></td>
+      <td class="relat-td-num"><strong>${formatCurrencyHTML(p, 'BRL')}</strong></td>
+      <td class="relat-td-num"><strong>${formatCurrencyHTML(r, 'BRL')}</strong></td>
+      <td class="relat-td-num ${d <= 0 ? 'relat-text-success' : 'relat-text-danger'}"><strong>${formatCurrencyHTML(d, 'BRL')}</strong></td>
       <td></td>
     </tr>`;
   };
@@ -446,9 +446,9 @@ function renderPrevisto() {
   const desvioTotal = totalR - totalP;
   document.getElementById('previsto-tfoot').innerHTML = `<tr class="relat-total-row">
     <td><strong>Total geral</strong></td>
-    <td class="relat-td-num"><strong>${formatCurrency(totalP, 'BRL')}</strong></td>
-    <td class="relat-td-num"><strong>${formatCurrency(totalR, 'BRL')}</strong></td>
-    <td class="relat-td-num ${desvioTotal <= 0 ? 'relat-text-success' : 'relat-text-danger'}"><strong>${formatCurrency(desvioTotal, 'BRL')}</strong></td>
+    <td class="relat-td-num"><strong>${formatCurrencyHTML(totalP, 'BRL')}</strong></td>
+    <td class="relat-td-num"><strong>${formatCurrencyHTML(totalR, 'BRL')}</strong></td>
+    <td class="relat-td-num ${desvioTotal <= 0 ? 'relat-text-success' : 'relat-text-danger'}"><strong>${formatCurrencyHTML(desvioTotal, 'BRL')}</strong></td>
     <td class="relat-td-num"><strong>${pctExec.toFixed(1)}%</strong></td>
   </tr>`;
 }
@@ -522,7 +522,7 @@ function renderCategorias() {
     const pct = totalDesp > 0 ? (c.total / totalDesp) * 100 : 0;
     const catRow = `<tr class="relat-cat-group-row">
       <td><span class="cat-dot" style="background:${escapeHtml(c.cor)}"></span><strong>${escapeHtml(c.nome)}</strong></td>
-      <td class="relat-td-num"><strong>${formatCurrency(c.total, 'BRL')}</strong></td>
+      <td class="relat-td-num"><strong>${formatCurrencyHTML(c.total, 'BRL')}</strong></td>
       <td class="relat-td-num"><strong>${pct.toFixed(1)}%</strong></td>
       <td class="relat-td-num">${c.count}</td>
     </tr>`;
@@ -530,7 +530,7 @@ function renderCategorias() {
       const sPct = totalDesp > 0 ? (s.total / totalDesp) * 100 : 0;
       return `<tr class="relat-subcat-row">
         <td class="relat-subcat-indent">${escapeHtml(s.nome)}</td>
-        <td class="relat-td-num">${formatCurrency(s.total, 'BRL')}</td>
+        <td class="relat-td-num">${formatCurrencyHTML(s.total, 'BRL')}</td>
         <td class="relat-td-num">${sPct.toFixed(1)}%</td>
         <td class="relat-td-num">${s.count}</td>
       </tr>`;
@@ -543,7 +543,7 @@ function renderCategorias() {
 
   document.getElementById('cat-tfoot').innerHTML = `<tr class="relat-total-row">
     <td><strong>Total</strong></td>
-    <td class="relat-td-num"><strong>${formatCurrency(totalDesp, 'BRL')}</strong></td>
+    <td class="relat-td-num"><strong>${formatCurrencyHTML(totalDesp, 'BRL')}</strong></td>
     <td class="relat-td-num"><strong>100%</strong></td>
     <td class="relat-td-num"><strong>${nTrans}</strong></td>
   </tr>`;
@@ -749,7 +749,7 @@ function renderHorizontalBars(items, total) {
       <div class="relat-hbar-track">
         <div class="relat-hbar-fill" style="width:${pct.toFixed(1)}%;background:${escapeHtml(item.catCor || 'var(--color-primary)')}"></div>
       </div>
-      <div class="relat-hbar-val">${formatCurrency(item.total, 'BRL')}</div>
+      <div class="relat-hbar-val">${formatCurrencyHTML(item.total, 'BRL')}</div>
     </div>`;
   }).join('');
 }

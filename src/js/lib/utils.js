@@ -30,6 +30,73 @@ export function getInitials(name, fallback = '') {
   return src.slice(0, 2).toUpperCase();
 }
 
+/**
+ * Parseia número digitado pelo usuário, aceitando tanto vírgula quanto ponto como decimal.
+ * Exemplos:
+ *   "1.500,00" → 1500     (europeu)
+ *   "1,500.00" → 1500     (americano)
+ *   "1500,00"  → 1500
+ *   "1500.00"  → 1500
+ *   "1500"     → 1500
+ */
+export function parseUserNumber(str) {
+  if (str === '' || str == null) return NaN;
+  const s = String(str).trim().replace(/\s/g, '');
+  if (!s) return NaN;
+
+  const lastDot   = s.lastIndexOf('.');
+  const lastComma = s.lastIndexOf(',');
+
+  if (lastDot > -1 && lastComma > -1) {
+    // Ambos presentes: o que vier por último é o separador decimal
+    if (lastComma > lastDot) {
+      // Formato europeu: 1.234,56
+      return parseFloat(s.replace(/\./g, '').replace(',', '.'));
+    } else {
+      // Formato americano: 1,234.56
+      return parseFloat(s.replace(/,/g, ''));
+    }
+  }
+
+  if (lastComma > -1) return parseFloat(s.replace(',', '.'));
+  return parseFloat(s);
+}
+
+/**
+ * Renders grouped <option> / <optgroup> HTML for conta select dropdowns.
+ * Groups: Conta Bancária | Cartão de Crédito | Conta Estrangeira
+ *
+ * @param {Array}  contas      - Array of conta objects (must have id, nome, apelido, tipo, moeda)
+ * @param {string} selectedId  - Currently selected conta id (for pre-selection)
+ * @param {Object} opts
+ * @param {string} opts.blankLabel - Label for the empty/placeholder option (pass '' to omit)
+ */
+export function renderContaOptions(contas, selectedId = '', { blankLabel = 'Selecione…' } = {}) {
+  function makeOpt(c) {
+    const sel = String(c.id) === String(selectedId) ? ' selected' : '';
+    return `<option value="${c.id}"${sel}>${escapeHtml(c.apelido || c.nome)}</option>`;
+  }
+
+  // Groups in display order — only rendered if at least one account exists in the group
+  const GROUPS = [
+    { label: 'Conta Corrente',   test: (c) => c.tipo === 'Corrente'    && (!c.moeda || c.moeda === 'BRL') },
+    { label: 'Conta Poupança',   test: (c) => c.tipo === 'Poupança'    && (!c.moeda || c.moeda === 'BRL') },
+    { label: 'Cofrinho',         test: (c) => c.tipo === 'Cofrinho'    && (!c.moeda || c.moeda === 'BRL') },
+    { label: 'Investimento',     test: (c) => c.tipo === 'Investimento' && (!c.moeda || c.moeda === 'BRL') },
+    { label: 'Cartão de Crédito',test: (c) => c.tipo === 'Cartão de Crédito' },
+    { label: 'Conta Estrangeira',test: (c) => c.tipo !== 'Cartão de Crédito' && c.moeda && c.moeda !== 'BRL' },
+  ];
+
+  let html = blankLabel !== '' ? `<option value="">${escapeHtml(blankLabel)}</option>` : '';
+  for (const g of GROUPS) {
+    const group = contas.filter(g.test);
+    if (group.length === 0) continue;
+    // If only one group type exists across all accounts, skip the optgroup label for cleaner UX
+    html += `<optgroup label="${escapeHtml(g.label)}">${group.map(makeOpt).join('')}</optgroup>`;
+  }
+  return html;
+}
+
 export function showConfirm(message, { okLabel = 'Confirmar', cancelLabel = 'Cancelar', danger = true } = {}) {
   return new Promise((resolve) => {
     const existing = document.getElementById('util-confirm-modal');

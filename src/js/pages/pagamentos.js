@@ -16,13 +16,14 @@ import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
-import { formatCurrency } from '../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.js';
 import { fetchExchangeRate } from '../lib/currency.js';
 import { initCurrencyWidget } from '../components/currency-widget.js';
 import { findBank, logoUrl } from '../lib/banks.js';
 import { syncPagamentoToTransacao, isPaidStatus } from '../lib/transacao-pagamento-sync.js';
-import { escapeHtml, formatDateBR, isoMonth, showConfirm } from '../lib/utils.js';
+import { escapeHtml, formatDateBR, isoMonth, showConfirm, parseUserNumber } from '../lib/utils.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
+import { MOEDAS } from '../lib/compromissos-config.js';
 
 // -----------------------------
 // State
@@ -39,7 +40,15 @@ let detailsPagamento = null;  // pagamento exibido no modal de detalhes
 let filterStatus = 'todos';   // 'todos' | 'pendentes' | 'atrasados' | 'pagos' | 'cancelados'
 let parcialState  = null;     // { pag, restanteOrig, restanteBRL } — preenchido ao abrir modais de parcial
 
-const ratesMap = new Map();   // 'USD' → 5.15
+const ratesMap = new Map();          // 'USD' → 5.15
+const finalizedItemsByBloco = new Map(); // num → items[], para o modal de finalizados
+
+const FINALIZADOS_STATUS = new Set(['Pago', 'Transferido', 'Cartão']);
+
+function getMainCurrencySymbol() {
+  const code = localStorage.getItem('finflow.moeda_padrao') || 'BRL';
+  return MOEDAS.find((m) => m.code === code)?.symbol || code;
+}
 
 const MONTH_LABELS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
@@ -123,9 +132,9 @@ function bindEvents() {
 
   // Filtros
   document.getElementById('status-filters').addEventListener('click', (e) => {
-    const btn = e.target.closest('.filter-pill');
+    const btn = e.target.closest('.cf-status-tab');
     if (!btn) return;
-    document.querySelectorAll('#status-filters .filter-pill').forEach((p) => p.classList.remove('active'));
+    document.querySelectorAll('#status-filters .cf-status-tab').forEach((p) => p.classList.remove('active'));
     btn.classList.add('active');
     filterStatus = btn.dataset.filter;
     renderPagamentos();
@@ -585,17 +594,22 @@ function renderBloco(num, title, period, items) {
 
   const alertCls = saldoBRL <= 0 ? 'alerta-negativo' : '';
 
-  // Agrupa items por categoria parent
+  // Separa finalizados (Pago, Transferido, Cartão) dos demais
+  const finalizedItems = items.filter((p) => FINALIZADOS_STATUS.has(p.status));
+  const activeItems    = items.filter((p) => !FINALIZADOS_STATUS.has(p.status));
+  finalizedItemsByBloco.set(num, finalizedItems);
+
+  // Agrupa items ativos por categoria parent
   const groups = new Map();
   cachedCategorias.forEach((cat) => groups.set(cat.id, []));
   const orphans = [];
-  items.forEach((p) => {
+  activeItems.forEach((p) => {
     const catId = p.subcategorias?.categoria_id;
     if (catId && groups.has(catId)) groups.get(catId).push(p);
     else orphans.push(p);
   });
 
-  // Monta rows com section headers (4 colunas agora: Compromisso, Vto, Valor, Status)
+  // Monta rows com section headers (4 colunas: Compromisso, Vto, Valor, Status)
   const sectionRows = [];
   for (const cat of cachedCategorias) {
     const arr = groups.get(cat.id) || [];
@@ -616,6 +630,17 @@ function renderBloco(num, title, period, items) {
     orphans.forEach((p) => sectionRows.push(renderPagamentoRow(p, '#9CA3AF')));
   }
 
+  // Linha "Finalizados" colapsada no final da tabela
+  const finalizadosRow = finalizedItems.length > 0 ? `
+    <tr class="finalizados-row" data-bloco="${num}" role="button" tabindex="0" title="Ver pagamentos finalizados">
+      <td colspan="4">
+        <span class="finalizados-row-label">Finalizados</span>
+        <span class="finalizados-badge">${finalizedItems.length}</span>
+        <svg class="finalizados-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </td>
+    </tr>
+  ` : '';
+
   const body = items.length === 0
     ? `<div class="pagamento-empty-bloco">Nenhum pagamento neste bloco.</div>`
     : `
@@ -624,12 +649,12 @@ function renderBloco(num, title, period, items) {
           <thead>
             <tr>
               <th>Compromisso</th>
-              <th>Vto</th>
+              <th class="text-center">Vto</th>
               <th class="text-right">Valor</th>
               <th>Status</th>
             </tr>
           </thead>
-          <tbody>${sectionRows.join('')}</tbody>
+          <tbody>${sectionRows.join('')}${finalizadosRow}</tbody>
         </table>
       </div>
     `;
@@ -638,7 +663,6 @@ function renderBloco(num, title, period, items) {
   // (Saídas realizadas | Oportunidade de investimento | Saídas restantes)
   const oportunidade = saldoBRL;
   const oportClass = oportunidade > 0 ? 'dre-positive' : (oportunidade < 0 ? 'dre-negative' : 'dre-zero');
-  const oportSign = oportunidade > 0 ? '+' : (oportunidade < 0 ? '-' : '');
 
   return `
     <div class="pagamento-bloco">
@@ -650,15 +674,15 @@ function renderBloco(num, title, period, items) {
         <div class="pagamento-bloco-stats-row">
           <div class="pagamento-bloco-stat pagamento-bloco-stat-left">
             <span class="pagamento-bloco-stat-label">Saídas realizadas</span>
-            <span class="pagamento-bloco-stat-value dre-negative">${formatCurrency(despesaRealizadaBRL, 'BRL')}</span>
+            <span class="pagamento-bloco-stat-value dre-negative">${formatCurrencyHTML(despesaRealizadaBRL, 'BRL')}</span>
           </div>
           <div class="pagamento-bloco-stat-center">
             <span class="pagamento-bloco-stat-label">Oportunidade de investimento</span>
-            <span class="pagamento-bloco-stat-value-big ${oportClass} ${alertCls}">${oportSign}${formatCurrency(Math.abs(oportunidade), 'BRL')}</span>
+            <span class="pagamento-bloco-stat-value-big ${oportClass} ${alertCls}">${formatCurrencyHTML(oportunidade, 'BRL')}</span>
           </div>
           <div class="pagamento-bloco-stat pagamento-bloco-stat-right">
             <span class="pagamento-bloco-stat-label">Saídas restantes</span>
-            <span class="pagamento-bloco-stat-value">${formatCurrency(despesaRestanteBRL, 'BRL')}</span>
+            <span class="pagamento-bloco-stat-value">${formatCurrencyHTML(despesaRestanteBRL, 'BRL')}</span>
           </div>
         </div>
       </header>
@@ -674,16 +698,24 @@ function renderPagamentoRow(p, catColor) {
   const tipoColor = tipo === 'Receita' ? 'var(--color-success)' : 'var(--color-danger)';
   const tipoSymbol = tipo === 'Receita' ? '+' : '-';
   const moeda = p.moeda || 'BRL';
+  const moedaSymbol = MOEDAS.find((m) => m.code === moeda)?.symbol || moeda;
   const isCancelado = p.status === 'Cancelado';
   const hasObs = !!(p.observacao && p.observacao.trim());
   const atrasadoFlag = isAtrasado(p);
-  // Valor (input em BRL) — começa preenchido com valor_real (que veio do auto-gen
-  // como valor_previsto). User pode alterar antes de mudar o status.
+  // Valor: converte pra BRL se tiver taxa; senão mostra no valor original.
+  // displaySymbol: R$ quando convertido, símbolo da moeda original quando não.
   let valorInputValue = '';
+  let displaySymbol = moedaSymbol;
   const valorBase = p.valor_real ?? p.valor_previsto;
   if (valorBase !== null && valorBase !== undefined) {
     const valorBRL = convertToBRL(Number(valorBase), moeda);
-    valorInputValue = valorBRL !== null ? valorBRL.toFixed(2) : Number(valorBase).toFixed(2);
+    if (valorBRL !== null) {
+      valorInputValue = valorBRL.toFixed(2);
+      displaySymbol = getMainCurrencySymbol(); // convertido → moeda principal
+    } else {
+      valorInputValue = Number(valorBase).toFixed(2);
+      // displaySymbol mantém o símbolo original (taxa não encontrada)
+    }
   }
 
   // Vencimento dia
@@ -740,18 +772,20 @@ function renderPagamentoRow(p, catColor) {
           ${descIcon}
         </div>
       </td>
-      <td class="tabular" style="font-size: var(--fs-xs); color: var(--color-text-secondary);">${vto}</td>
+      <td class="tabular text-center" style="font-size: var(--fs-xs); color: var(--color-text-secondary);">${vto}</td>
       <td class="text-right">
-        <input
-          type="number"
-          step="0.01"
-          min="0"
-          class="pagamento-valor-real"
-          data-pagamento-id="${p.id}"
-          value="${valorInputValue}"
-          placeholder="—"
-          aria-label="Valor pago em BRL"
-        />
+        <span class="orcamento-input-group">
+          <span class="brl-prefix">${displaySymbol}</span>
+          <input
+            type="text"
+            inputmode="decimal"
+            class="pagamento-valor-real"
+            data-pagamento-id="${p.id}"
+            value="${valorInputValue}"
+            placeholder="—"
+            aria-label="Valor pago em ${moeda}"
+          />
+        </span>
       </td>
       <td>
         <span class="pag-actions-cell">
@@ -801,6 +835,13 @@ function bindEdits() {
       return;
     }
 
+    const finalizadosRow = e.target.closest('.finalizados-row');
+    if (finalizadosRow) {
+      const num = Number(finalizadosRow.dataset.bloco);
+      openFinalizadosModal(num);
+      return;
+    }
+
     const row = e.target.closest('.pag-row');
     if (row) {
       const p = cachedPagamentos.find((x) => x.id === row.dataset.id);
@@ -808,13 +849,63 @@ function bindEdits() {
     }
   });
 
-  // KEYDOWN: Enter/Escape no valor-real
+  // KEYDOWN: Enter/Escape no valor-real + Enter no finalizados-row
   container.addEventListener('keydown', (e) => {
+    const finRow = e.target.closest('.finalizados-row');
+    if (finRow && e.key === 'Enter') { openFinalizadosModal(Number(finRow.dataset.bloco)); return; }
     const inp = e.target.closest('.pagamento-valor-real');
     if (!inp) return;
     if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
     else if (e.key === 'Escape') { inp.blur(); }
   });
+
+  // Modal finalizados — fechar
+  document.getElementById('btn-close-finalizados')?.addEventListener('click', closeFinalizadosModal);
+  document.getElementById('btn-cancel-finalizados')?.addEventListener('click', closeFinalizadosModal);
+  document.getElementById('modal-finalizados')?.addEventListener('click', (e) => {
+    if (e.target.id === 'modal-finalizados') closeFinalizadosModal();
+  });
+}
+
+// -----------------------------
+// Modal: Finalizados do bloco
+// -----------------------------
+function openFinalizadosModal(blocoNum) {
+  const items = finalizedItemsByBloco.get(blocoNum) || [];
+  const title = document.getElementById('modal-finalizados-title');
+  const tbody = document.getElementById('modal-finalizados-tbody');
+  if (!title || !tbody) return;
+
+  title.textContent = `Finalizados — Bloco ${blocoNum} (${items.length})`;
+
+  // Agrupa por categoria para manter consistência visual
+  const groups = new Map();
+  cachedCategorias.forEach((cat) => groups.set(cat.id, []));
+  const orphans = [];
+  items.forEach((p) => {
+    const catId = p.subcategorias?.categoria_id;
+    if (catId && groups.has(catId)) groups.get(catId).push(p);
+    else orphans.push(p);
+  });
+
+  const rows = [];
+  for (const cat of cachedCategorias) {
+    const arr = groups.get(cat.id) || [];
+    if (!arr.length) continue;
+    rows.push(`<tr class="cat-section" style="--cat-color: ${cat.cor};"><td colspan="4"><span class="cat-dot"></span>${escapeHtml(cat.nome)}</td></tr>`);
+    arr.forEach((p) => rows.push(renderPagamentoRow(p, cat.cor)));
+  }
+  if (orphans.length) {
+    rows.push(`<tr class="cat-section" style="--cat-color: #9CA3AF;"><td colspan="4"><span class="cat-dot"></span>Sem categoria</td></tr>`);
+    orphans.forEach((p) => rows.push(renderPagamentoRow(p, '#9CA3AF')));
+  }
+
+  tbody.innerHTML = rows.join('');
+  document.getElementById('modal-finalizados').classList.remove('hidden');
+}
+
+function closeFinalizadosModal() {
+  document.getElementById('modal-finalizados')?.classList.add('hidden');
 }
 
 // -----------------------------
@@ -1147,7 +1238,7 @@ async function saveValorReal(input) {
   // Empty = unset (null)
   let newValueOrig = null;
   if (raw !== '') {
-    const newValueBRL = Number(raw);
+    const newValueBRL = parseUserNumber(raw);
     if (isNaN(newValueBRL) || newValueBRL < 0) {
       showToast(t('pagamentos.validacao.valor_invalido', 'Valor inválido'), 'error');
       // Restore

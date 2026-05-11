@@ -539,7 +539,23 @@
   opacity: 0;
   transform: translateX(20px);
   transition: opacity var(--transition-base), transform var(--transition-base);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
 }
+
+.toast-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+}
+.toast-icon svg { width: 16px; height: 16px; }
+.toast-success .toast-icon { color: var(--color-success); }
+.toast-error   .toast-icon { color: var(--color-danger); }
+.toast-warning .toast-icon { color: var(--color-warning); }
+.toast-info    .toast-icon { color: var(--color-info); }
+.toast-message { flex: 1; line-height: 1.4; }
 
 .toast-visible {
   opacity: 1;
@@ -557,12 +573,12 @@
 .alerta-negativo {
   background-color: var(--color-danger) !important;
   color: #fff !important;
-  animation: blink 1s step-start infinite;
+  animation: pulse-danger 2s ease-in-out infinite;
 }
 
-@keyframes blink {
+@keyframes pulse-danger {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  50% { opacity: 0.65; }
 }
 
 /* ============================================================
@@ -1147,6 +1163,11 @@
 .bank-avatar.size-sm .bank-avatar-badge { width: 16px; height: 16px; bottom: -2px; right: -2px; border-width: 1.5px; }
 .bank-avatar.size-sm .bank-avatar-badge svg { width: 9px; height: 9px; }
 
+.bank-avatar.size-xs { width: 26px; height: 26px; }
+.bank-avatar.size-xs .bank-avatar-fallback { font-size: 10px; }
+.bank-avatar.size-xs .bank-avatar-badge { width: 12px; height: 12px; bottom: -2px; right: -2px; border-width: 1px; }
+.bank-avatar.size-xs .bank-avatar-badge svg { width: 7px; height: 7px; }
+
 /* ============================================================
    TYPE PILL (ícone + label do tipo)
    ============================================================ */
@@ -1291,6 +1312,136 @@
   background: var(--color-border);
 }
 
+/* ── Conta filter bar ─────────────────────────────── */
+.conta-filterbar {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-5);
+  display: flex;
+  flex-direction: column;
+}
+.conta-filterbar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  flex-wrap: wrap;
+}
+.conta-filterbar-label {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  min-width: 42px;
+  flex-shrink: 0;
+}
+.conta-filterbar-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 0 0;
+}
+
+/* Status tab buttons */
+.cf-status-tabs {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+.cf-status-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  border: none;
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.cf-status-tab:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-text-main);
+}
+.cf-status-tab.active {
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+  color: var(--color-primary);
+  font-weight: var(--fw-semibold);
+}
+.cf-tab-count {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  font-weight: normal;
+  font-variant-numeric: tabular-nums;
+}
+.cf-status-tab.active .cf-tab-count {
+  color: var(--color-primary);
+  opacity: 0.75;
+}
+
+/* Tipo chip buttons */
+.cf-tipo-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.cf-tipo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill, 999px);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+.cf-tipo-chip svg { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.55; transition: opacity 0.12s; }
+.cf-tipo-chip:hover {
+  border-color: var(--tipo-c, var(--color-primary));
+  color: var(--tipo-c, var(--color-primary));
+  background: color-mix(in srgb, var(--tipo-c, var(--color-primary)) 8%, var(--color-surface));
+}
+.cf-tipo-chip.active {
+  border-color: var(--tipo-c, var(--color-primary));
+  color: var(--tipo-c, var(--color-primary));
+  background: color-mix(in srgb, var(--tipo-c, var(--color-primary)) 12%, var(--color-surface));
+  font-weight: var(--fw-semibold);
+}
+.cf-tipo-chip.active svg { opacity: 1; }
+
+/* Saldo no card (só aparece na visão individual) */
+.conta-card-saldo {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+.conta-card-saldo-label {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+.conta-card-saldo-valor {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--color-success);
+  font-variant-numeric: tabular-nums;
+}
+.conta-card-saldo--negativo .conta-card-saldo-valor { color: var(--color-danger); }
+.conta-card-saldo--zero .conta-card-saldo-valor { color: var(--color-text-muted); }
+
 /* ============================================================
    CONTA CARD V2 — com bank logo + type pill
    ============================================================ */
@@ -1412,6 +1563,11 @@
   gap: var(--space-3);
 }
 
+.field-group--2col      { grid-template-columns: 1fr 1fr; }
+.field-group--3col      { grid-template-columns: 1fr 1fr 1fr; }
+.field-group--val-moeda { grid-template-columns: 1fr auto 1fr; }
+.field-group--wide-narrow { grid-template-columns: 2fr 1fr; }
+
 .field-group-title {
   grid-column: 1 / -1;
   font-size: var(--fs-xs);
@@ -1446,8 +1602,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  background: #fff;
+  object-fit: cover;
   border-radius: inherit;
 }
 .ctp-avatar-initials {
@@ -1591,6 +1746,28 @@
 }
 
 /* Tag "varia" pra compromissos com valor_variavel */
+/* Wrapper para células de valor variável na tabela de compromissos:
+   número sempre alinhado no topo, badge "varia" abaixo sem deslocar o número */
+.valor-cell-variavel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 3px;
+}
+
+/* O currency-split dentro do wrapper já herda td .currency-split (space-between) */
+.valor-cell-variavel .currency-split {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.valor-cell-meta {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .valor-variavel-tag {
   display: inline-flex;
   align-items: center;
@@ -1610,13 +1787,93 @@
   pointer-events: none;
 }
 
-/* Wrapper na coluna "Valor base" — tag à esquerda em slot fixo, número alinhado */
-.orcamento-base-wrapper {
+.occurrence-badge {
+  position: absolute;
+  top: -8px;
+  right: -12px;
   display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 9px;
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.occurrence-popover {
+  position: absolute;
+  z-index: 9999;
+  width: 220px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  padding: 8px 0;
+  font-size: var(--fs-sm);
+}
+
+.occ-popover-header {
+  font-weight: var(--fw-semibold);
+  color: var(--color-text);
+  padding: 4px 14px 8px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.occ-popover-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 14px;
+  gap: 8px;
+}
+
+.occ-popover-row:hover {
+  background: var(--color-hover);
+}
+
+.occ-popover-date {
+  color: var(--color-text-muted);
+  text-transform: capitalize;
+}
+
+.occ-popover-value {
+  font-weight: var(--fw-medium);
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Wrapper na coluna "Valor base" — tag à esquerda em slot fixo, número alinhado */
+.orcamento-base-wrapper {
+  display: flex;
+  align-items: baseline;
   width: 100%;
+  gap: 6px;
+}
+
+/* .base-value-number preenche o espaço restante e serve de contexto para o occurrence-badge absoluto */
+.base-value-number {
+  flex: 1;
+  display: flex;
+  position: relative;
+}
+
+/* currency-split dentro da coluna Valor Base: símbolo esquerda, número direita */
+.orcamento-base-value .currency-split {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0;
 }
 
 /* Badge "renda principal" */
@@ -1968,6 +2225,28 @@
   border-bottom: none;
 }
 
+/* Sticky first column */
+.contas-table thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--color-surface-alt);
+  box-shadow: 2px 0 4px -2px rgba(0,0,0,.08);
+}
+.contas-table tbody td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--color-surface);
+  box-shadow: 2px 0 4px -2px rgba(0,0,0,.08);
+}
+.contas-table tbody tr:hover td:first-child {
+  background: var(--color-primary-50);
+}
+.contas-table tbody tr.conta-group-row td:first-child {
+  background: var(--color-surface-alt);
+}
+
 .contas-table tbody tr {
   cursor: pointer;
   transition: background var(--transition-fast);
@@ -2106,6 +2385,14 @@
   border-top: 2px solid var(--cat-color, var(--color-border));
   border-bottom: 1px solid color-mix(in srgb, var(--cat-color, var(--color-border)) 30%, transparent);
 }
+/* Sticky da section header — mantém rótulo da categoria visível ao scrollar */
+.compromissos-grouped-table .categoria-section-header td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: color-mix(in srgb, var(--cat-color, var(--color-primary)) 14%, var(--color-surface));
+  box-shadow: 2px 0 4px -2px rgba(0,0,0,.06);
+}
 
 .compromissos-grouped-table tbody tr.categoria-section-header:first-child td {
   border-top: none;
@@ -2120,6 +2407,13 @@
   letter-spacing: 0.08em;
   padding: var(--space-2) var(--space-4);
   border-top: 2px solid var(--bloco-accent);
+}
+.compromissos-grouped-table .comp-bloco-header td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: color-mix(in srgb, var(--bloco-accent) 6%, var(--color-surface));
+  box-shadow: 2px 0 4px -2px rgba(0,0,0,.06);
 }
 
 .compromissos-grouped-table tbody tr.comp-bloco-header:first-child td {
@@ -2774,6 +3068,38 @@
 }
 
 /* R$ prefix antes do input no Orçamento (sinaliza que o valor está em BRL) */
+/* Currency split display: symbol + number as separate spans.
+   Inline (cards, badges): symbol e número colados.
+   Dentro de <td>: símbolo à esquerda da célula, número à direita — estilo coluna contábil. */
+.currency-split {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+/* Dentro de célula de tabela: preenche a célula inteira com símbolo à esquerda e número à direita */
+td .currency-split {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0;
+}
+
+.currency-sym {
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-secondary);
+  font-size: 0.72em;
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+  flex-shrink: 0;
+}
+
+.currency-num {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-display);
+}
+
 .brl-prefix {
   font-weight: var(--fw-semibold);
   color: var(--color-text-secondary);
@@ -2809,10 +3135,21 @@
    PAGAMENTOS — Blocos quinzenais (Fase 5.A)
    ============================================================ */
 .pagamentos-blocos-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  display: flex;
+  flex-direction: row;
   gap: var(--space-4);
   align-items: start;
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  /* scrollbar visível mas discreta */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+.pagamentos-blocos-container::-webkit-scrollbar { height: 6px; }
+.pagamentos-blocos-container::-webkit-scrollbar-track { background: transparent; }
+.pagamentos-blocos-container::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
 }
 
 .pagamento-bloco {
@@ -2824,6 +3161,8 @@
   display: flex;
   flex-direction: column;
   max-height: 720px;
+  min-width: 500px;
+  flex-shrink: 0;
 }
 
 .pagamento-bloco-header {
@@ -2892,9 +3231,9 @@
   font-weight: var(--fw-semibold);
   color: var(--color-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+  background: var(--color-surface-alt);
   box-shadow: 0 1px 0 var(--color-border);
 }
 
@@ -2950,6 +3289,50 @@
 
 .pagamento-valor-real.saving { border-color: var(--color-warning); }
 .pagamento-valor-real.saved  { border-color: var(--color-success); }
+
+/* Linha colapsada "Finalizados" no fim da tabela do bloco */
+.finalizados-row td {
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  background: color-mix(in srgb, var(--color-success) 6%, var(--color-surface));
+  border-top: 1px solid color-mix(in srgb, var(--color-success) 20%, var(--color-border));
+}
+.finalizados-row:hover td {
+  background: color-mix(in srgb, var(--color-success) 12%, var(--color-surface));
+}
+.finalizados-row td:first-child {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.finalizados-row-label {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-success);
+}
+.finalizados-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-success);
+  color: #fff;
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+  line-height: 1;
+}
+.finalizados-row-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--color-success);
+  margin-left: auto;
+  flex-shrink: 0;
+}
 
 .pagamento-empty-bloco {
   padding: var(--space-6) var(--space-4);
@@ -4689,7 +5072,7 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .projetos-tabela {
@@ -4697,6 +5080,7 @@
   border-collapse: separate;
   border-spacing: 0;
   font-size: var(--fs-sm);
+  min-width: 640px;
 }
 
 .projetos-tabela thead th {
@@ -4706,10 +5090,29 @@
   font-weight: var(--fw-semibold);
   color: var(--color-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface-alt);
   white-space: nowrap;
+}
+
+/* Sticky first column */
+.projetos-tabela thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--color-surface-alt);
+  box-shadow: 2px 0 4px -2px rgba(0,0,0,.08);
+}
+.projetos-tabela tbody td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--color-surface);
+  box-shadow: 2px 0 4px -2px rgba(0,0,0,.08);
+}
+.projetos-tabela tbody tr.projeto-tabela-row:hover td:first-child {
+  background: var(--color-surface-alt);
 }
 
 .projetos-tabela tbody td {
@@ -6387,6 +6790,25 @@
 
 .divida-tabela thead th.text-right { text-align: right; }
 
+/* Sticky first column */
+.divida-tabela thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--color-surface-alt);
+  box-shadow: 2px 0 4px -2px rgba(0,0,0,.08);
+}
+.divida-tabela tbody td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--color-surface);
+  box-shadow: 2px 0 4px -2px rgba(0,0,0,.08);
+}
+.divida-tabela-row:hover td:first-child {
+  background: var(--color-surface-alt);
+}
+
 .divida-tabela tbody td {
   padding: var(--space-3) var(--space-4);
   font-size: var(--fs-sm);
@@ -7425,24 +7847,258 @@
   flex-shrink: 0;
 }
 
+/* ── Trans Filterbar v2 (2-row structured) ──────────────── */
 .trans-filterbar {
+  margin-bottom: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+/* Generic row */
+.tf-row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   flex-wrap: wrap;
-  margin-bottom: var(--space-5);
-  padding: var(--space-3) var(--space-4);
-  background: var(--color-surface);
+  padding: var(--space-2-5, 10px) var(--space-4);
+}
+
+/* Row 1 — period + search + utils */
+.tf-row--primary {
+  gap: var(--space-3);
+}
+
+/* Row 2 — conta / tipo / pendentes / tags */
+.tf-row--secondary {
+  gap: var(--space-4);
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
+}
+
+/* Horizontal divider between rows */
+.tf-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 0;
+}
+
+/* ── Period group (mode tabs + date inputs) ── */
+.tf-period-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.tf-mode-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--color-surface-alt);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  padding: 2px;
 }
 
-.trans-filterbar .filter-pills {
-  margin-bottom: 0;
-  flex-wrap: nowrap;
+.tf-mode-tab {
+  padding: 4px 12px;
+  border-radius: calc(var(--radius-md) - 2px);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  border: none;
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+.tf-mode-tab:hover {
+  background: var(--color-surface);
+  color: var(--color-text-main);
+}
+.tf-mode-tab.active {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-weight: var(--fw-semibold);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
+.tf-date-inputs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ── Search ── */
+.tf-search-wrap {
+  flex: 1;
+  min-width: 180px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.tf-search-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+.tf-search-input {
+  width: 100%;
+  padding: 6px 10px 6px 32px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  background: var(--color-surface);
+  color: var(--color-text-main);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.tf-search-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb, 99,102,241), 0.1);
+}
+.tf-search-input::placeholder { color: var(--color-text-muted); }
+
+/* ── Utils (col-vis + export) ── */
+.tf-utils {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ── Filter group (label + control) ── */
+.tf-filter-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.tf-filter-label {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+/* ── Conta filter button ── */
+.tf-conta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 6px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  cursor: pointer;
+  font-size: var(--fs-xs);
+  color: var(--color-text-main);
+  transition: border-color 0.15s;
+  max-width: 200px;
+}
+.tf-conta-btn:hover { border-color: var(--color-primary); }
+.tf-conta-btn.is-open {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb, 99,102,241), 0.1);
+}
+.tf-conta-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+.tf-conta-chevron {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  transition: transform 0.15s;
+}
+.tf-conta-btn.is-open .tf-conta-chevron { transform: rotate(180deg); }
+
+/* ── Tipo chips ── */
+.tf-tipo-chips {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tf-tipo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill, 999px);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+.tf-tipo-chip:hover {
+  border-color: var(--tc, var(--color-primary));
+  color: var(--tc, var(--color-primary));
+  background: color-mix(in srgb, var(--tc, var(--color-primary)) 8%, var(--color-surface));
+}
+.tf-tipo-chip.active {
+  border-color: var(--tc, var(--color-primary));
+  color: var(--tc, var(--color-primary));
+  background: color-mix(in srgb, var(--tc, var(--color-primary)) 12%, var(--color-surface));
+  font-weight: var(--fw-semibold);
+}
+/* "Todos" chip uses primary when active */
+.tf-tipo-chip:not([style]).active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+}
+.tf-chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Pendentes button ── */
+.tf-pendentes-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill, 999px);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+.tf-pendentes-btn:hover {
+  border-color: var(--color-warning, #F59E0B);
+  color: var(--color-warning, #F59E0B);
+  background: color-mix(in srgb, var(--color-warning, #F59E0B) 8%, var(--color-surface));
+}
+.tf-pendentes-btn.is-active {
+  border-color: var(--color-warning, #F59E0B);
+  color: var(--color-warning, #F59E0B);
+  background: color-mix(in srgb, var(--color-warning, #F59E0B) 12%, var(--color-surface));
+  font-weight: var(--fw-semibold);
+}
+
+/* Keep legacy date group styles */
 .trans-date-wrap {
   display: flex;
   align-items: center;
@@ -7495,7 +8151,7 @@
   font-weight: var(--fw-semibold);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   background: var(--color-surface-alt);
   border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
@@ -7512,6 +8168,9 @@
 .trans-th-conta        { width: 140px; }
 .trans-th-valor        { width: 150px; }
 .trans-th-saldo        { width: 130px; }
+
+/* Saldo oculto quando visualizando todas as contas */
+.trans-table.saldo-hidden [data-col="saldo"] { display: none !important; }
 .trans-th-actions      { width: 44px;  text-align: center; }
 .trans-table thead th.trans-th-valor,
 .trans-table thead th.trans-th-saldo { text-align: right; }
@@ -7561,6 +8220,19 @@
   color: var(--color-text-main);
 }
 
+/* Avatar + name inline in table rows */
+.trans-conta-with-avatar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  vertical-align: middle;
+}
+.trans-conta-with-avatar > span {
+  font-size: var(--fs-sm);
+  color: var(--color-text-main);
+  white-space: nowrap;
+}
+
 .trans-tipo-receita { color: var(--color-success); }
 .trans-tipo-despesa { color: var(--color-danger); }
 .trans-tipo-transferencia { color: var(--color-primary); }
@@ -7580,12 +8252,12 @@
 .trans-transfer-flow {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-2);
   font-size: var(--fs-sm);
   flex-wrap: wrap;
 }
 .trans-transfer-flow-src { color: var(--color-text-secondary); }
-.trans-transfer-flow-arrow { color: var(--color-text-muted); }
+.trans-transfer-flow-arrow { color: var(--color-text-muted); flex-shrink: 0; }
 .trans-transfer-flow-dst { color: var(--color-text-main); font-weight: var(--fw-semibold); }
 
 /* Badge "Transferência" na coluna Categoria */
@@ -7651,9 +8323,10 @@
 
 /* Pílula do bloco (Contribuição / Sonhos / Custo de vida) */
 .trans-bloco-pill {
-  display: inline-block;
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-pill, 999px);
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
   font-size: var(--fs-xs);
   font-weight: var(--fw-semibold);
   text-transform: uppercase;
@@ -7661,6 +8334,20 @@
   color: var(--bloco-color, var(--color-text-main));
   background: color-mix(in srgb, var(--bloco-color, var(--color-text-main)) 12%, var(--color-surface));
   border: 1px solid color-mix(in srgb, var(--bloco-color, var(--color-border)) 30%, transparent);
+  white-space: nowrap;
+}
+
+/* Pílula da categoria (usa a cor da categoria) */
+.trans-cat-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  color: var(--cat-cor, var(--color-text-main));
+  background: color-mix(in srgb, var(--cat-cor, var(--color-text-main)) 12%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--cat-cor, var(--color-border)) 25%, transparent);
   white-space: nowrap;
 }
 
@@ -7698,6 +8385,175 @@
 .trans-td-banco {
   max-width: 220px;
   overflow: hidden;
+}
+
+.trans-desc-wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.trans-row-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 3px;
+}
+
+.trans-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--tag-color, var(--color-primary));
+  background: color-mix(in srgb, var(--tag-color, var(--color-primary)) 10%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--tag-color, var(--color-primary)) 25%, transparent);
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: background 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+
+.trans-tag-chip:hover {
+  background: color-mix(in srgb, var(--tag-color, var(--color-primary)) 18%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--tag-color, var(--color-primary)) 45%, transparent);
+}
+
+/* Active tag filters in the filter bar */
+.trans-tag-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.trans-active-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+  padding: 2px 6px 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.trans-active-tag-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  color: var(--color-primary);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.trans-active-tag-remove:hover {
+  background: color-mix(in srgb, var(--color-primary) 35%, transparent);
+}
+
+/* Tag input in modal */
+.tag-chips-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-height: 38px;
+  padding: 5px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  cursor: text;
+  transition: border-color 0.15s;
+}
+
+.tag-chips-input:focus-within {
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+.tag-chip-modal {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: color-mix(in srgb, var(--tag-color, var(--color-primary)) 12%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--tag-color, var(--color-primary)) 28%, transparent);
+  color: var(--tag-color, var(--color-primary));
+  border-radius: var(--radius-full);
+  padding: 3px 4px 3px 8px;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+}
+
+.tag-chip-text {
+  letter-spacing: 0.01em;
+}
+
+.tag-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  color: var(--color-primary);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.tag-chip-remove:hover {
+  background: color-mix(in srgb, var(--color-primary) 35%, transparent);
+}
+
+.tag-input-field {
+  flex: 1;
+  min-width: 100px;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: var(--fs-sm);
+  color: var(--color-text);
+  padding: 0;
+}
+
+.tag-input-field::placeholder {
+  color: var(--color-text-muted);
+}
+
+.tag-autocomplete {
+  position: absolute;
+  z-index: 200;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  margin-top: 2px;
+  min-width: 180px;
+  overflow: hidden;
+}
+
+.tag-autocomplete-item {
+  padding: 7px 12px;
+  font-size: var(--fs-sm);
+  color: var(--color-primary);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+}
+
+.tag-autocomplete-item:hover {
+  background: var(--color-hover);
 }
 
 .trans-banco-desc {
@@ -7940,8 +8796,8 @@
   font-size: var(--fs-xs);
   font-weight: var(--fw-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-text-muted);
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
   background: var(--color-surface-alt);
   border-bottom: 1px solid var(--color-border);
 }
@@ -8114,7 +8970,7 @@
   font-weight: var(--fw-semibold);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   background: var(--color-surface-alt);
   border-bottom: 1px solid var(--color-border);
 }
@@ -8200,8 +9056,8 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* Override the global .filter-pills margin when inside the filterbar */
-.relat-filterbar .filter-pills {
+/* Override margin when inside the relat filterbar */
+.relat-filterbar .cf-status-tabs {
   margin-bottom: 0;
   flex-wrap: nowrap;
 }
@@ -9255,11 +10111,8 @@
   gap: var(--space-1);
   flex-wrap: wrap;
 }
-.ctp-tipo-filters .filter-pill {
+.ctp-tipo-filters .cf-status-tab {
   flex: 0 0 auto;
-  white-space: nowrap;
-  padding: 4px var(--space-3);
-  font-size: var(--fs-xs);
 }
 .ctp-list-count {
   font-size: var(--fs-xs);
@@ -9331,6 +10184,8 @@
   font-size: 0.8rem;
   font-weight: 700;
   flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
 }
 .ctp-list-info { flex: 1; min-width: 0; }
 .ctp-list-name {
@@ -11098,14 +11953,14 @@
   white-space: nowrap;
 }
 .tabela-amort th {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: var(--fw-semibold);
   color: var(--color-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   position: sticky;
   top: 0;
-  background: var(--color-surface);
+  background: var(--color-surface-alt);
   z-index: 1;
 }
 .tabela-amort tr:last-child td { border-bottom: none; }
@@ -12689,5 +13544,614 @@
     max-height: 50vh;
     overflow-y: auto;
   }
+}
+
+/* =============================================================
+   Transaction splits — modal form
+   ============================================================= */
+
+/* Valor + Dividir inline row */
+.valor-moeda-row {
+  align-items: end !important;
+}
+
+.valor-dividir-field {
+  display: flex;
+  flex-direction: column;
+  align-self: end;
+}
+
+.valor-label-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-bottom: 4px;
+}
+
+.valor-total-hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--color-primary);
+  border-radius: 4px;
+  padding: 1px 5px;
+  line-height: 1.4;
+}
+
+.valor-dividir-btn {
+  white-space: nowrap;
+  gap: 5px;
+}
+
+.valor-dividir-btn--active {
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent) !important;
+  color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+
+/* Splits block (expands below the valor row) */
+.trans-splits-block {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface-2, var(--color-surface));
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.splits-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.splits-block-title {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.splits-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.trans-split-row {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
+  background: var(--color-surface-2, var(--color-surface));
+}
+
+.split-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.split-row-num {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.split-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.split-field-row {
+  grid-template-columns: 110px 1fr 1fr !important;
+}
+
+.field-label-sm {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.splits-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.splits-total-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+  margin-left: auto;
+}
+
+.splits-total-label { color: var(--color-text-secondary); }
+.splits-total-sep   { color: var(--color-text-tertiary); }
+
+.splits-warn {
+  color: var(--color-danger);
+  font-weight: 600;
+  font-size: var(--fs-xs);
+}
+
+.split-tags-input {
+  min-height: 34px;
+}
+
+/* =============================================================
+   Transaction splits — listing expand row
+   ============================================================= */
+
+.trans-varios-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  border: 1px dashed var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.trans-varios-pill:hover {
+  background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+}
+
+.trans-varios-cell {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.splits-chevron {
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.splits-chevron--open {
+  transform: rotate(180deg);
+}
+
+.trans-splits-detail-row td {
+  padding: 0 !important;
+}
+
+.splits-detail-cell {
+  padding: 0 !important;
+  background: var(--color-surface-2, var(--color-surface));
+}
+
+.splits-detail-wrap {
+  border-top: 2px solid var(--color-primary);
+  padding: var(--space-2) var(--space-4) var(--space-3);
+}
+
+.splits-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.splits-detail-table th {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border);
+  padding: 4px 6px;
+  text-align: left;
+}
+
+.splits-detail-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.splits-detail-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.splits-detail-num {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.splits-detail-valor {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.split-detail-tag {
+  display: inline-block;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+  margin-right: 3px;
+}
+
+/* =============================================================
+   Export buttons
+   ============================================================= */
+
+.trans-export-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+/* =============================================================
+   Transaction modal sections
+   ============================================================= */
+
+.trans-modal-section {
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+.trans-modal-section:last-child { border-bottom: none; margin-bottom: 0; }
+.trans-modal-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-3);
+}
+
+/* =============================================================
+   Conta picker
+   ============================================================= */
+
+.conta-picker { position: relative; }
+.conta-picker-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 0 var(--space-3);
+  height: 38px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+.conta-picker-btn:hover { border-color: var(--color-primary); }
+.conta-picker-btn.is-open { border-color: var(--color-primary); outline: 2px solid color-mix(in srgb, var(--color-primary) 25%, transparent); outline-offset: 0; }
+.conta-picker-name { flex: 1; font-size: var(--fs-sm); color: var(--color-text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conta-picker-chevron { flex-shrink: 0; color: var(--color-text-secondary); transition: transform 0.2s; }
+.conta-picker-btn.is-open .conta-picker-chevron { transform: rotate(180deg); }
+
+/* Conta picker dropdown (portal) */
+.conta-picker-dropdown {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+.cp-search-wrap { padding: var(--space-2); border-bottom: 1px solid var(--color-border); }
+.cp-search-input {
+  width: 100%; padding: 6px var(--space-2);
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  background: var(--color-surface); font-size: var(--fs-sm);
+  color: var(--color-text-main);
+}
+.cp-search-input:focus { outline: 2px solid var(--color-primary); border-color: transparent; }
+.cp-group-label {
+  padding: 6px var(--space-3) 3px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--color-text-secondary);
+}
+.cp-item {
+  display: flex; align-items: center; gap: var(--space-2);
+  width: 100%; padding: 7px var(--space-3);
+  border: none; background: none; cursor: pointer;
+  text-align: left; transition: background 0.1s;
+}
+.cp-item:hover { background: var(--color-surface-2, #f5f5f5); }
+.cp-item--selected { background: color-mix(in srgb, var(--color-primary) 10%, transparent) !important; }
+.cp-item-name { font-size: var(--fs-sm); color: var(--color-text-main); }
+.cp-empty { padding: var(--space-3); font-size: var(--fs-sm); color: var(--color-text-secondary); text-align: center; }
+
+/* =============================================================
+   Subcategoria inline create
+   ============================================================= */
+
+.sub-field-label-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 4px;
+}
+.sub-field-label-row .field-label { margin-bottom: 0; }
+.sub-new-btn { gap: 3px; padding: 2px 8px; font-size: 12px; }
+.sub-create-inline {
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-2, #f9fafb);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  display: flex; flex-direction: column; gap: var(--space-2);
+}
+.sub-create-actions { display: flex; gap: var(--space-2); }
+
+/* =============================================================
+   Bloco segmented picker
+   ============================================================= */
+.bloco-seg-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.bloco-seg-btn {
+  padding: 4px 12px;
+  border-radius: var(--radius-pill, 999px);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.bloco-seg-btn:hover {
+  border-color: var(--bloco-c, var(--color-primary));
+  color: var(--bloco-c, var(--color-primary));
+}
+.bloco-seg-btn.active {
+  background: color-mix(in srgb, var(--bloco-c, var(--color-primary)) 14%, var(--color-surface));
+  border-color: var(--bloco-c, var(--color-primary));
+  color: var(--bloco-c, var(--color-primary));
+  font-weight: var(--fw-semibold);
+}
+.bloco-seg-all.active {
+  background: var(--color-surface-alt);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-main);
+}
+
+/* =============================================================
+   Subcategoria picker
+   ============================================================= */
+.sub-picker { position: relative; }
+.sub-picker-input { cursor: text; }
+.sub-picker-dropdown {
+  position: fixed;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 9999;
+  overflow: hidden;
+}
+.sub-picker-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--fs-sm);
+  color: var(--color-text-main);
+  text-align: left;
+}
+.sub-picker-item:hover, .sub-picker-item--selected { background: var(--color-surface-alt); }
+.sub-picker-item--selected { font-weight: var(--fw-semibold); }
+.sub-picker-clear { color: var(--color-text-muted); font-style: italic; }
+.sub-picker-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sub-picker-name { flex: 1; }
+.sub-picker-create {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--color-border);
+  cursor: pointer;
+  font-size: var(--fs-sm);
+  color: var(--color-primary);
+  font-weight: var(--fw-medium);
+  text-align: left;
+}
+.sub-picker-create:hover { background: var(--color-surface-alt); }
+.sub-picker-create-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+.sub-picker-hint {
+  padding: 8px 12px;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* ── Categoria picker ──────────────────────────────────── */
+.cat-picker-wrap {
+  position: relative;
+}
+
+.cat-picker-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 0 var(--space-3);
+  height: 40px;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--fs-sm);
+  color: var(--color-text-main);
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.cat-picker-btn:hover {
+  border-color: var(--color-primary);
+}
+.cat-picker-btn.is-open {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb, 99, 102, 241), 0.15);
+}
+
+.cat-picker-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cat-picker-chevron {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  transition: transform 0.15s;
+}
+.cat-picker-btn.is-open .cat-picker-chevron {
+  transform: rotate(180deg);
+}
+
+.cat-picker-dropdown {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
+  padding: var(--space-1) 0;
+}
+.cat-picker-search-wrap {
+  padding: var(--space-2) var(--space-2) var(--space-1);
+  border-bottom: 1px solid var(--color-border-light, #f1f3f5);
+}
+.cat-picker-search {
+  width: 100%;
+  padding: var(--space-1-5) var(--space-2);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  outline: none;
+  background: var(--color-surface);
+  color: var(--color-text-main);
+}
+.cat-picker-search:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb, 99, 102, 241), 0.12);
+}
+.cat-picker-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--fs-sm);
+  color: var(--color-text-main);
+  text-align: left;
+  transition: background 0.12s;
+}
+.cat-picker-item:hover { background: var(--color-surface-raised, #f8f9fa); }
+.cat-picker-item--selected { background: var(--color-primary-light, #eef2ff); color: var(--color-primary); font-weight: 600; }
+.cat-picker-item--selected:hover { background: var(--color-primary-light, #eef2ff); }
+.cat-picker-blank { color: var(--color-text-secondary); font-style: italic; }
+.cat-picker-dot-item {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cat-picker-empty { padding: var(--space-2) var(--space-3); font-size: var(--fs-xs); color: var(--color-text-muted); }
+
+/* ── Split categoria picker ────────────────────────────── */
+.split-cat-picker-wrap { position: relative; }
+.split-cat-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 0 var(--space-2);
+  height: 34px;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--fs-xs);
+  color: var(--color-text-main);
+  text-align: left;
+  transition: border-color 0.15s;
+}
+.split-cat-btn:hover { border-color: var(--color-primary); }
+.split-cat-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.split-cat-dot--empty { background: var(--color-border) !important; }
+.split-cat-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.split-cat-chevron { flex-shrink: 0; color: var(--color-text-muted); }
+
+/* ── Split subcategoria picker ─────────────────────────── */
+.split-sub-picker-wrap { position: relative; }
+
+/* =============================================================
+   Contato picker — avatar com iniciais
+   ============================================================= */
+.cp-contato-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+  flex-shrink: 0;
 }
 

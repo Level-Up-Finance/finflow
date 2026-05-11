@@ -14,6 +14,7 @@ import {
   tipoColor,
   tipoPill,
   formatCurrency,
+  formatCurrencyHTML,
   diaSemanaLabel,
 } from '../../lib/compromissos-config.js';
 import { findBank, logoUrl } from '../../lib/banks.js';
@@ -103,7 +104,7 @@ function renderUnifiedRow(row, deps) {
         ? renderValorCell(row, null, getDisplayValor)
         : (row.valor_variavel
             ? renderValorCell(row, 'cat_' + row.id, getDisplayValor)
-            : formatCurrency(row.valor_base, row.moeda || 'BRL')))
+            : formatCurrencyHTML(row.valor_base, row.moeda || 'BRL')))
     : '<span class="text-muted">—</span>';
 
   return `
@@ -168,12 +169,13 @@ function renderDescricaoCell(c) {
 
 function renderValorCell(c, proxKey, getDisplayValor) {
   const dv = getDisplayValor(c, proxKey);
-  const valorStr = formatCurrency(dv.valor, dv.moeda);
+  const valorStr = formatCurrencyHTML(dv.valor, dv.moeda);
   if (dv.isVariavel) {
-    const tag = dv.mesAno
-      ? `<span class="valor-variavel-tag" title="Próximo: ${monthLabelFromIso(dv.mesAno)}">varia</span>`
-      : `<span class="valor-variavel-tag" title="Sem valor cadastrado pra próximos meses">varia</span>`;
-    return `<span style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">${valorStr}${tag}</span>`;
+    const tagTitle = dv.mesAno
+      ? `Próximo: ${monthLabelFromIso(dv.mesAno)}`
+      : 'Sem valor cadastrado pra próximos meses';
+    const tag = `<span class="valor-variavel-tag" title="${tagTitle}">varia</span>`;
+    return `<div class="valor-cell-variavel">${valorStr}<div class="valor-cell-meta">${tag}</div></div>`;
   }
   return valorStr;
 }

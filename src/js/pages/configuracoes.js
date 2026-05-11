@@ -11,6 +11,7 @@ import { CURRENCIES } from '../lib/currencies.js';
 import { escapeHtml } from '../lib/utils.js';
 import { DEFAULT_COLOR, renderColorPicker, setActiveColor } from '../lib/color-palette.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
+import { formatCurrency, renderMoedaOptions } from '../lib/compromissos-config.js';
 
 // -----------------------------
 // State
@@ -898,9 +899,7 @@ function renderSistemaPanel() {
 
   // Populate moeda_padrao select
   const selPadrao = document.getElementById('cfg-moeda-padrao');
-  selPadrao.innerHTML = CURRENCIES
-    .map((c) => `<option value="${c.code}" ${c.code === moedaPadrao ? 'selected' : ''}>${c.code} — ${c.label}</option>`)
-    .join('');
+  selPadrao.innerHTML = renderMoedaOptions(moedaPadrao);
 
   // Populate moedas checkboxes
   const grid = document.getElementById('cfg-moedas-grid');
@@ -1038,7 +1037,7 @@ function buildVinculoPopoverContent(type, id) {
 }
 
 function fmtCurrency(val, moeda = 'BRL') {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: moeda }).format(Number(val) || 0);
+  return formatCurrency(val, moeda);
 }
 
 // -----------------------------

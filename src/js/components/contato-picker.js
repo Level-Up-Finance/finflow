@@ -10,10 +10,19 @@
 // O dropdown é portal'd para o <body> com position:fixed pra escapar do
 // overflow:hidden dos modais.
 import { findSimilarContatos, normalize } from '../lib/contato-utils.js';
-import { escapeHtml } from '../lib/utils.js';
+import { escapeHtml, getInitials } from '../lib/utils.js';
 import { openContatoModal } from './contato-modal.js';
 
 const TIPO_LABELS = { cliente: 'Cliente', fornecedor: 'Fornecedor', ambos: 'Ambos' };
+
+function contaAvatar(nome) {
+  const init = getInitials(nome);
+  let hash = 0;
+  for (let i = 0; i < nome.length; i++) hash = nome.charCodeAt(i) + ((hash << 5) - hash);
+  const colors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#06B6D4', '#F97316', '#84CC16'];
+  const color = colors[Math.abs(hash) % colors.length];
+  return `<div class="cp-contato-avatar" style="background:${color};">${escapeHtml(init)}</div>`;
+}
 
 // "ambos" é renderizado como duas pills separadas (Cliente + Fornecedor).
 function renderTipoPills(tipo) {
@@ -109,6 +118,7 @@ export function initContatoPicker({ rootEl, contatos, defaultTipo = 'fornecedor'
     for (const c of filtered) {
       html += `
         <button type="button" class="contato-picker-item" data-id="${c.id}">
+          ${contaAvatar(c.nome)}
           <span class="contato-picker-name">${escapeHtml(c.nome)}</span>
           <span class="contato-picker-tipos">${renderTipoPills(c.tipo)}</span>
         </button>

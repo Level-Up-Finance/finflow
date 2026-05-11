@@ -6,7 +6,7 @@ import { initSidebar }                  from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase }                     from '../lib/supabase.js';
 import { showToast }                    from '../components/toast.js';
-import { formatCurrency }               from '../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.js';
 import { escapeHtml, formatDateBR } from '../lib/utils.js';
 import { fetchCnpjData, isValidCnpj, digitsOnly, googleCnpjSearchUrl, inferLogoUrl, checkImageExists } from '../lib/cnpj-lookup.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
@@ -134,17 +134,18 @@ function renderList() {
     const isArq    = c.status === 'arquivado';
     const showC = c.tipo === 'cliente'    || c.tipo === 'ambos';
     const showF = c.tipo === 'fornecedor' || c.tipo === 'ambos';
-    const letters = `
+    const hasPhoto = !!c.logo_url;
+    const letters = hasPhoto ? '' : `
       ${showC ? '<span class="ctp-tipo-letter cliente" title="Cliente">C</span>' : ''}
       ${showF ? '<span class="ctp-tipo-letter fornecedor" title="Fornecedor">F</span>' : ''}
     `;
-    const avatarInner = c.logo_url
+    const avatarInner = hasPhoto
       ? `<img src="${escapeHtml(c.logo_url)}" alt="" onerror="this.remove()">`
       : initials;
     const meta = [TIPO_LABELS[c.tipo] || c.tipo, isArq ? 'Arquivado' : null].filter(Boolean).join(' · ');
     html += `<div class="ctp-list-item ${c.id === selectedId ? 'is-selected' : ''} ${isArq ? 'is-archived' : ''}"
                   data-id="${c.id}" role="button" tabindex="0">
-      <div class="ctp-list-tipos">${letters}</div>
+      ${letters ? `<div class="ctp-list-tipos">${letters}</div>` : ''}
       <div class="ctp-list-avatar" style="background:${color}">${avatarInner}</div>
       <div class="ctp-list-info">
         <div class="ctp-list-name">${escapeHtml(c.nome)}</div>
@@ -317,7 +318,7 @@ function renderVinculosTab(contatoId) {
               ${d.data_vencimento ? `<span>· vence ${formatDateBR(d.data_vencimento)}</span>` : ''}
             </div>
           </div>
-          <div class="ctp-vinc-value">${formatCurrency(d.valor_total || 0, 'BRL')}</div>
+          <div class="ctp-vinc-value">${formatCurrencyHTML(d.valor_total || 0, 'BRL')}</div>
         </a>
       `).join('') + `</div>`;
 
@@ -333,7 +334,7 @@ function renderVinculosTab(contatoId) {
               ${p.data_alvo ? `<span>· alvo ${formatDateBR(p.data_alvo)}</span>` : ''}
             </div>
           </div>
-          <div class="ctp-vinc-value">${p.meta_valor ? formatCurrency(p.meta_valor, 'BRL') : '—'}</div>
+          <div class="ctp-vinc-value">${p.meta_valor ? formatCurrencyHTML(p.meta_valor, 'BRL') : '—'}</div>
         </a>
       `).join('') + `</div>`;
 
@@ -447,7 +448,7 @@ async function loadTransacoesTab(contatoId) {
       <div class="ctp-trans-date">${t.data}</div>
       <div class="ctp-trans-desc" title="${escapeHtml(desc)}">${escapeHtml(desc.length > 45 ? desc.slice(0, 45) + '…' : desc)}</div>
       <div class="ctp-trans-meta">${escapeHtml(meta)}</div>
-      <div class="ctp-trans-value ${tipoCls}">${sign} ${formatCurrency(t.valor, 'BRL')}</div>
+      <div class="ctp-trans-value ${tipoCls}">${sign} ${formatCurrencyHTML(t.valor, 'BRL')}</div>
       <div class="ctp-trans-status">${statusIcon}</div>
     </div>`;
   }).join('') + `</div>`;

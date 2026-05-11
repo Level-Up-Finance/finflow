@@ -7,9 +7,10 @@ import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
-import { formatCurrency } from '../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.js';
 import { initColVisibility } from '../lib/col-visibility.js';
-import { escapeHtml } from '../lib/utils.js';
+import { escapeHtml, parseUserNumber } from '../lib/utils.js';
+import { createContaPicker } from '../lib/conta-picker.js';
 import { initContatoPicker } from '../components/contato-picker.js';
 import { gerarTabela, aplicarCorrecao, validarFases } from '../lib/amortizacao.js';
 import { fetchIndicadores, resolveTaxaMensal, anualToMensal } from '../lib/indicadores.js';
@@ -236,6 +237,8 @@ const BLOCOS = [
 // -----------------------------
 let cachedDividas          = [];
 let cachedContas           = [];
+let divContaPicker         = null;
+let pagarContaPicker       = null;
 let cachedContatos         = [];
 let cachedDividaHistorico  = []; // pagamentos_divida_historico
 let cachedTaxaHistorico    = []; // divida_taxa_historico
@@ -341,7 +344,7 @@ async function refreshIndexedRates(dividas) {
 async function loadAll() {
   const [divRes, contRes, contatosRes, histRes, taxaHistRes] = await Promise.all([
     supabase.from('dividas').select('*').order('created_at', { ascending: false }),
-    supabase.from('contas').select('id, nome, apelido').order('nome'),
+    supabase.from('contas').select('id, nome, apelido, tipo, icone_cor, moeda').neq('status', 'arquivada').order('nome'),
     supabase.from('contatos').select('id, nome, tipo, status').neq('status', 'arquivado').order('nome'),
     supabase.from('pagamentos_divida_historico').select('*').order('data'),
     supabase.from('divida_taxa_historico').select('*').order('data_vigencia'),
@@ -385,7 +388,31 @@ async function loadAll() {
   cachedDividas = divRes.data || [];
   cachedContas  = contRes.data || [];
 
-  populateContaSelect('div-conta');
+  if (!divContaPicker) {
+    divContaPicker = createContaPicker({
+      triggerBtnId: 'div-conta-btn',
+      hiddenInputId: 'div-conta',
+      avatarWrapId:  'div-conta-avatar-wrap',
+      nameElId:      'div-conta-name',
+      getContas:     () => cachedContas,
+      placeholder:   'Nenhuma',
+      allowBlank:    true,
+      blankLabel:    '— Nenhuma —',
+    });
+    divContaPicker.init();
+  }
+  if (!pagarContaPicker) {
+    pagarContaPicker = createContaPicker({
+      triggerBtnId: 'pagar-transacao-conta-btn',
+      hiddenInputId: 'pagar-transacao-conta',
+      avatarWrapId:  'pagar-transacao-conta-avatar-wrap',
+      nameElId:      'pagar-transacao-conta-name',
+      getContas:     () => cachedContas,
+      placeholder:   'Selecionar conta…',
+      allowBlank:    false,
+    });
+    pagarContaPicker.init();
+  }
   initContatoPickerOnce();
   renderWidgets();
   render();
@@ -546,15 +573,15 @@ function renderCard(d) {
       <div class="div-card-values">
         <div class="div-card-value-item">
           <span class="div-card-value-label">Total</span>
-          <span class="div-card-value-num">${formatCurrency(total)}</span>
+          <span class="div-card-value-num">${formatCurrencyHTML(total)}</span>
         </div>
         <div class="div-card-value-item">
           <span class="div-card-value-label">Pago</span>
-          <span class="div-card-value-num div-card-value-num--success">${formatCurrency(pago)}</span>
+          <span class="div-card-value-num div-card-value-num--success">${formatCurrencyHTML(pago)}</span>
         </div>
         <div class="div-card-value-item">
           <span class="div-card-value-label">Restante</span>
-          <span class="div-card-value-num ${quitada ? '' : 'div-card-value-num--danger'}">${formatCurrency(restante)}</span>
+          <span class="div-card-value-num ${quitada ? '' : 'div-card-value-num--danger'}">${formatCurrencyHTML(restante)}</span>
         </div>
       </div>
 
@@ -565,7 +592,7 @@ function renderCard(d) {
           : (vencInfo || (vencimento ? `<span class="div-card-meta-item">Venc.: ${vencimento}</span>` : ''))}
         ${d.juros_percentual ? `<span class="div-card-meta-item">${Number(d.juros_percentual).toFixed(2)}% a.m.</span>` : ''}
         ${d.regime ? `<span class="div-card-meta-item"><span class="div-regime-badge div-regime-badge--${d.regime.toLowerCase()}">${d.regime}</span>${d.n_parcelas ? ` ${d.parcelas_pagas || 0}/${d.n_parcelas}x` : ''}</span>` : ''}
-        ${proximaParcela != null ? `<span class="div-card-meta-item div-card-proxima-parcela">Próx. ${formatCurrency(proximaParcela)}</span>` : ''}
+        ${proximaParcela != null ? `<span class="div-card-meta-item div-card-proxima-parcela">Próx. ${formatCurrencyHTML(proximaParcela)}</span>` : ''}
         ${contaNome ? `<span class="div-card-meta-item">${contaNome}</span>` : ''}
       </div>
 
@@ -947,7 +974,7 @@ function openModalDivida(id) {
   // Marca como "editado pelo usuário" se já tinha valor salvo (não sobrescreve)
   vencEl.dataset.userEdited = d?.data_vencimento ? 'true' : 'false';
   document.getElementById('div-status').value          = d?.status           ?? 'Ativa';
-  document.getElementById('div-conta').value           = d?.conta_id         ?? '';
+  divContaPicker?.setValue(d?.conta_id || '');
 
   // Credor agora é contato-picker — vincula ao contato_id da dívida
   initContatoPickerOnce();
@@ -1184,15 +1211,15 @@ function openHistoricoViewDivida(id) {
           <span class="hist-divida-pago"><span class="hist-divida-date-label">Pago em</span> ${fmtDate(h.data)}</span>
         </span>
         <span class="proj-hist-name">${escapeHtml(h.descricao || 'Pagamento')}${h.n_parcela && h.valor_amortizacao
-          ? `<span class="hist-breakdown"> · amort. ${formatCurrency(h.valor_amortizacao)} + juros ${formatCurrency(h.valor_juros)}${h.valor_correcao ? ` ${Number(h.valor_correcao) >= 0 ? '+' : ''} corr. ${formatCurrency(h.valor_correcao)}` : ''}${h.desconto_antecipacao ? ` − desc. ${formatCurrency(h.desconto_antecipacao)}` : ''}</span>`
+          ? `<span class="hist-breakdown"> · amort. ${formatCurrencyHTML(h.valor_amortizacao)} + juros ${formatCurrencyHTML(h.valor_juros)}${h.valor_correcao ? ` corr. ${formatCurrencyHTML(h.valor_correcao)}` : ''}${h.desconto_antecipacao ? ` desc. ${formatCurrencyHTML(-h.desconto_antecipacao)}` : ''}</span>`
           : ''}</span>
-        <span class="proj-hist-value">${formatCurrency(Number(h.valor))}</span>
+        <span class="proj-hist-value">${formatCurrencyHTML(Number(h.valor))}</span>
       </div>`;
     }).join('');
     const total = entradas.reduce((s, h) => s + Number(h.valor), 0);
     return `<div class="proj-hist-list">${rows}</div>
       <div style="display:flex;justify-content:flex-end;padding:var(--space-3) var(--space-4);font-weight:var(--fw-bold);font-size:var(--fs-sm);border-top:1px solid var(--color-border);margin-top:var(--space-1);">
-        Total pago: ${formatCurrency(total)}</div>`;
+        Total pago: ${formatCurrencyHTML(total)}</div>`;
   })();
 
   const taxasHtml = (() => {
@@ -1317,11 +1344,8 @@ function openPagarParcelaModal(id) {
   document.getElementById('pagar-valor-real').value   = '';
   document.getElementById('pagar-valor-real-delta').textContent = '';
 
-  // Conta select (obrigatório — pré-seleciona a conta vinculada à dívida se houver)
-  const contaSelect = document.getElementById('pagar-transacao-conta');
-  contaSelect.innerHTML = '<option value="">Selecionar conta…</option>' +
-    cachedContas.map((c) => `<option value="${c.id}">${c.apelido || c.nome}</option>`).join('');
-  if (d.conta_id) contaSelect.value = d.conta_id;
+  // Conta picker (obrigatório — pré-seleciona a conta vinculada à dívida se houver)
+  pagarContaPicker?.setValue(d.conta_id || '');
 
   renderPagarCard();
   openModal('modal-pagar-parcela');
@@ -1389,7 +1413,7 @@ function renderPagarCard() {
 
   const descontoRow = document.getElementById('pagar-desconto-display-row');
   descontoRow.classList.toggle('hidden', desconto <= 0);
-  if (desconto > 0) document.getElementById('pagar-parcela-desconto-val').textContent = `− ${formatCurrency(desconto)}`;
+  if (desconto > 0) document.getElementById('pagar-parcela-desconto-val').textContent = `${formatCurrency(-desconto)}`;
 
   // Auto-fill valor real (= total sugerido) se usuário não editou
   if (!pagarValorRealEditado) {
@@ -1402,10 +1426,10 @@ function renderPagarCard() {
     if (Math.abs(delta) < 0.01) {
       deltaEl.textContent = '';
     } else if (delta > 0) {
-      deltaEl.textContent = `Diferença +${formatCurrency(delta)} → registrada como correção monetária`;
+      deltaEl.textContent = `Diferença ${formatCurrency(delta)} → registrada como correção monetária`;
       deltaEl.style.color = 'var(--color-warning)';
     } else {
-      deltaEl.textContent = `Diferença −${formatCurrency(Math.abs(delta))} → registrada como desconto adicional`;
+      deltaEl.textContent = `Diferença ${formatCurrency(delta)} → registrada como desconto adicional`;
       deltaEl.style.color = 'var(--color-success)';
     }
   }
@@ -1492,7 +1516,7 @@ async function saveParcela() {
     if (transErr) throw transErr;
 
     const msg = pagarValorRealEditado && Math.abs(totalCorrecao) >= 0.01
-      ? `${rows.length} parcela${rows.length > 1 ? 's' : ''} registrada${rows.length > 1 ? 's' : ''} (ajuste: ${totalCorrecao >= 0 ? '+' : ''}${formatCurrency(totalCorrecao)})`
+      ? `${rows.length} parcela${rows.length > 1 ? 's' : ''} registrada${rows.length > 1 ? 's' : ''} (ajuste: ${formatCurrency(totalCorrecao)})`
       : `${rows.length} parcela${rows.length > 1 ? 's' : ''} registrada${rows.length > 1 ? 's' : ''}`;
     showToast(msg, 'success');
     closeModal('modal-pagar-parcela');
@@ -1524,8 +1548,8 @@ function openTabelaAmort(id) {
   const totalPmt   = tabela.reduce((s, r) => s + r.parcela, 0);
   const regimeBadge = `<span class="div-regime-badge div-regime-badge--${d.regime.toLowerCase()}">${d.regime}</span>`;
   const parcelaInfo = d.regime === 'Price'
-    ? formatCurrency(tabela[0]?.parcela || 0)
-    : `${formatCurrency(tabela[0]?.parcela || 0)} → ${formatCurrency(tabela[n - 1]?.parcela || 0)}`;
+    ? formatCurrencyHTML(tabela[0]?.parcela || 0)
+    : `${formatCurrencyHTML(tabela[0]?.parcela || 0)} → ${formatCurrencyHTML(tabela[n - 1]?.parcela || 0)}`;
 
   document.getElementById('tabela-amort-summary').innerHTML = `
     <div class="tabela-amort-summary-item">
@@ -1546,11 +1570,11 @@ function openTabelaAmort(id) {
     </div>
     <div class="tabela-amort-summary-item">
       <span class="tabela-amort-summary-label">Total juros</span>
-      <span class="tabela-amort-summary-value tabela-amort-danger">${formatCurrency(totalJuros)}</span>
+      <span class="tabela-amort-summary-value tabela-amort-danger">${formatCurrencyHTML(totalJuros)}</span>
     </div>
     <div class="tabela-amort-summary-item">
       <span class="tabela-amort-summary-label">Total a pagar</span>
-      <span class="tabela-amort-summary-value">${formatCurrency(totalPmt)}</span>
+      <span class="tabela-amort-summary-value">${formatCurrencyHTML(totalPmt)}</span>
     </div>
   `;
 
@@ -1563,11 +1587,11 @@ function openTabelaAmort(id) {
       <tr class="${cls}">
         <td class="tabular">${r.n}${isProxima ? ' <span class="tabela-amort-next-badge">próxima</span>' : ''}</td>
         <td class="tabular">${venc}</td>
-        <td class="tabular text-right">${formatCurrency(r.saldo_inicial)}</td>
-        <td class="tabular text-right">${formatCurrency(r.amortizacao)}</td>
-        <td class="tabular text-right tabela-amort-juros-cell">${formatCurrency(r.juros)}</td>
-        <td class="tabular text-right tabela-amort-pmt-cell">${formatCurrency(r.parcela)}</td>
-        <td class="tabular text-right">${formatCurrency(r.saldo_final)}</td>
+        <td class="tabular text-right">${formatCurrencyHTML(r.saldo_inicial)}</td>
+        <td class="tabular text-right">${formatCurrencyHTML(r.amortizacao)}</td>
+        <td class="tabular text-right tabela-amort-juros-cell">${formatCurrencyHTML(r.juros)}</td>
+        <td class="tabular text-right tabela-amort-pmt-cell">${formatCurrencyHTML(r.parcela)}</td>
+        <td class="tabular text-right">${formatCurrencyHTML(r.saldo_final)}</td>
       </tr>`;
   }).join('');
 
@@ -1729,13 +1753,6 @@ function calcVencimentoParcela(dataInicio, n) {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 }
 
-function populateContaSelect(selectId) {
-  const sel = document.getElementById(selectId);
-  const current = sel.value;
-  sel.innerHTML = '<option value="">Nenhuma</option>' +
-    cachedContas.map((c) => `<option value="${c.id}">${c.apelido || c.nome}</option>`).join('');
-  if (current) sel.value = current;
-}
 
 // =============================================================
 // View: Tabela
@@ -1792,9 +1809,9 @@ function renderTable(dividas) {
           <span class="div-card-badge" style="color:${st.color};background:${st.bg};">${st.label}</span>
           ${quitada && pago < total ? `<span class="tag-parcial" title="Encerrada antes de quitar o valor total">Parcial</span>` : ''}
         </td>
-        <td data-col="total"   class="text-right tabular">${formatCurrency(total)}</td>
-        <td data-col="pago"    class="text-right tabular" style="color:var(--color-success);">${formatCurrency(pago)}</td>
-        <td data-col="restante" class="text-right tabular${quitada ? '' : ' text-bold'}" style="${quitada ? '' : 'color:var(--color-danger);'}">${formatCurrency(restante)}</td>
+        <td data-col="total"   class="text-right tabular">${formatCurrencyHTML(total)}</td>
+        <td data-col="pago"    class="text-right tabular" style="color:var(--color-success);">${formatCurrencyHTML(pago)}</td>
+        <td data-col="restante" class="text-right tabular${quitada ? '' : ' text-bold'}" style="${quitada ? '' : 'color:var(--color-danger);'}">${formatCurrencyHTML(restante)}</td>
         <td data-col="pct">${pctCell}</td>
         <td data-col="pct-restante">${pctRestanteCell}</td>
         <td data-col="vencimento" class="tabular">${vencInfo}</td>
@@ -1871,7 +1888,7 @@ function makeHistRow(entry = null) {
   div.className = 'hist-row';
   div.innerHTML = `
     <input type="date" class="input hist-row-data" value="${entry?.data || ''}">
-    <input type="number" class="input hist-row-valor" value="${entry?.valor ?? ''}" step="0.01" min="0.01" placeholder="Valor (R$)">
+    <input type="text" inputmode="decimal" class="input hist-row-valor" value="${entry?.valor ?? ''}" placeholder="Valor (R$)">
     <input type="text" class="input hist-row-desc" value="${escapeHtml(entry?.descricao || '')}" placeholder="Descrição (opcional)" maxlength="100">
     <button type="button" class="hist-row-del" title="Remover">×</button>
   `;
@@ -1919,7 +1936,7 @@ async function saveHistoricoDivida() {
 
   try {
     if (mode === 'total') {
-      const valor = parseFloat(document.getElementById('hist-divida-total-valor').value) || 0;
+      const valor = parseUserNumber(document.getElementById('hist-divida-total-valor').value) || 0;
       const novoStatus = valor >= Number(d.valor_total) ? 'Quitada'
         : (d.status === 'Quitada' ? 'Ativa' : d.status);
       const { error } = await supabase
@@ -1933,7 +1950,7 @@ async function saveHistoricoDivida() {
       const rows = [];
       document.querySelectorAll('#hist-divida-extrato-list .hist-row').forEach((rowEl) => {
         const data = rowEl.querySelector('.hist-row-data').value;
-        const valor = parseFloat(rowEl.querySelector('.hist-row-valor').value);
+        const valor = parseUserNumber(rowEl.querySelector('.hist-row-valor').value);
         const descricao = rowEl.querySelector('.hist-row-desc').value.trim() || null;
         if (data && valor && valor > 0) rows.push({ data, valor, descricao });
       });

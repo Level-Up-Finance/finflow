@@ -100,6 +100,35 @@ export const MOEDAS = [
 
 const MOEDA_BY_CODE = Object.fromEntries(MOEDAS.map((m) => [m.code, m]));
 
+/** Gera <option> para cada moeda com exemplo do formato numérico.
+ *  Ex: "BRL — R$ 1.234,56"  |  "USD — $1,234.56"
+ */
+export function renderMoedaOptions(selectedCode = 'BRL') {
+  return MOEDAS.map((m) => {
+    let example;
+    try {
+      example = new Intl.NumberFormat(m.locale, {
+        style: 'currency', currency: m.code,
+        minimumFractionDigits: 2, maximumFractionDigits: 2,
+      }).format(1234.56);
+    } catch { example = `${m.symbol} 1234.56`; }
+    const sel = m.code === selectedCode ? ' selected' : '';
+    return `<option value="${m.code}"${sel}>${m.code} — ${example}</option>`;
+  }).join('');
+}
+
+/** Placeholder para input monetário com o separador correto da moeda.
+ *  BRL/EUR → "0,00"  |  USD/GBP → "0.00"
+ */
+export function moedaInputPlaceholder(code = 'BRL') {
+  const m = MOEDA_BY_CODE[code] || MOEDA_BY_CODE.BRL;
+  try {
+    const parts = new Intl.NumberFormat(m.locale, { minimumFractionDigits: 2 }).formatToParts(0);
+    const dec = parts.find((p) => p.type === 'decimal')?.value || '.';
+    return `0${dec}00`;
+  } catch { return '0.00'; }
+}
+
 /**
  * Formata um valor monetário com a convenção oficial da moeda:
  *   BRL → "R$ 1.234,56"
@@ -114,13 +143,45 @@ export function formatCurrency(amount, code = 'BRL') {
     return new Intl.NumberFormat(moeda.locale, {
       style: 'currency',
       currency: moeda.code,
+      currencySign: 'accounting',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value);
   } catch {
-    // Fallback se o navegador não suportar o locale
-    return `${moeda.symbol} ${value.toFixed(2)}`;
+    const abs = Math.abs(value).toFixed(2);
+    return value < 0 ? `(${moeda.symbol} ${abs})` : `${moeda.symbol} ${abs}`;
   }
+}
+
+// Split HTML display: <span class="currency-sym">R$</span><span class="currency-num">1.234,56</span>
+// For negative (accounting): sym stays, num gets parens: (1.234,56)
+export function formatCurrencyHTML(amount, code = 'BRL') {
+  const moeda = MOEDA_BY_CODE[code] || MOEDA_BY_CODE.BRL;
+  const value = Number(amount || 0);
+  let sym, numStr;
+  try {
+    const parts = new Intl.NumberFormat(moeda.locale, {
+      style: 'currency',
+      currency: moeda.code,
+      currencySign: 'accounting',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).formatToParts(value);
+    sym = parts.find((p) => p.type === 'currency')?.value || moeda.symbol;
+    const currIdx = parts.findIndex((p) => p.type === 'currency');
+    const numParts = [];
+    for (let i = 0; i < parts.length; i++) {
+      if (i === currIdx) continue;
+      if (i === currIdx + 1 && parts[i].type === 'literal' && parts[i].value.trim() === '') continue;
+      numParts.push(parts[i].value);
+    }
+    numStr = numParts.join('');
+  } catch {
+    sym = moeda.symbol;
+    const abs = Math.abs(value).toFixed(2);
+    numStr = value < 0 ? `(${abs})` : abs;
+  }
+  return `<span class="currency-split"><span class="currency-sym">${sym}</span><span class="currency-num">${numStr}</span></span>`;
 }
 
 // ---------- Defaults pra seed inicial ----------

@@ -67,47 +67,108 @@
 
       <!-- Barra de filtros -->
       <div class="trans-filterbar">
-        <div class="filter-pills" id="trans-mode-pills">
-          <button class="filter-pill active" data-mode="mes" type="button">Mês</button>
-          <button class="filter-pill" data-mode="ano" type="button">Ano</button>
-          <button class="filter-pill" data-mode="periodo" type="button">Período</button>
-          <button class="filter-pill" data-mode="todos" type="button">Todos</button>
+
+        <!-- ── Linha 1: Período + Busca + Utilitários ── -->
+        <div class="tf-row tf-row--primary">
+
+          <!-- Modo de período + date inputs -->
+          <div class="tf-period-wrap">
+            <div class="tf-mode-tabs" id="trans-mode-pills">
+              <button class="tf-mode-tab active" data-mode="mes" type="button">Mês</button>
+              <button class="tf-mode-tab" data-mode="ano" type="button">Ano</button>
+              <button class="tf-mode-tab" data-mode="periodo" type="button">Período</button>
+              <button class="tf-mode-tab" data-mode="todos" type="button">Todos</button>
+            </div>
+            <div class="tf-date-inputs">
+              <div class="trans-date-group" id="trans-input-mes">
+                <select class="input input-sm" id="filter-mes-month"></select>
+                <select class="input input-sm" id="filter-mes-year"></select>
+              </div>
+              <div class="trans-date-group hidden" id="trans-input-ano">
+                <select class="input input-sm" id="filter-ano"></select>
+              </div>
+              <div class="trans-date-group hidden" id="trans-input-periodo">
+                <input type="date" class="input input-sm" id="filter-dt-inicio">
+                <span class="trans-date-sep">até</span>
+                <input type="date" class="input input-sm" id="filter-dt-fim">
+              </div>
+              <button type="button" class="btn btn-primary btn-sm hidden" id="btn-trans-aplicar">Aplicar</button>
+            </div>
+          </div>
+
+          <!-- Busca -->
+          <div class="tf-search-wrap">
+            <svg class="tf-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+            <input type="search" id="filter-busca" class="tf-search-input" placeholder="Buscar transação…">
+          </div>
+
+          <!-- Utilitários: col-vis + export -->
+          <div class="tf-utils">
+            <div id="trans-col-vis"></div>
+            <div class="trans-export-group">
+              <button type="button" id="btn-export-csv" class="btn btn-ghost btn-sm" title="Exportar CSV">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/></svg>
+                CSV
+              </button>
+              <button type="button" id="btn-export-pdf" class="btn btn-ghost btn-sm" title="Imprimir / exportar PDF">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                PDF
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div class="trans-date-wrap">
-          <div class="trans-date-group" id="trans-input-mes">
-            <select class="input input-sm" id="filter-mes-month"></select>
-            <select class="input input-sm" id="filter-mes-year"></select>
+        <!-- ── Divisor ── -->
+        <div class="tf-divider"></div>
+
+        <!-- ── Linha 2: Conta + Tipo + Pendentes + Tags ── -->
+        <div class="tf-row tf-row--secondary">
+
+          <!-- Conta picker (visual) -->
+          <div class="tf-filter-group">
+            <span class="tf-filter-label">Conta</span>
+            <button type="button" class="tf-conta-btn" id="filter-conta-btn">
+              <span id="filter-conta-avatar-wrap">
+                <div class="bank-avatar size-xs"><div class="bank-avatar-fallback" style="background:#9CA3AF;">?</div></div>
+              </span>
+              <span class="tf-conta-name" id="filter-conta-name">Todas</span>
+              <svg class="tf-conta-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <input type="hidden" id="filter-conta" value="">
           </div>
-          <div class="trans-date-group hidden" id="trans-input-ano">
-            <select class="input input-sm" id="filter-ano"></select>
+
+          <!-- Tipo chips -->
+          <div class="tf-filter-group">
+            <span class="tf-filter-label">Tipo</span>
+            <div class="tf-tipo-chips" id="filter-tipo-chips">
+              <button class="tf-tipo-chip active" data-tipo="" type="button">Todos</button>
+              <button class="tf-tipo-chip" data-tipo="Receita" type="button" style="--tc:var(--color-success);">
+                <span class="tf-chip-dot" style="background:var(--color-success);"></span>
+                Receita
+              </button>
+              <button class="tf-tipo-chip" data-tipo="Despesa" type="button" style="--tc:var(--color-danger);">
+                <span class="tf-chip-dot" style="background:var(--color-danger);"></span>
+                Despesa
+              </button>
+              <button class="tf-tipo-chip" data-tipo="Transferência" type="button" style="--tc:var(--color-primary);">
+                <span class="tf-chip-dot" style="background:var(--color-primary);"></span>
+                Transf.
+              </button>
+            </div>
+            <input type="hidden" id="filter-tipo" value="">
           </div>
-          <div class="trans-date-group hidden" id="trans-input-periodo">
-            <input type="date" class="input input-sm" id="filter-dt-inicio">
-            <span class="trans-date-sep">até</span>
-            <input type="date" class="input input-sm" id="filter-dt-fim">
-          </div>
-          <button type="button" class="btn btn-primary btn-sm hidden" id="btn-trans-aplicar">Aplicar</button>
+
+          <!-- Pendentes toggle -->
+          <button type="button" id="filter-pendentes" class="tf-pendentes-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Pendentes
+            <span id="filter-pendentes-count" class="trans-pending-count hidden">0</span>
+          </button>
+
+          <!-- Tags ativas -->
+          <div id="trans-tag-filters" class="trans-tag-filters"></div>
+
         </div>
-
-        <div class="trans-filter-divider"></div>
-
-        <select id="filter-conta" class="input input-sm">
-          <option value="">Todas as contas</option>
-        </select>
-        <select id="filter-tipo" class="input input-sm">
-          <option value="">Todos os tipos</option>
-          <option value="Receita">Receita</option>
-          <option value="Despesa">Despesa</option>
-        </select>
-        <input type="search" id="filter-busca" class="input input-sm trans-filter-busca" placeholder="Buscar…">
-        <button type="button" id="filter-pendentes" class="btn btn-ghost btn-sm trans-filter-pending">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Pendentes
-          <span id="filter-pendentes-count" class="trans-pending-count hidden">0</span>
-        </button>
-
-        <div id="trans-col-vis"></div>
       </div>
 
       <!-- Barra de seleção em massa -->
@@ -151,121 +212,191 @@
       </div>
       <form id="form-transacao">
         <div class="modal-body">
-          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
-            <div class="field">
-              <label class="field-label" for="trans-data">Data <span class="required">*</span></label>
-              <input class="input" id="trans-data" type="date" required>
-            </div>
-            <div class="field">
-              <label class="field-label" for="trans-tipo">Tipo <span class="required">*</span></label>
-              <select class="select" id="trans-tipo" required>
-                <option value="Despesa">Despesa</option>
-                <option value="Receita">Receita</option>
-                <option value="Transferência">Transferência</option>
-              </select>
-            </div>
-          </div>
 
-          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
-            <div class="field">
-              <label class="field-label" for="trans-valor">Valor <span class="required">*</span></label>
-              <input class="input" id="trans-valor" type="number" step="0.01" min="0.01" placeholder="0,00" required>
-            </div>
-            <div class="field">
-              <label class="field-label" for="trans-moeda">Moeda</label>
-              <select class="select" id="trans-moeda">
-                <option value="BRL">BRL</option>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="GBP">GBP</option>
-              </select>
-            </div>
-          </div>
+          <!-- ── Seção Principal ── -->
+          <div class="trans-modal-section">
+            <p class="trans-modal-section-label">Principal</p>
 
-          <div class="field">
-            <label class="field-label" for="trans-conta">Conta <span class="required">*</span></label>
-            <select class="select" id="trans-conta" required>
-              <option value="">Selecione…</option>
-            </select>
-          </div>
-
-          <!-- ── Seção de transferência (visível só quando tipo = Transferência) ── -->
-          <div class="transfer-section hidden" id="trans-transfer-section">
-            <div class="field">
-              <label class="field-label" for="trans-conta-destino">Conta destino <span class="required">*</span></label>
-              <select class="select" id="trans-conta-destino">
-                <option value="">Selecione…</option>
-              </select>
-            </div>
-
-            <div class="transfer-cambio-card" id="trans-cambio-card">
-              <div class="transfer-cambio-header">
-                <span class="transfer-cambio-title">Câmbio</span>
-                <span class="transfer-cambio-par" id="trans-cambio-par">—</span>
-                <span class="transfer-fetch-status" id="trans-fetch-status"></span>
+            <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+              <div class="field">
+                <label class="field-label" for="trans-data">Data <span class="required">*</span></label>
+                <input class="input" id="trans-data" type="date" required>
               </div>
               <div class="field">
-                <label class="field-label" for="trans-taxa-oficial">Taxa oficial do dia</label>
-                <input class="input" id="trans-taxa-oficial" type="number" step="0.000001" min="0" placeholder="Buscando…">
-                <p class="field-hint">Cotação Frankfurter. Ajuste manualmente se necessário.</p>
+                <label class="field-label" for="trans-tipo">Tipo <span class="required">*</span></label>
+                <select class="select" id="trans-tipo" required>
+                  <option value="Despesa">Despesa</option>
+                  <option value="Receita">Receita</option>
+                  <option value="Transferência">Transferência</option>
+                </select>
               </div>
-              <div class="field-group" style="grid-template-columns: 1fr 1fr;">
-                <div class="field">
-                  <label class="field-label" for="trans-valor-previsto">Valor previsto (BRL)</label>
-                  <input class="input transfer-input-readonly" id="trans-valor-previsto" type="text" readonly placeholder="—" tabindex="-1">
-                  <p class="field-hint">Valor × taxa oficial. Calculado automaticamente.</p>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Conta <span class="required">*</span></label>
+              <div class="conta-picker" id="trans-conta-picker">
+                <button type="button" class="conta-picker-btn" id="trans-conta-btn">
+                  <span id="trans-conta-avatar-wrap">
+                    <div class="bank-avatar size-sm"><div class="bank-avatar-fallback" style="background:#9CA3AF;">?</div></div>
+                  </span>
+                  <span class="conta-picker-name" id="trans-conta-name">Selecione uma conta…</span>
+                  <svg class="conta-picker-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <input type="hidden" id="trans-conta" required>
+              </div>
+            </div>
+
+            <!-- ── Seção de transferência (visível só quando tipo = Transferência) ── -->
+            <div class="transfer-section hidden" id="trans-transfer-section">
+              <div class="field">
+                <label class="field-label" for="trans-conta-destino">Conta destino <span class="required">*</span></label>
+                <select class="select" id="trans-conta-destino">
+                  <option value="">Selecione…</option>
+                </select>
+              </div>
+
+              <div class="transfer-cambio-card" id="trans-cambio-card">
+                <div class="transfer-cambio-header">
+                  <span class="transfer-cambio-title">Câmbio</span>
+                  <span class="transfer-cambio-par" id="trans-cambio-par">—</span>
+                  <span class="transfer-fetch-status" id="trans-fetch-status"></span>
                 </div>
                 <div class="field">
-                  <label class="field-label" for="trans-valor-destino">Valor recebido (BRL)</label>
-                  <input class="input" id="trans-valor-destino" type="number" step="0.01" min="0" placeholder="Confirme após o crédito">
-                  <p class="field-hint">Pré-preenchido com o valor previsto. Ajuste se diferir.</p>
+                  <label class="field-label" for="trans-taxa-oficial">Taxa oficial do dia</label>
+                  <input class="input" id="trans-taxa-oficial" type="number" step="0.000001" min="0" placeholder="Buscando…">
+                  <p class="field-hint">Cotação Frankfurter. Ajuste manualmente se necessário.</p>
+                </div>
+                <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+                  <div class="field">
+                    <label class="field-label" for="trans-valor-previsto">Valor previsto (BRL)</label>
+                    <input class="input transfer-input-readonly" id="trans-valor-previsto" type="text" readonly placeholder="—" tabindex="-1">
+                    <p class="field-hint">Valor × taxa oficial. Calculado automaticamente.</p>
+                  </div>
+                  <div class="field">
+                    <label class="field-label" for="trans-valor-destino">Valor recebido (BRL)</label>
+                    <input class="input" id="trans-valor-destino" type="text" inputmode="decimal" placeholder="Confirme após o crédito">
+                    <p class="field-hint">Pré-preenchido com o valor previsto. Ajuste se diferir.</p>
+                  </div>
+                </div>
+                <div class="transfer-taxa-efetiva hidden" id="trans-taxa-efetiva-wrap">
+                  <span class="transfer-taxa-efetiva-label">Taxa efetiva:</span>
+                  <span class="transfer-taxa-efetiva-value" id="trans-taxa-efetiva-value">—</span>
                 </div>
               </div>
-              <div class="transfer-taxa-efetiva hidden" id="trans-taxa-efetiva-wrap">
-                <span class="transfer-taxa-efetiva-label">Taxa efetiva:</span>
-                <span class="transfer-taxa-efetiva-value" id="trans-taxa-efetiva-value">—</span>
+            </div>
+
+            <div class="field" id="trans-contato-field">
+              <label class="field-label" for="trans-contato-search">Cliente / Fornecedor</label>
+              <div class="contato-picker" data-picker="trans-contato">
+                <input type="text" id="trans-contato-search" class="contato-picker-input input" autocomplete="off" placeholder="Buscar contato ou digitar novo nome…">
+                <input type="hidden" id="trans-contato" value="">
+              </div>
+              <p class="field-hint">Identifica com quem a transação foi feita. Digite para buscar ou criar um novo.</p>
+            </div>
+
+            <div class="field" id="trans-bloco-field">
+              <label class="field-label">Bloco</label>
+              <div class="bloco-seg-picker" id="trans-bloco-picker">
+                <button type="button" class="bloco-seg-btn bloco-seg-all active" data-bloco="">— Todos —</button>
+                <button type="button" class="bloco-seg-btn" data-bloco="contribuicao" style="--bloco-c:var(--color-success);">Contribuição</button>
+                <button type="button" class="bloco-seg-btn" data-bloco="sonhos" style="--bloco-c:var(--color-primary);">Sonhos</button>
+                <button type="button" class="bloco-seg-btn" data-bloco="custo_vida" style="--bloco-c:var(--color-secondary);">Custo de vida</button>
+              </div>
+              <input type="hidden" id="trans-bloco" value="">
+            </div>
+
+            <div class="field-group valor-moeda-row" style="grid-template-columns: 1fr auto 1fr;">
+              <div class="field">
+                <div class="valor-label-row">
+                  <label class="field-label" for="trans-valor">Valor <span class="required">*</span></label>
+                  <span id="valor-total-hint" class="valor-total-hint hidden">Total</span>
+                </div>
+                <input class="input" id="trans-valor" type="text" inputmode="decimal" placeholder="0,00" required>
+              </div>
+              <div class="field valor-dividir-field" id="trans-splits-section">
+                <label class="field-label" style="visibility:hidden;">÷</label>
+                <button type="button" class="btn btn-ghost btn-sm valor-dividir-btn" id="btn-splits-toggle" title="Dividir em partes">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="3" x2="12" y2="10"/>
+                    <polyline points="8 7 12 3 16 7"/>
+                    <line x1="12" y1="21" x2="12" y2="14"/>
+                    <polyline points="8 17 12 21 16 17"/>
+                    <line x1="4" y1="12" x2="20" y2="12"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="field">
+                <label class="field-label" for="trans-moeda">Moeda</label>
+                <select class="select" id="trans-moeda">
+                  <option value="BRL">BRL</option>
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="GBP">GBP</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Divisão em partes — aparece logo abaixo do valor quando ativado -->
+            <div id="trans-splits-container" class="hidden trans-splits-block">
+              <div class="splits-block-header">
+                <span class="splits-block-title">Dividir em partes</span>
+                <div class="splits-total-bar">
+                  <span class="splits-total-label">Alocado:</span>
+                  <strong id="splits-allocated">—</strong>
+                  <span class="splits-total-sep">de</span>
+                  <strong id="splits-total-val">—</strong>
+                  <span id="splits-warn" class="splits-warn hidden">⚠ não bate com o total</span>
+                </div>
+              </div>
+              <div id="trans-splits-list"></div>
+              <div class="splits-footer">
+                <button type="button" class="btn btn-ghost btn-sm" id="btn-split-add">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+                  Adicionar parte
+                </button>
               </div>
             </div>
           </div>
 
-          <div class="field-group" style="grid-template-columns: 1fr 1fr;" id="trans-cat-fields">
+          <!-- ── Seção Divisão ── -->
+          <div class="trans-modal-section" id="trans-cat-section">
+
+            <div class="field" id="trans-cat-fields">
+              <label class="field-label">Categoria</label>
+              <div class="cat-picker-wrap" id="trans-cat-picker">
+                <button type="button" class="cat-picker-btn" id="trans-cat-btn">
+                  <span class="cat-picker-dot hidden" id="trans-cat-dot"></span>
+                  <span class="cat-picker-name" id="trans-cat-name">— Todas as categorias —</span>
+                  <svg class="cat-picker-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <input type="hidden" id="trans-categoria" value="">
+              </div>
+            </div>
+
+            <div class="field" id="trans-sub-field">
+              <label class="field-label">Subcategoria</label>
+              <div class="sub-picker" id="trans-sub-picker">
+                <input type="text" class="input sub-picker-input" id="trans-subcategoria-search"
+                       placeholder="— Sem vínculo —" autocomplete="off" spellcheck="false">
+                <input type="hidden" id="trans-subcategoria" value="">
+              </div>
+              <p class="field-hint">Digite para buscar. "+ Nova" aparece quando não existe.</p>
+            </div>
+
+            <div class="field" style="position: relative;">
+              <label class="field-label">Tags</label>
+              <div class="tag-chips-input" id="trans-tags-container">
+                <input type="text" class="tag-input-field" id="trans-tag-input"
+                       placeholder="#viagem2026" autocomplete="off" spellcheck="false" maxlength="60">
+              </div>
+              <div class="tag-autocomplete hidden" id="trans-tag-autocomplete"></div>
+              <p class="field-hint">Enter ou vírgula para adicionar · Backspace para remover o último</p>
+            </div>
+
             <div class="field">
-              <label class="field-label" for="trans-bloco">Bloco</label>
-              <select class="select" id="trans-bloco">
-                <option value="">— Todos —</option>
-                <option value="contribuicao">Contribuição</option>
-                <option value="sonhos">Sonhos</option>
-                <option value="custo_vida">Custo de vida</option>
-              </select>
+              <label class="field-label" for="trans-descricao">Descrição</label>
+              <textarea class="textarea" id="trans-descricao" rows="2" maxlength="300" placeholder="Anotação livre sobre a transação…"></textarea>
             </div>
-            <div class="field">
-              <label class="field-label" for="trans-categoria">Categoria</label>
-              <select class="select" id="trans-categoria">
-                <option value="">— Todas —</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="field" id="trans-sub-field">
-            <label class="field-label" for="trans-subcategoria">Subcategoria</label>
-            <select class="select" id="trans-subcategoria">
-              <option value="">— Sem vínculo —</option>
-            </select>
-            <p class="field-hint">Selecione Bloco e Categoria para filtrar. Vincula a um compromisso recorrente.</p>
-          </div>
-
-          <div class="field" id="trans-contato-field">
-            <label class="field-label" for="trans-contato-search">Cliente / Fornecedor</label>
-            <div class="contato-picker" data-picker="trans-contato">
-              <input type="text" id="trans-contato-search" class="contato-picker-input input" autocomplete="off" placeholder="Buscar contato ou digitar novo nome…">
-              <input type="hidden" id="trans-contato" value="">
-            </div>
-            <p class="field-hint">Identifica com quem a transação foi feita. Digite para buscar ou criar um novo.</p>
-          </div>
-
-          <div class="field">
-            <label class="field-label" for="trans-descricao">Descrição</label>
-            <textarea class="textarea" id="trans-descricao" rows="2" maxlength="300" placeholder="Anotação livre sobre a transação…"></textarea>
           </div>
 
           <!-- Reconciliação — exibido apenas ao editar -->

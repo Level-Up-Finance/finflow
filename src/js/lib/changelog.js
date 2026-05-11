@@ -7,6 +7,24 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-10-design-consistency',
+    version: '0.2.4',
+    date: '10/05/2026',
+    title: 'Consistência visual e de interação em todo o sistema',
+    items: [
+      { type: 'improvement', text: 'Tags de transação agora recebem cores distintas por hash — cada tag tem sempre a mesma cor, sem repetição visual' },
+      { type: 'improvement', text: 'Barra de filtros unificada em Compromissos, Pagamentos, Contatos e Relatórios — mesmo padrão visual de pills da página Contas' },
+      { type: 'improvement', text: 'Toast de notificação: ícones SVG ilustrativos para sucesso, erro, aviso e informação' },
+      { type: 'improvement', text: 'Botões "+ Novo" trocados para ícone SVG em todas as páginas — aparência consistente com o restante do sistema' },
+      { type: 'improvement', text: 'Tipografia de cabeçalhos de tabela padronizada: tamanho xs, negrito, maiúsculas, espaçamento 0.05 em e cor secundária em todas as páginas' },
+      { type: 'improvement', text: 'Primeira coluna congelada (sticky) ao rolar horizontalmente: Contas, Dívidas, Projetos e tabela agrupada de Compromissos' },
+      { type: 'improvement', text: 'Tabela de Projetos agora rola horizontalmente em telas pequenas — sem corte de conteúdo' },
+      { type: 'improvement', text: 'Tamanho e arredondamento de pills unificados em todo o sistema (padding 3 px × 8 px, border-radius full)' },
+      { type: 'improvement', text: 'Utilitários CSS de campo: .field-group--2col, .field-group--3col, .field-group--val-moeda e .field-group--wide-narrow para layouts de formulário consistentes' },
+      { type: 'fix',         text: 'Animação pulse-danger adicionada para alertas críticos de saldo negativo em Contas' },
+    ],
+  },
+  {
     id: '2026-05-07-dividas-investimentos-rework',
     version: '0.2.3',
     date: '07/05/2026',

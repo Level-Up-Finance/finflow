@@ -70,9 +70,14 @@
 
           <div class="field" style="max-width: 360px; margin-top: var(--space-5);">
             <label class="field-label" for="import-conta">Conta bancária <span class="required">*</span></label>
-            <select id="import-conta" class="select">
-              <option value="">Selecione a conta…</option>
-            </select>
+            <div class="conta-picker" id="import-conta-picker" style="max-width: 360px;">
+              <button type="button" class="conta-picker-btn" id="import-conta-btn">
+                <div id="import-conta-avatar-wrap"><div class="bank-avatar size-sm"><div class="bank-avatar-fallback" style="background:#9CA3AF;">?</div></div></div>
+                <span class="conta-picker-name" id="import-conta-name">Selecione a conta…</span>
+                <svg class="conta-picker-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <input type="hidden" id="import-conta" value="">
+            </div>
             <p class="field-hint">Todas as transações importadas serão vinculadas a esta conta.</p>
           </div>
         </div>

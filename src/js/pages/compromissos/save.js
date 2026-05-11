@@ -8,7 +8,7 @@ import { supabase } from '../../lib/supabase.js';
 import { showToast } from '../../components/toast.js';
 import { openModal, closeModal } from '../../components/modal.js';
 import { getCurrentUser } from '../../lib/auth.js';
-import { escapeHtml, todayISO } from '../../lib/utils.js';
+import { escapeHtml, todayISO, parseUserNumber } from '../../lib/utils.js';
 import { t } from '../../lib/textos.js';
 import { collectValoresMensais, saveValoresMensaisToOrcamento } from './valores-mensais.js';
 import { showInfoPopup } from './popovers.js';
@@ -24,12 +24,11 @@ export async function saveQuickValor(event, deps) {
   const novoValorRaw = document.getElementById('quick-valor-input').value;
   const motivo = document.getElementById('quick-motivo-input').value.trim() || null;
 
-  if (novoValorRaw === '' || isNaN(Number(novoValorRaw))) {
+  const novoValor = parseUserNumber(novoValorRaw);
+  if (novoValorRaw === '' || isNaN(novoValor)) {
     showToast(t('compromissos.validacao.valor_invalido', 'Informe um valor válido'), 'error');
     return;
   }
-
-  const novoValor = Number(novoValorRaw);
   const detailsCompromisso = deps.getDetailsCompromisso();
   if (!detailsCompromisso) return;
 
@@ -100,7 +99,8 @@ export async function saveCatDirectCompromisso(deps) {
   if (!tipo) { showToast(t('compromissos.validacao.tipo_obrigatorio', 'Escolha o tipo'), 'error'); return; }
   if (!iniciado_em) { showToast(t('compromissos.validacao.data_inicio', 'Informe a data de início'), 'error'); return; }
   if (isDividasCat && !dividaRaw) { showToast('Vincule uma dívida existente ou crie uma nova', 'error'); return; }
-  if (!valorVariavel && (valorBaseRaw === '' || isNaN(Number(valorBaseRaw)) || Number(valorBaseRaw) <= 0)) {
+  const valorBaseParsed = parseUserNumber(valorBaseRaw);
+  if (!valorVariavel && (valorBaseRaw === '' || isNaN(valorBaseParsed) || valorBaseParsed <= 0)) {
     showToast(t('compromissos.validacao.valor_maior_zero', 'Informe um valor maior que zero'), 'error'); return;
   }
 
@@ -134,7 +134,7 @@ export async function saveCatDirectCompromisso(deps) {
     vencimento_dia:  ehAnual ? anualDia : ((usaDiaSemana || ehUnico) ? null : Number(vencimentoRaw)),
     dia_semana:      usaDiaSemana ? Number(diaSemanaRaw) : null,
     intervalo_semanas: intervalo_semanas_cat,
-    valor_base:      valorVariavel ? 0 : Number(valorBaseRaw),
+    valor_base:      valorVariavel ? 0 : valorBaseParsed,
     valor_variavel:  valorVariavel,
     moeda,
     iniciado_em:     ehAnual ? anualIso : iniciado_em,
@@ -156,7 +156,7 @@ export async function saveCatDirectCompromisso(deps) {
       const { data: novaDivida, error: divErr } = await supabase.from('dividas').insert({
         user_id:         user.id,
         nome:            cat.nome,
-        valor_total:     Number(valorBaseRaw) || 0,
+        valor_total:     valorBaseParsed || 0,
         valor_pago:      0,
         data_inicio:     iniciado_em,
         data_vencimento: terminado_em || null,
@@ -245,7 +245,8 @@ export async function saveCompromisso(event, deps) {
   if (!categoria_id) { showToast(t('compromissos.validacao.cat_obrigatoria', 'Escolha uma categoria'), 'error'); return; }
   if (!iniciado_em) { showToast('Informe a data de início', 'error'); return; }
   if (isDividasCat && !dividaRaw) { showToast('Vincule uma dívida existente ou crie uma nova', 'error'); return; }
-  if (!valorVariavel && (valorBaseRaw === '' || isNaN(Number(valorBaseRaw)))) {
+  const valorBaseParsedSub = parseUserNumber(valorBaseRaw);
+  if (!valorVariavel && (valorBaseRaw === '' || isNaN(valorBaseParsedSub))) {
     showToast(t('compromissos.validacao.valor_invalido', 'Informe um valor válido'), 'error'); return;
   }
 
@@ -283,7 +284,7 @@ export async function saveCompromisso(event, deps) {
     vencimento_dia: ehAnual ? anualDia : ((usaDiaSemana || ehUnico) ? null : Number(vencimentoRaw)),
     dia_semana:     usaDiaSemana ? Number(diaSemanaRaw) : null,
     intervalo_semanas,
-    valor_base: valorVariavel ? 0 : Number(valorBaseRaw),
+    valor_base: valorVariavel ? 0 : valorBaseParsedSub,
     moeda,
     iniciado_em: ehAnual ? anualIso : iniciado_em,
     terminado_em,

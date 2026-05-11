@@ -14,11 +14,16 @@ import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
-import { formatCurrency } from '../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML, MOEDAS } from '../lib/compromissos-config.js';
 import { fetchExchangeRate, startCurrencyAutoRefresh } from '../lib/currency.js';
 import { initCurrencyWidget } from '../components/currency-widget.js';
-import { escapeHtml, isoMonth } from '../lib/utils.js';
+import { escapeHtml, isoMonth, parseUserNumber } from '../lib/utils.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
+
+function getMainCurrencySymbol() {
+  const code = localStorage.getItem('finflow.moeda_padrao') || 'BRL';
+  return MOEDAS.find((m) => m.code === code)?.symbol || code;
+}
 
 // -----------------------------
 // State
@@ -33,6 +38,7 @@ let cachedSubcategorias = []; // pra auto-gerar entradas
 let cachedProjetos = [];   // pra mostrar badge de projeto nas linhas de investimento
 let cachedDividas = [];    // { id, valor_total, valor_pago } pra coluna Progresso
 let realizadoByProjetoOrc = new Map(); // projeto_id → realizado (BRL) pra coluna Progresso
+const orcSubMap = new Map(); // entry.id → subcategoria (pra popover de ocorrências)
 
 // Câmbio
 const ALL_FOREIGN_CURRENCIES = ['USD', 'EUR', 'GBP']; // sempre exibidas no widget
@@ -541,7 +547,6 @@ function renderSuperBlocoHeader(bloco) {
 
 // Linha "Contribuição" — destaque ao final do super-bloco CONTRIBUIÇÃO
 function renderContribuicaoRow(valorBRL) {
-  const sign = valorBRL > 0 ? '+' : (valorBRL < 0 ? '-' : '');
   const cls  = valorBRL > 0 ? 'dre-positive' : (valorBRL < 0 ? 'dre-negative' : 'dre-zero');
   return `
     <tr class="contribuicao-row">
@@ -550,7 +555,7 @@ function renderContribuicaoRow(valorBRL) {
         <span class="contribuicao-hint">o que sobra pra Sonhos e Custo de vida</span>
       </td>
       <td class="text-right">
-        <span class="contribuicao-value ${cls}">${sign}${formatCurrency(Math.abs(valorBRL), 'BRL')}</span>
+        <span class="contribuicao-value ${cls}">${formatCurrencyHTML(valorBRL, 'BRL')}</span>
       </td>
     </tr>
   `;
@@ -567,9 +572,8 @@ function renderCategoriaSection(cat, entries) {
     if (vBRL === null) return; // skip se cotação não disponível
     categoriaTotal += (sub?.tipo === 'Receita') ? vBRL : -vBRL;
   });
-  const totalSign = categoriaTotal > 0 ? '+' : (categoriaTotal < 0 ? '-' : '');
   const totalClass = categoriaTotal > 0 ? 'dre-positive' : (categoriaTotal < 0 ? 'dre-negative' : 'dre-zero');
-  const totalDisplay = `${totalSign}${formatCurrency(Math.abs(categoriaTotal), 'BRL')}`;
+  const totalDisplay = `${formatCurrencyHTML(categoriaTotal, 'BRL')}`;
 
   const rows = entries.map(renderEntryRow).join('');
 
@@ -603,9 +607,10 @@ function renderEntryRow(entry) {
   const valorBase = Number(sub?.valor_base) || 0;
   const valorBaseTotal = isVariavel ? (Number(entry.valor_previsto) || 0) : (valorBase * ocurrencias);
   // Valor exibido na coluna "Valor base" (sempre só o número, sem tag inline — tag fica em slot fixo)
+  if (sub) orcSubMap.set(entry.id, sub);
   const baseValueText = isVariavel
-    ? formatCurrency(Number(entry.valor_previsto) || 0, moeda)
-    : `${formatCurrency(valorBase, moeda)}${ocurrencias > 1 ? ` × ${ocurrencias}` : ''}`;
+    ? formatCurrencyHTML(Number(entry.valor_previsto) || 0, moeda)
+    : `${formatCurrencyHTML(valorBase, moeda)}${ocurrencias > 1 ? `<span class="occurrence-badge" data-entry-id="${entry.id}" data-moeda="${moeda}">${ocurrencias}</span>` : ''}`;
   const baseDisplay = `
     <span class="orcamento-base-wrapper">
       <span class="valor-variavel-tag ${isVariavel ? '' : 'is-hidden'}">varia</span>
@@ -669,11 +674,10 @@ function renderEntryRow(entry) {
             </svg>
           </span>
           <span class="orcamento-input-group">
-            <span class="brl-prefix">R$</span>
+            <span class="brl-prefix">${getMainCurrencySymbol()}</span>
             <input
-              type="number"
-              step="0.01"
-              min="0"
+              type="text"
+              inputmode="decimal"
               class="orcamento-cell-edit"
               data-orcamento-id="${entry.id}"
               value="${inputValue}"
@@ -714,11 +718,64 @@ function bindCellEdits() {
       inp.blur();
     }
   });
+
+  container.addEventListener('click', (e) => {
+    const badge = e.target.closest('.occurrence-badge');
+    if (!badge) return;
+    e.stopPropagation();
+    showOccurrencePopover(badge);
+  });
+}
+
+function showOccurrencePopover(badge) {
+  closeOccurrencePopover();
+
+  const entryId = badge.dataset.entryId;
+  const moeda = badge.dataset.moeda || 'BRL';
+  const sub = orcSubMap.get(entryId);
+  if (!sub) return;
+
+  const dates = getOccurrenceDatesInMonth(sub, viewYear, viewMonth);
+  const valorBase = Number(sub.valor_base) || 0;
+
+  const dateFormatter = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
+
+  const rows = dates.map((d) => `
+    <div class="occ-popover-row">
+      <span class="occ-popover-date">${dateFormatter.format(d)}</span>
+      <span class="occ-popover-value">${formatCurrencyHTML(valorBase, moeda)}</span>
+    </div>
+  `).join('');
+
+  const pop = document.createElement('div');
+  pop.className = 'occurrence-popover';
+  pop.id = 'occurrence-popover';
+  pop.innerHTML = `
+    <div class="occ-popover-header">${sub.apelido?.trim() || sub.nome}</div>
+    ${rows}
+  `;
+  document.body.appendChild(pop);
+
+  const rect = badge.getBoundingClientRect();
+  const popW = 220;
+  let left = rect.right - popW + window.scrollX;
+  if (left < 8) left = 8;
+  pop.style.left = `${left}px`;
+  pop.style.top = `${rect.bottom + 6 + window.scrollY}px`;
+
+  setTimeout(() => {
+    document.addEventListener('click', closeOccurrencePopover, { once: true });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeOccurrencePopover(); }, { once: true });
+  }, 0);
+}
+
+function closeOccurrencePopover() {
+  document.getElementById('occurrence-popover')?.remove();
 }
 
 async function saveCell(input) {
   const id = input.dataset.orcamentoId;
-  const newValueBRL = Number(input.value); // Input está em BRL
+  const newValueBRL = parseUserNumber(input.value); // Input está em BRL
   const entry = cachedOrcamento.find((x) => x.id === id);
   if (!entry) return;
 
@@ -805,13 +862,12 @@ function updateSummary() {
   }
   const saldo = totalReceitas - totalDespesas;
 
-  document.getElementById('summary-receitas').textContent = `+${formatCurrency(totalReceitas, 'BRL')}`;
-  document.getElementById('summary-despesas').textContent = `-${formatCurrency(totalDespesas, 'BRL')}`;
+  document.getElementById('summary-receitas').innerHTML = formatCurrencyHTML(totalReceitas, 'BRL');
+  document.getElementById('summary-despesas').innerHTML = formatCurrencyHTML(-totalDespesas, 'BRL');
 
   const saldoEl = document.getElementById('summary-saldo');
   const saldoCard = document.getElementById('saldo-card');
-  const sign = saldo > 0 ? '+' : (saldo < 0 ? '-' : '');
-  saldoEl.textContent = `${sign}${formatCurrency(Math.abs(saldo), 'BRL')}`;
+  saldoEl.innerHTML = formatCurrencyHTML(saldo, 'BRL');
 
   // Alerta vermelho piscante se saldo ≤ 0
   if (saldo <= 0) {
@@ -989,7 +1045,7 @@ function render12MonthsView() {
           const canEdit = (entry.moeda === 'BRL') || valorBRL !== null;
           const monthLabel = `${String(m.month + 1).padStart(2, '0')}/${m.year}`;
           return `<td class="text-right value-cell ${currentClass}">
-            <input type="number" step="0.01" min="0"
+            <input type="text" inputmode="decimal"
               class="orcamento-cell-edit-12m"
               data-orcamento-id="${entry.id}"
               value="${inputValue}"
@@ -1035,10 +1091,9 @@ function render12MonthsView() {
         if (vBRL === null) continue;
         total += (sub.tipo === 'Receita') ? vBRL : -vBRL;
       }
-      const sign = total > 0 ? '+' : (total < 0 ? '-' : '');
       const cls = total > 0 ? 'dre-positive' : (total < 0 ? 'dre-negative' : 'dre-zero');
       const currentClass = m.isCurrent ? 'current-month' : '';
-      return `<td class="text-right tabular ${cls} ${currentClass}">${sign}${formatCurrency(Math.abs(total), 'BRL')}</td>`;
+      return `<td class="text-right tabular ${cls} ${currentClass}">${formatCurrency(total, 'BRL')}</td>`;
     }).join('');
 
     out.push(`
@@ -1094,10 +1149,9 @@ function render12MonthsView() {
             total += (sub.tipo === 'Receita') ? vBRL : -vBRL;
           }
         }
-        const sign = total > 0 ? '+' : (total < 0 ? '-' : '');
         const cls  = total > 0 ? 'dre-positive' : (total < 0 ? 'dre-negative' : 'dre-zero');
         const currentClass = m.isCurrent ? 'current-month' : '';
-        return `<td class="text-right tabular ${cls} ${currentClass}"><strong>${sign}${formatCurrency(Math.abs(total), 'BRL')}</strong></td>`;
+        return `<td class="text-right tabular ${cls} ${currentClass}"><strong>${formatCurrency(total, 'BRL')}</strong></td>`;
       }).join('');
       rows.push(`
         <tr class="contribuicao-row contribuicao-row-12m">
@@ -1112,24 +1166,23 @@ function render12MonthsView() {
   const receitaCells = months.map((m) => {
     const t = sumByTipoForMonth('Receita', m.mesAno);
     const cls = m.isCurrent ? 'current-month' : '';
-    return `<td class="text-right dre-positive ${cls}">+${formatCurrency(t, 'BRL')}</td>`;
+    return `<td class="text-right dre-positive ${cls}">${formatCurrency(t, 'BRL')}</td>`;
   }).join('');
 
   const despesaCells = months.map((m) => {
     const t = sumByTipoForMonth('Despesa', m.mesAno);
     const cls = m.isCurrent ? 'current-month' : '';
-    return `<td class="text-right dre-negative ${cls}">-${formatCurrency(t, 'BRL')}</td>`;
+    return `<td class="text-right dre-negative ${cls}">${formatCurrency(-t, 'BRL')}</td>`;
   }).join('');
 
   const saldoCells = months.map((m) => {
     const r = sumByTipoForMonth('Receita', m.mesAno);
     const d = sumByTipoForMonth('Despesa', m.mesAno);
     const s = r - d;
-    const sign = s > 0 ? '+' : (s < 0 ? '-' : '');
     const cls = s > 0 ? 'dre-positive' : (s < 0 ? 'dre-negative' : 'dre-zero');
     const alertCls = s <= 0 ? 'alerta-negativo' : '';
     const currentCls = m.isCurrent ? 'current-month' : '';
-    return `<td class="text-right ${cls} ${alertCls} ${currentCls}">${sign}${formatCurrency(Math.abs(s), 'BRL')}</td>`;
+    return `<td class="text-right ${cls} ${alertCls} ${currentCls}">${formatCurrency(s, 'BRL')}</td>`;
   }).join('');
 
   container.innerHTML = `
@@ -1249,6 +1302,16 @@ function countOccurrencesInMonth(sub, year, month) {
     if (occursOn(sub, d)) count++;
   }
   return count;
+}
+
+function getOccurrenceDatesInMonth(sub, year, month) {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const dates = [];
+  for (let day = 1; day <= daysInMonth; day++) {
+    const d = new Date(year, month, day);
+    if (occursOn(sub, d)) dates.push(new Date(d));
+  }
+  return dates;
 }
 
 function isActiveInMonth(sub, year, month) {
