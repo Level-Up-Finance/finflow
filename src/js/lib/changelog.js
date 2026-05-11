@@ -7,6 +7,15 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-10-login-redesign',
+    version: '0.2.5',
+    date: '10/05/2026',
+    title: 'Tela de login — rodapé redesenhado',
+    items: [
+      { type: 'improvement', text: '"Esqueci minha senha" e "Ainda não tem conta?" separados em linhas próprias com divisor visual — fim da linha única apertada' },
+    ],
+  },
+  {
     id: '2026-05-10-design-consistency',
     version: '0.2.4',
     date: '10/05/2026',
