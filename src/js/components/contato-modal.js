@@ -20,6 +20,7 @@ import {
   fetchCnpjData, isValidCnpj, formatCnpj, googleCnpjSearchUrl,
   inferLogoUrl, checkImageExists,
 } from '../lib/cnpj-lookup.js';
+import { PhonePicker } from './phone-picker.js';
 
 const FIELDS = [
   'nome', 'nome_extrato', 'tipo', 'pessoa_tipo',
@@ -106,7 +107,15 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
       for (const k of FIELDS) {
         const el = $(`ct-${k.replace(/_/g, '-')}`);
         if (!el) continue;
+        if (k === 'telefone' && ppTelCm) { ppTelCm.setValue(initialData?.[k] || ''); continue; }
+        if (k === 'whatsapp'  && ppWaCm)  { ppWaCm.setValue(initialData?.[k]  || ''); continue; }
         el.value = initialData?.[k] ?? (k === 'tipo' ? 'fornecedor' : '');
+      }
+      // "Mesmo número" — detecta se os dois são iguais ao editar
+      const mesmoEl = $('ct-mesmo-numero');
+      if (mesmoEl && initialData?.telefone && initialData?.whatsapp && initialData.telefone === initialData.whatsapp) {
+        mesmoEl.checked = true;
+        if (ppWaCm) ppWaCm.setDisabled(true);
       }
       applyPessoaTipoUI();
     }
@@ -154,6 +163,13 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
       }
     }
 
+    // ── Phone pickers ──────────────────────────────────────────
+    const elTelCm = $('ct-telefone');
+    const elWaCm  = $('ct-whatsapp');
+    let ppTelCm = null, ppWaCm = null;
+    if (elTelCm) ppTelCm = new PhonePicker(elTelCm, { placeholder: '(11) 99999-9999' });
+    if (elWaCm)  ppWaCm  = new PhonePicker(elWaCm,  { placeholder: '(11) 99999-9999' });
+
     // ── Wiring ─────────────────────────────────────────────────
     fillFromInitial();
     $('ct-pessoa-tipo').addEventListener('change', applyPessoaTipoUI);
@@ -168,6 +184,22 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
     });
     $('btn-buscar-cnpj').addEventListener('click', handleBuscarCnpj);
     $('btn-save-contato').addEventListener('click', handleSave);
+
+    // "Mesmo número" toggle
+    const mesmoElCm = $('ct-mesmo-numero');
+    if (mesmoElCm) {
+      mesmoElCm.addEventListener('change', () => {
+        if (!ppWaCm || !ppTelCm) return;
+        ppWaCm.setDisabled(mesmoElCm.checked);
+        if (mesmoElCm.checked) ppWaCm.syncFrom(ppTelCm);
+      });
+    }
+    // Sincroniza whatsapp quando telefone muda (se toggle ativo)
+    if (elTelCm) {
+      elTelCm.addEventListener('input', () => {
+        if (mesmoElCm?.checked && ppWaCm && ppTelCm) ppWaCm.syncFrom(ppTelCm);
+      });
+    }
 
     // Close handlers
     function cleanup(result) {
@@ -259,11 +291,15 @@ function renderModalHtml(title) {
         <div class="field-group" style="grid-template-columns: 1fr 1fr;">
           <div class="field">
             <label class="field-label" for="ct-telefone">Telefone</label>
-            <input type="text" class="input" id="ct-telefone" maxlength="30" placeholder="(11) 99999-9999">
+            <input type="text" id="ct-telefone" maxlength="40" placeholder="(11) 99999-9999">
+            <div class="phone-same-row">
+              <input type="checkbox" id="ct-mesmo-numero">
+              <label for="ct-mesmo-numero">Mesmo número do WhatsApp</label>
+            </div>
           </div>
           <div class="field">
             <label class="field-label" for="ct-whatsapp">WhatsApp</label>
-            <input type="text" class="input" id="ct-whatsapp" maxlength="30" placeholder="Ex: 5511999999999">
+            <input type="text" id="ct-whatsapp" maxlength="40" placeholder="(11) 99999-9999">
           </div>
         </div>
 

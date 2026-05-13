@@ -7,6 +7,18 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-13-phone-picker-iframe',
+    version: '0.2.7',
+    date: '13/05/2026',
+    title: 'Perfil e Contatos — seletor de país no telefone + correções',
+    items: [
+      { type: 'new',         text: 'Campo de telefone e WhatsApp com seletor de país (bandeira + nome) em Perfil e Contatos' },
+      { type: 'new',         text: 'Opção "Mesmo número do WhatsApp" sincroniza automaticamente os dois campos' },
+      { type: 'improvement', text: 'Contato do próprio usuário exibe label "Usuário" em vez de "Cliente / Fornecedor"' },
+      { type: 'fix',         text: 'Criação de compromisso inline via iframe funcionando corretamente em produção' },
+    ],
+  },
+  {
     id: '2026-05-13-categorias-redesign',
     version: '0.2.6',
     date: '13/05/2026',

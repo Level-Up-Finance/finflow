@@ -10,6 +10,7 @@ import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.j
 import { escapeHtml, formatDateBR } from '../lib/utils.js';
 import { fetchCnpjData, isValidCnpj, digitsOnly, googleCnpjSearchUrl, inferLogoUrl, checkImageExists } from '../lib/cnpj-lookup.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
+import { PhonePicker } from '../components/phone-picker.js';
 
 // ── State ─────────────────────────────────────────────────────
 let cachedContatos      = [];
@@ -25,8 +26,12 @@ let filterTipo          = 'all';   // 'all' | 'cliente' | 'fornecedor' | 'arquiv
 let filterPessoa        = new Set(); // subset de {'fisica', 'juridica'} (vazio = todos)
 let searchQuery         = '';
 
-const TIPO_LABELS = { cliente: 'Cliente', fornecedor: 'Fornecedor', ambos: 'Cliente / Fornecedor' };
-const TIPO_COLORS = { cliente: '#3b82f6', fornecedor: '#8b5cf6', ambos: '#64748b' };
+const TIPO_LABELS = { cliente: 'Cliente', fornecedor: 'Fornecedor', ambos: 'Cliente / Fornecedor', usuario: 'Usuário' };
+const TIPO_COLORS = { cliente: '#3b82f6', fornecedor: '#8b5cf6', ambos: '#64748b', usuario: '#059669' };
+
+// Phone pickers (formulário embutido em contatos.html)
+let ppTelCtg = null;
+let ppWaCtg  = null;
 
 // ── Init ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
@@ -36,9 +41,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadStrings();
   applyTranslationsToDom();
   await loadData();
+  initPhonePickersContatos();
   bindEvents();
   renderList();
 });
+
+function initPhonePickersContatos() {
+  const elTel = document.getElementById('ct-telefone');
+  const elWa  = document.getElementById('ct-whatsapp');
+  if (elTel) ppTelCtg = new PhonePicker(elTel, { placeholder: '(11) 99999-9999' });
+  if (elWa)  ppWaCtg  = new PhonePicker(elWa,  { placeholder: '(11) 99999-9999' });
+
+  // "Mesmo número" toggle
+  const mesmoEl = document.getElementById('ct-mesmo-numero');
+  if (mesmoEl) {
+    mesmoEl.addEventListener('change', () => {
+      if (!ppWaCtg || !ppTelCtg) return;
+      ppWaCtg.setDisabled(mesmoEl.checked);
+      if (mesmoEl.checked) ppWaCtg.syncFrom(ppTelCtg);
+    });
+  }
+  if (elTel) {
+    elTel.addEventListener('input', () => {
+      if (mesmoEl?.checked && ppWaCtg && ppTelCtg) ppWaCtg.syncFrom(ppTelCtg);
+    });
+  }
+}
 
 async function loadData() {
   const [contatosRes, subRes, catRes, contasRes, divRes, projRes] = await Promise.all([
@@ -76,7 +104,11 @@ function filteredContatos() {
       if (!isArchived) return false;
     } else {
       if (isArchived) return false;
-      if (filterTipo !== 'all' && c.tipo !== filterTipo) return false;
+      if (filterTipo !== 'all') {
+        // Contato do próprio usuário (is_perfil) não aparece nos filtros cliente/fornecedor
+        if (c.is_perfil) return false;
+        if (c.tipo !== filterTipo) return false;
+      }
     }
 
     // Pessoa/Empresa: vazio = mostra tudo; senão precisa estar no set
@@ -130,19 +162,21 @@ function renderList() {
       lastInitial = initial;
     }
     const initials = avatarInitials(c.nome);
-    const color    = TIPO_COLORS[c.tipo] || '#64748b';
+    const tipoEfetivo = c.is_perfil ? 'usuario' : c.tipo;
+    const color    = TIPO_COLORS[tipoEfetivo] || '#64748b';
     const isArq    = c.status === 'arquivado';
-    const showC = c.tipo === 'cliente'    || c.tipo === 'ambos';
-    const showF = c.tipo === 'fornecedor' || c.tipo === 'ambos';
+    const showC = !c.is_perfil && (c.tipo === 'cliente'    || c.tipo === 'ambos');
+    const showF = !c.is_perfil && (c.tipo === 'fornecedor' || c.tipo === 'ambos');
     const hasPhoto = !!c.logo_url;
     const letters = hasPhoto ? '' : `
       ${showC ? '<span class="ctp-tipo-letter cliente" title="Cliente">C</span>' : ''}
       ${showF ? '<span class="ctp-tipo-letter fornecedor" title="Fornecedor">F</span>' : ''}
+      ${c.is_perfil ? '<span class="ctp-tipo-letter usuario" title="Usuário">U</span>' : ''}
     `;
     const avatarInner = hasPhoto
       ? `<img src="${escapeHtml(c.logo_url)}" alt="" onerror="this.remove()">`
       : initials;
-    const meta = [TIPO_LABELS[c.tipo] || c.tipo, isArq ? 'Arquivado' : null].filter(Boolean).join(' · ');
+    const meta = [TIPO_LABELS[tipoEfetivo] || tipoEfetivo, isArq ? 'Arquivado' : null].filter(Boolean).join(' · ');
     html += `<div class="ctp-list-item ${c.id === selectedId ? 'is-selected' : ''} ${isArq ? 'is-archived' : ''}"
                   data-id="${c.id}" role="button" tabindex="0">
       ${letters ? `<div class="ctp-list-tipos">${letters}</div>` : ''}
@@ -188,9 +222,10 @@ async function selectContact(id) {
 }
 
 function renderDetailHeader(c) {
-  const initials = avatarInitials(c.nome);
-  const color    = TIPO_COLORS[c.tipo] || '#64748b';
-  const isArq    = c.status === 'arquivado';
+  const initials    = avatarInitials(c.nome);
+  const tipoEfetivo = c.is_perfil ? 'usuario' : c.tipo;
+  const color       = TIPO_COLORS[tipoEfetivo] || '#64748b';
+  const isArq       = c.status === 'arquivado';
 
   const avatarEl = document.getElementById('ct-detail-avatar');
   avatarEl.style.background = color;
@@ -201,7 +236,7 @@ function renderDetailHeader(c) {
   }
 
   document.getElementById('ct-detail-name').textContent  = c.nome;
-  document.getElementById('ct-detail-tipo').textContent  = TIPO_LABELS[c.tipo] || c.tipo;
+  document.getElementById('ct-detail-tipo').textContent  = TIPO_LABELS[tipoEfetivo] || tipoEfetivo;
 
   const statusBadge = document.getElementById('ct-detail-status-badge');
   statusBadge.classList.toggle('hidden', !isArq);
@@ -727,10 +762,24 @@ function openModal(id) {
 
   document.getElementById('modal-contato-title').textContent = c ? 'Editar contato' : 'Novo contato';
   for (const key of MODAL_FIELDS) {
+    if (key === 'telefone' || key === 'whatsapp') continue; // via PhonePicker
     const el = document.getElementById(`ct-${key.replace(/_/g, '-')}`);
     if (!el) continue;
     el.value = c?.[key] ?? (key === 'tipo' ? 'ambos' : '');
   }
+
+  // Phone pickers
+  if (ppTelCtg) ppTelCtg.setValue(c?.telefone || '');
+  if (ppWaCtg)  ppWaCtg.setValue(c?.whatsapp  || '');
+
+  // "Mesmo número"
+  const mesmoEl = document.getElementById('ct-mesmo-numero');
+  if (mesmoEl) {
+    const mesmo = !!(c?.telefone && c?.whatsapp && c.telefone === c.whatsapp);
+    mesmoEl.checked = mesmo;
+    if (ppWaCtg) ppWaCtg.setDisabled(mesmo);
+  }
+
   modalLogoUrl = c?.logo_url || null;
   applyPessoaTipoUI();
 

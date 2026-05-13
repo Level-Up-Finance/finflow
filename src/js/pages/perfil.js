@@ -10,10 +10,15 @@ import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { escapeHtml, getInitials, showConfirm } from '../lib/utils.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
+import { PhonePicker } from '../components/phone-picker.js';
 
 let cachedProfile = null;
 let userId = null;
 let userEmail = null;
+
+// Phone pickers
+let ppTelefone = null;
+let ppWhatsapp = null;
 
 const FIELDS = [
   'nome', 'apelido', 'telefone', 'bio',
@@ -33,10 +38,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   userId = user.id;
   userEmail = user.email;
 
+  initPhonePickers();
   await loadProfile();
   bindEvents();
   bindDangerZoneEvents();
 });
+
+// -----------------------------
+// Phone pickers
+// -----------------------------
+function initPhonePickers() {
+  const elTel = document.getElementById('perfil-telefone');
+  const elWa  = document.getElementById('perfil-whatsapp');
+  if (elTel) ppTelefone = new PhonePicker(elTel, { placeholder: '(11) 99999-9999' });
+  if (elWa)  ppWhatsapp = new PhonePicker(elWa,  { placeholder: '(11) 99999-9999' });
+}
 
 // -----------------------------
 // Load
@@ -58,8 +74,20 @@ async function loadProfile() {
   // Preenche campos
   document.getElementById('perfil-email').value = userEmail || '';
   for (const field of FIELDS) {
+    if (field === 'telefone' || field === 'whatsapp') continue; // gerenciados pelo PhonePicker
     const el = document.getElementById(`perfil-${field}`);
     if (el) el.value = cachedProfile[field] || '';
+  }
+
+  // Phone pickers
+  if (ppTelefone) ppTelefone.setValue(cachedProfile.telefone || '');
+  if (ppWhatsapp) ppWhatsapp.setValue(cachedProfile.whatsapp || '');
+
+  // "Mesmo número" — detecta se os dois são iguais
+  const mesmoEl = document.getElementById('perfil-mesmo-numero');
+  if (mesmoEl && cachedProfile.telefone && cachedProfile.whatsapp) {
+    mesmoEl.checked = cachedProfile.telefone === cachedProfile.whatsapp;
+    if (ppWhatsapp) ppWhatsapp.setDisabled(mesmoEl.checked);
   }
 
   renderFotoDisplay(cachedProfile.foto_url, cachedProfile.nome || cachedProfile.apelido || userEmail);
@@ -83,6 +111,30 @@ function bindEvents() {
   for (const field of FIELDS) {
     const el = document.getElementById(`perfil-${field}`);
     if (el) el.addEventListener('input', updateSaveButton);
+  }
+
+  // "Mesmo número" toggle
+  const mesmoEl = document.getElementById('perfil-mesmo-numero');
+  if (mesmoEl) {
+    mesmoEl.addEventListener('change', () => {
+      if (!ppWhatsapp || !ppTelefone) return;
+      ppWhatsapp.setDisabled(mesmoEl.checked);
+      if (mesmoEl.checked) {
+        ppWhatsapp.syncFrom(ppTelefone);
+      }
+      updateSaveButton();
+    });
+  }
+
+  // Quando telefone muda e "mesmo número" está marcado → espelha no whatsapp
+  const telInput = document.getElementById('perfil-telefone');
+  if (telInput) {
+    telInput.addEventListener('input', () => {
+      if (mesmoEl?.checked && ppWhatsapp && ppTelefone) {
+        ppWhatsapp.syncFrom(ppTelefone);
+      }
+      updateSaveButton();
+    });
   }
 
   // Submit (form)

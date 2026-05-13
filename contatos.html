@@ -188,11 +188,15 @@
         <div class="field-group" style="grid-template-columns: 1fr 1fr;">
           <div class="field">
             <label class="field-label" for="ct-telefone">Telefone</label>
-            <input type="text" class="input" id="ct-telefone" maxlength="30" placeholder="(11) 99999-9999">
+            <input type="text" id="ct-telefone" maxlength="40" placeholder="(11) 99999-9999">
+            <div class="phone-same-row">
+              <input type="checkbox" id="ct-mesmo-numero">
+              <label for="ct-mesmo-numero">Mesmo número do WhatsApp</label>
+            </div>
           </div>
           <div class="field">
             <label class="field-label" for="ct-whatsapp">WhatsApp</label>
-            <input type="text" class="input" id="ct-whatsapp" maxlength="30" placeholder="Ex: 5511999999999">
+            <input type="text" id="ct-whatsapp" maxlength="40" placeholder="(11) 99999-9999">
           </div>
         </div>
 
