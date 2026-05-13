@@ -374,6 +374,8 @@ export async function saveCompromisso(event, deps) {
     showToast(editingId ? t('compromissos.toast.atualizado', 'Compromisso atualizado') : t('compromissos.toast.criado', 'Compromisso criado'), 'success');
     if (subcategoriaMsg) showInfoPopup('Subcategoria', subcategoriaMsg);
 
+    // Signal embedded mode that a save occurred before modal closes
+    window._embeddedCompSaved = true;
     closeModal('modal-compromisso');
     deps.setEditingId(null);
     await deps.loadCompromissos();

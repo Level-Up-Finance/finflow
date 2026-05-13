@@ -144,46 +144,59 @@
         <button type="button" class="modal-close" id="btn-close-modal-categoria" aria-label="Fechar">×</button>
       </div>
       <div class="modal-body">
-        <div class="field">
-          <label class="field-label" for="cat-nome">Nome</label>
-          <input type="text" id="cat-nome" class="input" maxlength="50" placeholder="Ex: Lazer, Saúde…">
-        </div>
-        <div class="field-group" style="grid-template-columns: 1fr auto;">
+        <div id="cat-form-wrap">
           <div class="field">
-            <label class="field-label" for="cat-grupo">Bloco</label>
-            <select id="cat-grupo" class="select">
-              <optgroup label="Contribuição">
-                <option value="receitas">Receita</option>
-                <option value="dividas">Dívida</option>
-              </optgroup>
-              <option value="investimentos">Sonhos</option>
-              <option value="custo_vida" selected>Custo de vida</option>
-            </select>
+            <label class="field-label" for="cat-nome">Nome</label>
+            <input type="text" id="cat-nome" class="input" maxlength="50" placeholder="Ex: Lazer, Saúde…">
           </div>
-          <div class="field" style="grid-column: 1 / -1;">
-            <label class="field-label">Cor</label>
-            <div class="color-picker" id="cat-cor-picker"></div>
-            <input type="hidden" id="cat-cor" value="#6D5EF5">
+          <div class="field-group" style="grid-template-columns: 1fr auto;">
+            <div class="field">
+              <label class="field-label" for="cat-grupo">Bloco</label>
+              <select id="cat-grupo" class="select">
+                <optgroup label="Contribuição">
+                  <option value="receitas">Receita</option>
+                  <option value="dividas">Dívida</option>
+                </optgroup>
+                <option value="investimentos">Sonhos</option>
+                <option value="custo_vida" selected>Custo de vida</option>
+              </select>
+            </div>
+            <div class="field" style="grid-column: 1 / -1;">
+              <label class="field-label">Cor</label>
+              <div class="color-picker" id="cat-cor-picker"></div>
+              <input type="hidden" id="cat-cor" value="#6D5EF5">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="cat-descricao">Descrição <span class="field-optional">(opcional)</span></label>
+            <textarea id="cat-descricao" class="textarea" rows="2" maxlength="300" placeholder="Anotação sobre esta categoria…"></textarea>
+          </div>
+          <div class="cfg-migration-warning hidden" id="cat-migration-warning">
+            <div class="cfg-warning-box">
+              <strong>⚠ Esta categoria tem histórico vinculado</strong>
+              <p>Mover para outro bloco quebra a consistência dos relatórios (transações, compromissos, dívidas etc.). O ideal é criar uma categoria nova no bloco desejado e arquivar esta.</p>
+              <label class="cfg-override-toggle">
+                <input type="checkbox" id="cat-override-bloco">
+                <span>Mover mesmo assim — aceito perder a consistência</span>
+              </label>
+            </div>
           </div>
         </div>
-        <div class="field">
-          <label class="field-label" for="cat-descricao">Descrição <span class="field-optional">(opcional)</span></label>
-          <textarea id="cat-descricao" class="textarea" rows="2" maxlength="300" placeholder="Anotação sobre esta categoria…"></textarea>
-        </div>
-        <div class="cfg-migration-warning hidden" id="cat-migration-warning">
-          <div class="cfg-warning-box">
-            <strong>⚠ Esta categoria tem histórico vinculado</strong>
-            <p>Mover para outro bloco quebra a consistência dos relatórios (transações, compromissos, dívidas etc.). O ideal é criar uma categoria nova no bloco desejado e arquivar esta.</p>
-            <label class="cfg-override-toggle">
-              <input type="checkbox" id="cat-override-bloco">
-              <span>Mover mesmo assim — aceito perder a consistência</span>
-            </label>
+        <div id="cat-postsave" class="cfg-postsave hidden">
+          <div class="cfg-postsave-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><path d="M20 6L9 17l-5-5"/></svg>
           </div>
+          <p class="cfg-postsave-title">Categoria criada!</p>
+          <p class="cfg-postsave-desc">Quer criar um compromisso nesta categoria? Compromissos definem os valores mensais planejados — ajudam a acompanhar se você está dentro do orçamento.</p>
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer" id="cat-main-footer">
         <button type="button" class="btn btn-ghost" id="btn-cancel-categoria">Cancelar</button>
         <button type="button" class="btn btn-primary" id="btn-save-categoria">Salvar</button>
+      </div>
+      <div class="modal-footer hidden" id="cat-postsave-footer">
+        <button type="button" class="btn btn-ghost" id="btn-cat-postsave-no">Não agora</button>
+        <button type="button" class="btn btn-primary" id="btn-cat-postsave-yes">Criar compromisso</button>
       </div>
     </div>
   </div>
@@ -198,33 +211,56 @@
         <button type="button" class="modal-close" id="btn-close-modal-subcategoria" aria-label="Fechar">×</button>
       </div>
       <div class="modal-body">
-        <div class="field hidden" id="sub-categoria-field">
-          <label class="field-label" for="sub-categoria-select">Categoria <span class="required">*</span></label>
-          <select id="sub-categoria-select" class="select"></select>
-          <p class="field-hint" id="sub-categoria-hint"></p>
-        </div>
-        <div class="field">
-          <label class="field-label" for="sub-nome">Nome <span class="required">*</span></label>
-          <input type="text" id="sub-nome" class="input" maxlength="80" placeholder="Nome da subcategoria">
-        </div>
-        <div class="field">
-          <label class="field-label" for="sub-descricao">Descrição <span class="field-optional">(opcional)</span></label>
-          <textarea id="sub-descricao" class="textarea" rows="2" maxlength="300" placeholder="Anotação sobre esta subcategoria…"></textarea>
-        </div>
-        <div class="cfg-migration-warning hidden" id="sub-migration-warning">
-          <div class="cfg-warning-box">
-            <strong>⚠ Esta subcategoria tem histórico vinculado</strong>
-            <p>Mover para uma categoria de outro bloco quebra a consistência dos relatórios. Categorias de outros blocos aparecem como bloqueadas. O ideal é criar uma subcategoria nova no bloco desejado.</p>
-            <label class="cfg-override-toggle">
-              <input type="checkbox" id="sub-override-bloco">
-              <span>Mover mesmo assim — aceito perder a consistência</span>
+        <div id="sub-form-wrap">
+          <div class="field hidden" id="sub-categoria-field">
+            <label class="field-label" for="sub-categoria-select">Categoria <span class="required">*</span></label>
+            <select id="sub-categoria-select" class="select"></select>
+            <p class="field-hint" id="sub-categoria-hint"></p>
+          </div>
+          <div class="field">
+            <label class="field-label" for="sub-nome">Nome <span class="required">*</span></label>
+            <input type="text" id="sub-nome" class="input" maxlength="80" placeholder="Nome da subcategoria">
+          </div>
+          <div class="field">
+            <label class="field-label" for="sub-descricao">Descrição <span class="field-optional">(opcional)</span></label>
+            <textarea id="sub-descricao" class="textarea" rows="2" maxlength="300" placeholder="Anotação sobre esta subcategoria…"></textarea>
+          </div>
+          <div class="cfg-migration-warning hidden" id="sub-migration-warning">
+            <div class="cfg-warning-box">
+              <strong>⚠ Esta subcategoria tem histórico vinculado</strong>
+              <p>Mover para uma categoria de outro bloco quebra a consistência dos relatórios. Categorias de outros blocos aparecem como bloqueadas. O ideal é criar uma subcategoria nova no bloco desejado.</p>
+              <label class="cfg-override-toggle">
+                <input type="checkbox" id="sub-override-bloco">
+                <span>Mover mesmo assim — aceito perder a consistência</span>
+              </label>
+            </div>
+          </div>
+          <div id="sub-renda-principal-row" class="field hidden">
+            <label class="cfg-check-label">
+              <input type="checkbox" id="sub-renda-principal">
+              <span>Esta é a renda principal</span>
             </label>
+            <div id="sub-renda-principal-callout" class="cfg-info-callout hidden">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <p>Os blocos de pagamento em Compromissos serão calculados com base no valor desta receita.</p>
+            </div>
           </div>
         </div>
+        <div id="sub-postsave" class="cfg-postsave hidden">
+          <div class="cfg-postsave-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+          <p class="cfg-postsave-title">Subcategoria criada!</p>
+          <p class="cfg-postsave-desc">Quer criar um compromisso para esta subcategoria? Compromissos definem os valores mensais planejados — ajudam a acompanhar se você está dentro do orçamento.</p>
+        </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer" id="sub-main-footer">
         <button type="button" class="btn btn-ghost" id="btn-cancel-subcategoria">Cancelar</button>
         <button type="button" class="btn btn-primary" id="btn-save-subcategoria">Salvar</button>
+      </div>
+      <div class="modal-footer hidden" id="sub-postsave-footer">
+        <button type="button" class="btn btn-ghost" id="btn-sub-postsave-no">Não agora</button>
+        <button type="button" class="btn btn-primary" id="btn-sub-postsave-yes">Criar compromisso</button>
       </div>
     </div>
   </div>
@@ -246,6 +282,30 @@
         <button type="button" class="btn btn-danger" id="btn-cfg-confirmar-ok">Excluir</button>
       </div>
     </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Detalhe de subcategoria (clique no nome)
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-sub-detail" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Subcategoria</h2>
+        <button type="button" class="modal-close" id="btn-close-sub-detail" aria-label="Fechar">×</button>
+      </div>
+      <div id="sub-detail-content" style="overflow-y:auto;max-height:70vh;"></div>
+      <div class="sub-detail-footer">
+        <button type="button" class="btn btn-ghost" id="btn-sub-detail-close">Fechar</button>
+        <button type="button" class="btn btn-primary" id="btn-sub-detail-edit">Editar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       OVERLAY: Modal de compromisso embutido (iframe)
+       ============================================================ -->
+  <div id="cfg-embed-overlay" class="cfg-embed-overlay hidden">
+    <iframe id="cfg-embed-iframe" class="cfg-embed-iframe" src=""></iframe>
   </div>
 
   <div id="toast-container" class="toast-container"></div>

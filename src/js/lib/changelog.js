@@ -7,6 +7,19 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-13-categorias-redesign',
+    version: '0.2.6',
+    date: '13/05/2026',
+    title: 'Categorias — vínculos, transações e compromisso inline',
+    items: [
+      { type: 'new', text: 'Modal de compromisso abre na própria página de Categorias — sem navegar para outra tela' },
+      { type: 'new', text: 'Coluna "Vínculos" exibe badges coloridos de projeto, dívida e compromisso com hover popup' },
+      { type: 'new', text: 'Coluna "Transações" mostra contagem com hover popup das últimas 5 transações' },
+      { type: 'new', text: 'Clicar no nome da subcategoria abre popup com todos os detalhes, vínculos, últimas transações e botão Editar' },
+      { type: 'improvement', text: 'Ícone de editar removido das linhas de subcategoria — acesso via clique no nome' },
+    ],
+  },
+  {
     id: '2026-05-10-login-redesign',
     version: '0.2.5',
     date: '10/05/2026',

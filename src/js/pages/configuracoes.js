@@ -8,7 +8,7 @@ import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { getTheme, setTheme } from '../lib/theme.js';
 import { CURRENCIES } from '../lib/currencies.js';
-import { escapeHtml } from '../lib/utils.js';
+import { escapeHtml, formatDateBR } from '../lib/utils.js';
 import { DEFAULT_COLOR, renderColorPicker, setActiveColor } from '../lib/color-palette.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 import { formatCurrency, renderMoedaOptions } from '../lib/compromissos-config.js';
@@ -28,14 +28,24 @@ let newSubCatId   = null; // categoria_id pra nova subcategoria
 let pendingDelete = null; // { type: 'cat'|'sub', id }
 
 // Histórico (categorias/subcategorias com vínculos a registros reais)
-let historicoSubIds = new Set();
-let historicoCatIds = new Set();
-let subsWithTx      = new Set();
+let historicoSubIds  = new Set();
+let historicoCatIds  = new Set();
+let subsWithTx       = new Set();
+let cachedTxCountMap = new Map();  // subcategoria_id → tx count
 
 // Modal lock state for migration restrictions
 let modalCatLockedGrupo = null;
 let modalSubLockedGrupo = null;
 let modalSubBlocoGrupos = null;  // restrict cat select to this bloco's grupos
+
+// Sub detail modal state
+let detailSubId = null;  // which sub is being shown in modal-sub-detail
+
+// Quick-compromisso post-save state
+let compRapidoSubId     = null;  // subcategoria ID to update (or null → insert new)
+let compRapidoCatId     = null;  // categoria_id context
+let compRapidoIsReceita = false; // whether to show eh_renda_principal
+let compRapidoNome      = '';    // pre-fill name
 
 const SUPER_BLOCOS = [
   { id: 'contribuicao', label: 'Contribuição', grupos: ['receitas', 'dividas'],  accent: 'var(--color-success)' },
@@ -67,6 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   bindIdiomaEvents();
   initVinculoPopover();
   initInfoPopover();
+  initTxPopover();
   bindCategoryDragDrop();
   window.addEventListener('resize', updateStickyThTop);
   loadProfileSettings();  // async, non-blocking
@@ -125,14 +136,22 @@ async function loadAll() {
 // Histórico: detectar categorias/subcategorias com vínculos
 // -----------------------------
 async function computeHistorico() {
-  // 1) subcategorias com transações registradas
-  subsWithTx = new Set();
+  // 1) subcategorias com transações registradas + count map
+  subsWithTx       = new Set();
+  cachedTxCountMap = new Map();
   try {
     const { data: txs, error: txErr } = await supabase
       .from('transacoes')
       .select('subcategoria_id')
       .not('subcategoria_id', 'is', null);
-    if (!txErr) subsWithTx = new Set((txs || []).map((t) => t.subcategoria_id));
+    if (!txErr) {
+      for (const tx of txs || []) {
+        if (tx.subcategoria_id) {
+          subsWithTx.add(tx.subcategoria_id);
+          cachedTxCountMap.set(tx.subcategoria_id, (cachedTxCountMap.get(tx.subcategoria_id) || 0) + 1);
+        }
+      }
+    }
   } catch (err) {
     console.warn('[historico] erro ao consultar transacoes:', err?.message);
   }
@@ -188,8 +207,8 @@ function renderTree() {
         <tr>
           <th class="cfg-th-cat"><span class="cfg-th-label">Categoria</span>${addCatBtn}</th>
           <th class="cfg-th-sub"><span class="cfg-th-label">Subcategoria</span>${showSubBtn ? addSubBtn : ''}</th>
-          <th class="cfg-th-vinculo">Vínculo</th>
-          <th class="cfg-th-desc">Descrição</th>
+          <th class="cfg-th-comp">Vínculos</th>
+          <th class="cfg-th-tx">Transações</th>
           <th class="cfg-th-actions"></th>
         </tr>
       </thead>`;
@@ -202,7 +221,7 @@ function renderTree() {
             ${blocoHeader(false)}
             <tbody>
               <tr>
-                <td colspan="5" class="cfg-empty-bloco-row">Nenhuma categoria ainda.</td>
+                <td colspan="5" class="cfg-empty-bloco-row">Nenhuma categoria ainda.</td><!-- 5 cols: cat, sub, comp, tx, actions -->
               </tr>
             </tbody>
           </table>
@@ -232,13 +251,12 @@ function renderTree() {
       let catRows = '';
 
       if (subs.length === 0) {
-        const descText = cat.descricao ? escapeHtml(cat.descricao) : '<span class="cfg-td-desc-placeholder">—</span>';
         catRows = `
           <tr class="cfg-tr cfg-tr--first cfg-tr-cat-only">
             ${catCell(1)}
             <td class="cfg-td-sub cfg-td-empty">Sem subcategorias</td>
-            <td class="cfg-td-vinculo"><span class="cfg-vinculo-empty">sem vínculo</span></td>
-            <td class="cfg-td-desc" data-info-type="cat" data-info-id="${cat.id}">${descText}</td>
+            <td class="cfg-td-comp"><button class="btn-add-comp" data-cfg-cat="${cat.id}" data-cfg-tipo="${cat.grupo === 'receitas' ? 'Receita' : 'Despesa'}" data-cfg-nome="${escapeHtml(cat.nome)}" title="Criar compromisso" type="button"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> compromisso</button></td>
+            <td class="cfg-td-tx"><span class="cfg-tx-none">—</span></td>
             <td class="cfg-td-actions"></td>
           </tr>`;
       } else {
@@ -247,33 +265,40 @@ function renderTree() {
           const projeto = sub.projeto_id ? cachedProjetos.find((p) => p.id === sub.projeto_id) : null;
           const divida  = sub.divida_id  ? cachedDividas.find((d) => d.id === sub.divida_id)   : null;
 
-          let vinculoHtml;
+          // — Compromissos column —
+          const compParts = [];
           if (projeto) {
-            vinculoHtml = `<span class="vinculo-badge vinculo-badge--projeto" data-vinculo-type="projeto" data-vinculo-id="${projeto.id}" style="--vinculo-cor:${projeto.cor};">${escapeHtml(projeto.nome)}</span>`;
-          } else if (divida) {
-            vinculoHtml = `<span class="vinculo-badge vinculo-badge--divida" data-vinculo-type="divida" data-vinculo-id="${sub.divida_id}">${escapeHtml(divida.nome)}</span>`;
-          } else if (subsWithTx.has(sub.id)) {
-            vinculoHtml = '<span class="cfg-vinculo-tx">com transações</span>';
-          } else {
-            vinculoHtml = '<span class="cfg-vinculo-empty">sem vínculo</span>';
+            compParts.push(`<span class="vinculo-badge vinculo-badge--projeto" data-vinculo-type="projeto" data-vinculo-id="${projeto.id}" style="--vinculo-cor:${projeto.cor};">${escapeHtml(projeto.nome)}</span>`);
           }
+          if (divida) {
+            compParts.push(`<span class="vinculo-badge vinculo-badge--divida" data-vinculo-type="divida" data-vinculo-id="${sub.divida_id}">${escapeHtml(divida.nome)}</span>`);
+          }
+          if (hasComp) {
+            compParts.push(`<span class="cfg-comp-badge cfg-comp-badge--val">${escapeHtml(sub.nome)}</span>`);
+          }
+          const compHtml = compParts.length
+            ? `<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">${compParts.join('')}</div>`
+            : `<button class="btn-add-comp" data-cfg-sub="${sub.id}" title="Criar compromisso" type="button"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> compromisso</button>`;
+
+          // — Transações column —
+          const txCount = cachedTxCountMap.get(sub.id) || 0;
+          const txHtml = txCount > 0
+            ? `<button class="cfg-tx-badge" data-tx-sub="${sub.id}" title="Ver últimas transações"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 10h16M4 14h10M4 18h6"/></svg>${txCount}</button>`
+            : `<span class="cfg-tx-none">—</span>`;
 
           const subActions = `
             <div class="cfg-row-actions">
-              <button class="btn-icon" data-edit-sub="${sub.id}" title="Editar">${ICON_EDIT}</button>
               ${!hasComp ? `<button class="btn-icon danger" data-delete-sub="${sub.id}" title="Excluir">${ICON_TRASH}</button>` : ''}
             </div>`;
-
-          const descText = sub.descricao ? escapeHtml(sub.descricao) : '<span class="cfg-td-desc-placeholder">—</span>';
 
           catRows += `
             <tr class="cfg-tr${i === 0 ? ' cfg-tr--first' : ''}">
               ${i === 0 ? catCell(subs.length) : ''}
               <td class="cfg-td-sub">
-                <span class="cfg-sub-nome-cell">${escapeHtml(sub.nome)}</span>
+                <button class="cfg-sub-nome-btn" data-sub-detail="${sub.id}">${escapeHtml(sub.nome)}</button>
               </td>
-              <td class="cfg-td-vinculo">${vinculoHtml}</td>
-              <td class="cfg-td-desc" data-info-type="sub" data-info-id="${sub.id}">${descText}</td>
+              <td class="cfg-td-comp">${compHtml}</td>
+              <td class="cfg-td-tx">${txHtml}</td>
               <td class="cfg-td-actions">${subActions}</td>
             </tr>`;
         });
@@ -398,6 +423,27 @@ function bindTreeEvents() {
     // Excluir subcategoria
     const deleteSubBtn = e.target.closest('[data-delete-sub]');
     if (deleteSubBtn) { confirmDelete('sub', deleteSubBtn.dataset.deleteSub); return; }
+
+    // Criar compromisso via overlay iframe
+    const addCompBtn = e.target.closest('.btn-add-comp');
+    if (addCompBtn) {
+      const cfgSub  = addCompBtn.dataset.cfgSub;
+      const cfgCat  = addCompBtn.dataset.cfgCat;
+      const cfgTipo = addCompBtn.dataset.cfgTipo || 'Despesa';
+      const cfgNome = addCompBtn.dataset.cfgNome || '';
+      if (cfgSub) {
+        openEmbeddedCompromisso(`compromissos.html?embedded=1&cfg_sub=${encodeURIComponent(cfgSub)}`);
+      } else if (cfgCat) {
+        const params = new URLSearchParams({ embedded: '1', cfg_cat: cfgCat, cfg_tipo: cfgTipo });
+        if (cfgNome) params.set('cfg_nome', encodeURIComponent(cfgNome));
+        openEmbeddedCompromisso(`compromissos.html?${params.toString()}`);
+      }
+      return;
+    }
+
+    // Sub detail modal (click on sub name)
+    const subDetailBtn = e.target.closest('[data-sub-detail]');
+    if (subDetailBtn) { openSubDetailModal(subDetailBtn.dataset.subDetail); return; }
   });
 }
 
@@ -441,7 +487,15 @@ function refreshCatGrupoLock() {
 
 function closeCatModal() {
   document.getElementById('modal-categoria').classList.add('hidden');
-  editingCatId = null;
+  // Reset post-save state
+  document.getElementById('cat-form-wrap').classList.remove('hidden');
+  document.getElementById('cat-postsave').classList.add('hidden');
+  document.getElementById('cat-main-footer').classList.remove('hidden');
+  document.getElementById('cat-postsave-footer').classList.add('hidden');
+  editingCatId        = null;
+  compRapidoCatId     = null;
+  compRapidoNome      = '';
+  compRapidoIsReceita = false;
 }
 
 async function saveCat() {
@@ -474,7 +528,8 @@ async function saveCat() {
     ({ error } = await supabase.from('categorias').update({ nome, cor, grupo, descricao }).eq('id', editingCatId));
   } else {
     const ordem = cachedCategorias.length;
-    ({ error } = await supabase.from('categorias').insert({ user_id: user.id, nome, cor, grupo, ordem, is_default: false, descricao }));
+    ({ error } = await supabase.from('categorias')
+      .insert({ user_id: user.id, nome, cor, grupo, ordem, is_default: false, descricao }));
   }
 
   btn.disabled = false;
@@ -487,9 +542,29 @@ async function saveCat() {
     : t('configuracoes.toast.cat_criada', 'Categoria criada'),
     'success');
   const savedNome = nome;
-  closeCatModal();
-  await reloadAll();
-  scrollToTreeItem('.cfg-cat-nome-cell', savedNome);
+
+  if (!editingCatId) {
+    // Fetch the ID of the category we just created
+    const { data: freshCats } = await supabase
+      .from('categorias')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('nome', nome)
+      .eq('grupo', grupo)
+      .eq('is_default', false)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    const newCatId = freshCats?.[0]?.id || null;
+
+    await reloadAll();
+    scrollToTreeItem('.cfg-cat-nome-cell', savedNome);
+    if (newCatId) showCatPostSave(newCatId, grupo, savedNome);
+    else closeCatModal();
+  } else {
+    closeCatModal();
+    await reloadAll();
+    scrollToTreeItem('.cfg-cat-nome-cell', savedNome);
+  }
 }
 
 // -----------------------------
@@ -534,6 +609,20 @@ function openSubModal(subId = null, catId = null, blocoGrupos = null) {
     hint.textContent = subId ? 'Mude a categoria para mover esta subcategoria.' : '';
   }
 
+  // Renda principal: visible only for receitas grupo
+  const subCatId = resolvedCatId || (sub ? sub.categoria_id : null);
+  const subCat   = subCatId ? cachedCategorias.find((c) => c.id === subCatId) : null;
+  const isReceitas = subCat?.grupo === 'receitas'
+    || (modalSubBlocoGrupos?.includes('receitas') && !subCatId);
+  const rpRow = document.getElementById('sub-renda-principal-row');
+  rpRow.classList.toggle('hidden', !isReceitas);
+  if (isReceitas) {
+    const rpCb = document.getElementById('sub-renda-principal');
+    rpCb.checked = !!sub?.eh_renda_principal;
+    document.getElementById('sub-renda-principal-callout')
+      .classList.toggle('hidden', !rpCb.checked);
+  }
+
   document.getElementById('modal-subcategoria').classList.remove('hidden');
   document.getElementById('sub-nome').focus();
 }
@@ -564,8 +653,17 @@ function renderSubCatSelect(selectedCatId) {
 
 function closeSubModal() {
   document.getElementById('modal-subcategoria').classList.add('hidden');
-  editingSubId = null;
-  newSubCatId  = null;
+  // Reset post-save state
+  document.getElementById('sub-form-wrap').classList.remove('hidden');
+  document.getElementById('sub-postsave').classList.add('hidden');
+  document.getElementById('sub-main-footer').classList.remove('hidden');
+  document.getElementById('sub-postsave-footer').classList.add('hidden');
+  editingSubId        = null;
+  newSubCatId         = null;
+  compRapidoSubId     = null;
+  compRapidoCatId     = null;
+  compRapidoNome      = '';
+  compRapidoIsReceita = false;
 }
 
 async function saveSub() {
@@ -604,9 +702,17 @@ async function saveSub() {
   const user = await getCurrentUser();
   if (!user) return;
 
+  // Renda principal value (only relevant for receitas)
+  const currentCatForSave = cachedCategorias.find((c) => c.id === (resolvedCatId || editingSubId && cachedSubcategorias.find((s) => s.id === editingSubId)?.categoria_id));
+  const isReceitas = currentCatForSave?.grupo === 'receitas';
+  const ehRendaPrincipal = isReceitas
+    ? document.getElementById('sub-renda-principal').checked
+    : false;
+
   let error;
   if (editingSubId) {
     const updates = { nome, descricao };
+    if (isReceitas) updates.eh_renda_principal = ehRendaPrincipal;
     if (resolvedCatId) {
       const sub = cachedSubcategorias.find((s) => s.id === editingSubId);
       if (resolvedCatId !== sub?.categoria_id) {
@@ -621,28 +727,56 @@ async function saveSub() {
     const tipo  = cat?.grupo === 'receitas' ? 'Receita' : 'Despesa';
     const today = new Date().toISOString().slice(0, 10);
     ({ error } = await supabase.from('subcategorias').insert({
-      user_id:      user.id,
+      user_id:            user.id,
       nome,
       descricao,
-      categoria_id: resolvedCatId,
+      categoria_id:       resolvedCatId,
       tipo,
-      periodo:      'Mensal',
-      valor_base:   0,
-      iniciado_em:  today,
-      status:       'ativa',
+      periodo:            'Mensal',
+      valor_base:         0,
+      iniciado_em:        today,
+      status:             'ativa',
+      eh_renda_principal: ehRendaPrincipal,
     }));
   }
 
   btn.disabled = false;
   btn.textContent = 'Salvar';
 
-  if (error) { showToast('Erro: ' + error.message, 'error', 8000); return; }
+  if (error) {
+    // Friendly message for the unique-renda-principal constraint
+    if (error.code === '23505' && error.message?.includes('renda_principal')) {
+      showToast('Já existe uma renda principal. Remova a marcação da outra subcategoria primeiro.', 'error', 8000);
+    } else {
+      showToast('Erro: ' + error.message, 'error', 8000);
+    }
+    return;
+  }
 
   showToast(editingSubId ? t('configuracoes.toast.sub_atualizada', 'Subcategoria atualizada') : t('configuracoes.toast.sub_criada', 'Subcategoria criada'), 'success');
   const savedNome = nome;
-  closeSubModal();
-  await reloadAll();
-  scrollToTreeItem('.cfg-sub-nome-cell', savedNome);
+
+  if (!editingSubId) {
+    // Fetch the ID of the sub we just created (used by comp-rapido to update it)
+    const { data: freshSubs } = await supabase
+      .from('subcategorias')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('categoria_id', resolvedCatId)
+      .eq('nome', nome)
+      .eq('status', 'ativa')
+      .order('created_at', { ascending: false })
+      .limit(1);
+    const newSubId = freshSubs?.[0]?.id || null;
+
+    await reloadAll();
+    scrollToTreeItem('.cfg-sub-nome-cell', savedNome);
+    showSubPostSave(newSubId, resolvedCatId, savedNome, isReceitas);
+  } else {
+    closeSubModal();
+    await reloadAll();
+    scrollToTreeItem('.cfg-sub-nome-cell', savedNome);
+  }
 }
 
 // -----------------------------
@@ -734,6 +868,44 @@ function bindModalEvents() {
     renderSubCatSelect(currentVal);
   });
 
+  // Renda principal: show callout when checkbox toggled
+  document.getElementById('sub-renda-principal').addEventListener('change', (e) => {
+    document.getElementById('sub-renda-principal-callout').classList.toggle('hidden', !e.target.checked);
+  });
+
+  // Renda principal: update row visibility when category selector changes
+  document.getElementById('sub-categoria-select').addEventListener('change', () => {
+    const catId = document.getElementById('sub-categoria-select').value;
+    const cat = cachedCategorias.find((c) => c.id === catId);
+    const isRec = cat?.grupo === 'receitas';
+    document.getElementById('sub-renda-principal-row').classList.toggle('hidden', !isRec);
+    if (!isRec) {
+      document.getElementById('sub-renda-principal').checked = false;
+      document.getElementById('sub-renda-principal-callout').classList.add('hidden');
+    }
+  });
+
+  // Post-save: subcategoria
+  document.getElementById('btn-sub-postsave-no').addEventListener('click', closeSubModal);
+  document.getElementById('btn-sub-postsave-yes').addEventListener('click', () => {
+    const subId     = compRapidoSubId;
+    const catId     = compRapidoCatId;
+    const nome      = compRapidoNome;
+    const isReceita = compRapidoIsReceita;
+    closeSubModal();
+    goToNewCompromisso(subId, catId, nome, isReceita);
+  });
+
+  // Post-save: categoria
+  document.getElementById('btn-cat-postsave-no').addEventListener('click', closeCatModal);
+  document.getElementById('btn-cat-postsave-yes').addEventListener('click', () => {
+    const catId     = compRapidoCatId;
+    const nome      = compRapidoNome;
+    const isReceita = compRapidoIsReceita;
+    closeCatModal();
+    goToNewCompromisso(null, catId, nome, isReceita);
+  });
+
   // Confirm delete modal
   document.getElementById('btn-close-cfg-confirmar').addEventListener('click', closeConfirmModal);
   document.getElementById('btn-cfg-confirmar-cancel').addEventListener('click', closeConfirmModal);
@@ -741,10 +913,85 @@ function bindModalEvents() {
   document.getElementById('modal-cfg-confirmar').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeConfirmModal();
   });
+
+  // Sub detail modal
+  document.getElementById('btn-close-sub-detail').addEventListener('click', closeSubDetailModal);
+  document.getElementById('btn-sub-detail-close').addEventListener('click', closeSubDetailModal);
+  document.getElementById('btn-sub-detail-edit').addEventListener('click', () => {
+    const id = detailSubId;
+    closeSubDetailModal();
+    if (id) openSubModal(id);
+  });
+  document.getElementById('modal-sub-detail').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeSubDetailModal();
+  });
+
+  // Embed overlay — click backdrop to close
+  document.getElementById('cfg-embed-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      e.currentTarget.classList.add('hidden');
+      document.getElementById('cfg-embed-iframe').src = '';
+    }
+  });
 }
 
 // -----------------------------
-// Dropdown "Novo"
+// Post-save helpers & quick compromisso
+// -----------------------------
+function showSubPostSave(subId, catId, nome, isReceita) {
+  compRapidoSubId     = subId;
+  compRapidoCatId     = catId;
+  compRapidoNome      = nome;
+  compRapidoIsReceita = isReceita;
+
+  document.getElementById('sub-form-wrap').classList.add('hidden');
+  document.getElementById('sub-postsave').classList.remove('hidden');
+  document.getElementById('sub-main-footer').classList.add('hidden');
+  document.getElementById('sub-postsave-footer').classList.remove('hidden');
+}
+
+function showCatPostSave(catId, grupo, nome) {
+  compRapidoSubId     = null;
+  compRapidoCatId     = catId;
+  compRapidoNome      = nome;
+  compRapidoIsReceita = grupo === 'receitas';
+
+  document.getElementById('cat-form-wrap').classList.add('hidden');
+  document.getElementById('cat-postsave').classList.remove('hidden');
+  document.getElementById('cat-main-footer').classList.add('hidden');
+  document.getElementById('cat-postsave-footer').classList.remove('hidden');
+}
+
+function goToNewCompromisso(subId, catId, nome, isReceita) {
+  if (subId) {
+    openEmbeddedCompromisso(`compromissos.html?embedded=1&cfg_sub=${encodeURIComponent(subId)}`);
+  } else if (catId) {
+    const tipo   = isReceita ? 'Receita' : 'Despesa';
+    const params = new URLSearchParams({ embedded: '1', cfg_cat: catId, cfg_tipo: tipo });
+    if (nome) params.set('cfg_nome', encodeURIComponent(nome));
+    openEmbeddedCompromisso(`compromissos.html?${params.toString()}`);
+  }
+}
+
+function openEmbeddedCompromisso(url) {
+  const overlay = document.getElementById('cfg-embed-overlay');
+  const iframe  = document.getElementById('cfg-embed-iframe');
+  if (!overlay || !iframe) return;
+  iframe.src = url;
+  overlay.classList.remove('hidden');
+}
+
+// Listen for messages from the embedded iframe (save / close)
+window.addEventListener('message', (e) => {
+  if (e.origin !== window.location.origin) return;
+  if (e.data?.source !== 'finflow-embedded') return;
+  const overlay = document.getElementById('cfg-embed-overlay');
+  const iframe  = document.getElementById('cfg-embed-iframe');
+  overlay?.classList.add('hidden');
+  if (iframe) iframe.src = '';
+  if (e.data?.type === 'comp-saved') reloadAll();
+});
+
 // -----------------------------
 // Tabs
 // -----------------------------
@@ -1038,6 +1285,217 @@ function buildVinculoPopoverContent(type, id) {
 
 function fmtCurrency(val, moeda = 'BRL') {
   return formatCurrency(val, moeda);
+}
+
+// -----------------------------
+// Sub detail modal
+// -----------------------------
+async function openSubDetailModal(subId) {
+  detailSubId = subId;
+  const sub = cachedSubcategorias.find((s) => s.id === subId);
+  if (!sub) return;
+
+  const cat     = cachedCategorias.find((c) => c.id === sub.categoria_id);
+  const projeto = sub.projeto_id ? cachedProjetos.find((p) => p.id === sub.projeto_id) : null;
+  const divida  = sub.divida_id  ? cachedDividas.find((d)  => d.id === sub.divida_id)  : null;
+  const hasComp = Number(sub.valor_base) > 0 || sub.valor_variavel === true;
+  const valorLabel = sub.valor_variavel ? 'Variável' : (Number(sub.valor_base) > 0 ? fmtCurrency(Number(sub.valor_base)) : '—');
+
+  // Build colored badge rows — each on its own line with a type label
+  const badgeRows = [];
+  if (projeto) {
+    badgeRows.push(`
+      <div class="sub-detail-badge-row">
+        <span class="sub-detail-badge-type">Projeto</span>
+        <span class="vinculo-badge vinculo-badge--projeto" style="--vinculo-cor:${projeto.cor};">${escapeHtml(projeto.nome)}</span>
+      </div>`);
+  }
+  if (divida) {
+    badgeRows.push(`
+      <div class="sub-detail-badge-row">
+        <span class="sub-detail-badge-type">Dívida</span>
+        <span class="vinculo-badge vinculo-badge--divida">${escapeHtml(divida.nome)}</span>
+      </div>`);
+  }
+  if (hasComp) {
+    badgeRows.push(`
+      <div class="sub-detail-badge-row">
+        <span class="sub-detail-badge-type">Compromisso</span>
+        <span class="cfg-comp-badge cfg-comp-badge--val">${escapeHtml(sub.nome)}</span>
+      </div>`);
+  }
+  const badgesHtml = badgeRows.length
+    ? `<div style="display:flex;flex-direction:column;gap:var(--space-2);margin-bottom:var(--space-3);">${badgeRows.join('')}</div>`
+    : `<p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-bottom:var(--space-3);">Sem compromisso configurado</p>`;
+
+  // Load last 5 transactions
+  let txRows;
+  try {
+    const { data: txs } = await supabase
+      .from('transacoes')
+      .select('descricao, valor, tipo, data')
+      .eq('subcategoria_id', subId)
+      .order('data', { ascending: false })
+      .limit(5);
+    if (txs && txs.length) {
+      txRows = `<ul class="sub-detail-tx-list">` + txs.map((tx) => {
+        const isIn    = tx.tipo === 'Receita';
+        const val     = fmtCurrency(Math.abs(Number(tx.valor)));
+        const dateFmt = tx.data ? formatDateBR(tx.data) : '—';
+        return `<li class="sub-detail-tx-item">
+          <span class="sub-detail-tx-date">${dateFmt}</span>
+          <span class="sub-detail-tx-desc">${escapeHtml(tx.descricao || '—')}</span>
+          <span class="sub-detail-tx-val ${isIn ? 'sub-detail-tx-in' : 'sub-detail-tx-out'}">${isIn ? '+' : '-'}${val}</span>
+        </li>`;
+      }).join('') + `</ul>`;
+    } else {
+      txRows = `<p class="sub-detail-tx-empty">Nenhuma transação registrada.</p>`;
+    }
+  } catch { txRows = `<p class="sub-detail-tx-empty">Erro ao carregar transações.</p>`; }
+
+  const content = document.getElementById('sub-detail-content');
+  content.innerHTML = `
+    <div class="sub-detail-header">
+      <div style="flex:1">
+        <div class="sub-detail-name">${escapeHtml(sub.nome)}</div>
+        ${cat ? `<span class="sub-detail-cat-pill" style="background:${cat.cor}1A;color:${cat.cor};">${escapeHtml(cat.nome)}</span>` : ''}
+      </div>
+    </div>
+    <div class="sub-detail-body">
+      <div class="sub-detail-section">
+        <p class="sub-detail-section-title">Vínculo</p>
+        ${badgesHtml}
+        <div class="sub-detail-grid">
+          <div class="sub-detail-row">
+            <span class="sub-detail-label">Período</span>
+            <span class="sub-detail-value">${escapeHtml(sub.periodo || '—')}</span>
+          </div>
+          <div class="sub-detail-row">
+            <span class="sub-detail-label">Valor base</span>
+            <span class="sub-detail-value">${escapeHtml(valorLabel)}</span>
+          </div>
+          <div class="sub-detail-row">
+            <span class="sub-detail-label">Status</span>
+            <span class="sub-detail-value">${escapeHtml(sub.status || '—')}</span>
+          </div>
+          <div class="sub-detail-row">
+            <span class="sub-detail-label">Iniciado em</span>
+            <span class="sub-detail-value">${sub.iniciado_em ? formatDateBR(sub.iniciado_em) : '—'}</span>
+          </div>
+          ${sub.eh_renda_principal ? `<div class="sub-detail-row" style="grid-column:1/-1"><span class="sub-detail-label">Renda principal</span><span class="sub-detail-value" style="color:var(--color-success);">✓ Sim</span></div>` : ''}
+        </div>
+      </div>
+      ${sub.descricao ? `
+      <div class="sub-detail-section">
+        <p class="sub-detail-section-title">Descrição</p>
+        <div class="sub-detail-desc">${escapeHtml(sub.descricao)}</div>
+      </div>` : ''}
+      <div class="sub-detail-section">
+        <p class="sub-detail-section-title">Últimas transações</p>
+        ${txRows}
+      </div>
+    </div>`;
+
+  document.getElementById('modal-sub-detail').classList.remove('hidden');
+}
+
+function closeSubDetailModal() {
+  document.getElementById('modal-sub-detail').classList.add('hidden');
+  detailSubId = null;
+}
+
+// -----------------------------
+// Transaction count hover popover
+// -----------------------------
+let txPopover = null;
+let txPopoverSubId = null;
+let txHideTimer = null;
+let txShowTimer = null;
+const cachedLastTx = new Map(); // subId → tx[] (lazy loaded)
+
+function initTxPopover() {
+  txPopover = document.createElement('div');
+  txPopover.id        = 'tx-popover';
+  txPopover.className = 'vinculo-popover hidden';  // reuse vinculo-popover styles
+  txPopover.style.minWidth = '300px';
+  txPopover.style.maxWidth = '380px';
+  document.body.appendChild(txPopover);
+  txPopover.addEventListener('mouseenter', () => { clearTimeout(txHideTimer); });
+  txPopover.addEventListener('mouseleave', () => { txHideTimer = setTimeout(hideTxPopover, 150); });
+
+  document.addEventListener('mouseover', (e) => {
+    const badge = e.target.closest('[data-tx-sub]');
+    if (badge) {
+      clearTimeout(txHideTimer);
+      txShowTimer = setTimeout(() => showTxPopover(badge), 120);
+    }
+  });
+  document.addEventListener('mouseout', (e) => {
+    const badge = e.target.closest('[data-tx-sub]');
+    if (!badge) return;
+    clearTimeout(txShowTimer);
+    if (!e.relatedTarget?.closest('#tx-popover') && !e.relatedTarget?.closest('[data-tx-sub]')) {
+      txHideTimer = setTimeout(hideTxPopover, 150);
+    }
+  });
+}
+
+async function showTxPopover(badge) {
+  const subId = badge.dataset.txSub;
+  if (!subId) return;
+  txPopoverSubId = subId;
+
+  // Load if not cached
+  if (!cachedLastTx.has(subId)) {
+    cachedLastTx.set(subId, null); // sentinel to avoid concurrent loads
+    try {
+      const { data } = await supabase
+        .from('transacoes')
+        .select('descricao, valor, tipo, data')
+        .eq('subcategoria_id', subId)
+        .order('data', { ascending: false })
+        .limit(5);
+      cachedLastTx.set(subId, data || []);
+    } catch { cachedLastTx.set(subId, []); }
+  }
+
+  // If user moused away while loading, skip
+  if (txPopoverSubId !== subId) return;
+
+  const txs = cachedLastTx.get(subId) || [];
+  const sub = cachedSubcategorias.find((s) => s.id === subId);
+
+  let html = `<div class="tx-pop-header">${sub ? escapeHtml(sub.nome) : ''} — últimas transações</div>`;
+  if (txs.length) {
+    html += `<ul class="tx-pop-list">` + txs.map((tx) => {
+      const isIn = tx.tipo === 'Receita';
+      const val  = fmtCurrency(Math.abs(Number(tx.valor)));
+      return `<li class="tx-pop-item">
+        <span class="tx-pop-date">${tx.data ? formatDateBR(tx.data) : '—'}</span>
+        <span class="tx-pop-desc">${escapeHtml(tx.descricao || '—')}</span>
+        <span class="tx-pop-val ${isIn ? 'tx-pop-val--in' : 'tx-pop-val--out'}">${isIn ? '+' : '-'}${val}</span>
+      </li>`;
+    }).join('') + `</ul>`;
+  } else {
+    html += `<div class="tx-pop-empty">Nenhuma transação registrada.</div>`;
+  }
+
+  txPopover.innerHTML = html;
+  txPopover.classList.remove('hidden');
+
+  const rect = badge.getBoundingClientRect();
+  txPopover.style.top  = `${rect.bottom + 8 + window.scrollY}px`;
+  txPopover.style.left = `${rect.left + window.scrollX}px`;
+
+  const pr = txPopover.getBoundingClientRect();
+  if (pr.right > window.innerWidth - 12) {
+    txPopover.style.left = `${rect.right - pr.width + window.scrollX}px`;
+  }
+}
+
+function hideTxPopover() {
+  txPopover?.classList.add('hidden');
+  txPopoverSubId = null;
 }
 
 // -----------------------------

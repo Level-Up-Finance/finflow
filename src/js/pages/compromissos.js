@@ -93,20 +93,26 @@ const DEFAULT_TIPO = 'Despesa';
 // Init
 // -----------------------------
 document.addEventListener('DOMContentLoaded', async () => {
+  const _isEmbedded = new URLSearchParams(location.search).get('embedded') === '1';
+
   await guardSession();
-  await initSidebar('compromissos');
-  initTutorial('compromissos');
+  if (_isEmbedded) {
+    document.body.classList.add('comp-embedded');
+  } else {
+    await initSidebar('compromissos');
+    initTutorial('compromissos');
+  }
   await loadStrings();
   applyTranslationsToDom();
-  initCurrencyWidget('currency-widget');
+  if (!_isEmbedded) initCurrencyWidget('currency-widget');
 
   await loadContas();
   await loadCategorias();      // carrega + seed se vazio
   await loadProjetos();
   await loadDividas();
   await loadContatos();
-  renderCategoriaFilters();
-  renderTipoSelector();
+  if (!_isEmbedded) renderCategoriaFilters();
+  if (!_isEmbedded) renderTipoSelector();
   renderModalDropdowns();
   bindAllEvents({
     // state setters
@@ -155,27 +161,69 @@ document.addEventListener('DOMContentLoaded', async () => {
     showConfirm,
   });
 
-  colVisEl = initColVisibility({
-    storageKey: 'compromissos',
-    tableClass:  'compromissos-grouped-table',
-    columns: [
-      { key: 'subcategoria', label: 'Subcategoria', defaultVisible: true  },
-      { key: 'tipo',         label: 'Tipo',         defaultVisible: false },
-      { key: 'projeto',      label: 'Vínculo',      defaultVisible: true  },
-      { key: 'conta',        label: 'Banco/Cartão', defaultVisible: false },
-      { key: 'pagamento',    label: 'Pagamento',    defaultVisible: false },
-      { key: 'vencimento',   label: 'Vencimento',   defaultVisible: true  },
-      { key: 'proximo',      label: 'Próximo',      defaultVisible: true  },
-      { key: 'termina',      label: 'Termina em',   defaultVisible: false },
-      { key: 'periodo',      label: 'Período',      defaultVisible: true  },
-      { key: 'valor',        label: 'Valor',        defaultVisible: true  },
-      { key: 'descricao',    label: 'Descrição',    defaultVisible: false },
-      { key: 'status',       label: 'Status',       defaultVisible: true  },
-    ],
-    toolbarEl: document.querySelector('.toolbar'),
-  });
+  if (!_isEmbedded) {
+    colVisEl = initColVisibility({
+      storageKey: 'compromissos',
+      tableClass:  'compromissos-grouped-table',
+      columns: [
+        { key: 'subcategoria', label: 'Subcategoria', defaultVisible: true  },
+        { key: 'tipo',         label: 'Tipo',         defaultVisible: false },
+        { key: 'projeto',      label: 'Vínculo',      defaultVisible: true  },
+        { key: 'conta',        label: 'Banco/Cartão', defaultVisible: false },
+        { key: 'pagamento',    label: 'Pagamento',    defaultVisible: false },
+        { key: 'vencimento',   label: 'Vencimento',   defaultVisible: true  },
+        { key: 'proximo',      label: 'Próximo',      defaultVisible: true  },
+        { key: 'termina',      label: 'Termina em',   defaultVisible: false },
+        { key: 'periodo',      label: 'Período',      defaultVisible: true  },
+        { key: 'valor',        label: 'Valor',        defaultVisible: true  },
+        { key: 'descricao',    label: 'Descrição',    defaultVisible: false },
+        { key: 'status',       label: 'Status',       defaultVisible: true  },
+      ],
+      toolbarEl: document.querySelector('.toolbar'),
+    });
+  }
 
   await loadCompromissos();
+
+  // Auto-open from configuracoes.html via URL params
+  // ?cfg_sub=UUID   → edit that sub in the modal
+  // ?cfg_cat=UUID&cfg_tipo=Receita&cfg_nome=NAME → create new in that category
+  const _p = new URLSearchParams(location.search);
+  const _cfgSubId = _p.get('cfg_sub');
+  const _cfgCatId = _p.get('cfg_cat');
+  if (_cfgSubId || _cfgCatId) {
+    history.replaceState({}, '', location.pathname);
+    if (_cfgSubId) {
+      const sub = cachedCompromissos.find((s) => s.id === _cfgSubId);
+      if (sub) openCompromissoModal(sub);
+      else {
+        // Sub not in cached list yet — open as new with sub as id hint
+        openCompromissoModal({ id: _cfgSubId });
+      }
+    } else {
+      openCompromissoModal({
+        nome:         decodeURIComponent(_p.get('cfg_nome') || ''),
+        tipo:         _p.get('cfg_tipo') || DEFAULT_TIPO,
+        categoria_id: _cfgCatId,
+      });
+    }
+  } else if (_isEmbedded) {
+    // Embedded mode without specific params — open blank new compromisso
+    openCompromissoModal(null);
+  }
+
+  // In embedded mode, watch for modal close and postMessage parent
+  if (_isEmbedded) {
+    const modal = document.getElementById('modal-compromisso');
+    const mo = new window.MutationObserver(() => {
+      if (modal.classList.contains('hidden')) {
+        const saved = window._embeddedCompSaved || false;
+        window._embeddedCompSaved = false;
+        window.parent.postMessage({ source: 'finflow-embedded', type: saved ? 'comp-saved' : 'comp-closed' }, location.origin);
+      }
+    });
+    mo.observe(modal, { attributes: true, attributeFilter: ['class'] });
+  }
 });
 
 // -----------------------------
