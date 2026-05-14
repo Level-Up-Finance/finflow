@@ -18,7 +18,7 @@
 
     <header class="app-header header">
       <div class="header-left">
-        <h2 class="header-title">Feedback</h2>
+        <h2 class="header-title">Sugestões & Bugs</h2>
       </div>
     </header>
 
@@ -29,114 +29,201 @@
           <h1 class="page-title" data-i18n-key="feedback.titulo">Sugestões & Bugs</h1>
           <p class="page-description" data-i18n-key="feedback.descricao">Encontrou um bug, tem uma ideia, ou quer sugerir uma funcionalidade nova? Manda aqui — vou ler tudo.</p>
         </div>
+        <div class="page-header-actions">
+          <button type="button" class="btn btn-primary btn-sm" id="btn-nova-entrada">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+            Nova entrada
+          </button>
+        </div>
       </div>
 
-      <div class="feedback-layout">
-        <!-- ============================================================
-             SEÇÃO: Form
-             ============================================================ -->
-        <section class="feedback-section feedback-section--form">
-          <header class="feedback-section-header">
-            <h2 class="feedback-section-title">Nova entrada</h2>
-          </header>
+      <!-- ============================================================
+           Stats
+           ============================================================ -->
+      <div class="dev-stats" id="fb-stats">
+        <div class="dev-stats-card dev-stats-card--total">
+          <span class="dev-stats-num" id="fb-stat-total">—</span>
+          <span class="dev-stats-label">Total</span>
+        </div>
+        <div class="dev-stats-card dev-stats-card--pendente">
+          <span class="dev-stats-num" id="fb-stat-novo">—</span>
+          <span class="dev-stats-label">Novo</span>
+        </div>
+        <div class="dev-stats-card dev-stats-card--progresso">
+          <span class="dev-stats-num" id="fb-stat-andamento">—</span>
+          <span class="dev-stats-label">Em andamento</span>
+        </div>
+        <div class="dev-stats-card dev-stats-card--concluida">
+          <span class="dev-stats-num" id="fb-stat-concluida">—</span>
+          <span class="dev-stats-label">Concluídas</span>
+        </div>
+        <div class="dev-stats-card dev-stats-card--rejeitada">
+          <span class="dev-stats-num" id="fb-stat-rejeitada">—</span>
+          <span class="dev-stats-label">Rejeitadas</span>
+        </div>
+      </div>
 
-          <form id="form-feedback" class="feedback-form" autocomplete="off">
-            <div class="field">
-              <label class="field-label">Tipo</label>
-              <div class="feedback-type-options">
-                <label class="feedback-type-option">
-                  <input type="radio" name="type" value="bug">
-                  <span class="feedback-type-pill feedback-type-pill--bug">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>
-                    Bug
-                  </span>
-                </label>
-                <label class="feedback-type-option">
-                  <input type="radio" name="type" value="sugestao" checked>
-                  <span class="feedback-type-pill feedback-type-pill--sugestao">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
-                    Sugestão
-                  </span>
-                </label>
-                <label class="feedback-type-option">
-                  <input type="radio" name="type" value="feature">
-                  <span class="feedback-type-pill feedback-type-pill--feature">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 2 L15 8.5 L22 9.3 L17 14 L18.2 21 L12 17.8 L5.8 21 L7 14 L2 9.3 L9 8.5 Z"/></svg>
-                    Funcionalidade
-                  </span>
-                </label>
-                <label class="feedback-type-option">
-                  <input type="radio" name="type" value="pergunta">
-                  <span class="feedback-type-pill feedback-type-pill--pergunta">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-                    Pergunta
-                  </span>
-                </label>
-                <label class="feedback-type-option">
-                  <input type="radio" name="type" value="elogio">
-                  <span class="feedback-type-pill feedback-type-pill--elogio">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-                    Elogio
-                  </span>
-                </label>
-                <label class="feedback-type-option">
-                  <input type="radio" name="type" value="parceria">
-                  <span class="feedback-type-pill feedback-type-pill--parceria">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    Parceria
-                  </span>
-                </label>
-              </div>
-            </div>
+      <!-- ============================================================
+           Filter bar
+           ============================================================ -->
+      <div class="dev-filter-bar" id="fb-filter-bar">
+        <div class="dev-filter-search-wrap">
+          <svg class="dev-filter-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+          <input type="search" id="fb-search" class="input dev-filter-search"
+                 placeholder="Buscar por código, título ou descrição…" autocomplete="off">
+        </div>
 
-            <div class="field">
-              <label class="field-label" for="feedback-title">Título <span class="required">*</span></label>
-              <input type="text" id="feedback-title" class="input" maxlength="120" placeholder="Resumo curto do que aconteceu ou da ideia" data-i18n-placeholder="feedback.placeholder.titulo" required>
-            </div>
+        <select id="fb-fil-tipo" class="input dev-filter-select">
+          <option value="">Tipo</option>
+          <option value="bug">Bug</option>
+          <option value="sugestao">Sugestão</option>
+          <option value="feature">Funcionalidade</option>
+          <option value="pergunta">Pergunta</option>
+          <option value="elogio">Elogio</option>
+          <option value="parceria">Parceria</option>
+        </select>
 
-            <div class="field">
-              <label class="field-label" for="feedback-description">Descrição <span class="required">*</span></label>
-              <textarea id="feedback-description" class="textarea" rows="5" maxlength="2000" placeholder="Conta com mais detalhes — passos pra reproduzir o bug, ou como você imagina a funcionalidade…" required></textarea>
-            </div>
+        <select id="fb-fil-status" class="input dev-filter-select">
+          <option value="">Status</option>
+          <option value="novo">Novo</option>
+          <option value="em_analise">Em análise</option>
+          <option value="aprovada">Aprovada</option>
+          <option value="em_progresso">Em progresso</option>
+          <option value="feito">Feito</option>
+          <option value="agora_nao">Agora não</option>
+        </select>
 
-            <div class="feedback-form-actions">
-              <button type="submit" class="btn btn-primary" id="btn-feedback-submit">Enviar</button>
-            </div>
-          </form>
-        </section>
+        <button type="button" class="btn btn-ghost dev-filter-clear" id="fb-btn-clear">
+          Limpar
+        </button>
+      </div>
 
-        <!-- ============================================================
-             SEÇÃO: Suas entradas anteriores
-             ============================================================ -->
-        <section class="feedback-section feedback-section--list">
-          <header class="feedback-section-header">
-            <h2 class="feedback-section-title">Suas entradas</h2>
-            <p class="feedback-section-hint">Acompanhe o status do que você já enviou.</p>
-          </header>
+      <!-- ============================================================
+           Loading
+           ============================================================ -->
+      <div id="fb-loading" class="loading-overlay" style="position:relative; min-height:160px;">
+        <span class="spinner"></span>
+      </div>
 
-          <div id="feedback-mine-loading" class="loading-overlay" style="position:relative; min-height:120px;">
-            <span class="spinner"></span>
-          </div>
-          <div id="feedback-mine-list" class="table-wrapper hidden"></div>
-          <div id="feedback-mine-empty" class="feedback-empty hidden">
-            <p>Você ainda não enviou nada. Use o formulário acima.</p>
-          </div>
-        </section>
+      <!-- ============================================================
+           Table
+           ============================================================ -->
+      <div class="table-wrapper hidden" id="fb-table-wrap">
+        <table class="dev-table" id="fb-table">
+          <thead>
+            <tr>
+              <th class="dev-th dev-th--codigo">Código</th>
+              <th class="dev-th dev-th--tipo">Tipo</th>
+              <th class="dev-th dev-th--titulo">Título</th>
+              <th class="dev-th fb-th-desc">Descrição</th>
+              <th class="dev-th dev-th--status">Status</th>
+              <th class="dev-th fb-th-retorno">Retorno</th>
+              <th class="dev-th fb-th-date">Criada</th>
+            </tr>
+          </thead>
+          <tbody id="fb-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- ============================================================
+           Empty state
+           ============================================================ -->
+      <div id="fb-empty" class="feedback-empty hidden">
+        <p>Você ainda não enviou nada. Clique em <strong>Nova entrada</strong> para começar.</p>
       </div>
     </main>
   </div>
 
-  <!-- Modal: Detalhe da entrada -->
+  <!-- ============================================================
+       Modal: Nova entrada
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-fb-add" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h3 class="modal-title">Nova entrada</h3>
+        <button type="button" class="modal-close" id="btn-close-fba" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body" style="gap:var(--space-4)">
+        <div class="field">
+          <label class="field-label">Tipo</label>
+          <div class="feedback-type-options" id="fba-type-options">
+            <label class="feedback-type-option">
+              <input type="radio" name="fba-type" value="bug">
+              <span class="feedback-type-pill feedback-type-pill--bug">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>
+                Bug
+              </span>
+            </label>
+            <label class="feedback-type-option">
+              <input type="radio" name="fba-type" value="sugestao" checked>
+              <span class="feedback-type-pill feedback-type-pill--sugestao">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
+                Sugestão
+              </span>
+            </label>
+            <label class="feedback-type-option">
+              <input type="radio" name="fba-type" value="feature">
+              <span class="feedback-type-pill feedback-type-pill--feature">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 2 L15 8.5 L22 9.3 L17 14 L18.2 21 L12 17.8 L5.8 21 L7 14 L2 9.3 L9 8.5 Z"/></svg>
+                Funcionalidade
+              </span>
+            </label>
+            <label class="feedback-type-option">
+              <input type="radio" name="fba-type" value="pergunta">
+              <span class="feedback-type-pill feedback-type-pill--pergunta">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                Pergunta
+              </span>
+            </label>
+            <label class="feedback-type-option">
+              <input type="radio" name="fba-type" value="elogio">
+              <span class="feedback-type-pill feedback-type-pill--elogio">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                Elogio
+              </span>
+            </label>
+            <label class="feedback-type-option">
+              <input type="radio" name="fba-type" value="parceria">
+              <span class="feedback-type-pill feedback-type-pill--parceria">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Parceria
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="fba-titulo">Título <span class="required">*</span></label>
+          <input type="text" id="fba-titulo" class="input" maxlength="120"
+                 placeholder="Resumo curto do que aconteceu ou da ideia" required>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="fba-desc">Descrição <span class="required">*</span></label>
+          <textarea id="fba-desc" class="textarea" rows="5" maxlength="2000"
+                    placeholder="Conta com mais detalhes — passos pra reproduzir o bug, ou como você imagina a funcionalidade…" required></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-cancel-fba">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-save-fba">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       Modal: Detalhe da entrada
+       ============================================================ -->
   <div class="modal-backdrop hidden" id="modal-fb-detail" role="dialog" aria-modal="true">
     <div class="modal modal-md">
       <div class="modal-header">
-        <div>
-          <span id="fbd-codigo" class="i18n-chave"></span>
+        <div style="display:flex;align-items:center;gap:var(--space-2)">
+          <span id="fbd-codigo" style="font-family:monospace;font-size:var(--fs-xs);color:var(--color-text-muted)"></span>
+          <span id="fbd-tipo-pill"></span>
         </div>
         <button type="button" class="modal-close" id="btn-close-fbd" aria-label="Fechar">×</button>
       </div>
       <div class="modal-body" style="gap:var(--space-4)">
-        <div class="fb-hover-meta" id="fbd-meta"></div>
         <div>
           <p class="field-label" style="margin-bottom:var(--space-1)">Título</p>
           <p id="fbd-title" style="font-size:var(--fs-sm);font-weight:var(--fw-semibold);color:var(--color-text-main)"></p>
@@ -145,7 +232,11 @@
           <p class="field-label" style="margin-bottom:var(--space-1)">Descrição</p>
           <p id="fbd-desc" style="font-size:var(--fs-sm);color:var(--color-text-secondary);white-space:pre-wrap;line-height:1.6"></p>
         </div>
-        <div id="fbd-retorno-wrap">
+        <div>
+          <p class="field-label" style="margin-bottom:var(--space-1)">Status</p>
+          <span id="fbd-status"></span>
+        </div>
+        <div id="fbd-retorno-wrap" class="hidden">
           <p class="field-label" style="margin-bottom:var(--space-1)">Retorno</p>
           <p id="fbd-retorno" style="font-size:var(--fs-sm);color:var(--color-text-secondary);white-space:pre-wrap;line-height:1.6"></p>
         </div>

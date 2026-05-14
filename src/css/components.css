@@ -13506,6 +13506,33 @@ td .currency-split {
 .fb-mine-table .fb-mine-row:hover td { background: var(--color-surface-alt); }
 .ft-th-desc    { min-width: 180px; }
 .ft-th-retorno { min-width: 160px; }
+
+/* ── Tabela redesenhada do feedback (alinhada ao Gerenciador) ── */
+.fb-th-desc    { min-width: 160px; }
+.fb-th-retorno { width: 180px; }
+.fb-th-date    { width: 90px; white-space: nowrap; }
+
+.fb-td-desc {
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+}
+.fb-td-retorno {
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+}
+.fb-td-date {
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
 .fb-col-retorno {
   font-size: var(--fs-sm);
   color: var(--color-text-secondary);

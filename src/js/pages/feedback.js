@@ -1,6 +1,7 @@
 // =============================================================
 // FinFlow — Página: Feedback (logado)
-// Form pra enviar bugs/sugestões/features + lista das próprias entradas
+// Design alinhado com o Gerenciador de Sugestões.
+// Mostra as próprias entradas + abre modal para nova entrada.
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
@@ -10,6 +11,13 @@ import { escapeHtml } from '../lib/utils.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 let userId = null;
+let todos  = [];   // todos os registros do usuário
+
+// Filtros
+let busca     = '';
+let filTipo   = '';
+let filStatus = '';
+
 
 const TYPE_LABELS = {
   bug:      'Bug',
@@ -23,11 +31,21 @@ const TYPE_LABELS = {
 const STATUS_LABELS = {
   novo:         'Novo',
   em_analise:   'Em análise',
-  aprovada:     'Aprovada para desenvolvimento',
+  aprovada:     'Aprovada',
   em_progresso: 'Em progresso',
   feito:        'Feito',
   agora_nao:    'Agora não',
 };
+
+// Label mais descritivo para o modal de detalhe
+const STATUS_LABELS_DETAIL = {
+  ...STATUS_LABELS,
+  aprovada: 'Aprovada para desenvolvimento',
+};
+
+// ─────────────────────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
@@ -43,42 +61,203 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadMine();
 });
 
-function bindEvents() {
-  document.getElementById('form-feedback').addEventListener('submit', onSubmit);
+// ─────────────────────────────────────────────────────────────
+// Carregar dados
+// ─────────────────────────────────────────────────────────────
 
+async function loadMine() {
+  showLoading(true);
+
+  const { data, error } = await supabase
+    .from('feedback')
+    .select('id, codigo, type, title, description, status, created_at, updated_at, resposta_usuario')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  showLoading(false);
+
+  if (error) {
+    showToast('Erro ao carregar suas entradas: ' + error.message, 'error', 8000);
+    return;
+  }
+
+  todos = data ?? [];
+  renderAll();
+}
+
+// ─────────────────────────────────────────────────────────────
+// Renderização
+// ─────────────────────────────────────────────────────────────
+
+function renderAll() {
+  renderStats();
+  renderTable();
+}
+
+function renderStats() {
+  const total     = todos.length;
+  const novo      = todos.filter(i => i.status === 'novo').length;
+  const andamento = todos.filter(i => ['em_analise', 'aprovada', 'em_progresso'].includes(i.status)).length;
+  const concluida = todos.filter(i => i.status === 'feito').length;
+  const rejeitada = todos.filter(i => i.status === 'agora_nao').length;
+
+  setText('fb-stat-total',    total);
+  setText('fb-stat-novo',     novo);
+  setText('fb-stat-andamento',andamento);
+  setText('fb-stat-concluida',concluida);
+  setText('fb-stat-rejeitada',rejeitada);
+}
+
+function getFiltered() {
+  return todos.filter(item => {
+    if (filTipo   && item.type   !== filTipo)   return false;
+    if (filStatus && item.status !== filStatus) return false;
+    if (busca) {
+      const q = busca.toLowerCase();
+      const hay = [item.codigo ?? '', item.title ?? '', item.description ?? ''].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function renderTable() {
+  const filtered = getFiltered();
+  const tbody    = document.getElementById('fb-tbody');
+  const wrap     = document.getElementById('fb-table-wrap');
+  const empty    = document.getElementById('fb-empty');
+
+  if (!filtered.length) {
+    wrap.classList.add('hidden');
+    empty.classList.remove('hidden');
+    return;
+  }
+
+  empty.classList.add('hidden');
+  wrap.classList.remove('hidden');
+
+  tbody.innerHTML = filtered.map(item => {
+    const typeLabel   = TYPE_LABELS[item.type]    ?? item.type   ?? '—';
+    const statusLabel = STATUS_LABELS[item.status] ?? item.status ?? '—';
+    const criada      = item.created_at
+      ? new Date(item.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      : '—';
+    const retorno = item.resposta_usuario
+      ? escapeHtml(truncate(item.resposta_usuario, 60))
+      : '<span style="color:var(--color-text-tertiary)">—</span>';
+
+    return `
+      <tr class="dev-tr" data-id="${escapeHtml(item.id)}">
+        <td class="dev-td dev-td-codigo" data-action="detail">${escapeHtml(item.codigo ?? '—')}</td>
+        <td class="dev-td" data-action="detail">
+          <span class="feedback-type-pill feedback-type-pill--${escapeHtml(item.type ?? '')}">${escapeHtml(typeLabel)}</span>
+        </td>
+        <td class="dev-td dev-td-titulo" data-action="detail">${escapeHtml(item.title ?? '—')}</td>
+        <td class="dev-td fb-td-desc" data-action="detail">${escapeHtml(truncate(item.description, 80))}</td>
+        <td class="dev-td" data-action="detail">
+          <span class="feedback-status-badge feedback-status-badge--${escapeHtml(item.status ?? '')}">${escapeHtml(statusLabel)}</span>
+        </td>
+        <td class="dev-td fb-td-retorno" data-action="detail">${retorno}</td>
+        <td class="dev-td fb-td-date" data-action="detail">${escapeHtml(criada)}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────────────────────
+// Eventos
+// ─────────────────────────────────────────────────────────────
+
+function bindEvents() {
+  // Filtros
+  document.getElementById('fb-search').addEventListener('input', (e) => {
+    busca = e.target.value.trim();
+    renderTable();
+  });
+  document.getElementById('fb-fil-tipo').addEventListener('change', (e) => {
+    filTipo = e.target.value;
+    renderTable();
+  });
+  document.getElementById('fb-fil-status').addEventListener('change', (e) => {
+    filStatus = e.target.value;
+    renderTable();
+  });
+  document.getElementById('fb-btn-clear').addEventListener('click', () => {
+    busca = filTipo = filStatus = '';
+    document.getElementById('fb-search').value = '';
+    document.getElementById('fb-fil-tipo').value = '';
+    document.getElementById('fb-fil-status').value = '';
+    renderTable();
+  });
+
+  // Clique na linha → detalhe
+  document.getElementById('fb-tbody').addEventListener('click', (e) => {
+    const td = e.target.closest('td[data-action="detail"]');
+    if (!td) return;
+    const id = td.closest('tr')?.dataset.id;
+    if (id) openDetailModal(id);
+  });
+
+  // Modal Nova entrada
+  document.getElementById('btn-nova-entrada').addEventListener('click', openAddModal);
+  document.getElementById('btn-close-fba').addEventListener('click',   closeAddModal);
+  document.getElementById('btn-cancel-fba').addEventListener('click',  closeAddModal);
+  document.getElementById('btn-save-fba').addEventListener('click',    saveAdd);
+  document.getElementById('modal-fb-add').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeAddModal();
+  });
+
+  // Modal Detalhe
   document.getElementById('btn-close-fbd').addEventListener('click',  closeDetailModal);
   document.getElementById('btn-cancel-fbd').addEventListener('click', closeDetailModal);
   document.getElementById('modal-fb-detail').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeDetailModal();
   });
+
+  // Escape fecha qualquer modal aberto
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeDetailModal();
+    if (e.key !== 'Escape') return;
+    closeDetailModal();
+    closeAddModal();
   });
 }
 
-async function onSubmit(e) {
-  e.preventDefault();
+// ─────────────────────────────────────────────────────────────
+// Modal: Nova entrada
+// ─────────────────────────────────────────────────────────────
 
-  const type        = document.querySelector('input[name="type"]:checked')?.value;
-  const title       = document.getElementById('feedback-title').value.trim();
-  const description = document.getElementById('feedback-description').value.trim();
+function openAddModal() {
+  document.getElementById('fba-titulo').value = '';
+  document.getElementById('fba-desc').value   = '';
+  const sug = document.querySelector('input[name="fba-type"][value="sugestao"]');
+  if (sug) sug.checked = true;
+  document.getElementById('modal-fb-add').classList.remove('hidden');
+  document.getElementById('fba-titulo').focus();
+}
 
-  if (!type || !title || !description) {
+function closeAddModal() {
+  document.getElementById('modal-fb-add').classList.add('hidden');
+}
+
+async function saveAdd() {
+  const type  = document.querySelector('input[name="fba-type"]:checked')?.value;
+  const title = document.getElementById('fba-titulo').value.trim();
+  const desc  = document.getElementById('fba-desc').value.trim();
+
+  if (!type || !title || !desc) {
     showToast(t('feedback.validacao.campos_obrigatorios', 'Preencha todos os campos.'), 'warning');
     return;
   }
 
-  const btn = document.getElementById('btn-feedback-submit');
+  const btn = document.getElementById('btn-save-fba');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>';
 
-  const { error } = await supabase.from('feedback').insert({
-    user_id:     userId,
-    type,
-    title,
-    description,
-    status:      'novo',
-  });
+  const { data, error } = await supabase
+    .from('feedback')
+    .insert({ user_id: userId, type, title, description: desc, status: 'novo' })
+    .select()
+    .single();
 
   btn.disabled = false;
   btn.textContent = 'Enviar';
@@ -88,153 +267,67 @@ async function onSubmit(e) {
     return;
   }
 
+  todos.unshift(data);
+  renderAll();
+  closeAddModal();
   showToast(t('feedback.toast.enviado', 'Enviado! Obrigado pelo feedback.'), 'success');
-  document.getElementById('form-feedback').reset();
-  // Garante que o radio "sugestao" volta selecionado
-  const sug = document.querySelector('input[name="type"][value="sugestao"]');
-  if (sug) sug.checked = true;
-  await loadMine();
 }
 
-// -----------------------------
-// Lista das próprias entradas
-// -----------------------------
-async function loadMine() {
-  const loading = document.getElementById('feedback-mine-loading');
-  const list    = document.getElementById('feedback-mine-list');
-  const empty   = document.getElementById('feedback-mine-empty');
+// ─────────────────────────────────────────────────────────────
+// Modal: Detalhe
+// ─────────────────────────────────────────────────────────────
 
-  loading.classList.remove('hidden');
-  list.classList.add('hidden');
-  empty.classList.add('hidden');
+function openDetailModal(id) {
+  const item = todos.find(i => i.id === id);
+  if (!item) return;
 
-  const { data, error } = await supabase
-    .from('feedback')
-    .select('id, codigo, type, title, description, status, created_at, updated_at, changelog_id, resposta_usuario')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+  const typeLabel   = TYPE_LABELS[item.type]           ?? item.type   ?? '—';
+  const statusLabel = STATUS_LABELS_DETAIL[item.status] ?? item.status ?? '—';
+  const date        = item.created_at
+    ? new Date(item.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+    : '';
 
-  loading.classList.add('hidden');
+  document.getElementById('fbd-codigo').textContent = item.codigo ?? '';
+  document.getElementById('fbd-tipo-pill').innerHTML =
+    `<span class="feedback-type-pill feedback-type-pill--${escapeHtml(item.type ?? '')}">${escapeHtml(typeLabel)}</span>`;
+  document.getElementById('fbd-title').textContent = item.title ?? '';
+  document.getElementById('fbd-desc').textContent  = item.description ?? '';
 
-  if (error) {
-    showToast('Erro ao carregar suas entradas: ' + error.message, 'error', 8000);
-    return;
-  }
-
-  if (!data?.length) {
-    empty.classList.remove('hidden');
-    return;
-  }
-
-  list.innerHTML = renderTable(data);
-  list.classList.remove('hidden');
-  initDetailModal(data);
-}
-
-// ── Tabela agrupada ───────────────────────────────────────────
-const GROUPS = [
-  { label: t('feedback.group.novas', 'Novas'),                    statuses: ['novo'] },
-  { label: t('feedback.group.analise', 'Em análise e em andamento'), statuses: ['em_analise', 'aprovada', 'em_progresso'] },
-  { label: t('feedback.group.concluidas', 'Concluídas e rejeitadas'),  statuses: ['feito', 'agora_nao'] },
-];
-
-function renderTable(items) {
-  const thead = `
-    <thead>
-      <tr>
-        <th class="ft-th-codigo">Código</th>
-        <th class="ft-th-type">Tipo</th>
-        <th>Título</th>
-        <th>Descrição</th>
-        <th class="ft-th-status">Status</th>
-        <th class="ft-th-retorno">Retorno</th>
-        <th class="ft-th-date">Criada</th>
-        <th class="ft-th-date">Concluído</th>
-      </tr>
-    </thead>`;
-
-  const bodies = GROUPS.map((group) => {
-    const filtered = items.filter((f) => group.statuses.includes(f.status));
-    if (!filtered.length) return '';
-
-    const rows = filtered.map((fb) => {
-      const typeLabel   = TYPE_LABELS[fb.type]    || fb.type;
-      const statusLabel = STATUS_LABELS[fb.status] || fb.status;
-      const criada      = new Date(fb.created_at).toLocaleDateString('pt-BR', {
-        day: '2-digit', month: '2-digit', year: 'numeric',
-      });
-      const concluido   = (fb.status === 'feito' || fb.status === 'agora_nao') && fb.updated_at
-        ? new Date(fb.updated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-        : '—';
-      return `
-        <tr class="ft-row fb-mine-row" data-id="${fb.id}">
-          <td><span class="i18n-chave">${escapeHtml(fb.codigo || '—')}</span></td>
-          <td><span class="feedback-type-pill feedback-type-pill--${fb.type}">${escapeHtml(typeLabel)}</span></td>
-          <td class="fb-col-title">${escapeHtml(fb.title)}</td>
-          <td class="fb-col-desc">${escapeHtml(truncate(fb.description, 100))}</td>
-          <td><span class="feedback-status-badge feedback-status-badge--${fb.status}">${escapeHtml(statusLabel)}</span></td>
-          <td class="fb-col-retorno">${fb.resposta_usuario ? escapeHtml(truncate(fb.resposta_usuario, 60)) : '<span style="color:var(--color-text-tertiary)">—</span>'}</td>
-          <td class="ft-td-date">${escapeHtml(criada)}</td>
-          <td class="ft-td-date">${escapeHtml(concluido)}</td>
-        </tr>`;
-    }).join('');
-
-    return `
-      <tbody>
-        <tr class="fb-group-header-row">
-          <td colspan="8">
-            <span class="fb-group-header-label">${escapeHtml(group.label)}</span>
-            <span class="feedback-group-count">${filtered.length}</span>
-          </td>
-        </tr>
-        ${rows}
-      </tbody>`;
-  }).join('');
-
-  return `<table class="table fb-mine-table">${thead}${bodies}</table>`;
-}
-
-function truncate(text, n) {
-  if (!text) return '';
-  return text.length > n ? text.slice(0, n - 1) + '…' : text;
-}
-
-// ── Modal de detalhe ──────────────────────────────────────────
-function initDetailModal(items) {
-  document.querySelectorAll('.fb-mine-row').forEach((row) => {
-    const fb = items.find((f) => f.id === row.dataset.id);
-    if (!fb) return;
-    row.addEventListener('click', () => openDetailModal(fb));
-  });
-}
-
-function openDetailModal(fb) {
-  const date        = new Date(fb.created_at).toLocaleDateString('pt-BR', {
-    day: '2-digit', month: 'long', year: 'numeric',
-  });
-  const typeLabel   = TYPE_LABELS[fb.type]    || fb.type;
-  const statusLabel = STATUS_LABELS[fb.status] || fb.status;
-
-  document.getElementById('fbd-codigo').textContent = fb.codigo || '';
-  document.getElementById('fbd-meta').innerHTML =
-    `<span class="feedback-type-pill feedback-type-pill--${fb.type}">${escapeHtml(typeLabel)}</span>` +
-    `<span class="feedback-status-badge feedback-status-badge--${fb.status}">${escapeHtml(statusLabel)}</span>`;
-  document.getElementById('fbd-title').textContent = fb.title;
-  document.getElementById('fbd-desc').textContent  = fb.description;
+  document.getElementById('fbd-status').innerHTML =
+    `<span class="feedback-status-badge feedback-status-badge--${escapeHtml(item.status ?? '')}">${escapeHtml(statusLabel)}</span>`;
 
   const retornoWrap = document.getElementById('fbd-retorno-wrap');
-  if (fb.resposta_usuario) {
-    document.getElementById('fbd-retorno').textContent = fb.resposta_usuario;
+  if (item.resposta_usuario) {
+    document.getElementById('fbd-retorno').textContent = item.resposta_usuario;
     retornoWrap.classList.remove('hidden');
   } else {
     retornoWrap.classList.add('hidden');
   }
 
-  document.getElementById('fbd-date').textContent  = `Enviado em ${date}`;
-
+  document.getElementById('fbd-date').textContent = `Enviado em ${date}`;
   document.getElementById('modal-fb-detail').classList.remove('hidden');
 }
 
 function closeDetailModal() {
   document.getElementById('modal-fb-detail').classList.add('hidden');
+}
+
+// ─────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────
+
+function showLoading(on) {
+  document.getElementById('fb-loading').classList.toggle('hidden', !on);
+  document.getElementById('fb-table-wrap').classList.toggle('hidden', on);
+  document.getElementById('fb-empty').classList.add('hidden');
+}
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = String(value);
+}
+
+function truncate(text, n) {
+  if (!text) return '';
+  return text.length > n ? text.slice(0, n - 1) + '…' : text;
 }
