@@ -72,6 +72,7 @@ async function loadMine() {
     .from('feedback')
     .select('id, codigo, type, title, description, status, created_at, updated_at, resposta_usuario')
     .eq('user_id', userId)
+    .eq('origem', 'usuario')
     .order('created_at', { ascending: false });
 
   showLoading(false);
@@ -257,7 +258,7 @@ async function saveAdd() {
 
   const { data, error } = await supabase
     .from('feedback')
-    .insert({ user_id: userId, type, title, description: desc, status: 'novo' })
+    .insert({ user_id: userId, type, title, description: desc, status: 'novo', origem: 'usuario' })
     .select()
     .single();
 

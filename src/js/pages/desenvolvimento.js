@@ -753,6 +753,7 @@ async function saveAdd() {
       title:       titulo,
       description: description,
       status:      'novo',
+      origem:      'admin',
       modulo,
       impacto,
       complexidade,
