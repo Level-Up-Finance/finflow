@@ -26,6 +26,7 @@ const htmlPages = [
   'admin-feedback',
   'admin-i18n',
   'admin-usuarios',
+  'desenvolvimento',
 ];
 
 export default defineConfig({
