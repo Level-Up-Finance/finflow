@@ -11,6 +11,7 @@ import { showToast } from '../components/toast.js';
 import { escapeHtml, getInitials, showConfirm } from '../lib/utils.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 import { PhonePicker } from '../components/phone-picker.js';
+import { AddressPicker, renderAddressFieldsHtml } from '../components/address-picker.js';
 
 let cachedProfile = null;
 let userId = null;
@@ -19,6 +20,9 @@ let userEmail = null;
 // Phone pickers
 let ppTelefone = null;
 let ppWhatsapp = null;
+
+// Address picker
+let apPerfil = null;
 
 const FIELDS = [
   'nome', 'apelido', 'telefone', 'bio',
@@ -39,6 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   userEmail = user.email;
 
   initPhonePickers();
+  initAddressPicker();
   await loadProfile();
   bindEvents();
   bindDangerZoneEvents();
@@ -52,6 +57,16 @@ function initPhonePickers() {
   const elWa  = document.getElementById('perfil-whatsapp');
   if (elTel) ppTelefone = new PhonePicker(elTel, { placeholder: '(11) 99999-9999' });
   if (elWa)  ppWhatsapp = new PhonePicker(elWa,  { placeholder: '(11) 99999-9999' });
+}
+
+// -----------------------------
+// Address picker
+// -----------------------------
+function initAddressPicker() {
+  const container = document.getElementById('perfil-address-picker');
+  if (!container) return;
+  container.innerHTML = renderAddressFieldsHtml('perfil-');
+  apPerfil = new AddressPicker('perfil-', document);
 }
 
 // -----------------------------
@@ -83,6 +98,9 @@ async function loadProfile() {
   if (ppTelefone) ppTelefone.setValue(cachedProfile.telefone || '');
   if (ppWhatsapp) ppWhatsapp.setValue(cachedProfile.whatsapp || '');
 
+  // Address picker
+  if (apPerfil) apPerfil.setValue(cachedProfile);
+
   // "Mesmo número" — detecta se os dois são iguais
   const mesmoEl = document.getElementById('perfil-mesmo-numero');
   if (mesmoEl && cachedProfile.telefone && cachedProfile.whatsapp) {
@@ -112,6 +130,12 @@ function bindEvents() {
     const el = document.getElementById(`perfil-${field}`);
     if (el) el.addEventListener('input', updateSaveButton);
   }
+
+  // Address fields → habilitar Salvar
+  ['cep','logradouro','numero','complemento','bairro','cidade','estado-uf'].forEach((id) => {
+    const el = document.getElementById(`perfil-${id}`);
+    if (el) el.addEventListener('input', updateSaveButton);
+  });
 
   // "Mesmo número" toggle
   const mesmoEl = document.getElementById('perfil-mesmo-numero');
@@ -162,13 +186,29 @@ function bindEvents() {
 function updateSaveButton() {
   const btn = document.getElementById('btn-perfil-salvar');
   let changed = false;
+
   for (const field of FIELDS) {
+    if (field === 'telefone' || field === 'whatsapp') continue; // via PhonePicker
     const el = document.getElementById(`perfil-${field}`);
     if (!el) continue;
     const cur = (el.value || '').trim();
     const old = (cachedProfile?.[field] || '').trim();
     if (cur !== old) { changed = true; break; }
   }
+
+  // Check phone pickers
+  if (!changed && ppTelefone && (ppTelefone.getValue() || '') !== (cachedProfile?.telefone || '')) changed = true;
+  if (!changed && ppWhatsapp && (ppWhatsapp.getValue() || '') !== (cachedProfile?.whatsapp || '')) changed = true;
+
+  // Check address fields
+  if (!changed && apPerfil) {
+    const addr = apPerfil.getValue();
+    const addrFields = ['cep','logradouro','numero','complemento','bairro','cidade','estado_uf'];
+    for (const f of addrFields) {
+      if ((addr[f] || '') !== (cachedProfile?.[f] || '')) { changed = true; break; }
+    }
+  }
+
   btn.disabled = !changed;
 }
 
@@ -187,6 +227,12 @@ async function saveProfile() {
     if (!el) continue;
     const v = (el.value || '').trim();
     payload[field] = v || null;
+  }
+
+  // Address fields
+  if (apPerfil) {
+    const addr = apPerfil.getValue();
+    Object.keys(addr).forEach((k) => { payload[k] = addr[k] || null; });
   }
 
   const { error } = await supabase

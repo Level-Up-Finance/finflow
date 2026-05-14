@@ -14529,3 +14529,37 @@ body.comp-embedded { background: transparent; }
 .phone-same-row input[type="checkbox"] { width: 14px; height: 14px; cursor: pointer; accent-color: var(--color-primary); }
 .phone-same-row label { font-size: var(--fs-xs); color: var(--color-text-secondary); cursor: pointer; user-select: none; }
 
+/* ============================================================
+   ADDRESS PICKER
+   ============================================================ */
+.addr-cep-row {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.addr-cep-input { flex: 1; max-width: 140px; }
+.addr-cep-btn   { flex-shrink: 0; }
+
+.addr-grid {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: var(--space-2);
+}
+.addr-field--logradouro { grid-column: 1 / -1; }
+.addr-field--numero     { grid-column: 1; width: 100px; }
+.addr-field--complemento{ grid-column: 2 / -1; }
+.addr-field--bairro     { grid-column: 1 / 2; }
+.addr-field--cidade     { grid-column: 2 / 3; }
+.addr-field--estado     { grid-column: 3 / 4; width: 80px; }
+.addr-label { font-size: var(--fs-xs); color: var(--color-text-secondary); margin-bottom: 2px; display: block; }
+
+@media (max-width: 480px) {
+  .addr-grid { grid-template-columns: 1fr 1fr; }
+  .addr-field--logradouro,
+  .addr-field--complemento,
+  .addr-field--bairro { grid-column: 1 / -1; }
+  .addr-field--numero,
+  .addr-field--cidade { grid-column: 1; }
+  .addr-field--estado { grid-column: 2; width: 100%; }
+}
+

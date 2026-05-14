@@ -21,13 +21,15 @@ import {
   inferLogoUrl, checkImageExists,
 } from '../lib/cnpj-lookup.js';
 import { PhonePicker } from './phone-picker.js';
+import { AddressPicker, renderAddressFieldsHtml } from './address-picker.js';
 
 const FIELDS = [
   'nome', 'nome_extrato', 'tipo', 'pessoa_tipo',
   'email', 'telefone', 'whatsapp', 'website',
   'linkedin', 'instagram',
   'documento', 'empresa', 'cargo',
-  'endereco', 'aniversario', 'observacao',
+  'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'estado_uf',
+  'aniversario', 'observacao',
 ];
 
 /**
@@ -79,7 +81,6 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
       if (!nomeEl.value.trim()) nomeEl.value = data.nome || data.razao_social || '';
       setIfEmpty('ct-email', data.email);
       setIfEmpty('ct-telefone', data.telefone);
-      setIfEmpty('ct-endereco', data.endereco);
       $('ct-documento').value = data.cnpj;
       if (logoUrl) modalLogoUrl = logoUrl;
       showToast('Dados preenchidos. Revise e salve.', 'success');
@@ -111,6 +112,8 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
         if (k === 'whatsapp'  && ppWaCm)  { ppWaCm.setValue(initialData?.[k]  || ''); continue; }
         el.value = initialData?.[k] ?? (k === 'tipo' ? 'fornecedor' : '');
       }
+      // Address picker
+      apCm.setValue(initialData || {});
       // "Mesmo número" — detecta se os dois são iguais ao editar
       const mesmoEl = $('ct-mesmo-numero');
       if (mesmoEl && initialData?.telefone && initialData?.whatsapp && initialData.telefone === initialData.whatsapp) {
@@ -169,6 +172,9 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
     let ppTelCm = null, ppWaCm = null;
     if (elTelCm) ppTelCm = new PhonePicker(elTelCm, { placeholder: '(11) 99999-9999' });
     if (elWaCm)  ppWaCm  = new PhonePicker(elWaCm,  { placeholder: '(11) 99999-9999' });
+
+    // ── Address picker ─────────────────────────────────────────
+    const apCm = new AddressPicker('ct-', backdrop);
 
     // ── Wiring ─────────────────────────────────────────────────
     fillFromInitial();
@@ -334,8 +340,10 @@ function renderModalHtml(title) {
         <!-- Localização -->
         <h3 class="field-section-title">Localização</h3>
         <div class="field">
-          <label class="field-label" for="ct-endereco">Endereço</label>
-          <textarea class="textarea" id="ct-endereco" rows="2" maxlength="300" placeholder="Rua, número, bairro, cidade, estado, CEP"></textarea>
+          <label class="field-label">Endereço</label>
+          <div id="ct-address-picker">
+            ${renderAddressFieldsHtml('ct-')}
+          </div>
         </div>
 
         <!-- Outros -->

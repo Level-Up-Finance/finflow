@@ -11,6 +11,7 @@ import { escapeHtml, formatDateBR } from '../lib/utils.js';
 import { fetchCnpjData, isValidCnpj, digitsOnly, googleCnpjSearchUrl, inferLogoUrl, checkImageExists } from '../lib/cnpj-lookup.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 import { PhonePicker } from '../components/phone-picker.js';
+import { AddressPicker, renderAddressFieldsHtml } from '../components/address-picker.js';
 
 // ── State ─────────────────────────────────────────────────────
 let cachedContatos      = [];
@@ -32,6 +33,7 @@ const TIPO_COLORS = { cliente: '#3b82f6', fornecedor: '#8b5cf6', ambos: '#64748b
 // Phone pickers (formulário embutido em contatos.html)
 let ppTelCtg = null;
 let ppWaCtg  = null;
+let apCtg    = null;  // AddressPicker para o form de contatos
 
 // ── Init ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
@@ -65,6 +67,13 @@ function initPhonePickersContatos() {
     elTel.addEventListener('input', () => {
       if (mesmoEl?.checked && ppWaCtg && ppTelCtg) ppWaCtg.syncFrom(ppTelCtg);
     });
+  }
+
+  // Address picker
+  const addrContainer = document.getElementById('ct-address-picker');
+  if (addrContainer) {
+    addrContainer.innerHTML = renderAddressFieldsHtml('ct-');
+    apCtg = new AddressPicker('ct-', document);
   }
 }
 
@@ -310,7 +319,7 @@ function renderDadosTab(c) {
       { label: 'Cargo',   value: c.cargo },
     ] : []),
     { label: 'Aniversário', value: aniversarioDM(c.aniversario) },
-    { label: 'Endereço',    value: c.endereco, full: true },
+    { label: 'Endereço', value: [c.logradouro, c.numero ? `nº ${c.numero}` : '', c.complemento, c.bairro, c.cidade && c.estado_uf ? `${c.cidade}/${c.estado_uf}` : (c.cidade || c.estado_uf || ''), c.cep].filter(Boolean).join(', ') || c.endereco || '', full: true },
     { label: 'Twitter/X',  value: c.twitter,
       html: c.twitter ? `<a href="${escapeHtml(c.twitter)}" target="_blank" rel="noopener">${escapeHtml(c.twitter)}</a>` : null },
     { label: 'Bio',  value: c.bio, full: true },
@@ -621,7 +630,8 @@ const MODAL_FIELDS = [
   'email', 'telefone', 'whatsapp', 'website',
   'linkedin', 'instagram', 'twitter',
   'documento', 'empresa', 'cargo',
-  'endereco', 'aniversario', 'bio',
+  'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'estado_uf',
+  'aniversario', 'bio',
 ];
 // logo_url é gerenciado fora do form (auto-preenchido pela busca CNPJ)
 let modalLogoUrl = null;
@@ -724,7 +734,6 @@ function applyCnpjDataToForm(data, logoUrl) {
 
   setIfEmpty('ct-email', data.email);
   setIfEmpty('ct-telefone', data.telefone);
-  setIfEmpty('ct-endereco', data.endereco);
   // CNPJ formatado
   document.getElementById('ct-documento').value = data.cnpj;
 
@@ -771,6 +780,9 @@ function openModal(id) {
   // Phone pickers
   if (ppTelCtg) ppTelCtg.setValue(c?.telefone || '');
   if (ppWaCtg)  ppWaCtg.setValue(c?.whatsapp  || '');
+
+  // Address picker
+  if (apCtg) apCtg.setValue(c || {});
 
   // "Mesmo número"
   const mesmoEl = document.getElementById('ct-mesmo-numero');

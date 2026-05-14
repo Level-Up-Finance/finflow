@@ -7,6 +7,17 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-13-endereco-estruturado',
+    version: '0.2.8',
+    date: '13/05/2026',
+    title: 'Contatos e Perfil — endereço estruturado com busca por CEP',
+    items: [
+      { type: 'new',         text: 'Campo de endereço separado em CEP, logradouro, número, complemento, bairro, cidade e estado' },
+      { type: 'new',         text: 'Busca automática de endereço pelo CEP via ViaCEP — preenche todos os campos de uma vez' },
+      { type: 'improvement', text: 'Endereço disponível também no Perfil (sincronizado com o contato do usuário)' },
+    ],
+  },
+  {
     id: '2026-05-13-phone-picker-iframe',
     version: '0.2.7',
     date: '13/05/2026',
