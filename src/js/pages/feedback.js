@@ -150,7 +150,7 @@ function renderTable() {
       <tr class="dev-tr" data-id="${escapeHtml(item.id)}">
         <td class="dev-td dev-td-codigo" data-action="detail">${escapeHtml(item.codigo ?? '—')}</td>
         <td class="dev-td" data-action="detail">
-          <span class="feedback-type-pill feedback-type-pill--${escapeHtml(item.type ?? '')}">${escapeHtml(typeLabel)}</span>
+          <span class="dev-tipo-pill dev-tipo-pill--${escapeHtml(item.type ?? '')}">${escapeHtml(typeLabel)}</span>
         </td>
         <td class="dev-td dev-td-titulo" data-action="detail">${escapeHtml(item.title ?? '—')}</td>
         <td class="dev-td fb-td-desc" data-action="detail">${escapeHtml(truncate(item.description, 80))}</td>
