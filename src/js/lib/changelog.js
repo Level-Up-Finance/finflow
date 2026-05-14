@@ -7,6 +7,19 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-14-gerenciador-sugestoes',
+    version: '0.2.9',
+    date: '14/05/2026',
+    title: 'Gerenciador de Sugestões + Novidades redesenhada',
+    items: [
+      { type: 'new',         text: 'Gerenciador de Sugestões — painel admin completo para rastrear, priorizar e evoluir o status do feedback dos usuários' },
+      { type: 'new',         text: 'Status "Aprovada" no fluxo de desenvolvimento — sinaliza sugestões aprovadas antes de entrar em progresso' },
+      { type: 'new',         text: 'Página Novidades redesenhada: "Em desenvolvimento" ao lado das últimas 3 atualizações (com scroll interno) e histórico em 2 colunas' },
+      { type: 'improvement', text: 'Painel de detalhes de contato exibe tipo correto "Usuário" para o perfil do próprio usuário' },
+      { type: 'improvement', text: 'Navegação reorganizada — Feedback pelo avatar; Gerenciador de Sugestões integrado ao painel Admin' },
+    ],
+  },
+  {
     id: '2026-05-13-endereco-estruturado',
     version: '0.2.8',
     date: '13/05/2026',

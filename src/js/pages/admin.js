@@ -5,8 +5,8 @@ import { guardSession } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
 import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
-const initialized = { feedback: false, usuarios: false, idiomas: false };
-const VALID_TABS   = new Set(['feedback', 'usuarios', 'idiomas']);
+const initialized = { usuarios: false, idiomas: false };
+const VALID_TABS   = new Set(['usuarios', 'idiomas']);
 
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   bindTabEvents();
   const hash = location.hash.slice(1);
-  await activateTab(VALID_TABS.has(hash) ? hash : 'feedback');
+  await activateTab(VALID_TABS.has(hash) ? hash : 'usuarios');
 });
 
 function bindTabEvents() {
@@ -42,10 +42,7 @@ async function activateTab(tab) {
   // Cache-bust dos dynamic imports — força browser a baixar nova versão
   // quando o arquivo muda (em dev). Em produção, hash do build resolveria.
   const v = `?v=${Date.now()}`;
-  if (tab === 'feedback') {
-    const { init } = await import('./admin-feedback.js' + v);
-    await init();
-  } else if (tab === 'usuarios') {
+  if (tab === 'usuarios') {
     const { init } = await import('./admin-usuarios.js' + v);
     await init();
   } else if (tab === 'idiomas') {

@@ -31,18 +31,40 @@
         </div>
       </div>
 
-      <div id="novidades-content" style="max-width: 680px;">
-        <!-- Roadmap (em progresso) -->
-        <section id="roadmap-section" class="roadmap-section hidden">
-          <header class="roadmap-section-header">
-            <h2 class="roadmap-section-title">No forno</h2>
-            <p class="roadmap-section-hint">Sugestões da comunidade que estão sendo trabalhadas.</p>
-          </header>
-          <div id="roadmap-list" class="roadmap-list"></div>
+      <div class="nov-content">
+
+        <!-- ── Top grid: Em desenvolvimento (esq) + Últimas atualizações (dir) ── -->
+        <div class="nov-top-grid" id="nov-top-grid">
+
+          <!-- ESQUERDA: Em desenvolvimento (aparece só quando há itens aprovados) -->
+          <section class="nov-section nov-col-left hidden" id="nov-aprovadas-section">
+            <h2 class="nov-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" width="15" height="15"
+                   style="color:var(--color-primary)">
+                <path d="M9 12l2 2 4-4"/>
+                <path d="M21 12c0 4.97-4.03 9-9 9S3 16.97 3 12 7.03 3 12 3s9 4.03 9 9z"/>
+              </svg>
+              Em desenvolvimento
+            </h2>
+            <p class="nov-section-hint">Sugestões aprovadas para implementar em breve.</p>
+            <div id="nov-aprovadas-list" class="nov-aprovadas-list"></div>
+          </section>
+
+          <!-- DIREITA: Últimas atualizações (últimas 3 versões com scroll interno) -->
+          <section class="nov-section nov-col-right">
+            <h2 class="nov-section-title">Últimas atualizações</h2>
+            <div id="nov-featured" class="nov-featured-list"></div>
+          </section>
+
+        </div>
+
+        <!-- ── Histórico (versões mais antigas, 2 colunas) ────────────────────── -->
+        <section class="nov-section hidden" id="nov-history-section">
+          <h2 class="nov-section-title">Histórico</h2>
+          <div id="nov-history-list" class="nov-history-list"></div>
         </section>
 
-        <!-- Changelog -->
-        <div id="changelog-content"></div>
       </div>
     </main>
   </div>

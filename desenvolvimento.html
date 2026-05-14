@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerenciador de Sugestões · FinFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/variables.css">
+  <link rel="stylesheet" href="src/css/global.css">
+  <link rel="stylesheet" href="src/css/components.css">
+  <link rel="stylesheet" href="src/css/layout.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-sidebar" id="sidebar-container"></div>
+
+    <header class="app-header header">
+      <div class="header-left">
+        <h2 class="header-title">Gerenciador de Sugestões</h2>
+      </div>
+    </header>
+
+    <main class="app-main main">
+      <div class="page-header">
+        <div class="page-header-content">
+          <p class="page-eyebrow">Interno</p>
+          <h1 class="page-title">Gerenciador de Sugestões</h1>
+          <p class="page-description">FinFlow — Planejamento de desenvolvimento</p>
+        </div>
+        <div class="page-header-actions">
+          <a href="/feedback.html" class="btn btn-ghost btn-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Ajuda &amp; Sugestões
+          </a>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-export-csv">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            CSV
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-export-json">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            JSON
+          </button>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-nova-sugestao">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+            Nova sugestão
+          </button>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           Stats
+           ============================================================ -->
+      <div class="dev-stats" id="dev-stats">
+        <div class="dev-stats-card dev-stats-card--total">
+          <span class="dev-stats-num" id="stat-total">—</span>
+          <span class="dev-stats-label">Total</span>
+        </div>
+        <div class="dev-stats-card dev-stats-card--pendente">
+          <span class="dev-stats-num" id="stat-pendente">—</span>
+          <span class="dev-stats-label">Pendente</span>
+        </div>
+        <div class="dev-stats-card dev-stats-card--progresso">
+          <span class="dev-stats-num" id="stat-progresso">—</span>
+          <span class="dev-stats-label">Em progresso</span>
+        </div>
+        <div class="dev-stats-card dev-stats-card--concluida">
+          <span class="dev-stats-num" id="stat-concluida">—</span>
+          <span class="dev-stats-label">Concluídas</span>
+        </div>
+        <div class="dev-stats-card dev-stats-card--aprovada">
+          <span class="dev-stats-num" id="stat-aprovada">—</span>
+          <span class="dev-stats-label">Aprovadas</span>
+        </div>
+        <div class="dev-stats-card dev-stats-card--rejeitada">
+          <span class="dev-stats-num" id="stat-rejeitada">—</span>
+          <span class="dev-stats-label">Rejeitadas</span>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           Tabs
+           ============================================================ -->
+      <div class="dev-tabs" id="dev-tabs">
+        <button type="button" class="dev-tab active" data-tab="pendentes">
+          Pendentes <span class="dev-tab-badge" id="tab-badge-pendentes">0</span>
+        </button>
+        <button type="button" class="dev-tab" data-tab="aprovadas">
+          Aprovadas <span class="dev-tab-badge" id="tab-badge-aprovadas">0</span>
+        </button>
+        <button type="button" class="dev-tab" data-tab="em_progresso">
+          Em Progresso <span class="dev-tab-badge" id="tab-badge-em_progresso">0</span>
+        </button>
+        <button type="button" class="dev-tab" data-tab="concluidas">
+          Concluídas <span class="dev-tab-badge" id="tab-badge-concluidas">0</span>
+        </button>
+        <button type="button" class="dev-tab" data-tab="rejeitadas">
+          Rejeitadas <span class="dev-tab-badge" id="tab-badge-rejeitadas">0</span>
+        </button>
+      </div>
+
+      <!-- ============================================================
+           Filter bar
+           ============================================================ -->
+      <div class="dev-filter-bar" id="dev-filter-bar">
+        <div class="dev-filter-search-wrap">
+          <svg class="dev-filter-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+          <input type="search" id="dev-search" class="input dev-filter-search"
+                 placeholder="Buscar por código, título ou descrição…" autocomplete="off">
+        </div>
+
+        <select id="dev-fil-tipo" class="input dev-filter-select">
+          <option value="">Tipo</option>
+          <option value="bug">Bug</option>
+          <option value="sugestao">Sugestão</option>
+          <option value="feature">Funcionalidade</option>
+          <option value="pergunta">Pergunta</option>
+          <option value="elogio">Elogio</option>
+          <option value="parceria">Parceria</option>
+        </select>
+
+        <select id="dev-fil-modulo" class="input dev-filter-select">
+          <option value="">Módulo</option>
+          <option value="dashboard">Dashboard</option>
+          <option value="transacoes">Transações</option>
+          <option value="pagamentos">Pagamentos</option>
+          <option value="contas">Contas</option>
+          <option value="compromissos">Compromissos</option>
+          <option value="orcamento">Orçamento</option>
+          <option value="dividas">Dívidas</option>
+          <option value="investimentos">Investimentos</option>
+          <option value="relatorios">Relatórios</option>
+          <option value="contatos">Contatos</option>
+          <option value="importar">Importar extrato</option>
+          <option value="perfil">Perfil & Configurações</option>
+          <option value="admin">Admin</option>
+          <option value="outros">Outros</option>
+        </select>
+
+        <select id="dev-fil-impacto" class="input dev-filter-select">
+          <option value="">Impacto</option>
+          <option value="Alto">Alto</option>
+          <option value="Médio">Médio</option>
+          <option value="Baixo">Baixo</option>
+        </select>
+
+        <select id="dev-fil-complex" class="input dev-filter-select">
+          <option value="">Complexidade</option>
+          <option value="Alta">Alta</option>
+          <option value="Média">Média</option>
+          <option value="Baixa">Baixa</option>
+          <option value="Muito Baixa">Muito Baixa</option>
+        </select>
+
+        <button type="button" class="btn btn-ghost dev-filter-clear" id="btn-clear-filters">
+          Limpar
+        </button>
+      </div>
+
+      <!-- ============================================================
+           Loading
+           ============================================================ -->
+      <div id="dev-loading" class="loading-overlay" style="position:relative; min-height:160px;">
+        <span class="spinner"></span>
+      </div>
+
+      <!-- ============================================================
+           Table
+           ============================================================ -->
+      <div class="table-wrapper hidden" id="dev-table-wrap">
+        <table class="dev-table" id="dev-table">
+          <thead>
+            <tr>
+              <th class="dev-th dev-th--codigo">Código</th>
+              <th class="dev-th dev-th--tipo">Tipo</th>
+              <th class="dev-th dev-th--titulo">Título</th>
+              <th class="dev-th dev-th--modulo">Módulo</th>
+              <th class="dev-th dev-th--impacto">Impacto</th>
+              <th class="dev-th dev-th--complex">Complexidade</th>
+              <th class="dev-th dev-th--status">Status</th>
+            </tr>
+          </thead>
+          <tbody id="dev-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- ============================================================
+           Empty state
+           ============================================================ -->
+      <div id="dev-empty" class="feedback-empty hidden">
+        <p>Nenhuma entrada encontrada com os filtros aplicados.</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============================================================
+       Modal: Detalhe
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-dev-detail" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:var(--space-2)">
+          <span id="ddd-codigo" class="i18n-chave" style="font-family:monospace;font-size:var(--fs-xs);color:var(--color-text-muted)"></span>
+          <span id="ddd-tipo-pill"></span>
+        </div>
+        <button type="button" class="modal-close" id="btn-close-ddd" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body" style="gap:var(--space-4)">
+        <div>
+          <p class="field-label" style="margin-bottom:var(--space-1)">Título</p>
+          <p id="ddd-title" style="font-size:var(--fs-sm);font-weight:var(--fw-semibold);color:var(--color-text-main)"></p>
+        </div>
+        <div>
+          <p class="field-label" style="margin-bottom:var(--space-1)">Descrição</p>
+          <p id="ddd-desc" style="font-size:var(--fs-sm);color:var(--color-text-secondary);white-space:pre-wrap;line-height:1.6"></p>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-3)">
+          <div>
+            <p class="field-label" style="margin-bottom:var(--space-1)">Módulo</p>
+            <span id="ddd-modulo"></span>
+          </div>
+          <div>
+            <p class="field-label" style="margin-bottom:var(--space-1)">Impacto</p>
+            <span id="ddd-impacto"></span>
+          </div>
+          <div>
+            <p class="field-label" style="margin-bottom:var(--space-1)">Complexidade</p>
+            <span id="ddd-complex"></span>
+          </div>
+        </div>
+        <div>
+          <p class="field-label" style="margin-bottom:var(--space-1)">Status</p>
+          <span id="ddd-status"></span>
+        </div>
+        <div id="ddd-notas-wrap">
+          <p class="field-label" style="margin-bottom:var(--space-1)">Notas internas</p>
+          <p id="ddd-notas" style="font-size:var(--fs-sm);color:var(--color-text-secondary);white-space:pre-wrap;line-height:1.6"></p>
+        </div>
+        <div id="ddd-arquivos-wrap">
+          <p class="field-label" style="margin-bottom:var(--space-1)">Arquivos</p>
+          <div id="ddd-arquivos-list" class="dev-arquivos-list"></div>
+        </div>
+        <p id="ddd-date" style="font-size:var(--fs-xs);color:var(--color-text-tertiary)"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-cancel-ddd">Fechar</button>
+        <button type="button" class="btn btn-primary" id="btn-edit-from-detail">Editar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       Modal: Editar
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-dev-edit" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h3 class="modal-title">Editar entrada</h3>
+        <button type="button" class="modal-close" id="btn-close-dde" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body" style="gap:var(--space-4)">
+        <div class="field">
+          <label class="field-label" for="dde-modulo">Módulo</label>
+          <select id="dde-modulo" class="input">
+            <option value="dashboard">Dashboard</option>
+            <option value="transacoes">Transações</option>
+            <option value="pagamentos">Pagamentos</option>
+            <option value="contas">Contas</option>
+            <option value="compromissos">Compromissos</option>
+            <option value="orcamento">Orçamento</option>
+            <option value="dividas">Dívidas</option>
+            <option value="investimentos">Investimentos</option>
+            <option value="relatorios">Relatórios</option>
+            <option value="contatos">Contatos</option>
+            <option value="importar">Importar extrato</option>
+            <option value="perfil">Perfil & Configurações</option>
+            <option value="admin">Admin</option>
+            <option value="outros">Outros</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+          <div class="field">
+            <label class="field-label" for="dde-impacto">Impacto</label>
+            <select id="dde-impacto" class="input">
+              <option value="Alto">Alto</option>
+              <option value="Médio">Médio</option>
+              <option value="Baixo">Baixo</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="dde-complex">Complexidade</label>
+            <select id="dde-complex" class="input">
+              <option value="Alta">Alta</option>
+              <option value="Média">Média</option>
+              <option value="Baixa">Baixa</option>
+              <option value="Muito Baixa">Muito Baixa</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="dde-desc">Descrição</label>
+          <textarea id="dde-desc" class="textarea" rows="4" maxlength="2000"></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label" for="dde-notas">Notas internas</label>
+          <textarea id="dde-notas" class="textarea" rows="4" maxlength="4000"
+                    placeholder="Anotações, links, referências, próximos passos…"></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label">Arquivos</label>
+          <div class="dev-upload-area" id="dde-upload-area">
+            <input type="file" id="dde-file-input" class="dev-file-input" multiple accept="image/*,.pdf,.txt,.csv,.json,.md">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" style="color:var(--color-text-muted)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+            <p style="font-size:var(--fs-sm);color:var(--color-text-muted);margin-top:var(--space-2)">
+              Arraste arquivos ou <button type="button" class="dev-upload-link" id="dde-browse-btn">clique para selecionar</button>
+            </p>
+          </div>
+          <div id="dde-file-list" class="dev-file-list"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-cancel-dde">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-save-dde">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       Modal: Nova sugestão
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-dev-add" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h3 class="modal-title">Nova sugestão</h3>
+        <button type="button" class="modal-close" id="btn-close-dda" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body" style="gap:var(--space-4)">
+        <div class="field">
+          <label class="field-label" for="dda-titulo">Título <span class="required">*</span></label>
+          <input type="text" id="dda-titulo" class="input" maxlength="120"
+                 placeholder="Resumo curto da ideia ou bug" required>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+          <div class="field">
+            <label class="field-label" for="dda-tipo">Tipo</label>
+            <select id="dda-tipo" class="input">
+              <option value="sugestao">Sugestão</option>
+              <option value="bug">Bug</option>
+              <option value="feature">Funcionalidade</option>
+              <option value="pergunta">Pergunta</option>
+              <option value="elogio">Elogio</option>
+              <option value="parceria">Parceria</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="dda-modulo">Módulo</label>
+            <select id="dda-modulo" class="input">
+              <option value="outros">Outros</option>
+              <option value="dashboard">Dashboard</option>
+              <option value="transacoes">Transações</option>
+              <option value="pagamentos">Pagamentos</option>
+              <option value="contas">Contas</option>
+              <option value="compromissos">Compromissos</option>
+              <option value="orcamento">Orçamento</option>
+              <option value="dividas">Dívidas</option>
+              <option value="investimentos">Investimentos</option>
+              <option value="relatorios">Relatórios</option>
+              <option value="contatos">Contatos</option>
+              <option value="importar">Importar extrato</option>
+              <option value="perfil">Perfil & Configurações</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+          <div class="field">
+            <label class="field-label" for="dda-impacto">Impacto</label>
+            <select id="dda-impacto" class="input">
+              <option value="Médio">Médio</option>
+              <option value="Alto">Alto</option>
+              <option value="Baixo">Baixo</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="dda-complex">Complexidade</label>
+            <select id="dda-complex" class="input">
+              <option value="Baixa">Baixa</option>
+              <option value="Alta">Alta</option>
+              <option value="Média">Média</option>
+              <option value="Muito Baixa">Muito Baixa</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="dda-desc">Descrição</label>
+          <textarea id="dda-desc" class="textarea" rows="4" maxlength="2000"
+                    placeholder="Descreva com mais detalhes…"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-cancel-dda">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-save-dda">Criar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script type="module" src="src/js/pages/desenvolvimento.js"></script>
+</body>
+</html>

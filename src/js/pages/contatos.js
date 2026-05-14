@@ -286,7 +286,7 @@ function renderDadosTab(c) {
   // Cada item: { label, value, hint?, full?, html? (HTML em vez de texto puro) }
   const fields = [
     { label: 'Pessoa / Empresa', value: PESSOA_LABELS[c.pessoa_tipo] || '' },
-    { label: 'Tipo',             value: TIPO_LABELS[c.tipo] || c.tipo },
+    { label: 'Tipo',             value: TIPO_LABELS[c.is_perfil ? 'usuario' : c.tipo] || c.tipo },
     { label: 'Nome',             value: c.nome },
     { label: docLabel,           value: c.documento },
     {

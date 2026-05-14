@@ -23,6 +23,7 @@ const TYPE_LABELS = {
 const STATUS_LABELS = {
   novo:         'Novo',
   em_analise:   'Em análise',
+  aprovada:     'Aprovada para desenvolvimento',
   em_progresso: 'Em progresso',
   feito:        'Feito',
   agora_nao:    'Agora não',
@@ -133,7 +134,7 @@ async function loadMine() {
 // ── Tabela agrupada ───────────────────────────────────────────
 const GROUPS = [
   { label: t('feedback.group.novas', 'Novas'),                    statuses: ['novo'] },
-  { label: t('feedback.group.analise', 'Em análise e em andamento'), statuses: ['em_analise', 'em_progresso'] },
+  { label: t('feedback.group.analise', 'Em análise e em andamento'), statuses: ['em_analise', 'aprovada', 'em_progresso'] },
   { label: t('feedback.group.concluidas', 'Concluídas e rejeitadas'),  statuses: ['feito', 'agora_nao'] },
 ];
 
