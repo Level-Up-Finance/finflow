@@ -7,6 +7,20 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-14-gerenciador-refinamentos',
+    version: '0.3.0',
+    date: '14/05/2026',
+    title: 'Gerenciador de Sugestões — refinamentos e paridade visual',
+    items: [
+      { type: 'improvement', text: 'Widgets de stats idênticos nas páginas Gerenciador e Sugestões & Bugs — 6 cards na mesma ordem: Total, Pendente, Aprovadas, Em Progresso, Concluídas, Rejeitadas' },
+      { type: 'improvement', text: 'Cor do widget e badge "Aprovadas" alterada de roxo para azul em toda a interface' },
+      { type: 'new',         text: 'Campo "Retorno para o usuário" no modal de edição do Gerenciador — mensagem visível pelo usuário na página Sugestões & Bugs' },
+      { type: 'fix',         text: 'Dropdown de status no Gerenciador corrigido — agora abre e fecha corretamente ao clicar' },
+      { type: 'new',         text: 'Tab "Todas" no Gerenciador para visualizar entradas de todos os status de uma vez' },
+      { type: 'new',         text: 'Destaque "Minha sugestão" na página Novidades — sugestões aprovadas do próprio usuário aparecem com fundo roxo e badge identificador' },
+    ],
+  },
+  {
     id: '2026-05-14-gerenciador-sugestoes',
     version: '0.2.9',
     date: '14/05/2026',

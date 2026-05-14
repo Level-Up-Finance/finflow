@@ -12216,8 +12216,8 @@ td .currency-split {
   color: var(--color-success);
 }
 .feedback-status-badge--aprovada {
-  background: color-mix(in srgb, #7c3aed 14%, var(--color-surface));
-  color: #5b21b6;
+  background: color-mix(in srgb, #1d4ed8 14%, var(--color-surface));
+  color: #1e40af;
 }
 .feedback-status-badge--agora_nao {
   background: var(--color-surface-alt);
@@ -12991,6 +12991,26 @@ td .currency-split {
   border: 1px solid var(--color-border);
   border-left: 3px solid #7c3aed;
   border-radius: var(--radius-md);
+}
+
+.nov-aprovada-card--mine {
+  background: color-mix(in srgb, #7c3aed 7%, var(--color-surface));
+  border-color: color-mix(in srgb, #7c3aed 30%, var(--color-border));
+  border-left: 4px solid #7c3aed;
+}
+
+.nov-aprovada-mine-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 2px 8px;
+  background: #ede9fe;
+  color: #5b21b6;
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
 }
 
 .nov-aprovada-title {
@@ -14869,7 +14889,7 @@ body.comp-embedded { background: transparent; }
 
 .dev-stats-card--total    { background: var(--color-primary); }
 .dev-stats-card--pendente { background: #64748b; }
-.dev-stats-card--aprovada { background: #7c3aed; }
+.dev-stats-card--aprovada { background: #1d4ed8; }
 .dev-stats-card--progresso{ background: #d97706; }
 .dev-stats-card--concluida{ background: #16a34a; }
 .dev-stats-card--rejeitada{ background: #dc2626; }
@@ -15060,7 +15080,7 @@ body.comp-embedded { background: transparent; }
 }
 .dev-status-badge--novo         { background: var(--color-surface-alt); color: var(--color-text-secondary); border: 1px solid var(--color-border); }
 .dev-status-badge--em_analise   { background: var(--color-info-bg);     color: #1E40AF; }
-.dev-status-badge--aprovada     { background: #ede9fe;                  color: #5b21b6; }
+.dev-status-badge--aprovada     { background: #dbeafe;                  color: #1e40af; }
 .dev-status-badge--em_progresso { background: var(--color-warning-bg);  color: #92400E; }
 .dev-status-badge--feito        { background: var(--color-success-bg);  color: #065F46; }
 .dev-status-badge--agora_nao    { background: var(--color-danger-bg);   color: #991B1B; }

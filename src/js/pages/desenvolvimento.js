@@ -50,8 +50,9 @@ const STATUS_LABELS = {
   agora_nao:    'Agora não',
 };
 
-// Mapeamento de tab → statuses exibidos
+// Mapeamento de tab → statuses exibidos (null = todas)
 const TAB_STATUSES = {
+  todas:        null,
   pendentes:    ['novo', 'em_analise'],
   aprovadas:    ['aprovada'],
   em_progresso: ['em_progresso'],
@@ -154,17 +155,19 @@ function renderStats() {
 
 function renderTabBadges() {
   for (const [tab, statuses] of Object.entries(TAB_STATUSES)) {
-    const count = todos.filter(i => statuses.includes(i.status)).length;
+    const count = statuses === null
+      ? todos.length
+      : todos.filter(i => statuses.includes(i.status)).length;
     setText(`tab-badge-${tab}`, count);
   }
 }
 
 function getFiltered() {
-  const statuses = TAB_STATUSES[grupo] ?? [];
+  const statuses = TAB_STATUSES[grupo];
 
   return todos.filter(item => {
     // Tab
-    if (!statuses.includes(item.status)) return false;
+    if (statuses !== null && !statuses.includes(item.status)) return false;
 
     // Busca
     if (busca) {
@@ -385,8 +388,8 @@ function bindEvents() {
 // ─────────────────────────────────────────────────────────────
 
 function toggleStatusDrop(id, anchor) {
+  if (statusDropId === id) { closeAllDrops(); return; }
   closeAllDrops();
-  if (statusDropId === id) { statusDropId = null; return; }
   statusDropId = id;
 
   const drop = document.createElement('div');
@@ -410,8 +413,8 @@ function toggleStatusDrop(id, anchor) {
 }
 
 function toggleModuloDrop(id, anchor) {
+  if (moduloDropId === id) { closeAllDrops(); return; }
   closeAllDrops();
-  if (moduloDropId === id) { moduloDropId = null; return; }
   moduloDropId = id;
 
   const drop = document.createElement('div');
@@ -543,6 +546,14 @@ function openDetailModal(id) {
     notasWrap.classList.add('hidden');
   }
 
+  const retornoWrap = document.getElementById('ddd-retorno-wrap');
+  if (item.resposta_usuario) {
+    retornoWrap.classList.remove('hidden');
+    document.getElementById('ddd-retorno').textContent = item.resposta_usuario;
+  } else {
+    retornoWrap.classList.add('hidden');
+  }
+
   // Arquivos
   const arquivosWrap = document.getElementById('ddd-arquivos-wrap');
   const arquivos     = Array.isArray(item.arquivos) ? item.arquivos : [];
@@ -581,11 +592,12 @@ function openEditModal(id) {
   editingId    = id;
   editArquivos = Array.isArray(item.arquivos) ? [...item.arquivos] : [];
 
-  document.getElementById('dde-modulo').value  = item.modulo       ?? 'outros';
-  document.getElementById('dde-impacto').value = item.impacto      ?? 'Médio';
-  document.getElementById('dde-complex').value = item.complexidade ?? 'Baixa';
-  document.getElementById('dde-desc').value    = item.description  ?? '';
-  document.getElementById('dde-notas').value   = item.notas        ?? '';
+  document.getElementById('dde-modulo').value   = item.modulo            ?? 'outros';
+  document.getElementById('dde-impacto').value  = item.impacto           ?? 'Médio';
+  document.getElementById('dde-complex').value  = item.complexidade      ?? 'Baixa';
+  document.getElementById('dde-desc').value     = item.description       ?? '';
+  document.getElementById('dde-notas').value    = item.notas             ?? '';
+  document.getElementById('dde-retorno').value  = item.resposta_usuario  ?? '';
 
   renderFileList();
   document.getElementById('modal-dev-edit').classList.remove('hidden');
@@ -600,11 +612,12 @@ function closeEditModal() {
 async function saveEdit() {
   if (!editingId) return;
 
-  const modulo      = document.getElementById('dde-modulo').value;
-  const impacto     = document.getElementById('dde-impacto').value;
-  const complexidade= document.getElementById('dde-complex').value;
-  const description = document.getElementById('dde-desc').value.trim();
-  const notas       = document.getElementById('dde-notas').value.trim();
+  const modulo           = document.getElementById('dde-modulo').value;
+  const impacto          = document.getElementById('dde-impacto').value;
+  const complexidade     = document.getElementById('dde-complex').value;
+  const description      = document.getElementById('dde-desc').value.trim();
+  const notas            = document.getElementById('dde-notas').value.trim();
+  const resposta_usuario = document.getElementById('dde-retorno').value.trim();
 
   const btn = document.getElementById('btn-save-dde');
   btn.disabled = true;
@@ -618,6 +631,7 @@ async function saveEdit() {
       complexidade,
       description,
       notas,
+      resposta_usuario: resposta_usuario || null,
       arquivos: editArquivos,
       updated_at: new Date().toISOString(),
     })

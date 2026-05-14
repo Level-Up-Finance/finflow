@@ -3,7 +3,7 @@
 // Layout: últimas 3 versões em destaque + histórico compacto
 //         + bloco "Em desenvolvimento" (feedback aprovado)
 // =============================================================
-import { guardSession } from '../lib/auth.js';
+import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
 import { CHANGELOG } from '../lib/changelog.js';
 import { supabase } from '../lib/supabase.js';
@@ -51,7 +51,7 @@ function markSeen() {
 async function loadAprovadas() {
   const { data, error } = await supabase
     .from('feedback')
-    .select('id, type, title, modulo')
+    .select('id, type, title, modulo, user_id')
     .eq('status', 'aprovada')
     .order('updated_at', { ascending: false });
 
@@ -119,7 +119,7 @@ function renderHistory() {
 
 // ── Aprovadas para desenvolvimento ────────────────────────────
 
-function renderAprovadas(aprovadas) {
+function renderAprovadas(aprovadas, currentUserId) {
   const section   = document.getElementById('nov-aprovadas-section');
   const container = document.getElementById('nov-aprovadas-list');
   const topGrid   = document.getElementById('nov-top-grid');
@@ -130,13 +130,20 @@ function renderAprovadas(aprovadas) {
   section.classList.remove('hidden');
   topGrid?.classList.add('has-aprovadas');
 
-  container.innerHTML = aprovadas.map((fb) => `
-    <div class="nov-aprovada-card">
-      <span class="feedback-type-pill feedback-type-pill--${escapeHtml(fb.type)}">${escapeHtml(FB_TYPE_LABELS[fb.type] || fb.type)}</span>
-      <span class="nov-aprovada-title">${escapeHtml(fb.title)}</span>
-      ${fb.modulo && fb.modulo !== 'outros' ? `<span class="nov-aprovada-modulo">${escapeHtml(MODULOS[fb.modulo] || fb.modulo)}</span>` : ''}
-    </div>
-  `).join('');
+  container.innerHTML = aprovadas.map((fb) => {
+    const isMine = currentUserId && fb.user_id === currentUserId;
+    return `
+      <div class="nov-aprovada-card${isMine ? ' nov-aprovada-card--mine' : ''}">
+        <span class="feedback-type-pill feedback-type-pill--${escapeHtml(fb.type)}">${escapeHtml(FB_TYPE_LABELS[fb.type] || fb.type)}</span>
+        <span class="nov-aprovada-title">${escapeHtml(fb.title)}</span>
+        ${fb.modulo && fb.modulo !== 'outros' ? `<span class="nov-aprovada-modulo">${escapeHtml(MODULOS[fb.modulo] || fb.modulo)}</span>` : ''}
+        ${isMine ? `<span class="nov-aprovada-mine-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Minha sugestão
+        </span>` : ''}
+      </div>
+    `;
+  }).join('');
 }
 
 // ── Main ──────────────────────────────────────────────────────
@@ -151,6 +158,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderFeatured();
   renderHistory();
 
-  const aprovadas = await loadAprovadas();
-  renderAprovadas(aprovadas);
+  const [aprovadas, user] = await Promise.all([loadAprovadas(), getCurrentUser()]);
+  renderAprovadas(aprovadas, user?.id ?? null);
 });

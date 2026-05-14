@@ -96,14 +96,16 @@ function renderAll() {
 
 function renderStats() {
   const total     = todos.length;
-  const novo      = todos.filter(i => i.status === 'novo').length;
-  const andamento = todos.filter(i => ['em_analise', 'aprovada', 'em_progresso'].includes(i.status)).length;
+  const pendente  = todos.filter(i => ['novo', 'em_analise'].includes(i.status)).length;
+  const aprovada  = todos.filter(i => i.status === 'aprovada').length;
+  const progresso = todos.filter(i => i.status === 'em_progresso').length;
   const concluida = todos.filter(i => i.status === 'feito').length;
   const rejeitada = todos.filter(i => i.status === 'agora_nao').length;
 
   setText('fb-stat-total',    total);
-  setText('fb-stat-novo',     novo);
-  setText('fb-stat-andamento',andamento);
+  setText('fb-stat-pendente', pendente);
+  setText('fb-stat-aprovada', aprovada);
+  setText('fb-stat-progresso',progresso);
   setText('fb-stat-concluida',concluida);
   setText('fb-stat-rejeitada',rejeitada);
 }

@@ -30,10 +30,6 @@
           <p class="page-description">FinFlow — Planejamento de desenvolvimento</p>
         </div>
         <div class="page-header-actions">
-          <a href="/feedback.html" class="btn btn-ghost btn-sm">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            Ajuda &amp; Sugestões
-          </a>
           <button type="button" class="btn btn-ghost btn-sm" id="btn-export-csv">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
             CSV
@@ -61,6 +57,10 @@
           <span class="dev-stats-num" id="stat-pendente">—</span>
           <span class="dev-stats-label">Pendente</span>
         </div>
+        <div class="dev-stats-card dev-stats-card--aprovada">
+          <span class="dev-stats-num" id="stat-aprovada">—</span>
+          <span class="dev-stats-label">Aprovadas</span>
+        </div>
         <div class="dev-stats-card dev-stats-card--progresso">
           <span class="dev-stats-num" id="stat-progresso">—</span>
           <span class="dev-stats-label">Em progresso</span>
@@ -68,10 +68,6 @@
         <div class="dev-stats-card dev-stats-card--concluida">
           <span class="dev-stats-num" id="stat-concluida">—</span>
           <span class="dev-stats-label">Concluídas</span>
-        </div>
-        <div class="dev-stats-card dev-stats-card--aprovada">
-          <span class="dev-stats-num" id="stat-aprovada">—</span>
-          <span class="dev-stats-label">Aprovadas</span>
         </div>
         <div class="dev-stats-card dev-stats-card--rejeitada">
           <span class="dev-stats-num" id="stat-rejeitada">—</span>
@@ -83,6 +79,9 @@
            Tabs
            ============================================================ -->
       <div class="dev-tabs" id="dev-tabs">
+        <button type="button" class="dev-tab" data-tab="todas">
+          Todas <span class="dev-tab-badge" id="tab-badge-todas">0</span>
+        </button>
         <button type="button" class="dev-tab active" data-tab="pendentes">
           Pendentes <span class="dev-tab-badge" id="tab-badge-pendentes">0</span>
         </button>
@@ -237,6 +236,10 @@
           <p class="field-label" style="margin-bottom:var(--space-1)">Notas internas</p>
           <p id="ddd-notas" style="font-size:var(--fs-sm);color:var(--color-text-secondary);white-space:pre-wrap;line-height:1.6"></p>
         </div>
+        <div id="ddd-retorno-wrap" class="hidden">
+          <p class="field-label" style="margin-bottom:var(--space-1)">Retorno para o usuário</p>
+          <p id="ddd-retorno" style="font-size:var(--fs-sm);color:var(--color-text-secondary);white-space:pre-wrap;line-height:1.6"></p>
+        </div>
         <div id="ddd-arquivos-wrap">
           <p class="field-label" style="margin-bottom:var(--space-1)">Arquivos</p>
           <div id="ddd-arquivos-list" class="dev-arquivos-list"></div>
@@ -306,6 +309,11 @@
           <label class="field-label" for="dde-notas">Notas internas</label>
           <textarea id="dde-notas" class="textarea" rows="4" maxlength="4000"
                     placeholder="Anotações, links, referências, próximos passos…"></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label" for="dde-retorno">Retorno para o usuário</label>
+          <textarea id="dde-retorno" class="textarea" rows="3" maxlength="2000"
+                    placeholder="Mensagem visível para o usuário na página Sugestões &amp; Bugs…"></textarea>
         </div>
         <div class="field">
           <label class="field-label">Arquivos</label>
