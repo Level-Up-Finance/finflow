@@ -14965,6 +14965,140 @@ body.comp-embedded { background: transparent; }
 }
 .foto-picker-remove:hover { color: var(--color-danger, #ef4444); }
 
+/* ── FotoPicker — Crop modal ──────────────────────────────── */
+.fp-crop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.fp-crop-modal {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5) var(--space-6);
+  width: 340px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.fp-crop-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fp-crop-title {
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+  color: var(--color-text-main);
+}
+
+.fp-crop-close {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+}
+.fp-crop-close:hover { color: var(--color-text-main); }
+
+.fp-crop-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-4) var(--space-3);
+}
+
+.fp-crop-viewport {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  border: 2px solid var(--color-primary, #6366f1);
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary, #6366f1) 18%, transparent);
+}
+.fp-crop-viewport:active { cursor: grabbing; }
+
+.fp-crop-img {
+  position: absolute;
+  object-fit: none; /* size set via JS */
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.fp-crop-hint {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.fp-crop-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.fp-crop-zoom-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+}
+.fp-crop-zoom-btn:hover {
+  background: var(--color-surface);
+  border-color: var(--color-primary, #6366f1);
+  color: var(--color-primary, #6366f1);
+}
+
+.fp-crop-range {
+  flex: 1;
+  cursor: pointer;
+  accent-color: var(--color-primary, #6366f1);
+}
+
+.fp-crop-footer {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
 /* Checkbox "Estrangeiro" no bloco de Identificação */
 .estrangeiro-check-row {
   display: flex;

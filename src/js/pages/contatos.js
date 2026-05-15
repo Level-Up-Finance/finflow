@@ -188,7 +188,7 @@ function renderList() {
     const showC = !c.is_perfil && (c.tipo === 'cliente'    || c.tipo === 'ambos');
     const showF = !c.is_perfil && (c.tipo === 'fornecedor' || c.tipo === 'ambos');
     const hasPhoto = !!c.logo_url;
-    const letters = hasPhoto ? '' : `
+    const letters = `
       ${showC ? '<span class="ctp-tipo-letter cliente" title="Cliente">C</span>' : ''}
       ${showF ? '<span class="ctp-tipo-letter fornecedor" title="Fornecedor">F</span>' : ''}
       ${c.is_perfil ? '<span class="ctp-tipo-letter usuario" title="Usuário">U</span>' : ''}

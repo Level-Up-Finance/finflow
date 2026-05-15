@@ -83,9 +83,9 @@ export default [
     },
   },
 
-  // Scripts Node (extract-strings, sync-strings)
+  // Scripts Node (extract-strings, sync-strings, query.mjs)
   {
-    files: ['scripts/**/*.js'],
+    files: ['scripts/**/*.js', 'scripts/**/*.mjs'],
     languageOptions: {
       globals: {
         process: 'readonly',
