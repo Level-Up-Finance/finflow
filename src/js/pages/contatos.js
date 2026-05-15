@@ -12,6 +12,7 @@ import { fetchCnpjData, isValidCnpj, digitsOnly, googleCnpjSearchUrl, inferLogoU
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 import { PhonePicker } from '../components/phone-picker.js';
 import { AddressPicker, renderAddressFieldsHtml } from '../components/address-picker.js';
+import { FotoPicker } from '../components/foto-picker.js';
 
 // ── State ─────────────────────────────────────────────────────
 let cachedContatos      = [];
@@ -34,6 +35,7 @@ const TIPO_COLORS = { cliente: '#3b82f6', fornecedor: '#8b5cf6', ambos: '#64748b
 let ppTelCtg = null;
 let ppWaCtg  = null;
 let apCtg    = null;  // AddressPicker para o form de contatos
+let fpCtg    = null;  // FotoPicker para o form de contatos
 
 // ── Init ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
@@ -75,6 +77,15 @@ function initPhonePickersContatos() {
     addrContainer.innerHTML = renderAddressFieldsHtml('ct-');
     apCtg = new AddressPicker('ct-', document);
   }
+
+  // Foto picker
+  const fpEl = document.getElementById('ct-foto-picker');
+  if (fpEl) fpCtg = new FotoPicker(fpEl);
+
+  // Atualiza iniciais do FotoPicker quando o nome muda
+  document.getElementById('ct-nome')?.addEventListener('input', (e) => {
+    fpCtg?.setNome(e.target.value.trim());
+  });
 }
 
 async function loadData() {
@@ -750,7 +761,10 @@ function applyCnpjDataToForm(data, logoUrl) {
   // CNPJ formatado
   document.getElementById('ct-documento').value = data.cnpj;
 
-  if (logoUrl) modalLogoUrl = logoUrl;
+  if (logoUrl) {
+    modalLogoUrl = logoUrl;
+    fpCtg?.setValue(logoUrl);
+  }
 
   showToast('Dados preenchidos. Revise e salve.', 'success');
 }
@@ -821,6 +835,7 @@ function openModal(id) {
   if (estrEl) estrEl.checked = c?.estrangeiro ?? false;
 
   modalLogoUrl = c?.logo_url || null;
+  fpCtg?.setValue(c?.logo_url || null, c?.nome || '');
   applyPessoaTipoUI();
   applyEstrangeiroUI();
 
@@ -848,7 +863,7 @@ async function saveContato() {
 
   if (!payload.nome) { showToast('Informe o nome do contato.', 'error'); return; }
   if (!payload.tipo) payload.tipo = 'ambos';
-  payload.logo_url    = modalLogoUrl;
+  payload.logo_url    = fpCtg?.getValue() ?? modalLogoUrl;
   payload.estrangeiro = document.getElementById('ct-estrangeiro')?.checked ?? false;
 
   const btn = document.getElementById('btn-save-contato');

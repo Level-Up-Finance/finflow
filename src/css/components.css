@@ -14825,6 +14825,88 @@ body.comp-embedded { background: transparent; }
 /* ============================================================
    ADDRESS PICKER
    ============================================================ */
+/* ============================================================
+   FOTO PICKER — upload de foto de perfil em formulários
+   ============================================================ */
+.foto-picker-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-4);
+}
+
+/* O elemento raiz passado ao FotoPicker */
+.foto-picker-el {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.foto-picker-btn {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px dashed var(--color-border);
+  background: var(--color-surface);
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.2s, opacity 0.2s;
+  flex-shrink: 0;
+}
+.foto-picker-btn:hover     { border-color: var(--color-primary, #6366f1); }
+.foto-picker-btn:disabled,
+.foto-picker-loading       { opacity: 0.5; cursor: not-allowed; }
+
+.foto-picker-avatar {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff;
+}
+.foto-picker-avatar img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.foto-picker-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.foto-picker-btn:hover .foto-picker-overlay { opacity: 1; }
+
+.foto-picker-remove {
+  font-size: var(--fs-xs);
+  color: var(--color-text-tertiary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+.foto-picker-remove:hover { color: var(--color-danger, #ef4444); }
+
 /* Checkbox "Estrangeiro" no bloco de Identificação */
 .estrangeiro-check-row {
   display: flex;

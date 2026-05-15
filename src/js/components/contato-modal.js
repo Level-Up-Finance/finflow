@@ -22,6 +22,7 @@ import {
 } from '../lib/cnpj-lookup.js';
 import { PhonePicker } from './phone-picker.js';
 import { AddressPicker, renderAddressFieldsHtml } from './address-picker.js';
+import { FotoPicker } from './foto-picker.js';
 
 const FIELDS = [
   'nome', 'nome_extrato', 'tipo', 'pessoa_tipo',
@@ -93,7 +94,7 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
       setIfEmpty('ct-email', data.email);
       setIfEmpty('ct-telefone', data.telefone);
       $('ct-documento').value = data.cnpj;
-      if (logoUrl) modalLogoUrl = logoUrl;
+      if (logoUrl) { modalLogoUrl = logoUrl; fpCm.setValue(logoUrl); }
       showToast('Dados preenchidos. Revise e salve.', 'success');
     }
 
@@ -125,6 +126,9 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
       }
       // Address picker
       apCm.setValue(initialData || {});
+
+      // Foto picker
+      fpCm.setValue(initialData?.logo_url || null, initialData?.nome || '');
       // "Mesmo número" — detecta se os dois são iguais ao editar
       const mesmoEl = $('ct-mesmo-numero');
       if (mesmoEl && initialData?.telefone && initialData?.whatsapp && initialData.telefone === initialData.whatsapp) {
@@ -146,7 +150,7 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
         const v = (el.value || '').trim();
         payload[k] = v === '' ? null : v;
       }
-      payload.logo_url    = modalLogoUrl;
+      payload.logo_url    = fpCm.getValue() ?? modalLogoUrl;
       payload.estrangeiro = $('ct-estrangeiro')?.checked ?? false;
       if (!payload.nome) {
         $('ct-nome').focus();
@@ -192,6 +196,9 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
     // ── Address picker ─────────────────────────────────────────
     const apCm = new AddressPicker('ct-', backdrop);
 
+    // ── Foto picker ────────────────────────────────────────────
+    const fpCm = new FotoPicker($('ct-foto-picker'));
+
     // ── Wiring ─────────────────────────────────────────────────
     fillFromInitial();
     $('ct-pessoa-tipo').addEventListener('change', applyPessoaTipoUI);
@@ -211,6 +218,7 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
     $('ct-nome').addEventListener('input', () => {
       $('ct-nome').classList.remove('input--error');
       updateCnpjActions();
+      fpCm.setNome($('ct-nome').value.trim());
     });
     $('btn-buscar-cnpj').addEventListener('click', handleBuscarCnpj);
     $('btn-save-contato').addEventListener('click', handleSave);
@@ -262,6 +270,12 @@ function renderModalHtml(title) {
         </button>
       </div>
       <div class="modal-body">
+
+        <!-- Foto de perfil -->
+        <div class="foto-picker-container">
+          <div class="foto-picker-el" id="ct-foto-picker"></div>
+          <p class="field-hint" style="margin:0">Clique no avatar para adicionar ou trocar a foto</p>
+        </div>
 
         <!-- Identificação -->
         <h3 class="field-section-title">Identificação</h3>
