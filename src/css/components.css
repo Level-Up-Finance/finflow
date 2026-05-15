@@ -14825,12 +14825,20 @@ body.comp-embedded { background: transparent; }
 /* ============================================================
    ADDRESS PICKER
    ============================================================ */
+.addr-pais-row {
+  margin-bottom: var(--space-2);
+}
+.addr-pais-select { width: 100%; }
+
 .addr-cep-row {
-  display: flex;
-  gap: var(--space-2);
   margin-bottom: var(--space-3);
 }
-.addr-cep-input { flex: 1; max-width: 140px; }
+.addr-cep-input-wrap {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+.addr-cep-input { flex: 1; max-width: 160px; }
 .addr-cep-btn   { flex-shrink: 0; }
 
 .addr-grid {

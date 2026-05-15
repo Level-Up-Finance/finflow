@@ -319,7 +319,7 @@ function renderDadosTab(c) {
       { label: 'Cargo',   value: c.cargo },
     ] : []),
     { label: 'Aniversário', value: aniversarioDM(c.aniversario) },
-    { label: 'Endereço', value: [c.logradouro, c.numero ? `nº ${c.numero}` : '', c.complemento, c.bairro, c.cidade && c.estado_uf ? `${c.cidade}/${c.estado_uf}` : (c.cidade || c.estado_uf || ''), c.cep].filter(Boolean).join(', ') || c.endereco || '', full: true },
+    { label: 'Endereço', value: [c.logradouro, c.numero ? `nº ${c.numero}` : '', c.complemento, c.bairro, c.cidade && c.estado_uf ? `${c.cidade}/${c.estado_uf}` : (c.cidade || c.estado_uf || ''), c.cep, c.pais && c.pais !== 'Brasil' ? c.pais : ''].filter(Boolean).join(', ') || c.endereco || '', full: true },
     { label: 'Twitter/X',  value: c.twitter,
       html: c.twitter ? `<a href="${escapeHtml(c.twitter)}" target="_blank" rel="noopener">${escapeHtml(c.twitter)}</a>` : null },
     { label: 'Bio',  value: c.bio, full: true },
@@ -630,7 +630,7 @@ const MODAL_FIELDS = [
   'email', 'telefone', 'whatsapp', 'website',
   'linkedin', 'instagram', 'twitter',
   'documento', 'empresa', 'cargo',
-  'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'estado_uf',
+  'pais', 'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'estado_uf',
   'aniversario', 'bio',
 ];
 // logo_url é gerenciado fora do form (auto-preenchido pela busca CNPJ)

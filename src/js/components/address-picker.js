@@ -1,20 +1,45 @@
 // =============================================================
-// AddressPicker — formulário de endereço estruturado com CEP
+// AddressPicker — formulário de endereço com suporte internacional
 // =============================================================
 // Uso:
-//   import { AddressPicker } from '../components/address-picker.js';
-//   const ap = new AddressPicker('ct-');   // prefix dos IDs
-//   ap.getValue()  → { cep, logradouro, numero, complemento, bairro, cidade, estado_uf }
+//   import { AddressPicker, renderAddressFieldsHtml } from '../components/address-picker.js';
+//   const ap = new AddressPicker('ct-', container);
+//   ap.getValue()  → { pais, cep, logradouro, numero, complemento, bairro, cidade, estado_uf }
 //   ap.setValue(obj)
 // =============================================================
-import { formatCep, isValidCep, fetchCep } from '../lib/cep-lookup.js';
+import {
+  formatCep, isValidCep, fetchCep,
+  isValidZip, fetchZip,
+  isValidPostcode, fetchPostcode,
+} from '../lib/cep-lookup.js';
 import { showToast } from './toast.js';
 
-const ESTADOS = [
-  '', 'AC','AL','AP','AM','BA','CE','DF','ES','GO',
-  'MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ',
-  'RN','RS','RO','RR','SC','SP','SE','TO',
+// ── Países ────────────────────────────────────────────────────
+// Países mais relevantes no topo; demais em ordem alfabética.
+export const PAISES = [
+  'Brasil',
+  'Estados Unidos',
+  'Reino Unido',
+  '—',
+  'África do Sul', 'Alemanha', 'Argentina', 'Austrália', 'Áustria',
+  'Bélgica', 'Bolívia', 'Canadá', 'Chile', 'China', 'Colômbia',
+  'Coreia do Sul', 'Costa Rica', 'Cuba', 'Dinamarca', 'Emirados Árabes',
+  'Equador', 'Espanha', 'Filipinas', 'Finlândia', 'França', 'Grécia',
+  'Guatemala', 'Honduras', 'Hong Kong', 'Hungria', 'Índia', 'Indonésia',
+  'Irlanda', 'Israel', 'Itália', 'Japão', 'Malásia', 'Marrocos',
+  'México', 'Nigéria', 'Noruega', 'Nova Zelândia', 'Países Baixos',
+  'Panamá', 'Paraguai', 'Peru', 'Polônia', 'Portugal', 'República Tcheca',
+  'Romênia', 'Rússia', 'Singapura', 'Suécia', 'Suíça', 'Tailândia',
+  'Taiwan', 'Turquia', 'Ucrânia', 'Uruguai', 'Venezuela', 'Vietnã',
+  'Outro',
 ];
+
+// Configuração por país: qual lookup usar
+const LOOKUP_CONFIG = {
+  'Brasil':         { type: 'cep',      label: 'CEP',        placeholder: '00000-000' },
+  'Estados Unidos': { type: 'zip',      label: 'ZIP Code',   placeholder: '90210'     },
+  'Reino Unido':    { type: 'postcode', label: 'Post Code',  placeholder: 'SW1A 1AA'  },
+};
 
 export class AddressPicker {
   /**
@@ -25,79 +50,143 @@ export class AddressPicker {
     this._p   = prefix;
     this._ctx = container || document;
     this._$ = (id) => this._ctx.querySelector(`#${this._p}${id}`);
-    this._bindCep();
+    this._bindPais();
   }
 
-  _bindCep() {
-    const cepEl = this._$('cep');
-    const btnEl = this._$('btn-buscar-cep');
-    if (!cepEl) return;
+  _bindPais() {
+    const paisEl = this._$('pais');
+    if (!paisEl) return;
 
-    // Formata ao digitar
-    cepEl.addEventListener('input', () => {
-      const raw = cepEl.value.replace(/\D/g, '');
-      cepEl.value = formatCep(raw);
-      if (btnEl) btnEl.disabled = !isValidCep(raw);
+    // Aplica UI inicial baseado no país atual
+    this._updatePostalUI(paisEl.value);
+
+    paisEl.addEventListener('change', () => {
+      this._updatePostalUI(paisEl.value);
+      // Limpa código postal ao trocar de país
+      const postalEl = this._$('cep');
+      if (postalEl) postalEl.value = '';
     });
+  }
 
-    // Busca ao sair do campo (blur) se válido
-    cepEl.addEventListener('blur', () => {
-      if (isValidCep(cepEl.value)) this._lookupCep();
-    });
+  _updatePostalUI(pais) {
+    const config    = LOOKUP_CONFIG[pais];
+    const postalEl  = this._$('cep');
+    const btnEl     = this._$('btn-buscar-cep');
+    const labelEl   = this._$('postal-label');
+    const rowEl     = this._$('postal-row');
 
-    // Busca ao pressionar Enter
-    cepEl.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); this._lookupCep(); }
-    });
+    if (labelEl && config) labelEl.textContent = config.label;
+    if (postalEl && config) postalEl.placeholder = config.placeholder;
 
-    // Botão buscar
+    // Mostra/oculta botão de busca — só para BR, US e UK
     if (btnEl) {
-      btnEl.addEventListener('click', () => this._lookupCep());
+      btnEl.classList.toggle('hidden', !config);
+      if (config) btnEl.textContent = `Buscar ${config.label}`;
+    }
+
+    // Rebinda o postal input
+    if (postalEl) {
+      // Remove listeners antigos clonando o elemento
+      const clone = postalEl.cloneNode(true);
+      postalEl.parentNode.replaceChild(clone, postalEl);
+      this._bindPostal(pais);
     }
   }
 
-  async _lookupCep() {
-    const cepEl = this._$('cep');
-    const btnEl = this._$('btn-buscar-cep');
-    if (!cepEl || !isValidCep(cepEl.value)) return;
+  _bindPostal(pais) {
+    const postalEl = this._$('cep');
+    const btnEl    = this._$('btn-buscar-cep');
+    if (!postalEl) return;
+
+    const config = LOOKUP_CONFIG[pais];
+    if (!config) return; // outros países: sem lookup
+
+    const validate = () => {
+      const v = postalEl.value;
+      if (config.type === 'cep')      return isValidCep(v);
+      if (config.type === 'zip')      return isValidZip(v);
+      if (config.type === 'postcode') return isValidPostcode(v);
+      return false;
+    };
+
+    // Formata CEP ao digitar (só BR)
+    if (config.type === 'cep') {
+      postalEl.addEventListener('input', () => {
+        const raw = postalEl.value.replace(/\D/g, '');
+        postalEl.value = formatCep(raw);
+        if (btnEl) btnEl.disabled = !validate();
+      });
+    } else {
+      postalEl.addEventListener('input', () => {
+        if (btnEl) btnEl.disabled = !validate();
+      });
+    }
+
+    postalEl.addEventListener('blur', () => {
+      if (validate()) this._lookup(pais);
+    });
+
+    postalEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); this._lookup(pais); }
+    });
+
+    if (btnEl) {
+      // Clona para remover listeners antigos do botão também
+      const btnClone = btnEl.cloneNode(true);
+      btnEl.parentNode.replaceChild(btnClone, btnEl);
+      this._$('btn-buscar-cep').addEventListener('click', () => this._lookup(pais));
+    }
+  }
+
+  async _lookup(pais) {
+    const postalEl = this._$('cep');
+    const btnEl    = this._$('btn-buscar-cep');
+    const config   = LOOKUP_CONFIG[pais];
+    if (!postalEl || !config) return;
 
     if (btnEl) { btnEl.disabled = true; btnEl.textContent = '…'; }
 
     try {
-      const addr = await fetchCep(cepEl.value);
-      cepEl.value = addr.cep;
+      let addr;
+      if (config.type === 'cep')      addr = await fetchCep(postalEl.value);
+      if (config.type === 'zip')      addr = await fetchZip(postalEl.value);
+      if (config.type === 'postcode') addr = await fetchPostcode(postalEl.value);
+      if (!addr) return;
 
+      // Preenche campos disponíveis (não sobrescreve se já preenchido manualmente,
+      // exceto CEP que normaliza)
       const set = (id, val) => {
         const el = this._$(id);
         if (el && val) el.value = val;
       };
-      set('logradouro', addr.logradouro);
-      set('bairro',     addr.bairro);
-      set('cidade',     addr.cidade);
-
-      // Estado: select ou input
-      const estadoEl = this._$('estado-uf');
-      if (estadoEl && addr.estado_uf) estadoEl.value = addr.estado_uf;
+      if (addr.cep)        postalEl.value = addr.cep;
+      if (addr.logradouro) set('logradouro', addr.logradouro);
+      if (addr.bairro)     set('bairro',     addr.bairro);
+      set('cidade',        addr.cidade);
+      set('estado-uf',     addr.estado_uf);
 
       // Foca no número após preencher
       const numEl = this._$('numero');
       if (numEl) setTimeout(() => numEl.focus(), 30);
 
-      // Dispara input em todos os campos para updateSaveButton
       ['cep','logradouro','bairro','cidade','estado-uf'].forEach((id) => {
         this._$(id)?.dispatchEvent(new Event('input', { bubbles: true }));
       });
 
     } catch (err) {
-      showToast(err.message || 'CEP não encontrado.', 'error', 4000);
+      showToast(err.message || 'Código postal não encontrado.', 'error', 4000);
     } finally {
-      if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Buscar'; }
+      if (btnEl) {
+        btnEl.disabled = false;
+        btnEl.textContent = `Buscar ${config?.label ?? ''}`;
+      }
     }
   }
 
   getValue() {
     const g = (id) => (this._$(id)?.value || '').trim();
     return {
+      pais:        g('pais'),
       cep:         g('cep'),
       logradouro:  g('logradouro'),
       numero:      g('numero'),
@@ -111,16 +200,20 @@ export class AddressPicker {
   setValue(obj) {
     if (!obj) return;
     const s = (id, val) => { const el = this._$(id); if (el) el.value = val || ''; };
-    s('cep',         formatCep(obj.cep || ''));
+    const pais = obj.pais || 'Brasil';
+    s('pais',        pais);
+    s('cep',         pais === 'Brasil' ? formatCep(obj.cep || '') : (obj.cep || ''));
     s('logradouro',  obj.logradouro  || '');
     s('numero',      obj.numero      || '');
     s('complemento', obj.complemento || '');
     s('bairro',      obj.bairro      || '');
     s('cidade',      obj.cidade      || '');
     s('estado-uf',   obj.estado_uf   || '');
+    // Atualiza UI após setar o país
+    this._updatePostalUI(pais);
   }
 
-  /** Endereço formatado para exibição (backward compat) */
+  /** Endereço formatado para exibição */
   getFormatted() {
     const v = this.getValue();
     const parts = [
@@ -130,6 +223,7 @@ export class AddressPicker {
       v.bairro,
       v.cidade && v.estado_uf ? `${v.cidade}/${v.estado_uf}` : v.cidade || v.estado_uf,
       v.cep,
+      v.pais && v.pais !== 'Brasil' ? v.pais : '',
     ].filter(Boolean);
     return parts.join(', ');
   }
@@ -140,18 +234,30 @@ export class AddressPicker {
   }
 }
 
-/** Gera o HTML dos campos de endereço — inserir onde o textarea estava */
+/** Gera o HTML dos campos de endereço */
 export function renderAddressFieldsHtml(prefix) {
-  const p = prefix; // ex: 'ct-' ou 'perfil-'
-  const estadoOptions = ESTADOS.map((e) =>
-    e ? `<option value="${e}">${e}</option>` : `<option value="">UF</option>`
+  const p = prefix;
+
+  const paisOptions = PAISES.map((c) =>
+    c === '—'
+      ? `<option disabled>──────────────</option>`
+      : `<option value="${c}">${c}</option>`
   ).join('');
 
   return `
-    <div class="addr-cep-row">
-      <input type="text" class="input addr-cep-input" id="${p}cep"
-             maxlength="9" placeholder="00000-000" autocomplete="postal-code">
-      <button type="button" class="btn btn-secondary btn-sm addr-cep-btn" id="${p}btn-buscar-cep" disabled>Buscar</button>
+    <div class="addr-pais-row">
+      <label class="addr-label" for="${p}pais">País</label>
+      <select class="select addr-pais-select" id="${p}pais" autocomplete="country-name">
+        ${paisOptions}
+      </select>
+    </div>
+    <div class="addr-cep-row" id="${p}postal-row">
+      <label class="addr-label" id="${p}postal-label" for="${p}cep">CEP</label>
+      <div class="addr-cep-input-wrap">
+        <input type="text" class="input addr-cep-input" id="${p}cep"
+               maxlength="12" placeholder="00000-000" autocomplete="postal-code">
+        <button type="button" class="btn btn-secondary btn-sm addr-cep-btn" id="${p}btn-buscar-cep" disabled>Buscar CEP</button>
+      </div>
     </div>
     <div class="addr-grid">
       <div class="addr-field addr-field--logradouro">
@@ -164,10 +270,10 @@ export function renderAddressFieldsHtml(prefix) {
       </div>
       <div class="addr-field addr-field--complemento">
         <label class="addr-label" for="${p}complemento">Complemento</label>
-        <input type="text" class="input" id="${p}complemento" maxlength="100" placeholder="Apto, sala…" autocomplete="address-line2">
+        <input type="text" class="input" id="${p}complemento" maxlength="100" placeholder="Apto, suite…" autocomplete="address-line2">
       </div>
       <div class="addr-field addr-field--bairro">
-        <label class="addr-label" for="${p}bairro">Bairro</label>
+        <label class="addr-label" for="${p}bairro">Bairro / Distrito</label>
         <input type="text" class="input" id="${p}bairro" maxlength="100" placeholder="Bairro" autocomplete="address-level3">
       </div>
       <div class="addr-field addr-field--cidade">
@@ -175,10 +281,8 @@ export function renderAddressFieldsHtml(prefix) {
         <input type="text" class="input" id="${p}cidade" maxlength="100" placeholder="Cidade" autocomplete="address-level2">
       </div>
       <div class="addr-field addr-field--estado">
-        <label class="addr-label" for="${p}estado-uf">Estado</label>
-        <select class="select" id="${p}estado-uf" autocomplete="address-level1">
-          ${estadoOptions}
-        </select>
+        <label class="addr-label" for="${p}estado-uf">Estado / Região</label>
+        <input type="text" class="input" id="${p}estado-uf" maxlength="60" placeholder="Estado" autocomplete="address-level1">
       </div>
     </div>
   `;

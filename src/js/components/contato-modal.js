@@ -28,7 +28,7 @@ const FIELDS = [
   'email', 'telefone', 'whatsapp', 'website',
   'linkedin', 'instagram',
   'documento', 'empresa', 'cargo',
-  'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'estado_uf',
+  'pais', 'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'estado_uf',
   'aniversario', 'bio',
 ];
 
