@@ -14825,6 +14825,22 @@ body.comp-embedded { background: transparent; }
 /* ============================================================
    ADDRESS PICKER
    ============================================================ */
+/* Checkbox "Estrangeiro" no bloco de Identificação */
+.estrangeiro-check-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  margin-bottom: var(--space-3);
+  user-select: none;
+}
+.estrangeiro-check-row input[type="checkbox"] {
+  flex-shrink: 0;
+  accent-color: var(--color-primary, #6366f1);
+}
+
 .addr-pais-row {
   margin-bottom: var(--space-2);
 }

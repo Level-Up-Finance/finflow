@@ -287,8 +287,9 @@ function renderDadosTab(c) {
   const fields = [
     { label: 'Pessoa / Empresa', value: PESSOA_LABELS[c.pessoa_tipo] || '' },
     { label: 'Tipo',             value: TIPO_LABELS[c.is_perfil ? 'usuario' : c.tipo] || c.tipo },
+    ...(c.estrangeiro ? [{ label: 'Origem', value: '🌍 Estrangeiro' }] : []),
     { label: 'Nome',             value: c.nome },
-    { label: docLabel,           value: c.documento },
+    ...(c.estrangeiro ? [] : [{ label: docLabel, value: c.documento }]),
     {
       label: 'Nome no extrato', value: c.nome_extrato,
       hint: 'Usado para reconhecimento por texto',
@@ -512,6 +513,18 @@ function bindEvents() {
   });
 
   document.getElementById('ct-pessoa-tipo').addEventListener('change', applyPessoaTipoUI);
+
+  // Estrangeiro toggle
+  document.getElementById('ct-estrangeiro')?.addEventListener('change', applyEstrangeiroUI);
+
+  // Auto-marca estrangeiro ao mudar país (e desmarca ao voltar para Brasil)
+  document.getElementById('ct-pais')?.addEventListener('change', () => {
+    const pais = document.getElementById('ct-pais').value;
+    const estrEl = document.getElementById('ct-estrangeiro');
+    if (!estrEl) return;
+    estrEl.checked = !!pais && pais !== 'Brasil';
+    applyEstrangeiroUI();
+  });
 
   // Busca por CNPJ (Brasil API)
   document.getElementById('ct-documento').addEventListener('input', updateCnpjActions);
@@ -748,12 +761,23 @@ function applyPessoaTipoUI() {
   document.getElementById('ct-profissional-section').classList.toggle('hidden', pessoaTipo !== 'fisica');
   // Label do documento muda conforme PF/PJ
   const labelEl = document.getElementById('ct-documento-label');
-  if (pessoaTipo === 'fisica')      labelEl.textContent = 'CPF';
+  if (pessoaTipo === 'fisica')        labelEl.textContent = 'CPF';
   else if (pessoaTipo === 'juridica') labelEl.textContent = 'CNPJ';
-  else                                 labelEl.textContent = 'Documento (CPF/CNPJ)';
-  // Ações de busca CNPJ só pra PJ
-  document.getElementById('ct-cnpj-actions').classList.toggle('hidden', pessoaTipo !== 'juridica');
+  else                                labelEl.textContent = 'Documento (CPF/CNPJ)';
+  // Ações de busca CNPJ só pra PJ e não-estrangeiro
+  const estrangeiro = document.getElementById('ct-estrangeiro')?.checked ?? false;
+  document.getElementById('ct-cnpj-actions').classList.toggle('hidden', pessoaTipo !== 'juridica' || estrangeiro);
   updateCnpjActions();
+}
+
+function applyEstrangeiroUI() {
+  const checked = document.getElementById('ct-estrangeiro')?.checked ?? false;
+  document.getElementById('ct-documento-wrap')?.classList.toggle('hidden', checked);
+  if (checked) {
+    const docEl = document.getElementById('ct-documento');
+    if (docEl) docEl.value = '';
+    document.getElementById('ct-cnpj-actions')?.classList.add('hidden');
+  }
 }
 
 function updateCnpjActions() {
@@ -792,8 +816,13 @@ function openModal(id) {
     if (ppWaCtg) ppWaCtg.setDisabled(mesmo);
   }
 
+  // Estrangeiro checkbox
+  const estrEl = document.getElementById('ct-estrangeiro');
+  if (estrEl) estrEl.checked = c?.estrangeiro ?? false;
+
   modalLogoUrl = c?.logo_url || null;
   applyPessoaTipoUI();
+  applyEstrangeiroUI();
 
   const delBtn = document.getElementById('btn-deletar-contato');
   delBtn.classList.toggle('hidden', !id);
@@ -819,7 +848,8 @@ async function saveContato() {
 
   if (!payload.nome) { showToast('Informe o nome do contato.', 'error'); return; }
   if (!payload.tipo) payload.tipo = 'ambos';
-  payload.logo_url = modalLogoUrl;
+  payload.logo_url    = modalLogoUrl;
+  payload.estrangeiro = document.getElementById('ct-estrangeiro')?.checked ?? false;
 
   const btn = document.getElementById('btn-save-contato');
   btn.disabled = true;

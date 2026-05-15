@@ -60,8 +60,19 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
       if (pessoaTipo === 'fisica')        labelEl.textContent = 'CPF';
       else if (pessoaTipo === 'juridica') labelEl.textContent = 'CNPJ';
       else                                labelEl.textContent = 'Documento (CPF/CNPJ)';
-      $('ct-cnpj-actions').classList.toggle('hidden', pessoaTipo !== 'juridica');
+      const estrangeiro = $('ct-estrangeiro')?.checked ?? false;
+      $('ct-cnpj-actions').classList.toggle('hidden', pessoaTipo !== 'juridica' || estrangeiro);
       updateCnpjActions();
+    }
+
+    function applyEstrangeiroUI() {
+      const checked = $('ct-estrangeiro')?.checked ?? false;
+      $('ct-documento-wrap')?.classList.toggle('hidden', checked);
+      if (checked) {
+        const docEl = $('ct-documento');
+        if (docEl) docEl.value = '';
+        $('ct-cnpj-actions')?.classList.add('hidden');
+      }
     }
 
     function updateCnpjActions() {
@@ -120,7 +131,11 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
         mesmoEl.checked = true;
         if (ppWaCm) ppWaCm.setDisabled(true);
       }
+      // Estrangeiro
+      const estrEl = $('ct-estrangeiro');
+      if (estrEl) estrEl.checked = initialData?.estrangeiro ?? false;
       applyPessoaTipoUI();
+      applyEstrangeiroUI();
     }
 
     function collectPayload() {
@@ -131,7 +146,8 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
         const v = (el.value || '').trim();
         payload[k] = v === '' ? null : v;
       }
-      payload.logo_url = modalLogoUrl;
+      payload.logo_url    = modalLogoUrl;
+      payload.estrangeiro = $('ct-estrangeiro')?.checked ?? false;
       if (!payload.nome) {
         $('ct-nome').focus();
         $('ct-nome').classList.add('input--error');
@@ -179,6 +195,14 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
     // ── Wiring ─────────────────────────────────────────────────
     fillFromInitial();
     $('ct-pessoa-tipo').addEventListener('change', applyPessoaTipoUI);
+    $('ct-estrangeiro')?.addEventListener('change', applyEstrangeiroUI);
+    $('ct-pais')?.addEventListener('change', () => {
+      const pais = $('ct-pais')?.value ?? 'Brasil';
+      const estrEl = $('ct-estrangeiro');
+      if (!estrEl) return;
+      estrEl.checked = !!pais && pais !== 'Brasil';
+      applyEstrangeiroUI();
+    });
     $('ct-documento').addEventListener('input', updateCnpjActions);
     $('ct-documento').addEventListener('blur', () => {
       const cnpj = $('ct-documento').value;
@@ -264,7 +288,7 @@ function renderModalHtml(title) {
             <label class="field-label" for="ct-nome">Nome <span class="required">*</span></label>
             <input type="text" class="input" id="ct-nome" required maxlength="120" placeholder="Nome do contato">
           </div>
-          <div class="field">
+          <div class="field" id="ct-documento-wrap">
             <label class="field-label" for="ct-documento" id="ct-documento-label">Documento (CPF/CNPJ)</label>
             <input type="text" class="input" id="ct-documento" maxlength="30">
             <div class="ct-cnpj-actions hidden" id="ct-cnpj-actions">
@@ -276,6 +300,10 @@ function renderModalHtml(title) {
             </div>
           </div>
         </div>
+        <label class="estrangeiro-check-row">
+          <input type="checkbox" id="ct-estrangeiro">
+          Estrangeiro — não possui CPF / CNPJ
+        </label>
         <div class="field">
           <label class="field-label" for="ct-nome-extrato">Nome no extrato</label>
           <input type="text" class="input" id="ct-nome-extrato" maxlength="120" placeholder="Como aparece no extrato bancário">
