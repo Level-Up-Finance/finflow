@@ -10411,6 +10411,7 @@ td .currency-split {
 }
 
 .ctp-vinc-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -10470,9 +10471,66 @@ td .currency-split {
 .ctp-vinc-status.status-quitada,
 .ctp-vinc-status.status-concluido   { background: rgba(59, 130, 246, 0.12); color: #1e40af; }
 .ctp-vinc-status.status-negociando,
-.ctp-vinc-status.status-pausado     { background: rgba(234, 179, 8, 0.12);  color: #a16207; }
+.ctp-vinc-status.status-pausado,
+.ctp-vinc-status.status-inativa     { background: rgba(234, 179, 8, 0.12);  color: #a16207; }
 .ctp-vinc-status.status-atrasada    { background: rgba(239, 68, 68, 0.12);  color: #b91c1c; }
-.ctp-vinc-status.status-arquivado   { background: rgba(100, 116, 139, 0.12); color: #475569; }
+.ctp-vinc-status.status-arquivado,
+.ctp-vinc-status.status-arquivada   { background: rgba(100, 116, 139, 0.12); color: #475569; }
+
+/* ── Vínculos: tipo badge (Receita / Despesa) ── */
+.ctp-vinc-tipo {
+  display: inline-block;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-full);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-xs);
+}
+.ctp-vinc-tipo-receita     { background: rgba(16, 185, 129, 0.12); color: #065f46; }
+.ctp-vinc-tipo-despesa     { background: rgba(239, 68, 68, 0.12);  color: #991b1b; }
+.ctp-vinc-tipo-transferência { background: rgba(99, 102, 241, 0.12); color: #3730a3; }
+
+/* ── Vínculos: hover card ── */
+.ctp-vinc-hover {
+  display: none;
+  position: absolute;
+  z-index: 200;
+  left: 0;
+  bottom: calc(100% + 6px);
+  min-width: 220px;
+  max-width: 300px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  padding: var(--space-3) var(--space-4);
+  pointer-events: none;
+}
+.ctp-vinc-item:hover .ctp-vinc-hover {
+  display: block;
+}
+.ctp-vinc-hover-title {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-main);
+  margin-bottom: var(--space-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ctp-vinc-hover-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-xs);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-1);
+}
+.ctp-vinc-hover-row:last-child { margin-bottom: 0; }
+.ctp-vinc-hover-label {
+  color: var(--color-text-muted);
+  min-width: 68px;
+  flex-shrink: 0;
+}
 
 .ctp-vinc-value {
   font-family: var(--font-display);

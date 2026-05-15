@@ -92,7 +92,7 @@ async function loadData() {
   const [contatosRes, subRes, catRes, contasRes, divRes, projRes] = await Promise.all([
     supabase.from('contatos').select('*').order('nome'),
     supabase.from('subcategorias').select('id, nome, apelido, categoria_id').neq('status', 'arquivada').order('nome'),
-    supabase.from('categorias').select('id, nome').order('nome'),
+    supabase.from('categorias').select('id, nome, tipo, status, periodo, vencimento_dia, cor, contato_id').order('nome'),
     supabase.from('contas').select('id, nome, apelido').order('nome'),
     supabase.from('dividas').select('id, nome, valor_total, status, data_inicio, data_vencimento, contato_id, conta_id').order('nome'),
     supabase.from('projetos_investimento').select('id, nome, status, cor, meta_valor, data_alvo, contato_id').order('nome'),
@@ -358,10 +358,50 @@ const PROJETO_STATUS_LABELS = {
   arquivado: 'Arquivado',
 };
 
+// ── Hover-card builders (read-only) ──────────────────────────
+function _divHoverCard(d) {
+  return `<div class="ctp-vinc-hover">
+    <div class="ctp-vinc-hover-title">${escapeHtml(d.nome)}</div>
+    <div class="ctp-vinc-hover-row">
+      <span class="ctp-vinc-hover-label">Status</span>
+      <span class="ctp-vinc-status status-${(d.status || 'Ativa').toLowerCase()}">${escapeHtml(DIVIDA_STATUS_LABELS[d.status] || d.status || 'Ativa')}</span>
+    </div>
+    ${d.valor_total != null ? `<div class="ctp-vinc-hover-row"><span class="ctp-vinc-hover-label">Valor</span><span>${formatCurrency(d.valor_total, 'BRL')}</span></div>` : ''}
+    ${d.data_inicio ? `<div class="ctp-vinc-hover-row"><span class="ctp-vinc-hover-label">Início</span><span>${formatDateBR(d.data_inicio)}</span></div>` : ''}
+    ${d.data_vencimento ? `<div class="ctp-vinc-hover-row"><span class="ctp-vinc-hover-label">Vencimento</span><span>${formatDateBR(d.data_vencimento)}</span></div>` : ''}
+  </div>`;
+}
+
+function _projHoverCard(p) {
+  return `<div class="ctp-vinc-hover">
+    <div class="ctp-vinc-hover-title">${escapeHtml(p.nome)}</div>
+    <div class="ctp-vinc-hover-row">
+      <span class="ctp-vinc-hover-label">Status</span>
+      <span class="ctp-vinc-status status-${(p.status || 'ativo')}">${escapeHtml(PROJETO_STATUS_LABELS[p.status] || p.status || 'Ativo')}</span>
+    </div>
+    ${p.meta_valor != null ? `<div class="ctp-vinc-hover-row"><span class="ctp-vinc-hover-label">Meta</span><span>${formatCurrency(p.meta_valor, 'BRL')}</span></div>` : ''}
+    ${p.data_alvo ? `<div class="ctp-vinc-hover-row"><span class="ctp-vinc-hover-label">Alvo</span><span>${formatDateBR(p.data_alvo)}</span></div>` : ''}
+  </div>`;
+}
+
+const COMP_STATUS_LABELS = { ativa: 'Ativa', inativa: 'Inativa', arquivada: 'Arquivada' };
+
+function _compHoverCard(c) {
+  const statusLabel = COMP_STATUS_LABELS[c.status] || c.status || 'Ativa';
+  return `<div class="ctp-vinc-hover">
+    <div class="ctp-vinc-hover-title">${escapeHtml(c.nome)}</div>
+    ${c.tipo ? `<div class="ctp-vinc-hover-row"><span class="ctp-vinc-hover-label">Tipo</span><span>${escapeHtml(c.tipo)}</span></div>` : ''}
+    ${c.status ? `<div class="ctp-vinc-hover-row"><span class="ctp-vinc-hover-label">Status</span><span class="ctp-vinc-status status-${c.status}">${escapeHtml(statusLabel)}</span></div>` : ''}
+    ${c.periodo ? `<div class="ctp-vinc-hover-row"><span class="ctp-vinc-hover-label">Período</span><span>${escapeHtml(c.periodo)}</span></div>` : ''}
+    ${c.vencimento_dia ? `<div class="ctp-vinc-hover-row"><span class="ctp-vinc-hover-label">Dia</span><span>Todo dia ${c.vencimento_dia}</span></div>` : ''}
+  </div>`;
+}
+
 function renderVinculosTab(contatoId) {
-  const panel = document.getElementById('ct-vinculos-content');
-  const dividas  = cachedDividas.filter((d) => d.contato_id === contatoId);
-  const projetos = cachedProjetos.filter((p) => p.contato_id === contatoId);
+  const panel       = document.getElementById('ct-vinculos-content');
+  const dividas     = cachedDividas.filter((d) => d.contato_id === contatoId);
+  const projetos    = cachedProjetos.filter((p) => p.contato_id === contatoId);
+  const compromissos = cachedCategorias.filter((c) => c.contato_id === contatoId);
 
   const divHtml = dividas.length === 0
     ? `<div class="ctp-empty-state">Nenhuma dívida vinculada.</div>`
@@ -375,6 +415,7 @@ function renderVinculosTab(contatoId) {
             </div>
           </div>
           <div class="ctp-vinc-value">${formatCurrencyHTML(d.valor_total || 0, 'BRL')}</div>
+          ${_divHoverCard(d)}
         </a>
       `).join('') + `</div>`;
 
@@ -391,6 +432,24 @@ function renderVinculosTab(contatoId) {
             </div>
           </div>
           <div class="ctp-vinc-value">${p.meta_valor ? formatCurrencyHTML(p.meta_valor, 'BRL') : '—'}</div>
+          ${_projHoverCard(p)}
+        </a>
+      `).join('') + `</div>`;
+
+  const compHtml = compromissos.length === 0
+    ? `<div class="ctp-empty-state">Nenhum compromisso vinculado.</div>`
+    : `<div class="ctp-vinc-list">` + compromissos.map((c) => `
+        <a class="ctp-vinc-item" href="compromissos.html#comp-${c.id}">
+          ${c.cor ? `<div class="ctp-vinc-dot" style="background: ${c.cor};"></div>` : ''}
+          <div class="ctp-vinc-info">
+            <div class="ctp-vinc-name">${escapeHtml(c.nome)}</div>
+            <div class="ctp-vinc-meta">
+              ${c.tipo ? `<span class="ctp-vinc-tipo ctp-vinc-tipo-${(c.tipo || '').toLowerCase()}">${escapeHtml(c.tipo)}</span>` : ''}
+              ${c.status ? `<span class="ctp-vinc-status status-${c.status}">${escapeHtml(COMP_STATUS_LABELS[c.status] || c.status)}</span>` : ''}
+              ${c.periodo ? `<span>· ${escapeHtml(c.periodo)}</span>` : ''}
+            </div>
+          </div>
+          ${_compHoverCard(c)}
         </a>
       `).join('') + `</div>`;
 
@@ -402,6 +461,10 @@ function renderVinculosTab(contatoId) {
     <section class="ctp-vinc-section">
       <h3 class="ctp-vinc-section-title">Projetos de investimento <span class="ctp-vinc-count">${projetos.length}</span></h3>
       ${projHtml}
+    </section>
+    <section class="ctp-vinc-section">
+      <h3 class="ctp-vinc-section-title">Compromissos <span class="ctp-vinc-count">${compromissos.length}</span></h3>
+      ${compHtml}
     </section>
   `;
 }
