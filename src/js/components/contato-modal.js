@@ -297,6 +297,10 @@ function renderModalHtml(title) {
             </select>
           </div>
         </div>
+        <label class="estrangeiro-check-row">
+          <input type="checkbox" id="ct-estrangeiro">
+          Estrangeiro — não possui CPF / CNPJ
+        </label>
         <div class="field-group" style="grid-template-columns: 1fr 1fr;">
           <div class="field">
             <label class="field-label" for="ct-nome">Nome <span class="required">*</span></label>
@@ -314,10 +318,6 @@ function renderModalHtml(title) {
             </div>
           </div>
         </div>
-        <label class="estrangeiro-check-row">
-          <input type="checkbox" id="ct-estrangeiro">
-          Estrangeiro — não possui CPF / CNPJ
-        </label>
         <div class="field">
           <label class="field-label" for="ct-nome-extrato">Nome no extrato</label>
           <input type="text" class="input" id="ct-nome-extrato" maxlength="120" placeholder="Como aparece no extrato bancário">

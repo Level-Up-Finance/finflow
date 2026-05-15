@@ -15046,10 +15046,11 @@ body.comp-embedded { background: transparent; }
 
 .fp-crop-img {
   position: absolute;
-  object-fit: none; /* size set via JS */
+  /* width/height/left/top controlados via JS — não usar object-fit aqui */
   user-select: none;
   -webkit-user-drag: none;
   pointer-events: none;
+  display: block;
 }
 
 .fp-crop-hint {

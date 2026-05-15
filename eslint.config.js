@@ -51,6 +51,7 @@ export default [
         getComputedStyle: 'readonly',
         // Async helpers
         Promise: 'readonly',
+        AbortController: 'readonly',
         WeakMap: 'readonly',
         WeakSet: 'readonly',
         Map: 'readonly',

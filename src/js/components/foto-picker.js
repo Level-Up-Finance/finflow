@@ -156,7 +156,11 @@ export class FotoPicker {
     const vpEl    = overlay.querySelector('.fp-crop-viewport');
     const range   = overlay.querySelector('.fp-crop-range');
 
-    // ── State: img position (top-left in viewport coords) + zoom ─
+    // AbortController para limpar listeners no window ao fechar
+    const ac = new AbortController();
+    const sig = { signal: ac.signal };
+
+    // ── State ────────────────────────────────────────────────────
     let baseScale = 1;
     let imgLeft   = 0;
     let imgTop    = 0;
@@ -164,6 +168,9 @@ export class FotoPicker {
     let rendW     = VP_SIZE;
     let rendH     = VP_SIZE;
     let ready     = false;
+
+    // Esconde a imagem até carregar (evita flash no tamanho natural)
+    img.style.opacity = '0';
 
     const clampPos = () => {
       const w = rendW * zoom;
@@ -183,7 +190,6 @@ export class FotoPicker {
 
     const setZoom = (newZoom, pivotX = VP_SIZE / 2, pivotY = VP_SIZE / 2) => {
       newZoom = Math.min(4, Math.max(1, newZoom));
-      // Keep pivot point fixed in viewport
       imgLeft = pivotX - (pivotX - imgLeft) * (newZoom / zoom);
       imgTop  = pivotY - (pivotY - imgTop)  * (newZoom / zoom);
       zoom = newZoom;
@@ -192,10 +198,10 @@ export class FotoPicker {
       range.value = zoom;
     };
 
-    img.addEventListener('load', () => {
+    const initFromImage = () => {
       const natW = img.naturalWidth;
       const natH = img.naturalHeight;
-      // Cover: scale so both dimensions ≥ VP_SIZE
+      if (!natW || !natH) return;
       baseScale = Math.max(VP_SIZE / natW, VP_SIZE / natH);
       rendW     = natW * baseScale;
       rendH     = natH * baseScale;
@@ -204,8 +210,16 @@ export class FotoPicker {
       zoom      = 1;
       clampPos();
       applyPos();
+      img.style.opacity = '1';
       ready = true;
-    });
+    };
+
+    // Pode já estar carregada (cache) — tenta direto, senão espera load
+    if (img.complete && img.naturalWidth) {
+      initFromImage();
+    } else {
+      img.addEventListener('load', initFromImage, { once: true });
+    }
 
     // ── Drag to pan ─────────────────────────────────────────────
     let dragging = false;
@@ -216,7 +230,6 @@ export class FotoPicker {
       dragging = true;
       lastX = e.clientX;
       lastY = e.clientY;
-      vpEl.style.cursor = 'grabbing';
       e.preventDefault();
     });
     window.addEventListener('mousemove', (e) => {
@@ -227,11 +240,8 @@ export class FotoPicker {
       lastY = e.clientY;
       clampPos();
       applyPos();
-    });
-    window.addEventListener('mouseup', () => {
-      dragging = false;
-      vpEl.style.cursor = 'grab';
-    });
+    }, sig);
+    window.addEventListener('mouseup', () => { dragging = false; }, sig);
 
     // Touch
     vpEl.addEventListener('touchstart', (e) => {
@@ -249,8 +259,8 @@ export class FotoPicker {
       lastY = e.touches[0].clientY;
       clampPos();
       applyPos();
-    }, { passive: true });
-    window.addEventListener('touchend', () => { dragging = false; });
+    }, { ...sig, passive: true });
+    window.addEventListener('touchend', () => { dragging = false; }, sig);
 
     // ── Mouse wheel zoom ─────────────────────────────────────────
     vpEl.addEventListener('wheel', (e) => {
@@ -259,22 +269,23 @@ export class FotoPicker {
       const vpRect = vpEl.getBoundingClientRect();
       const pivotX = e.clientX - vpRect.left;
       const pivotY = e.clientY - vpRect.top;
-      setZoom(zoom - e.deltaY * 0.002, pivotX, pivotY);
+      // normaliza delta: trackpad dá valores pequenos, mouse dá ~100
+      const delta = e.deltaY * (e.deltaMode === 1 ? 20 : 1);
+      setZoom(zoom - delta * 0.004, pivotX, pivotY);
     }, { passive: false });
 
     // ── Zoom buttons + range ─────────────────────────────────────
     overlay.querySelectorAll('.fp-crop-zoom-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        setZoom(zoom + parseFloat(btn.dataset.dir) * 0.2);
+        setZoom(zoom + parseFloat(btn.dataset.dir) * 0.25);
       });
     });
     range.addEventListener('input', () => setZoom(parseFloat(range.value)));
 
     // ── Close / cancel ───────────────────────────────────────────
     const close = () => {
+      ac.abort();                  // remove todos os listeners do window
       URL.revokeObjectURL(objUrl);
-      // remove event listeners attached to window
-      dragging = false;
       overlay.remove();
     };
     overlay.querySelector('.fp-crop-close').addEventListener('click', close);
