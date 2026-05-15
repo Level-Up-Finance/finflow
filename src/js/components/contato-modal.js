@@ -29,7 +29,7 @@ const FIELDS = [
   'linkedin', 'instagram',
   'documento', 'empresa', 'cargo',
   'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'estado_uf',
-  'aniversario', 'observacao',
+  'aniversario', 'bio',
 ];
 
 /**
@@ -356,8 +356,8 @@ function renderModalHtml(title) {
           <div class="field"></div>
         </div>
         <div class="field">
-          <label class="field-label" for="ct-observacao">Observação</label>
-          <textarea class="textarea" id="ct-observacao" rows="3" maxlength="500"></textarea>
+          <label class="field-label" for="ct-bio">Bio / Observação</label>
+          <textarea class="textarea" id="ct-bio" rows="3" maxlength="500"></textarea>
         </div>
       </div>
       <div class="modal-footer">
