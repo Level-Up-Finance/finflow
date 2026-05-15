@@ -7,6 +7,18 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-15-contatos-foto-crop',
+    version: '0.3.1',
+    date: '15/05/2026',
+    title: 'Foto de perfil com crop + Vínculos completos',
+    items: [
+      { type: 'new',         text: 'Crop interativo ao adicionar foto de perfil — arraste para reposicionar e use zoom in/out antes de salvar' },
+      { type: 'improvement', text: 'Badges F (Fornecedor) / C (Cliente) / U (Usuário) agora sempre visíveis na lista de contatos, mesmo quando o contato tem foto' },
+      { type: 'new',         text: 'Aba Vínculos nos detalhes de contato agora exibe também Compromissos vinculados' },
+      { type: 'new',         text: 'Hover card em cada vínculo — passe o mouse sobre dívidas, projetos ou compromissos para ver os detalhes sem sair da tela' },
+    ],
+  },
+  {
     id: '2026-05-14-gerenciador-refinamentos',
     version: '0.3.0',
     date: '14/05/2026',
