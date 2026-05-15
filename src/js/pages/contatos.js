@@ -91,8 +91,8 @@ function initPhonePickersContatos() {
 async function loadData() {
   const [contatosRes, subRes, catRes, contasRes, divRes, projRes] = await Promise.all([
     supabase.from('contatos').select('*').order('nome'),
-    supabase.from('subcategorias').select('id, nome, apelido, categoria_id').neq('status', 'arquivada').order('nome'),
-    supabase.from('categorias').select('id, nome, tipo, status, periodo, vencimento_dia, cor, contato_id').order('nome'),
+    supabase.from('subcategorias').select('id, nome, apelido, categoria_id, contato_id, tipo, status, periodo, vencimento_dia, valor_base, moeda').neq('status', 'arquivada').order('nome'),
+    supabase.from('categorias').select('id, nome').order('nome'),
     supabase.from('contas').select('id, nome, apelido').order('nome'),
     supabase.from('dividas').select('id, nome, valor_total, status, data_inicio, data_vencimento, contato_id, conta_id').order('nome'),
     supabase.from('projetos_investimento').select('id, nome, status, cor, meta_valor, data_alvo, contato_id').order('nome'),
@@ -394,6 +394,7 @@ function _compHoverCard(c) {
     ${c.status ? `<div class="ctp-vinc-hover-row"><span class="ctp-vinc-hover-label">Status</span><span class="ctp-vinc-status status-${c.status}">${escapeHtml(statusLabel)}</span></div>` : ''}
     ${c.periodo ? `<div class="ctp-vinc-hover-row"><span class="ctp-vinc-hover-label">Período</span><span>${escapeHtml(c.periodo)}</span></div>` : ''}
     ${c.vencimento_dia ? `<div class="ctp-vinc-hover-row"><span class="ctp-vinc-hover-label">Dia</span><span>Todo dia ${c.vencimento_dia}</span></div>` : ''}
+    ${c.valor_base != null ? `<div class="ctp-vinc-hover-row"><span class="ctp-vinc-hover-label">Valor</span><span>${formatCurrency(c.valor_base, c.moeda || 'BRL')}</span></div>` : ''}
   </div>`;
 }
 
@@ -401,7 +402,7 @@ function renderVinculosTab(contatoId) {
   const panel       = document.getElementById('ct-vinculos-content');
   const dividas     = cachedDividas.filter((d) => d.contato_id === contatoId);
   const projetos    = cachedProjetos.filter((p) => p.contato_id === contatoId);
-  const compromissos = cachedCategorias.filter((c) => c.contato_id === contatoId);
+  const compromissos = cachedSubcategorias.filter((s) => s.contato_id === contatoId);
 
   const divHtml = dividas.length === 0
     ? `<div class="ctp-empty-state">Nenhuma dívida vinculada.</div>`
@@ -439,8 +440,7 @@ function renderVinculosTab(contatoId) {
   const compHtml = compromissos.length === 0
     ? `<div class="ctp-empty-state">Nenhum compromisso vinculado.</div>`
     : `<div class="ctp-vinc-list">` + compromissos.map((c) => `
-        <a class="ctp-vinc-item" href="compromissos.html#comp-${c.id}">
-          ${c.cor ? `<div class="ctp-vinc-dot" style="background: ${c.cor};"></div>` : ''}
+        <a class="ctp-vinc-item" href="compromissos.html">
           <div class="ctp-vinc-info">
             <div class="ctp-vinc-name">${escapeHtml(c.nome)}</div>
             <div class="ctp-vinc-meta">
@@ -449,6 +449,7 @@ function renderVinculosTab(contatoId) {
               ${c.periodo ? `<span>· ${escapeHtml(c.periodo)}</span>` : ''}
             </div>
           </div>
+          ${c.valor_base != null ? `<div class="ctp-vinc-value">${formatCurrencyHTML(c.valor_base, c.moeda || 'BRL')}</div>` : ''}
           ${_compHoverCard(c)}
         </a>
       `).join('') + `</div>`;
