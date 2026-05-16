@@ -11860,12 +11860,21 @@ td .currency-split {
 .trans-divida-link svg { flex: 0 0 auto; }
 
 /* Histórico: layout com data de vencimento + data de pagamento */
+.hist-row-divida {
+  grid-template-columns: 140px 1fr auto;
+}
 .hist-row-divida .hist-divida-dates {
   display: flex;
   flex-direction: column;
   gap: 2px;
   font-size: var(--fs-xs);
-  min-width: 130px;
+}
+.hist-row-divida .proj-hist-name {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  overflow: hidden;
 }
 .hist-divida-date-label {
   color: var(--color-text-muted);
@@ -11920,9 +11929,11 @@ td .currency-split {
 
 /* Breakdown de amort/juros na linha do histórico */
 .hist-breakdown {
+  display: block;
   font-size: var(--fs-xs);
   color: var(--color-text-muted);
-  margin-left: var(--space-1);
+  white-space: normal;
+  line-height: 1.4;
 }
 
 /* Toggle "Registrar em Transações" */

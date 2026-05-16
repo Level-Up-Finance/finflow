@@ -7,6 +7,16 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-16-dividas-historico-layout',
+    version: '0.3.4',
+    date: '16/05/2026',
+    title: 'Dívidas — card de histórico de pagamentos reformulado',
+    items: [
+      { type: 'fix', text: 'Histórico de dívidas: textos de data, nome e breakdown de amortização/juros não se sobrepõem mais — cada informação ocupa sua própria linha' },
+      { type: 'improvement', text: 'Modal de histórico ampliado para melhor leitura dos detalhes de cada pagamento' },
+    ],
+  },
+  {
     id: '2026-05-16-categorias-modal-perf',
     version: '0.3.3',
     date: '16/05/2026',
