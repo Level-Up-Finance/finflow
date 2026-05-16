@@ -33,7 +33,7 @@ export const PAISES = [
 ];
 
 // Configuração por país: qual lookup usar
-// ZIP Code (EUA) e Post Code (UK) removidos temporariamente.
+// ZIP Code (EUA) e Post Code (UK) removidos temporariamente — sg.app.000042.
 // Lookup automático só disponível para Brasil via ViaCEP.
 const LOOKUP_CONFIG = {
   'Brasil': { type: 'cep', label: 'CEP', placeholder: '00000-000' },

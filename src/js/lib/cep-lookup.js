@@ -34,5 +34,5 @@ export async function fetchCep(cep) {
   };
 }
 
-// ZIP Code (EUA) e Post Code (UK) removidos temporariamente.
+// ZIP Code (EUA) e Post Code (UK) removidos temporariamente — sg.app.000042.
 // Lookup automático só disponível para Brasil via ViaCEP.
