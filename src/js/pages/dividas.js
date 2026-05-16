@@ -511,14 +511,14 @@ async function renderWidgets() {
     totalAbertoBRL += toBRL(Math.max(0, total - pago), code);
   }
 
-  // Total pago e % baseados na moeda principal (BRL)
-  const brl         = byCurrency['BRL'] || { total: 0, pago: 0 };
+  // Total pago em BRL (moeda principal)
+  const brl          = byCurrency['BRL'] || { total: 0, pago: 0 };
   const totalPagoBRL = brl.pago;
-  const totalGeralBRL = brl.total;
-  const totalRestBRL  = Math.max(0, totalGeralBRL - totalPagoBRL);
 
-  const pctPago     = totalGeralBRL > 0 ? Math.min(100, (totalPagoBRL / totalGeralBRL) * 100) : 0;
-  const pctRestante = totalGeralBRL > 0 ? Math.min(100, (totalRestBRL  / totalGeralBRL) * 100) : 0;
+  // % calculados sobre o total geral convertido (aberto + pago em R$)
+  const totalGeralConvertido = totalAbertoBRL + totalPagoBRL;
+  const pctRestante = totalGeralConvertido > 0 ? Math.min(100, (totalAbertoBRL / totalGeralConvertido) * 100) : 0;
+  const pctPago     = totalGeralConvertido > 0 ? Math.min(100, (totalPagoBRL    / totalGeralConvertido) * 100) : 0;
 
   // Breakdown por moeda (todas as moedas com dívida, BRL primeiro)
   const hasMultiple = allCodes.length > 1;
