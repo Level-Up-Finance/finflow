@@ -7,6 +7,20 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-16-criar-compromisso-divida-projeto',
+    version: '0.4.1',
+    date: '16/05/2026',
+    title: 'Dívidas e Projetos — criação coerente do compromisso vinculado',
+    items: [
+      { type: 'new', text: 'Cards de Dívida sem compromisso vinculado exibem badge "⚠ Configurar compromisso" — clicar abre o modal pra preencher regime + parcelas e gera o compromisso automaticamente.' },
+      { type: 'new', text: 'Cards de Projeto de Investimento sem compromisso vinculado exibem o mesmo badge — clicar abre o modal de edição já com a seção "Criar compromisso vinculado" aberta.' },
+      { type: 'improvement', text: 'Dívidas: ao salvar com regime + parcelas, o compromisso vinculado agora é criado/atualizado com `valor_variavel=true` quando as parcelas variam (SAC, Customizado) e fica com `valor_base` fixo quando todas são iguais (Price).' },
+      { type: 'improvement', text: 'Dívidas: o `orcamento_geral` do compromisso é regenerado mês a mês com o valor exato de cada parcela, calculado por `gerarTabela`. A janela `iniciado_em / terminado_em` fica alinhada com a primeira e a última parcela.' },
+      { type: 'improvement', text: 'Dívidas: a função `ensureSubcategoriaForDivida` é idempotente — pode ser chamada a cada save sem duplicar registros (atualiza o existente).' },
+      { type: 'improvement', text: 'Projetos: ao editar um projeto sem compromisso vinculado, a seção "Criar compromisso vinculado" aparece pré-marcada com a data alvo do projeto como sugestão de data inicial.' },
+    ],
+  },
+  {
     id: '2026-05-16-compromissos-divida-projeto-fonte-verdade',
     version: '0.4.0',
     date: '16/05/2026',

@@ -465,6 +465,7 @@ function renderCard(p) {
           <h3 class="projeto-card-name">${escapeHtml(p.nome)}</h3>
           <span class="projeto-card-status status-${p.status}">${STATUS_LABELS[p.status] || p.status}</span>
           ${isParcial ? `<span class="tag-parcial" title="Encerrado antes de atingir a meta">Parcial</span>` : ''}
+          ${p.status !== 'arquivado' && subsCount === 0 ? `<button class="div-card-pendente-badge proj-btn-editar" data-id="${p.id}" type="button" title="Configurar compromisso deste projeto">⚠ Configurar compromisso</button>` : ''}
         </div>
       </header>
       ${p.descricao ? `<p class="projeto-card-desc">${escapeHtml(p.descricao)}</p>` : ''}
@@ -855,6 +856,8 @@ function bindCardClicks() {
     el.addEventListener('click', (e) => {
       // Don't open details if the "+ Aporte" button was clicked
       if (e.target.closest('.proj-btn-aporte')) return;
+      // Badge "Configurar compromisso" abre o modal de edição direto
+      if (e.target.closest('.proj-btn-editar')) return;
       openDetailsModal(el.dataset.id);
     });
   });
@@ -862,6 +865,13 @@ function bindCardClicks() {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       openHistoricoInvestModal(btn.dataset.id);
+    });
+  });
+  document.querySelectorAll('.proj-btn-editar').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const proj = cachedProjetos.find((p) => p.id === btn.dataset.id);
+      if (proj) openProjetoModal(proj);
     });
   });
 }
@@ -928,17 +938,23 @@ function openProjetoModal(p = null, prefill = null) {
   const compData     = document.getElementById('proj-comp-data');
   const compCategSel = document.getElementById('proj-comp-categoria');
 
-  if (editingId) {
+  // Em edição, só mostra a seção de criar compromisso se o projeto AINDA não tem
+  // compromisso vinculado (fluxo "Configurar compromisso" via badge no card).
+  const temCompromisso = editingId
+    ? cachedSubcategorias.some((s) => s.projeto_id === editingId)
+    : false;
+  if (editingId && temCompromisso) {
     toggleWrap.classList.add('hidden');
     compFields.classList.add('hidden');
     compCheckbox.checked = false;
   } else {
     toggleWrap.classList.remove('hidden');
-    compCheckbox.checked = !!prefill?.aporte_mensal;
+    // Em modo "configurar compromisso" (edição sem compromisso), já vem marcado
+    compCheckbox.checked = editingId ? true : !!prefill?.aporte_mensal;
     compFields.classList.toggle('hidden', !compCheckbox.checked);
     compValor.value   = prefill?.aporte_mensal != null ? formatDecimal(prefill.aporte_mensal, 2) : '';
     compPeriodo.value = 'Mensal';
-    compData.value    = todayISODate();
+    compData.value    = (editingId ? p?.data_alvo : null) || todayISODate();
 
     // Popula categorias do grupo investimentos (default = "Investimentos")
     compCategSel.innerHTML = '';
@@ -985,8 +1001,10 @@ async function saveProjeto(event) {
     contato_id:  contatoPicker?.getValue() || null,
   };
 
-  // Compromisso vinculado (só em modo criação)
-  const wantCompromisso = !editingId && document.getElementById('proj-criar-compromisso').checked;
+  // Compromisso vinculado: em modo criação OU em modo "Configurar compromisso"
+  // (edição quando o projeto ainda não tem compromisso vinculado).
+  const editingProjetoSemCompromisso = editingId && !cachedSubcategorias.some((s) => s.projeto_id === editingId);
+  const wantCompromisso = (!editingId || editingProjetoSemCompromisso) && document.getElementById('proj-criar-compromisso').checked;
   let compromissoData = null;
   if (wantCompromisso) {
     const valor      = parseDecimal(document.getElementById('proj-comp-valor').value);
@@ -1008,6 +1026,8 @@ async function saveProjeto(event) {
     let user = null;
     if (editingId) {
       response = await supabase.from('projetos_investimento').update(payload).eq('id', editingId).select().single();
+      // Em "Configurar compromisso" precisamos do user pra criar a subcategoria
+      if (wantCompromisso) user = await getCurrentUser();
     } else {
       user = await getCurrentUser();
       if (!user) throw new Error('Sessão expirada');
@@ -1019,10 +1039,10 @@ async function saveProjeto(event) {
     if (compromissoData && response.data?.id && user) {
       try {
         await ensureSubcategoriaForProjeto(response.data.id, user.id, payload.nome, compromissoData);
-        showToast(t('investimentos.toast.criado_com_compromisso', 'Projeto criado e compromisso vinculado'), 'success');
+        showToast(t('investimentos.toast.criado_com_compromisso', 'Projeto salvo e compromisso vinculado'), 'success');
       } catch (err) {
         console.warn('[ensureSubcategoriaForProjeto]', err);
-        showToast('Projeto criado, mas falhou ao criar compromisso: ' + (err?.message || String(err)), 'error', 10000);
+        showToast('Projeto salvo, mas falhou ao criar compromisso: ' + (err?.message || String(err)), 'error', 10000);
       }
     } else {
       showToast(editingId

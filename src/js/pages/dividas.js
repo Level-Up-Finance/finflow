@@ -277,8 +277,9 @@ const BLOCOS = [
 // -----------------------------
 // State
 // -----------------------------
-let cachedDividas          = [];
-let cachedContas           = [];
+let cachedDividas              = [];
+let cachedDividaCompromissoIds = new Set(); // divida_ids que já têm compromisso vinculado
+let cachedContas               = [];
 let divContaPicker         = null;
 let pagarContaPicker       = null;
 let cachedContatos         = [];
@@ -387,13 +388,16 @@ async function refreshIndexedRates(dividas) {
 // Load
 // -----------------------------
 async function loadAll() {
-  const [divRes, contRes, contatosRes, histRes, taxaHistRes] = await Promise.all([
+  const [divRes, contRes, contatosRes, histRes, taxaHistRes, subsRes] = await Promise.all([
     supabase.from('dividas').select('*').order('created_at', { ascending: false }),
     supabase.from('contas').select('id, nome, apelido, tipo, icone_cor, moeda').neq('status', 'arquivada').order('nome'),
     supabase.from('contatos').select('id, nome, tipo, status').neq('status', 'arquivado').order('nome'),
     supabase.from('pagamentos_divida_historico').select('*').order('data'),
     supabase.from('divida_taxa_historico').select('*').order('data_vigencia'),
+    supabase.from('subcategorias').select('divida_id').not('divida_id', 'is', null),
   ]);
+  // Set de divida_ids que já têm compromisso vinculado (pra badge "Criar compromisso")
+  cachedDividaCompromissoIds = new Set((subsRes?.data || []).map((s) => s.divida_id));
 
   // Auto-refresh de taxas indexadas (SELIC/CDI/IPCA) — feito antes do render
   if (divRes.data) await refreshIndexedRates(divRes.data);
@@ -647,6 +651,7 @@ function renderCard(d) {
           <span class="div-card-nome">${d.nome}</span>
           <span class="div-card-badge" style="color:${st.color}; background:${st.bg};">${st.label}</span>
           ${quitada && pago < total ? `<span class="tag-parcial" title="Encerrada antes de quitar o valor total">Parcial</span>` : ''}
+          ${d.status !== 'Arquivada' && !cachedDividaCompromissoIds.has(d.id) ? `<button class="div-card-pendente-badge div-btn-editar" data-id="${d.id}" type="button" title="Configurar compromisso desta dívida">⚠ Configurar compromisso</button>` : ''}
         </div>
         <span class="div-card-credor">${d.credor || ''}</span>
       </div>
@@ -1295,8 +1300,22 @@ async function saveDivida(e) {
 // -----------------------------
 // Auto-criar subcategoria vinculada à dívida
 // -----------------------------
+/**
+ * Garante que existe um compromisso (subcategoria) vinculado à dívida, com:
+ *   • valor_variavel = true se parcelas variam mês a mês (SAC, Customizado, etc.)
+ *     ou false se todas iguais (Price)
+ *   • iniciado_em = data_inicio; terminado_em = último vencimento
+ *   • orcamento_geral populado mês a mês com o valor de cada parcela
+ *
+ * É idempotente: pode ser chamado a cada save da dívida. Se já existe
+ * subcategoria vinculada, ela é atualizada (não duplicada) e
+ * orcamento_geral é regenerado.
+ */
 async function ensureSubcategoriaForDivida(dividaId, dvd) {
-  // Já existe subcategoria vinculada a esta dívida?
+  // Pré-condição: precisa de regime + n_parcelas + data_inicio + valor_total
+  if (!dvd.regime || !dvd.n_parcelas || !dvd.data_inicio || !dvd.valor_total) return;
+
+  // Já existe subcategoria vinculada?
   const { data: existing, error: existErr } = await supabase.from('subcategorias')
     .select('id')
     .eq('divida_id', dividaId)
@@ -1305,9 +1324,9 @@ async function ensureSubcategoriaForDivida(dividaId, dvd) {
     showToast('Aviso: falha ao checar compromisso existente — ' + existErr.message, 'error', 8000);
     return;
   }
-  if (existing && existing.length > 0) return; // já criada
+  const subExistente = existing && existing.length > 0 ? existing[0].id : null;
 
-  // Busca categoria "Dívidas" do usuário — NÃO cria, ela já vem por padrão no sistema
+  // Busca categoria "Dívidas"
   const { data: cats, error: catSelErr } = await supabase.from('categorias')
     .select('id, nome')
     .eq('user_id', dvd.user_id);
@@ -1315,7 +1334,6 @@ async function ensureSubcategoriaForDivida(dividaId, dvd) {
     showToast('Aviso: falha ao buscar categoria Dívidas — ' + catSelErr.message, 'error', 8000);
     return;
   }
-
   const catDividas = (cats || []).find((c) =>
     c.nome && (c.nome.toLowerCase() === 'dívidas' || c.nome.toLowerCase() === 'dividas')
   );
@@ -1324,16 +1342,28 @@ async function ensureSubcategoriaForDivida(dividaId, dvd) {
     return;
   }
 
-  // Calcula valor base estimado da parcela
+  // Gera tabela de parcelas
   const taxa = Number(dvd.juros_percentual || 0) / 100;
   const tabela = gerarTabela(dvd.regime, dvd.valor_total, taxa, dvd.n_parcelas, dvd.fases);
-  const valorBase = tabela.length ? Number(tabela[0].parcela.toFixed(2)) : 0;
+  if (!tabela || tabela.length === 0) return;
 
-  // Dia de vencimento = dia da data_inicio
-  const [, , diaStr] = dvd.data_inicio.split('-');
-  const vencDia = parseInt(diaStr) || 1;
+  const valores = tabela.map((p) => Number(Number(p.parcela).toFixed(2)));
+  const todasIguais   = valores.every((v) => Math.abs(v - valores[0]) < 0.005);
+  const valor_variavel = !todasIguais;
+  const valor_base     = todasIguais ? valores[0] : 0;
 
-  const { error: insErr } = await supabase.from('subcategorias').insert({
+  // Dia de vencimento + janela (iniciado_em / terminado_em)
+  const [y0, m0, d0] = dvd.data_inicio.split('-').map(Number);
+  const vencDia = d0 || 1;
+  const totalMonths = tabela.length;
+  const endMonthIdx = (m0 - 1) + (totalMonths - 1);
+  const endYear  = y0 + Math.floor(endMonthIdx / 12);
+  const endMonth = (endMonthIdx % 12) + 1;
+  const lastDayOfMonth = new Date(endYear, endMonth, 0).getDate();
+  const endDay   = Math.min(vencDia, lastDayOfMonth);
+  const terminado_em = `${endYear}-${String(endMonth).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
+
+  const subPayload = {
     user_id:        dvd.user_id,
     nome:           dvd.nome,
     tipo:           'Despesa',
@@ -1345,14 +1375,72 @@ async function ensureSubcategoriaForDivida(dividaId, dvd) {
     vencimento_dia: vencDia,
     periodo:        'Mensal',
     iniciado_em:    dvd.data_inicio,
+    terminado_em,
     moeda:          dvd.moeda || 'BRL',
-    valor_base:     valorBase,
+    valor_base,
+    valor_variavel,
     status:         'ativa',
-    descricao:      `Auto-criado para a dívida "${dvd.nome}"`,
+    descricao:      `Auto-gerado a partir da dívida "${dvd.nome}" (${tabela.length} parcela${tabela.length > 1 ? 's' : ''}, regime ${dvd.regime})`,
+  };
+
+  let subId = subExistente;
+  if (subId) {
+    const { error: updErr } = await supabase.from('subcategorias').update(subPayload).eq('id', subId);
+    if (updErr) {
+      showToast('Falha ao atualizar compromisso vinculado: ' + updErr.message, 'error', 10000);
+      return;
+    }
+  } else {
+    const { data: novaSub, error: insErr } = await supabase.from('subcategorias').insert(subPayload).select('id').single();
+    if (insErr) {
+      showToast('Falha ao criar compromisso vinculado: ' + insErr.message, 'error', 10000);
+      console.error('[ensureSubcategoria] insert', insErr);
+      return;
+    }
+    subId = novaSub.id;
+  }
+
+  // Regenera orcamento_geral mês a mês com o valor de cada parcela
+  await regenerateOrcamentoGeralForDivida(subId, dvd, tabela);
+}
+
+/**
+ * Apaga e recria as linhas de orcamento_geral para o compromisso vinculado
+ * à dívida, uma por mês a partir de data_inicio, refletindo o valor exato
+ * de cada parcela calculada por gerarTabela.
+ */
+async function regenerateOrcamentoGeralForDivida(subId, dvd, tabela) {
+  const moeda = dvd.moeda || 'BRL';
+  const [y0, m0] = dvd.data_inicio.split('-').map(Number);
+
+  // Apaga linhas existentes deste compromisso
+  const { error: delErr } = await supabase
+    .from('orcamento_geral')
+    .delete()
+    .eq('subcategoria_id', subId);
+  if (delErr) {
+    console.error('[regenerateOrcamento delete]', delErr);
+  }
+
+  const rows = tabela.map((p, idx) => {
+    const monthIdx = (m0 - 1) + idx; // 0-indexed total months from epoch-of-year
+    const year  = y0 + Math.floor(monthIdx / 12);
+    const month = (monthIdx % 12) + 1;
+    const mesAno = `${year}-${String(month).padStart(2, '0')}-01`;
+    return {
+      user_id: dvd.user_id,
+      subcategoria_id: subId,
+      mes_ano: mesAno,
+      valor_previsto: Number(Number(p.parcela).toFixed(2)),
+      moeda,
+    };
   });
+
+  if (rows.length === 0) return;
+  const { error: insErr } = await supabase.from('orcamento_geral').insert(rows);
   if (insErr) {
-    showToast('Falha ao criar compromisso vinculado: ' + insErr.message, 'error', 10000);
-    console.error('[ensureSubcategoria] insert', insErr);
+    console.error('[regenerateOrcamento insert]', insErr);
+    showToast('Compromisso criado, mas falha ao gerar valores mensais: ' + insErr.message, 'warning', 8000);
   }
 }
 
