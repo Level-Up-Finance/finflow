@@ -93,7 +93,9 @@ const DEFAULT_TIPO = 'Despesa';
 // Init
 // -----------------------------
 document.addEventListener('DOMContentLoaded', async () => {
-  const _isEmbedded = new URLSearchParams(location.search).get('embedded') === '1';
+  const _params     = new URLSearchParams(location.search);
+  const _isEmbedded = _params.get('embedded') === '1';
+  const _isPreload  = _params.get('preload')  === '1';  // pré-aquecimento em background
 
   await guardSession();
   if (_isEmbedded) {
@@ -106,11 +108,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyTranslationsToDom();
   if (!_isEmbedded) initCurrencyWidget('currency-widget');
 
-  await loadContas();
-  await loadCategorias();      // carrega + seed se vazio
-  await loadProjetos();
-  await loadDividas();
-  await loadContatos();
+  // Carrega todos os lookups em paralelo — reduz de ~3s sequencial para ~600ms
+  await Promise.all([loadContas(), loadCategorias(), loadProjetos(), loadDividas(), loadContatos()]);
   if (!_isEmbedded) renderCategoriaFilters();
   if (!_isEmbedded) renderTipoSelector();
   renderModalDropdowns();
@@ -209,9 +208,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         categoria_id: _cfgCatId,
       });
     }
-  } else if (_isEmbedded) {
+  } else if (_isEmbedded && !_isPreload) {
     // Embedded mode without specific params — open blank new compromisso
     openCompromissoModal(null);
+  }
+
+  // ── Modo pré-aquecimento ────────────────────────────────────────
+  // Carregou em background (preload=1): sinaliza parent que está pronto
+  // para receber comandos open-modal instantâneos.
+  if (_isPreload) {
+    document.documentElement.style.visibility = '';
+    window.parent.postMessage({ source: 'finflow-embedded', type: 'comp-preloaded' }, location.origin);
+    window.addEventListener('message', (ev) => {
+      if (ev.origin !== location.origin) return;
+      if (ev.data?.source !== 'finflow-host' || ev.data?.type !== 'open-modal') return;
+      const d = ev.data;
+      if (d.cfg_sub) {
+        const sub = cachedCompromissos.find((s) => s.id === d.cfg_sub);
+        openCompromissoModal(sub || { id: d.cfg_sub });
+      } else if (d.cfg_cat) {
+        openCompromissoModal({ nome: decodeURIComponent(d.cfg_nome || ''), tipo: d.cfg_tipo || DEFAULT_TIPO, categoria_id: d.cfg_cat });
+      } else {
+        openCompromissoModal(null);
+      }
+    });
   }
 
   // In embedded mode, watch for modal close and postMessage parent

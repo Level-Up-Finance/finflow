@@ -41,6 +41,9 @@ let modalSubBlocoGrupos = null;  // restrict cat select to this bloco's grupos
 // Sub detail modal state
 let detailSubId = null;  // which sub is being shown in modal-sub-detail
 
+// Pré-aquecimento do iframe embedded de compromissos
+let embedPreloaded = false;
+
 // Quick-compromisso post-save state
 let compRapidoSubId     = null;  // subcategoria ID to update (or null → insert new)
 let compRapidoCatId     = null;  // categoria_id context
@@ -87,6 +90,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (validCfgTabs.has(hashTab) && hashTab !== 'categorias') {
     document.querySelector(`.cfg-sidenav-item[data-tab="${hashTab}"]`)?.click();
   }
+
+  // Pré-aquece o iframe de compromissos em background para abertura instantânea
+  preWarmEmbedded();
 });
 
 // -----------------------------
@@ -930,7 +936,11 @@ function bindModalEvents() {
   document.getElementById('cfg-embed-overlay').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) {
       e.currentTarget.classList.add('hidden');
-      document.getElementById('cfg-embed-iframe').src = '';
+      const ifr = document.getElementById('cfg-embed-iframe');
+      ifr.src = '';
+      ifr.style.visibility = 'hidden';
+      embedPreloaded = false;
+      setTimeout(() => preWarmEmbedded(), 800);
     }
   });
 }
@@ -973,31 +983,60 @@ function goToNewCompromisso(subId, catId, nome, isReceita) {
   }
 }
 
+function preWarmEmbedded() {
+  const iframe = document.getElementById('cfg-embed-iframe');
+  if (!iframe) return;
+  embedPreloaded = false;
+  iframe.style.visibility = 'hidden';
+  iframe.src = 'compromissos.html?embedded=1&preload=1';
+}
+
 function openEmbeddedCompromisso(url) {
   const overlay = document.getElementById('cfg-embed-overlay');
   const iframe  = document.getElementById('cfg-embed-iframe');
   if (!overlay || !iframe) return;
-  // Esconde o iframe até ele sinalizar que o modal está pronto (evita flash
-  // do app-shell + conteúdo parcial enquanto o JS interno carrega)
-  iframe.style.visibility = 'hidden';
-  iframe.src = url;
+
   overlay.classList.remove('hidden');
+  iframe.style.visibility = 'hidden'; // revela ao receber comp-ready
+
+  if (embedPreloaded) {
+    // Iframe já carregado — envia comando para abrir o modal instantaneamente
+    const params = new URLSearchParams(url.includes('?') ? url.split('?')[1] : '');
+    const msg = { source: 'finflow-host', type: 'open-modal' };
+    if (params.get('cfg_sub'))  msg.cfg_sub  = params.get('cfg_sub');
+    if (params.get('cfg_cat'))  msg.cfg_cat  = params.get('cfg_cat');
+    if (params.get('cfg_tipo')) msg.cfg_tipo = params.get('cfg_tipo');
+    if (params.get('cfg_nome')) msg.cfg_nome = params.get('cfg_nome');
+    iframe.contentWindow.postMessage(msg, location.origin);
+  } else {
+    // Fallback: carrega o iframe do zero (pré-aquecimento ainda não terminou)
+    iframe.src = url;
+  }
 }
 
-// Listen for messages from the embedded iframe (save / close / ready)
+// Listen for messages from the embedded iframe (save / close / preloaded / ready)
 window.addEventListener('message', (e) => {
   if (e.origin !== window.location.origin) return;
   if (e.data?.source !== 'finflow-embedded') return;
   const overlay = document.getElementById('cfg-embed-overlay');
   const iframe  = document.getElementById('cfg-embed-iframe');
+  if (e.data?.type === 'comp-preloaded') {
+    // Pré-aquecimento concluído — próxima abertura será instantânea
+    embedPreloaded = true;
+    return;
+  }
   if (e.data?.type === 'comp-ready') {
     // Modal interno pronto — revela o iframe sem flash
     if (iframe) iframe.style.visibility = 'visible';
     return;
   }
+  // comp-saved ou comp-closed
   overlay?.classList.add('hidden');
-  if (iframe) { iframe.src = ''; iframe.style.visibility = 'hidden'; }
+  if (iframe) iframe.style.visibility = 'hidden';
   if (e.data?.type === 'comp-saved') reloadAll();
+  // Re-aquece para a próxima abertura
+  embedPreloaded = false;
+  setTimeout(() => preWarmEmbedded(), 800);
 });
 
 // -----------------------------
