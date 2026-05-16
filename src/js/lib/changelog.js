@@ -7,6 +7,17 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-16-orcamento-filtros-layout',
+    version: '0.5.4',
+    date: '16/05/2026',
+    title: 'Orçamento — layout dos filtros mais compacto',
+    items: [
+      { type: 'improvement', text: 'Filtros da aba Configurações reorganizados em barra horizontal única: busca, Exibição, Status e view-toggle alinhados. Filtro por Categoria fica em linha separada com chips coloridas — economiza espaço vertical sem perder funcionalidades.' },
+      { type: 'improvement', text: 'Nova classe utilitária `cf-status-tabs--compact` (padding e font-size menores) para filtros densos.' },
+      { type: 'improvement', text: 'Layout responsivo: em telas estreitas o filtro vira coluna preservando todos os controles.' },
+    ],
+  },
+  {
     id: '2026-05-16-orcamento-indicador-cabe',
     version: '0.5.3',
     date: '16/05/2026',

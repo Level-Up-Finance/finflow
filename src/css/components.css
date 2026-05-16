@@ -4518,6 +4518,78 @@ td .currency-split {
 .orc-bloco-mini-label { color: var(--color-text-muted); font-weight: var(--fw-medium); }
 .orc-bloco-mini-value { color: var(--color-text-main); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
 
+/* v0.5.4 — Filter bar horizontal compacto (substitui conta-filterbar nas
+   abas de Configurações do Orçamento). Tudo numa linha (busca → grupos
+   de filtros → view-toggle no canto direito). Linha extra apenas para
+   o seletor de categoria (chips coloridas). */
+.orc-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.orc-filter-search {
+  flex: 0 1 240px;
+  height: 32px;
+  font-size: var(--fs-sm);
+}
+.orc-filter-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.orc-filter-label {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.cf-status-tabs--compact {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.cf-status-tabs--compact .cf-status-tab {
+  padding: 4px var(--space-2);
+  font-size: var(--fs-xs);
+  border-radius: calc(var(--radius-md) - 3px);
+}
+
+.orc-filter-categorias {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.cf-tipo-chips--inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1 1 auto;
+}
+
+@media (max-width: 720px) {
+  .orc-filter-bar { gap: var(--space-2); }
+  .orc-filter-search { flex: 1 1 100%; }
+  .orc-filter-group { flex: 1 1 100%; }
+  .orc-filter-bar .view-toggle { margin-left: 0 !important; }
+}
+
 /* v0.5.1 — abas Mensal e 12 meses são read-only. Inputs aparecem como texto. */
 .orcamento-cell-edit[disabled],
 .orcamento-cell-edit[readonly],
