@@ -14622,7 +14622,7 @@ td .currency-split {
   align-items: center;
   justify-content: center;
 }
-.cfg-embed-overlay.hidden { display: none; }
+.cfg-embed-overlay.hidden { visibility: hidden; pointer-events: none; }
 
 .cfg-embed-iframe {
   width: min(860px, 98vw);

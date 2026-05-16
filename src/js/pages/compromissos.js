@@ -182,6 +182,44 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // ── Modo pré-aquecimento ────────────────────────────────────────
+  // Dropdowns e eventos já prontos — sinaliza parent AGORA, antes de
+  // loadCompromissos (que é lenta). loadCompromissos roda em background
+  // para estar disponível se o usuário abrir um compromisso existente.
+  if (_isPreload) {
+    document.documentElement.style.visibility = '';
+    window.parent.postMessage({ source: 'finflow-embedded', type: 'comp-preloaded' }, location.origin);
+
+    // Escuta comandos de abertura do parent
+    window.addEventListener('message', (ev) => {
+      if (ev.origin !== location.origin) return;
+      if (ev.data?.source !== 'finflow-host' || ev.data?.type !== 'open-modal') return;
+      const d = ev.data;
+      if (d.cfg_sub) {
+        const sub = cachedCompromissos.find((s) => s.id === d.cfg_sub);
+        openCompromissoModal(sub || { id: d.cfg_sub });
+      } else if (d.cfg_cat) {
+        openCompromissoModal({ nome: decodeURIComponent(d.cfg_nome || ''), tipo: d.cfg_tipo || DEFAULT_TIPO, categoria_id: d.cfg_cat });
+      } else {
+        openCompromissoModal(null);
+      }
+    });
+
+    // Observa fechamento do modal para avisar o parent
+    const _modal = document.getElementById('modal-compromisso');
+    new window.MutationObserver(() => {
+      if (_modal.classList.contains('hidden')) {
+        const saved = window._embeddedCompSaved || false;
+        window._embeddedCompSaved = false;
+        window.parent.postMessage({ source: 'finflow-embedded', type: saved ? 'comp-saved' : 'comp-closed' }, location.origin);
+      }
+    }).observe(_modal, { attributes: true, attributeFilter: ['class'] });
+
+    loadCompromissos(); // background — sem await
+    return;
+  }
+
+  // ── Fluxo normal (não-preload) ──────────────────────────────────
   await loadCompromissos();
 
   // Auto-open from configuracoes.html via URL params
@@ -197,10 +235,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (_cfgSubId) {
       const sub = cachedCompromissos.find((s) => s.id === _cfgSubId);
       if (sub) openCompromissoModal(sub);
-      else {
-        // Sub not in cached list yet — open as new with sub as id hint
-        openCompromissoModal({ id: _cfgSubId });
-      }
+      else openCompromissoModal({ id: _cfgSubId });
     } else {
       openCompromissoModal({
         nome:         decodeURIComponent(_p.get('cfg_nome') || ''),
@@ -208,30 +243,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         categoria_id: _cfgCatId,
       });
     }
-  } else if (_isEmbedded && !_isPreload) {
-    // Embedded mode without specific params — open blank new compromisso
+  } else if (_isEmbedded) {
     openCompromissoModal(null);
-  }
-
-  // ── Modo pré-aquecimento ────────────────────────────────────────
-  // Carregou em background (preload=1): sinaliza parent que está pronto
-  // para receber comandos open-modal instantâneos.
-  if (_isPreload) {
-    document.documentElement.style.visibility = '';
-    window.parent.postMessage({ source: 'finflow-embedded', type: 'comp-preloaded' }, location.origin);
-    window.addEventListener('message', (ev) => {
-      if (ev.origin !== location.origin) return;
-      if (ev.data?.source !== 'finflow-host' || ev.data?.type !== 'open-modal') return;
-      const d = ev.data;
-      if (d.cfg_sub) {
-        const sub = cachedCompromissos.find((s) => s.id === d.cfg_sub);
-        openCompromissoModal(sub || { id: d.cfg_sub });
-      } else if (d.cfg_cat) {
-        openCompromissoModal({ nome: decodeURIComponent(d.cfg_nome || ''), tipo: d.cfg_tipo || DEFAULT_TIPO, categoria_id: d.cfg_cat });
-      } else {
-        openCompromissoModal(null);
-      }
-    });
   }
 
   // In embedded mode, watch for modal close and postMessage parent
