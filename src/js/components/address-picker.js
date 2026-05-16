@@ -9,8 +9,6 @@
 // =============================================================
 import {
   formatCep, isValidCep, fetchCep,
-  isValidZip, fetchZip,
-  isValidPostcode, fetchPostcode,
 } from '../lib/cep-lookup.js';
 import { showToast } from './toast.js';
 
@@ -35,10 +33,10 @@ export const PAISES = [
 ];
 
 // Configuração por país: qual lookup usar
+// ZIP Code (EUA) e Post Code (UK) removidos temporariamente.
+// Lookup automático só disponível para Brasil via ViaCEP.
 const LOOKUP_CONFIG = {
-  'Brasil':         { type: 'cep',      label: 'CEP',        placeholder: '00000-000' },
-  'Estados Unidos': { type: 'zip',      label: 'ZIP Code',   placeholder: '90210'     },
-  'Reino Unido':    { type: 'postcode', label: 'Post Code',  placeholder: 'SW1A 1AA'  },
+  'Brasil': { type: 'cep', label: 'CEP', placeholder: '00000-000' },
 };
 
 export class AddressPicker {
@@ -101,26 +99,14 @@ export class AddressPicker {
     const config = LOOKUP_CONFIG[pais];
     if (!config) return; // outros países: sem lookup
 
-    const validate = () => {
-      const v = postalEl.value;
-      if (config.type === 'cep')      return isValidCep(v);
-      if (config.type === 'zip')      return isValidZip(v);
-      if (config.type === 'postcode') return isValidPostcode(v);
-      return false;
-    };
+    const validate = () => isValidCep(postalEl.value);
 
-    // Formata CEP ao digitar (só BR)
-    if (config.type === 'cep') {
-      postalEl.addEventListener('input', () => {
-        const raw = postalEl.value.replace(/\D/g, '');
-        postalEl.value = formatCep(raw);
-        if (btnEl) btnEl.disabled = !validate();
-      });
-    } else {
-      postalEl.addEventListener('input', () => {
-        if (btnEl) btnEl.disabled = !validate();
-      });
-    }
+    // Formata CEP ao digitar
+    postalEl.addEventListener('input', () => {
+      const raw = postalEl.value.replace(/\D/g, '');
+      postalEl.value = formatCep(raw);
+      if (btnEl) btnEl.disabled = !validate();
+    });
 
     postalEl.addEventListener('blur', () => {
       if (validate()) this._lookup(pais);
@@ -147,10 +133,7 @@ export class AddressPicker {
     if (btnEl) { btnEl.disabled = true; btnEl.textContent = '…'; }
 
     try {
-      let addr;
-      if (config.type === 'cep')      addr = await fetchCep(postalEl.value);
-      if (config.type === 'zip')      addr = await fetchZip(postalEl.value);
-      if (config.type === 'postcode') addr = await fetchPostcode(postalEl.value);
+      const addr = await fetchCep(postalEl.value);
       if (!addr) return;
 
       // Preenche campos disponíveis (não sobrescreve se já preenchido manualmente,

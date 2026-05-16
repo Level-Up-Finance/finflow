@@ -191,6 +191,7 @@ export function initContatoPicker({ rootEl, contatos, defaultTipo = 'fornecedor'
   }
 
   async function handleCreate() {
+    closeDropdown();
     const nome = inputEl.value.trim();
     if (!nome) return;
 

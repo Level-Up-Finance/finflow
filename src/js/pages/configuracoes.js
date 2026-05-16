@@ -265,19 +265,19 @@ function renderTree() {
           const projeto = sub.projeto_id ? cachedProjetos.find((p) => p.id === sub.projeto_id) : null;
           const divida  = sub.divida_id  ? cachedDividas.find((d) => d.id === sub.divida_id)   : null;
 
-          // — Compromissos column —
+          // — Compromissos column — (order: compromisso → dívida → projeto)
           const compParts = [];
-          if (projeto) {
-            compParts.push(`<span class="vinculo-badge vinculo-badge--projeto" data-vinculo-type="projeto" data-vinculo-id="${projeto.id}" style="--vinculo-cor:${projeto.cor};">${escapeHtml(projeto.nome)}</span>`);
+          if (hasComp) {
+            compParts.push(`<span class="cfg-comp-badge cfg-comp-badge--val">${escapeHtml(sub.nome)}</span>`);
           }
           if (divida) {
             compParts.push(`<span class="vinculo-badge vinculo-badge--divida" data-vinculo-type="divida" data-vinculo-id="${sub.divida_id}">${escapeHtml(divida.nome)}</span>`);
           }
-          if (hasComp) {
-            compParts.push(`<span class="cfg-comp-badge cfg-comp-badge--val">${escapeHtml(sub.nome)}</span>`);
+          if (projeto) {
+            compParts.push(`<span class="vinculo-badge vinculo-badge--projeto" data-vinculo-type="projeto" data-vinculo-id="${projeto.id}" style="--vinculo-cor:${projeto.cor};">${escapeHtml(projeto.nome)}</span>`);
           }
           const compHtml = compParts.length
-            ? `<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">${compParts.join('')}</div>`
+            ? `<div style="display:flex;flex-wrap:nowrap;gap:4px;align-items:center;">${compParts.join('')}</div>`
             : `<button class="btn-add-comp" data-cfg-sub="${sub.id}" title="Criar compromisso" type="button"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> compromisso</button>`;
 
           // — Transações column —
@@ -977,18 +977,26 @@ function openEmbeddedCompromisso(url) {
   const overlay = document.getElementById('cfg-embed-overlay');
   const iframe  = document.getElementById('cfg-embed-iframe');
   if (!overlay || !iframe) return;
+  // Esconde o iframe até ele sinalizar que o modal está pronto (evita flash
+  // do app-shell + conteúdo parcial enquanto o JS interno carrega)
+  iframe.style.visibility = 'hidden';
   iframe.src = url;
   overlay.classList.remove('hidden');
 }
 
-// Listen for messages from the embedded iframe (save / close)
+// Listen for messages from the embedded iframe (save / close / ready)
 window.addEventListener('message', (e) => {
   if (e.origin !== window.location.origin) return;
   if (e.data?.source !== 'finflow-embedded') return;
   const overlay = document.getElementById('cfg-embed-overlay');
   const iframe  = document.getElementById('cfg-embed-iframe');
+  if (e.data?.type === 'comp-ready') {
+    // Modal interno pronto — revela o iframe sem flash
+    if (iframe) iframe.style.visibility = 'visible';
+    return;
+  }
   overlay?.classList.add('hidden');
-  if (iframe) iframe.src = '';
+  if (iframe) { iframe.src = ''; iframe.style.visibility = 'hidden'; }
   if (e.data?.type === 'comp-saved') reloadAll();
 });
 

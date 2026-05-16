@@ -823,6 +823,12 @@ function openCompromissoModal(c = null) {
   }
 
   openModal('modal-compromisso');
+
+  // Se rodando dentro do overlay do iframe (configuracoes.html), avisa o parent
+  // que o modal já está visível — ele pode revelar o iframe sem flash
+  if (new URLSearchParams(location.search).get('embedded') === '1') {
+    window.parent.postMessage({ source: 'finflow-embedded', type: 'comp-ready' }, location.origin);
+  }
 }
 
 // Opens the create modal pre-filled with an existing compromisso's data (no editingId)

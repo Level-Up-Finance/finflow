@@ -34,51 +34,5 @@ export async function fetchCep(cep) {
   };
 }
 
-// ── Estados Unidos (Zippopotam) ───────────────────────────────
-
-export function isValidZip(raw) {
-  return /^\d{5}$/.test((raw || '').replace(/\D/g, '').slice(0, 5));
-}
-
-/**
- * Busca cidade/estado pelo ZIP Code via api.zippopotam.us (EUA).
- * @returns {Promise<{cidade, estado_uf}>}
- */
-export async function fetchZip(zip) {
-  const digits = (zip || '').replace(/\D/g, '').slice(0, 5);
-  if (digits.length !== 5) throw new Error('ZIP Code deve ter 5 dígitos.');
-  const res = await fetch(`https://api.zippopotam.us/us/${digits}`);
-  if (!res.ok) throw new Error('ZIP Code não encontrado.');
-  const data = await res.json();
-  const place = data.places?.[0];
-  if (!place) throw new Error('ZIP Code não encontrado.');
-  return {
-    cidade:    place['place name']          || '',
-    estado_uf: place['state abbreviation']  || '',
-  };
-}
-
-// ── Reino Unido (postcodes.io) ────────────────────────────────
-
-export function isValidPostcode(raw) {
-  // Formato UK: AN NAA, ANN NAA, AAN NAA, AANN NAA, ANA NAA, AANA NAA
-  const clean = (raw || '').replace(/\s+/g, '').toUpperCase();
-  return /^[A-Z]{1,2}[0-9][0-9A-Z]?\s?[0-9][A-Z]{2}$/.test(clean) && clean.length >= 5;
-}
-
-/**
- * Busca endereço pelo Post Code via postcodes.io (Reino Unido).
- * @returns {Promise<{cidade, estado_uf}>}
- */
-export async function fetchPostcode(postcode) {
-  const clean = (postcode || '').trim().toUpperCase();
-  if (!clean) throw new Error('Post Code inválido.');
-  const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(clean)}`);
-  if (!res.ok) throw new Error('Post Code não encontrado.');
-  const data = await res.json();
-  if (data.status !== 200 || !data.result) throw new Error('Post Code não encontrado.');
-  return {
-    cidade:    data.result.admin_district || data.result.parish || '',
-    estado_uf: data.result.region         || data.result.country || '',
-  };
-}
+// ZIP Code (EUA) e Post Code (UK) removidos temporariamente.
+// Lookup automático só disponível para Brasil via ViaCEP.

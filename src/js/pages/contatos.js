@@ -456,16 +456,16 @@ function renderVinculosTab(contatoId) {
 
   panel.innerHTML = `
     <section class="ctp-vinc-section">
+      <h3 class="ctp-vinc-section-title">Compromissos <span class="ctp-vinc-count">${compromissos.length}</span></h3>
+      ${compHtml}
+    </section>
+    <section class="ctp-vinc-section">
       <h3 class="ctp-vinc-section-title">Dívidas <span class="ctp-vinc-count">${dividas.length}</span></h3>
       ${divHtml}
     </section>
     <section class="ctp-vinc-section">
       <h3 class="ctp-vinc-section-title">Projetos de investimento <span class="ctp-vinc-count">${projetos.length}</span></h3>
       ${projHtml}
-    </section>
-    <section class="ctp-vinc-section">
-      <h3 class="ctp-vinc-section-title">Compromissos <span class="ctp-vinc-count">${compromissos.length}</span></h3>
-      ${compHtml}
     </section>
   `;
 }

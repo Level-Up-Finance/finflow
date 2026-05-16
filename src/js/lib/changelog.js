@@ -7,6 +7,20 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-16-categorias-contatos-fixes',
+    version: '0.3.2',
+    date: '16/05/2026',
+    title: 'Correções — Categorias, Contatos e Foto de perfil',
+    items: [
+      { type: 'fix',         text: 'Picker de contato: dropdown fecha corretamente antes de abrir o modal de criação' },
+      { type: 'fix',         text: 'Crop de foto de perfil: botões de zoom não distorciam imagem antes do carregamento completo' },
+      { type: 'fix',         text: 'Crop de foto de perfil: recorte salvo corresponde exatamente à área visível no viewport circular' },
+      { type: 'fix',         text: 'Popup de compromisso na página Categorias: abertura sem flash visual' },
+      { type: 'improvement', text: 'Categorias: coluna Vínculos mais larga — badges de compromisso, dívida e projeto ficam todos na mesma linha' },
+      { type: 'improvement', text: 'Vínculos exibidos na ordem: Compromisso → Dívida → Projeto de investimento (em Categorias e no card de Contatos)' },
+    ],
+  },
+  {
     id: '2026-05-15-contatos-foto-crop',
     version: '0.3.1',
     date: '15/05/2026',

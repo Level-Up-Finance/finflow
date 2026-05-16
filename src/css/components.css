@@ -7587,8 +7587,8 @@ td .currency-split {
 
 .cfg-th-cor,
 .cfg-th-actions { width: 48px; text-align: center; }
-.cfg-th-vinculo { width: 180px; }
-.cfg-th-comp  { width: 180px; }
+.cfg-th-vinculo { width: 320px; }
+.cfg-th-comp  { width: 320px; }
 .cfg-th-tx    { width: 100px; }
 
 .cfg-tr td {
@@ -7634,6 +7634,8 @@ td .currency-split {
 
 .cfg-td-sub {
   color: var(--color-text-secondary);
+  width: 140px;
+  max-width: 140px;
 }
 
 .cfg-td-empty {
