@@ -208,6 +208,7 @@ export class FotoPicker {
       imgLeft   = (VP_SIZE - rendW) / 2;
       imgTop    = (VP_SIZE - rendH) / 2;
       zoom      = 1;
+      range.value = 1;
       clampPos();
       applyPos();
       img.style.opacity = '1';
@@ -277,10 +278,11 @@ export class FotoPicker {
     // ── Zoom buttons + range ─────────────────────────────────────
     overlay.querySelectorAll('.fp-crop-zoom-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
+        if (!ready) return;
         setZoom(zoom + parseFloat(btn.dataset.dir) * 0.25);
       });
     });
-    range.addEventListener('input', () => setZoom(parseFloat(range.value)));
+    range.addEventListener('input', () => { if (!ready) return; setZoom(parseFloat(range.value)); });
 
     // ── Close / cancel ───────────────────────────────────────────
     const close = () => {
@@ -301,19 +303,18 @@ export class FotoPicker {
       canvas.height = CANVAS_OUT;
       const ctx = canvas.getContext('2d');
 
-      // Source rect in natural image pixels:
-      // imgLeft/imgTop = position of img top-left in viewport coords
-      // viewport starts at (0, 0), size VP_SIZE × VP_SIZE
-      // rendered image dimensions: rendW*zoom × rendH*zoom
-      // offset of viewport inside rendered image: (0 - imgLeft) × (0 - imgTop)
-      // in natural pixels: divide by (baseScale * zoom)
-      const totalScale = baseScale * zoom;
-      const srcX = -imgLeft / totalScale;
-      const srcY = -imgTop  / totalScale;
-      const srcW = VP_SIZE  / totalScale;
-      const srcH = VP_SIZE  / totalScale;
+      // Source rect via getBoundingClientRect — reads actual rendered position,
+      // bypassing any state-sync issues between JS variables and CSS layout.
+      const vpRect  = vpEl.getBoundingClientRect();
+      const imgRect = img.getBoundingClientRect();
+      const pixelScaleX = img.naturalWidth  / imgRect.width;
+      const pixelScaleY = img.naturalHeight / imgRect.height;
+      const srcX = (vpRect.left - imgRect.left) * pixelScaleX;
+      const srcY = (vpRect.top  - imgRect.top)  * pixelScaleY;
+      const srcW = vpRect.width  * pixelScaleX;
+      const srcH = vpRect.height * pixelScaleY;
 
-      // Draw circular crop (clip to circle for preview, but upload square — CSS handles circle)
+      // Draw square crop — CSS clips the avatar to circle
       ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, CANVAS_OUT, CANVAS_OUT);
 
       close();

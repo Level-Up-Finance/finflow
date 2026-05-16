@@ -1,9 +1,11 @@
 #!/bin/bash
-# Inicia o dev server do Vite em background.
+# Inicia o dev server do Vite em background e abre o browser.
+# Duplo-clique para usar — o terminal fecha sozinho após abrir.
 cd "$(dirname "$0")"
 
-# Para qualquer servidor anterior na porta 8000
-lsof -ti :8000 | xargs kill -9 2>/dev/null
+# Para qualquer servidor anterior na porta 8765
+lsof -ti :8765 | xargs kill -9 2>/dev/null
+sleep 0.5
 
 # Garante node_modules instalado
 if [ ! -d "node_modules" ]; then
@@ -11,11 +13,13 @@ if [ ! -d "node_modules" ]; then
   npm install
 fi
 
-# Inicia o Vite em background
-nohup npm run dev > /tmp/finflow-server.log 2>&1 &
+# Inicia o Vite em background (log em /tmp/finflow-server.log)
+nohup npm run dev -- --port 8765 --host > /tmp/finflow-server.log 2>&1 &
 echo $! > /tmp/finflow-server.pid
-echo "FinFlow iniciado em http://localhost:8000"
 
 # Aguarda servidor subir e abre no browser
 sleep 2
-open http://localhost:8000
+open http://localhost:8765
+
+# Fecha o terminal automaticamente
+osascript -e 'tell application "Terminal" to close front window' &
