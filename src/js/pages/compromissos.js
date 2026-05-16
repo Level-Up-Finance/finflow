@@ -192,7 +192,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const _cfgSubId = _p.get('cfg_sub');
   const _cfgCatId = _p.get('cfg_cat');
   if (_cfgSubId || _cfgCatId) {
-    history.replaceState({}, '', location.pathname);
+    // Limpa os params cfg_* mas preserva embedded=1 para que openCompromissoModal
+    // ainda consiga detectar o modo embedded e enviar o postMessage comp-ready.
+    history.replaceState({}, '', _isEmbedded ? location.pathname + '?embedded=1' : location.pathname);
     if (_cfgSubId) {
       const sub = cachedCompromissos.find((s) => s.id === _cfgSubId);
       if (sub) openCompromissoModal(sub);
