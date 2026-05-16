@@ -489,7 +489,7 @@ function renderWidgets() {
     byCurrency[moeda].pago  += Number(d.valor_pago);
   }
 
-  // Valores primários em BRL
+  // Valores primários em BRL (para o donut e o % do subtítulo)
   const brl           = byCurrency['BRL'] || { total: 0, pago: 0 };
   const totalGeralBRL = brl.total;
   const totalPagoBRL  = brl.pago;
@@ -498,23 +498,31 @@ function renderWidgets() {
   const pctPago     = totalGeralBRL > 0 ? Math.min(100, (totalPagoBRL / totalGeralBRL) * 100) : 0;
   const pctRestante = totalGeralBRL > 0 ? Math.min(100, (totalRestBRL / totalGeralBRL) * 100) : 0;
 
-  // Linhas extras para cada moeda estrangeira
-  const nonBRL = Object.keys(byCurrency).filter(c => c !== 'BRL');
-  const extraHTML = (tipo) => nonBRL.map(code => {
-    const { total, pago } = byCurrency[code];
-    const val = tipo === 'restante' ? Math.max(0, total - pago) : pago;
-    return `<span class="kpi-extra-moeda">${formatCurrencyHTML(val, code)}</span>`;
-  }).join('');
+  // Moedas presentes (ordem: BRL primeiro, depois as demais alfabeticamente)
+  const allCodes = ['BRL', ...Object.keys(byCurrency).filter(c => c !== 'BRL').sort()];
+  const hasMultipleCurrencies = allCodes.length > 1;
 
-  const sufixo = nonBRL.length ? ' (R$)' : '';
+  // Gera as linhas de breakdown por moeda (todas as moedas com dívida)
+  const breakdownHTML = (tipo) => {
+    if (!hasMultipleCurrencies) return ''; // só BRL → sem breakdown
+    return allCodes
+      .filter(code => byCurrency[code])
+      .map(code => {
+        const { total, pago } = byCurrency[code];
+        const val = tipo === 'restante' ? Math.max(0, total - pago) : pago;
+        return `<span class="kpi-extra-moeda">${formatCurrencyHTML(val, code)}</span>`;
+      }).join('');
+  };
+
+  const sufixo = hasMultipleCurrencies ? ' (R$)' : '';
 
   // Widget 1 — quanto falta pagar
-  document.getElementById('kpi-aberto-value').innerHTML = formatCurrencyHTML(totalRestBRL, 'BRL') + extraHTML('restante');
+  document.getElementById('kpi-aberto-value').innerHTML = formatCurrencyHTML(totalRestBRL, 'BRL') + breakdownHTML('restante');
   document.getElementById('kpi-aberto-sub').textContent = `${fmtPct(pctRestante)} do total ainda em aberto${sufixo}`;
   document.getElementById('kpi-aberto-chart').innerHTML = renderDonutSVG(pctRestante, 'var(--color-danger)', 'lg');
 
   // Widget 2 — quanto já foi pago
-  document.getElementById('kpi-pago-value').innerHTML = formatCurrencyHTML(totalPagoBRL, 'BRL') + extraHTML('pago');
+  document.getElementById('kpi-pago-value').innerHTML = formatCurrencyHTML(totalPagoBRL, 'BRL') + breakdownHTML('pago');
   document.getElementById('kpi-pago-sub').textContent  = `${fmtPct(pctPago)} do total já pago${sufixo}`;
   document.getElementById('kpi-pago-chart').innerHTML  = renderDonutSVG(pctPago, 'var(--color-success)', 'lg');
 }
