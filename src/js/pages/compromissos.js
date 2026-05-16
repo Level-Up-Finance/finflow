@@ -143,6 +143,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setNivelMode,
     toggleDividaField,
     toggleProjetoField,
+    toggleVinculoBanner,
     toggleVencimentoFields,
     toggleValorVariavelFields,
     toggleRendaPrincipalRow,
@@ -308,7 +309,7 @@ async function criarProjeto(nome) {
 async function loadDividas() {
   const { data, error } = await supabase
     .from('dividas')
-    .select('id, nome, credor, status, valor_total, valor_pago, configurada')
+    .select('id, nome, credor, status, valor_total, valor_pago')
     .order('nome');
   if (error) {
     if (!/relation.*dividas/i.test(error.message)) {
@@ -630,6 +631,51 @@ function toggleProjetoField() {
   }
 }
 
+/**
+ * Mostra o banner "Compromissos de Dívida/Projeto são criados pela página específica"
+ * quando o usuário seleciona uma categoria do grupo "dividas" ou "investimentos".
+ * Esconde o resto do form e o botão Salvar, oferecendo CTA para a página correta.
+ */
+function toggleVinculoBanner() {
+  const banner = document.getElementById('comp-vinculo-banner');
+  if (!banner) return;
+  const catId = document.getElementById('comp-categoria').value;
+  const cat   = cachedCategorias.find((c) => c.id === catId);
+  const grupo = cat?.grupo;
+  const isDivida    = grupo === 'dividas'       || /dívida|divida/i.test(cat?.nome || '');
+  const isProjeto   = grupo === 'investimentos' || /investiment/i.test(cat?.nome || '');
+  const bloqueado   = isDivida || isProjeto;
+
+  // Se está editando um compromisso vinculado (divida_id/projeto_id setados), também bloqueia
+  // — mas isso normalmente não acontece pelo fluxo do app (modal-details esconde Editar nesses casos).
+
+  banner.classList.toggle('hidden', !bloqueado);
+
+  // Marca a modal-body como bloqueada → CSS esconde tudo exceto o banner e o select de categoria
+  const modalBody = banner.closest('.modal-body');
+  if (modalBody) modalBody.classList.toggle('comp-modal-bloqueada', bloqueado);
+
+  // Esconde o botão Salvar quando bloqueado
+  const btnSalvar = document.getElementById('btn-salvar-compromisso');
+  if (btnSalvar) btnSalvar.classList.toggle('hidden', bloqueado);
+
+  // Ajusta CTA do banner
+  if (bloqueado) {
+    const btn   = document.getElementById('btn-comp-ir-pagina');
+    const label = document.getElementById('btn-comp-ir-pagina-label');
+    const title = document.getElementById('comp-vinculo-banner-title');
+    if (isDivida) {
+      btn.dataset.destino = 'dividas';
+      label.textContent = 'Ir para Dívidas';
+      title.textContent = 'Compromissos de Dívidas são criados pela página de Dívidas.';
+    } else {
+      btn.dataset.destino = 'investimentos';
+      label.textContent = 'Ir para Investimentos';
+      title.textContent = 'Compromissos de Investimentos são criados pela página de Projetos.';
+    }
+  }
+}
+
 
 
 function syncCategoriaFilterUI() {
@@ -849,6 +895,7 @@ function openCompromissoModal(c = null) {
   toggleRendaPrincipalRow();
   toggleProjetoField();
   toggleDividaField();
+  toggleVinculoBanner();
   toggleTransferFields();
   updateLimiteInfo(c?.conta_id || '');
   if (c?.valor_variavel) {
@@ -982,6 +1029,28 @@ async function openDetailsModal(c) {
   }
 
   document.getElementById('btn-encerrar').classList.toggle('hidden', c.status === 'arquivada' || !!c.terminado_em);
+
+  // ── Compromisso vinculado a Dívida/Projeto → modo read-only ──
+  // Esconde botões de edição/duplicação/arquivamento, mostra "Ir para Dívida/Projeto"
+  const ehVinculado    = !!(c.divida_id || c.projeto_id);
+  const ehDivida       = !!c.divida_id;
+  const btnIrVinculo   = document.getElementById('btn-ir-vinculo');
+  const btnEditar      = document.getElementById('btn-editar');
+  const btnDuplicar    = document.getElementById('btn-duplicar');
+  const btnAtualizar   = document.getElementById('btn-atualizar-valor');
+  if (ehVinculado) {
+    btnEditar.classList.add('hidden');
+    btnDuplicar.classList.add('hidden');
+    btnAtualizar.classList.add('hidden');
+    btnArq.classList.add('hidden');
+    btnDel.classList.add('hidden');
+    document.getElementById('btn-encerrar').classList.add('hidden');
+    btnIrVinculo.classList.remove('hidden');
+    document.getElementById('btn-ir-vinculo-label').textContent =
+      ehDivida ? 'Ir para Dívida' : 'Ir para Projeto';
+  } else {
+    btnIrVinculo.classList.add('hidden');
+  }
 
   // Reset histórico (escondido até carregar)
   document.getElementById('details-history').classList.add('hidden');

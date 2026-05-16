@@ -647,7 +647,6 @@ function renderCard(d) {
           <span class="div-card-nome">${d.nome}</span>
           <span class="div-card-badge" style="color:${st.color}; background:${st.bg};">${st.label}</span>
           ${quitada && pago < total ? `<span class="tag-parcial" title="Encerrada antes de quitar o valor total">Parcial</span>` : ''}
-          ${!d.configurada ? `<button class="div-card-pendente-badge div-btn-editar" data-id="${d.id}" type="button" title="Configurar dívida">⚠ Configurar</button>` : ''}
         </div>
         <span class="div-card-credor">${d.credor || ''}</span>
       </div>
@@ -808,25 +807,6 @@ function bindEvents() {
 
   // Salvar dívida
   document.getElementById('form-divida').addEventListener('submit', saveDivida);
-
-  // Confirmar configuração da dívida (botão "Confirmar configuração" no modal)
-  document.getElementById('btn-confirmar-config').addEventListener('click', async () => {
-    if (!editingId) return;
-    const btn = document.getElementById('btn-confirmar-config');
-    btn.disabled = true;
-    const { error } = await supabase
-      .from('dividas')
-      .update({ configurada: true })
-      .eq('id', editingId);
-    btn.disabled = false;
-    if (error) {
-      showToast('Erro ao confirmar configuração: ' + error.message, 'error', 6000);
-      return;
-    }
-    showToast('Dívida marcada como configurada ✓', 'success');
-    closeModal('modal-divida');
-    await loadAll();
-  });
 
   // Excluir / Arquivar / Restaurar
   document.getElementById('btn-deletar-divida').addEventListener('click', async () => {
@@ -1078,45 +1058,6 @@ async function openModalDivida(id) {
 
   document.getElementById('modal-divida-title').textContent = d ? 'Editar dívida' : 'Nova dívida';
 
-  // ── Pendente de configuração ──────────────────────────────
-  const pendente = d && !d.configurada;
-  const banner   = document.getElementById('div-pendente-banner');
-  const btnConf  = document.getElementById('btn-confirmar-config');
-  banner.classList.toggle('hidden', !pendente);
-  btnConf.classList.toggle('hidden', !pendente);
-
-  // Pré-preenchimento silencioso a partir da subcategoria vinculada
-  if (pendente) {
-    try {
-      const { data: subs } = await supabase
-        .from('subcategorias')
-        .select('valor_base, iniciado_em, contato_id, conta_id')
-        .eq('divida_id', id)
-        .limit(5);
-
-      if (subs && subs.length > 0) {
-        // Agrupa múltiplos compromissos: soma valor_base, pega data mais antiga
-        const valorSugerido = subs.reduce((s, sub) => s + (Number(sub.valor_base) || 0), 0);
-        const dataSugerida  = subs.reduce((min, sub) => (!min || (sub.iniciado_em && sub.iniciado_em < min) ? sub.iniciado_em : min), null);
-        const sub0          = subs[0];
-
-        // Só pré-preenche se o campo ainda estiver vazio
-        const valorTotalEl = document.getElementById('div-valor-total');
-        if (valorSugerido > 0 && !valorTotalEl.value) writeDecimal('div-valor-total', valorSugerido, 2);
-        if (dataSugerida && !d.data_inicio) {
-          document.getElementById('div-data-inicio').value = dataSugerida;
-        }
-        if (sub0.conta_id && !d.conta_id) divContaPicker?.setValue(sub0.conta_id);
-        if (sub0.contato_id && !d.contato_id) credorPicker?.setValue(sub0.contato_id);
-
-        // Atualiza o texto do banner com a quantidade de compromissos
-        const nSubs = subs.length;
-        document.getElementById('div-pendente-banner-text').textContent =
-          `Esta dívida ainda não foi configurada. ${nSubs > 1 ? `${nSubs} compromissos vinculados detectados` : '1 compromisso vinculado detectado'} — campos pré-preenchidos para agilizar.`;
-      }
-    } catch { /* silencioso — pré-fill é best-effort */ }
-  }
-
   // Botão de exclusão muda comportamento conforme estado da dívida:
   // - Nova dívida (sem id) → escondido
   // - Arquivada → "Restaurar" (verde)
@@ -1308,10 +1249,6 @@ async function saveDivida(e) {
   btn.textContent = 'Salvando…';
 
   const user = await getCurrentUser();
-  // Ao salvar, herda o valor atual de configurada (não altera — usa btn-confirmar-config)
-  const configuradaAtual = editingId
-    ? (cachedDividas.find((x) => x.id === editingId)?.configurada ?? false)
-    : false;
 
   const payload = {
     nome, credor, valor_total, moeda,
@@ -1320,7 +1257,6 @@ async function saveDivida(e) {
     taxa_tipo, taxa_referencia,
     indice_correcao, correcao_taxa,
     data_inicio, data_vencimento, status, conta_id, contato_id, observacao,
-    configurada: configuradaAtual,
     user_id: user.id,
   };
 

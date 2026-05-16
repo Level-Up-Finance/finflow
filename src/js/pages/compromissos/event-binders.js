@@ -110,6 +110,7 @@ export function bindAllEvents(deps) {
     document.getElementById('comp-categoria').value = e.target.value;
     d.toggleDividaField();
     d.toggleProjetoField();
+    d.toggleVinculoBanner();
   });
 
   // Tipo selector
@@ -139,6 +140,7 @@ export function bindAllEvents(deps) {
   document.getElementById('comp-categoria').addEventListener('change', () => {
     d.toggleProjetoField();
     d.toggleDividaField();
+    d.toggleVinculoBanner();
   });
 
   // Select de projeto: "__new__" abre prompt pra criar inline
@@ -209,6 +211,23 @@ export function bindAllEvents(deps) {
     if (!c) return;
     closeModal('modal-details');
     d.openCompromissoModal(c);
+  });
+
+  // "Ir para Dívida/Projeto" — navega para a página fonte de verdade
+  document.getElementById('btn-ir-vinculo').addEventListener('click', () => {
+    const c = d.getDetailsCompromisso();
+    if (!c) return;
+    if (c.divida_id) {
+      location.href = `dividas.html?divida_id=${encodeURIComponent(c.divida_id)}`;
+    } else if (c.projeto_id) {
+      location.href = `investimentos.html?projeto_id=${encodeURIComponent(c.projeto_id)}`;
+    }
+  });
+
+  // "Ir para Dívidas/Investimentos" (do banner do form de criação)
+  document.getElementById('btn-comp-ir-pagina').addEventListener('click', () => {
+    const destino = document.getElementById('btn-comp-ir-pagina').dataset.destino;
+    location.href = destino === 'investimentos' ? 'investimentos.html' : 'dividas.html';
   });
 
   document.getElementById('btn-duplicar').addEventListener('click', () => {

@@ -87,10 +87,7 @@ function renderUnifiedRow(row, deps) {
     vinculoCell = `<span class="vinculo-badge vinculo-badge--projeto" data-vinculo-type="projeto" data-vinculo-id="${row.projeto_id}" style="--vinculo-cor:${proj?.cor};">${escapeHtml(proj?.nome ?? '—')}</span>`;
   } else if (row.divida_id) {
     const div = getDivida(row.divida_id);
-    const pendenteBadge = div && div.configurada === false
-      ? `<span class="div-pendente-chip" title="Dívida pendente de configuração — clique para configurar" data-divida-config="${row.divida_id}">⚠ Configurar</span>`
-      : '';
-    vinculoCell = `<span class="vinculo-badge vinculo-badge--divida" data-vinculo-type="divida" data-vinculo-id="${row.divida_id}">${escapeHtml(div?.nome ?? '—')}</span>${pendenteBadge}`;
+    vinculoCell = `<span class="vinculo-badge vinculo-badge--divida" data-vinculo-type="divida" data-vinculo-id="${row.divida_id}">${escapeHtml(div?.nome ?? '—')}</span>`;
   } else {
     vinculoCell = '<span class="text-muted">—</span>';
   }

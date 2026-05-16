@@ -7,6 +7,19 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-16-compromissos-divida-projeto-fonte-verdade',
+    version: '0.4.0',
+    date: '16/05/2026',
+    title: 'Refatoração — Dívidas e Projetos são fonte de verdade dos seus compromissos',
+    items: [
+      { type: 'improvement', text: 'Compromissos vinculados a Dívidas ou Projetos de Investimento agora só podem ser criados/editados pela página específica (Dívidas ou Investimentos). A página de Compromissos mostra os vínculos em modo leitura.' },
+      { type: 'new', text: 'Modal de detalhes do compromisso: para itens vinculados a Dívida/Projeto, os botões Editar / Duplicar / Atualizar valor / Arquivar / Encerrar são substituídos por "Ir para Dívida" ou "Ir para Projeto".' },
+      { type: 'new', text: 'Modal de novo compromisso: ao selecionar uma categoria de Dívida ou Investimento, o formulário esconde os campos e exibe um banner explicativo com botão direto para a página correta.' },
+      { type: 'fix', text: 'Removida coluna `configurada` da tabela `dividas` e todo o fluxo "⚠ Configurar" do v0.3.9 — substituídos pela nova arquitetura.' },
+      { type: 'improvement', text: 'Migração 0088 purga compromissos vinculados a dívidas/projetos existentes para garantir consistência com o novo modelo (a recriação será feita pela página específica em uma próxima versão).' },
+    ],
+  },
+  {
     id: '2026-05-16-dividas-pendente-config',
     version: '0.3.9',
     date: '16/05/2026',

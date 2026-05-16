@@ -180,6 +180,10 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
             Editar
           </button>
+          <button type="button" class="btn btn-primary hidden" id="btn-ir-vinculo">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+            <span id="btn-ir-vinculo-label">Ir para Dívida</span>
+          </button>
         </div>
       </div>
     </div>
@@ -196,6 +200,21 @@
       </div>
 
       <div class="modal-body">
+        <!-- Aviso: categoria de Dívida/Projeto exige criação pela página específica -->
+        <div id="comp-vinculo-banner" class="comp-vinculo-banner hidden">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+          <div style="flex:1;">
+            <strong id="comp-vinculo-banner-title">Compromissos desta categoria são criados pela página específica.</strong>
+            <p style="margin:4px 0 0; font-size: var(--fs-sm);" id="comp-vinculo-banner-text">
+              Dívidas e Projetos de Investimento gerenciam seus próprios compromissos para garantir que parcelas, regime e valores fiquem em sincronia.
+            </p>
+          </div>
+          <button type="button" class="btn btn-primary" id="btn-comp-ir-pagina">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+            <span id="btn-comp-ir-pagina-label">Ir para Dívidas</span>
+          </button>
+        </div>
+
         <!-- Nível: Nova subcategoria / Categoria existente -->
         <div class="field hidden" id="nivel-field">
           <label class="field-label">Criar como</label>
