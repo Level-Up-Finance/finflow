@@ -4682,6 +4682,16 @@ td .currency-split {
   font-weight: var(--fw-medium);
 }
 
+/* Linha extra para moedas estrangeiras nos KPI widgets */
+.kpi-extra-moeda {
+  display: block;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-1);
+  line-height: 1.2;
+}
+
 .invest-kpi-sub {
   font-size: var(--fs-sm);
   color: var(--color-text-secondary);

@@ -480,22 +480,43 @@ function initContatoPickerOnce() {
 // KPI widgets
 // -----------------------------
 function renderWidgets() {
-  const totalGeral    = cachedDividas.reduce((s, d) => s + Number(d.valor_total), 0);
-  const totalPago     = cachedDividas.reduce((s, d) => s + Number(d.valor_pago),  0);
-  const totalRestante = Math.max(0, totalGeral - totalPago);
+  // Agrupa por moeda para não somar valores de moedas diferentes
+  const byCurrency = {};
+  for (const d of cachedDividas) {
+    const moeda = d.moeda || 'BRL';
+    if (!byCurrency[moeda]) byCurrency[moeda] = { total: 0, pago: 0 };
+    byCurrency[moeda].total += Number(d.valor_total);
+    byCurrency[moeda].pago  += Number(d.valor_pago);
+  }
 
-  const pctPago     = totalGeral > 0 ? Math.min(100, (totalPago     / totalGeral) * 100) : 0;
-  const pctRestante = totalGeral > 0 ? Math.min(100, (totalRestante / totalGeral) * 100) : 0;
+  // Valores primários em BRL
+  const brl           = byCurrency['BRL'] || { total: 0, pago: 0 };
+  const totalGeralBRL = brl.total;
+  const totalPagoBRL  = brl.pago;
+  const totalRestBRL  = Math.max(0, totalGeralBRL - totalPagoBRL);
+
+  const pctPago     = totalGeralBRL > 0 ? Math.min(100, (totalPagoBRL / totalGeralBRL) * 100) : 0;
+  const pctRestante = totalGeralBRL > 0 ? Math.min(100, (totalRestBRL / totalGeralBRL) * 100) : 0;
+
+  // Linhas extras para cada moeda estrangeira
+  const nonBRL = Object.keys(byCurrency).filter(c => c !== 'BRL');
+  const extraHTML = (tipo) => nonBRL.map(code => {
+    const { total, pago } = byCurrency[code];
+    const val = tipo === 'restante' ? Math.max(0, total - pago) : pago;
+    return `<span class="kpi-extra-moeda">${formatCurrencyHTML(val, code)}</span>`;
+  }).join('');
+
+  const sufixo = nonBRL.length ? ' (R$)' : '';
 
   // Widget 1 — quanto falta pagar
-  document.getElementById('kpi-aberto-value').textContent = formatCurrency(totalRestante);
-  document.getElementById('kpi-aberto-sub').textContent   = `${fmtPct(pctRestante)} do total ainda em aberto`;
-  document.getElementById('kpi-aberto-chart').innerHTML   = renderDonutSVG(pctRestante, 'var(--color-danger)', 'lg');
+  document.getElementById('kpi-aberto-value').innerHTML = formatCurrencyHTML(totalRestBRL, 'BRL') + extraHTML('restante');
+  document.getElementById('kpi-aberto-sub').textContent = `${fmtPct(pctRestante)} do total ainda em aberto${sufixo}`;
+  document.getElementById('kpi-aberto-chart').innerHTML = renderDonutSVG(pctRestante, 'var(--color-danger)', 'lg');
 
   // Widget 2 — quanto já foi pago
-  document.getElementById('kpi-pago-value').textContent = formatCurrency(totalPago);
-  document.getElementById('kpi-pago-sub').textContent   = `${fmtPct(pctPago)} do total já pago`;
-  document.getElementById('kpi-pago-chart').innerHTML   = renderDonutSVG(pctPago, 'var(--color-success)', 'lg');
+  document.getElementById('kpi-pago-value').innerHTML = formatCurrencyHTML(totalPagoBRL, 'BRL') + extraHTML('pago');
+  document.getElementById('kpi-pago-sub').textContent  = `${fmtPct(pctPago)} do total já pago${sufixo}`;
+  document.getElementById('kpi-pago-chart').innerHTML  = renderDonutSVG(pctPago, 'var(--color-success)', 'lg');
 }
 
 // -----------------------------

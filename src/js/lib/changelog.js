@@ -7,6 +7,16 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-16-dividas-multimoeda-kpi',
+    version: '0.3.7',
+    date: '16/05/2026',
+    title: 'Dívidas — suporte a moeda estrangeira nos KPIs',
+    items: [
+      { type: 'new', text: 'Formulário de dívida: novo campo "Moeda" para configurar dívidas em BRL, USD, EUR ou GBP — valores exibidos na moeda correta em cards, tabelas e histórico' },
+      { type: 'fix', text: 'KPI "Total em aberto" e "Total pago": deixam de somar valores de moedas diferentes — BRL é exibido como valor principal; dívidas em moeda estrangeira aparecem como linha separada abaixo' },
+    ],
+  },
+  {
     id: '2026-05-16-dividas-tabelas-pdf',
     version: '0.3.6',
     date: '16/05/2026',
