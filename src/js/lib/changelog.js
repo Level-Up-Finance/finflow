@@ -7,6 +7,17 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-16-orcamento-readonly-mensal-12meses',
+    version: '0.5.1',
+    date: '16/05/2026',
+    title: 'Orçamento — abas Mensal e 12 meses são apenas visualização',
+    items: [
+      { type: 'improvement', text: 'Coluna "valor planejado" nas abas Mensal e 12 meses fica em modo somente leitura — edições só pela aba Configurações (ou pelas páginas de Dívidas/Projetos quando o compromisso é vinculado).' },
+      { type: 'improvement', text: 'Colunas, badges, tags e gráficos das abas de visualização permanecem inalterados; apenas inputs de edição são bloqueados.' },
+      { type: 'fix', text: 'saveCell agora ignora inputs com readonly/disabled — evita gravações acidentais a partir das abas de visualização.' },
+    ],
+  },
+  {
     id: '2026-05-16-orcamento-unificado-tabs',
     version: '0.5.0',
     date: '16/05/2026',

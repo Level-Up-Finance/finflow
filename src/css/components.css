@@ -4465,6 +4465,21 @@ td .currency-split {
   font-weight: var(--fw-semibold);
 }
 
+/* v0.5.1 — abas Mensal e 12 meses são read-only. Inputs aparecem como texto. */
+.orcamento-cell-edit[disabled],
+.orcamento-cell-edit[readonly],
+.orcamento-cell-edit-12m[readonly],
+.orcamento-cell-edit-12m.readonly-view {
+  background: transparent;
+  border-color: transparent;
+  cursor: default;
+  color: var(--color-text-main);
+  pointer-events: none;
+}
+.orcamento-cell-edit[disabled]:hover,
+.orcamento-cell-edit[readonly]:hover,
+.orcamento-cell-edit-12m[readonly]:hover { background: transparent; border-color: transparent; }
+
 /* Quando uma categoria de Dívida/Investimento é selecionada, esconde tudo
    exceto o banner e os campos de seleção de categoria — orienta o usuário
    a ir para a página específica em vez de continuar criando aqui. */

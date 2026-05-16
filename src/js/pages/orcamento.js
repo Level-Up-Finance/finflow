@@ -660,7 +660,8 @@ function renderEntryRow(entry) {
   // Input mostra valor em BRL (convertido). Edição em BRL → save converte de volta.
   const valorOrig = Number(entry.valor_previsto) || 0;
   const valorBRL = convertToBRL(valorOrig, moeda, entry);
-  const canEdit = isBRL || valorBRL !== null;
+  // v0.5.1: aba Mensal/12meses é apenas visualização — edição vive em Configurações
+  const canEdit = false;
   const inputValue = (valorBRL !== null ? valorBRL : valorOrig).toFixed(2);
 
   // Pra moeda estrangeira, mostra valor original abaixo como referência
@@ -809,6 +810,8 @@ function closeOccurrencePopover() {
 }
 
 async function saveCell(input) {
+  // v0.5.1: edição desativada — esta página agora é apenas visualização
+  if (input.disabled || input.readOnly) return;
   const id = input.dataset.orcamentoId;
   const newValueBRL = parseUserNumber(input.value); // Input está em BRL
   const entry = cachedOrcamento.find((x) => x.id === id);
@@ -1077,14 +1080,14 @@ function render12MonthsView() {
           const valorOrig = Number(entry.valor_previsto) || 0;
           const valorBRL = convertToBRL(valorOrig, entry.moeda || 'BRL', entry);
           const inputValue = (valorBRL !== null ? valorBRL : valorOrig).toFixed(2);
-          const canEdit = (entry.moeda === 'BRL') || valorBRL !== null;
           const monthLabel = `${String(m.month + 1).padStart(2, '0')}/${m.year}`;
+          // v0.5.1: aba 12 meses é apenas visualização — sempre readonly
           return `<td class="text-right value-cell ${currentClass}">
             <input type="text" inputmode="decimal"
-              class="orcamento-cell-edit-12m"
+              class="orcamento-cell-edit-12m readonly-view"
               data-orcamento-id="${entry.id}"
               value="${inputValue}"
-              ${editable && canEdit ? '' : 'readonly'}
+              readonly
               aria-label="Valor planejado de ${escapeHtml(sub.apelido?.trim() || sub.nome)} em ${monthLabel} em BRL"
             />
           </td>`;
