@@ -824,9 +824,11 @@ function openCompromissoModal(c = null) {
 
   openModal('modal-compromisso');
 
-  // Se rodando dentro do overlay do iframe (configuracoes.html), avisa o parent
-  // que o modal já está visível — ele pode revelar o iframe sem flash
+  // Se rodando dentro do overlay do iframe (configuracoes.html), restaura a
+  // visibilidade do documentElement (escondida pelo inline script do <head>
+  // para evitar flash do app-shell) e avisa o parent que o modal está pronto.
   if (new URLSearchParams(location.search).get('embedded') === '1') {
+    document.documentElement.style.visibility = '';
     window.parent.postMessage({ source: 'finflow-embedded', type: 'comp-ready' }, location.origin);
   }
 }
