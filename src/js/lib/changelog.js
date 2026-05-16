@@ -7,6 +7,17 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-16-categorias-modal-perf',
+    version: '0.3.3',
+    date: '16/05/2026',
+    title: 'Categorias — modal de compromisso instantâneo + ajustes visuais',
+    items: [
+      { type: 'fix',         text: 'Modal de compromisso na página Categorias: aparecia tela cinza sem conteúdo — corrigido em 3 camadas (visibilidade, parâmetro embedded e timing do postMessage)' },
+      { type: 'improvement', text: 'Modal de compromisso na página Categorias: abertura agora é instantânea — iframe pré-carregado em background com queries paralelas ao abrir a página' },
+      { type: 'improvement', text: 'Tabela de Categorias: colunas Categoria, Subcategoria e Vínculos com mesma largura; Transações reduzida ao mínimo necessário e centralizada; espaçamento lateral equilibrado' },
+    ],
+  },
+  {
     id: '2026-05-16-categorias-contatos-fixes',
     version: '0.3.2',
     date: '16/05/2026',
