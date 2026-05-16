@@ -7,6 +7,18 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-16-orcamento-meses-passados',
+    version: '0.5.2',
+    date: '16/05/2026',
+    title: 'Orçamento — aba "Meses passados" funcional',
+    items: [
+      { type: 'new', text: 'Aba "Meses passados": seletor de mês listando apenas meses dos últimos 12 que têm pagamentos lançados.' },
+      { type: 'new', text: 'Tabela do mês selecionado mostra cada compromisso com status (Pago/Cartão/Cancelado/Parcial), valor previsto e valor realizado, agrupados por categoria.' },
+      { type: 'new', text: 'Cartões de totalização ao final: total previsto, total realizado e diferença (verde se realizado ≤ previsto, vermelho caso contrário).' },
+      { type: 'improvement', text: 'Apenas visualização — nenhuma edição possível, conforme o modelo de fontes de verdade introduzido no v0.4.0.' },
+    ],
+  },
+  {
     id: '2026-05-16-orcamento-readonly-mensal-12meses',
     version: '0.5.1',
     date: '16/05/2026',

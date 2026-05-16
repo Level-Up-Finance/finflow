@@ -106,11 +106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadProjetos();
   await Promise.all([loadDividas(), loadRealizadoProjetos()]);
 
-  if (viewMode === 'passados') {
-    showPassadosPlaceholder();
-  } else {
-    await dispatchLoad();
-  }
+  await dispatchLoad();
 
   // Auto-refresh das cotações a cada 5 min
   if (autoRefreshHandle) clearInterval(autoRefreshHandle);
@@ -133,30 +129,199 @@ function bindEvents() {
 
 function dispatchLoad() {
   if (viewMode === 'yearly') return loadYearly();
-  if (viewMode === 'passados') return showPassadosPlaceholder();
+  if (viewMode === 'passados') return showPassadosView();
   return loadMonth();
 }
 
 /**
- * Placeholder pra aba "Meses passados" — v0.5.0 ainda não implementa a view.
- * Esconde os controles de mensal e mostra um cartão "Em breve".
+ * Aba "Meses passados" (v0.5.2): mostra o REALIZADO (pagamentos reais)
+ * dos últimos 12 meses. Apenas visualização. O usuário escolhe o mês
+ * num dropdown que lista somente os meses com dados.
  */
-function showPassadosPlaceholder() {
+async function showPassadosView() {
   document.querySelector('.orcamento-monthnav')?.classList.add('hidden');
   document.getElementById('frozen-banner')?.classList.add('hidden');
   document.getElementById('orcamento-summary')?.classList.add('hidden');
   document.getElementById('empty-state')?.classList.add('hidden');
   const container = document.getElementById('orcamento-container');
   if (!container) return;
-  container.innerHTML = `
-    <div class="empty-state" style="margin-top: var(--space-8);">
-      <div class="empty-state-icon">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+
+  container.innerHTML = '<div class="loading-overlay"><span class="spinner"></span>Carregando histórico…</div>';
+
+  // Descobre os meses (últimos 12) que têm pagamentos lançados
+  const today = new Date();
+  const minDate = new Date(today.getFullYear(), today.getMonth() - 11, 1);
+  const minISO  = `${minDate.getFullYear()}-${String(minDate.getMonth() + 1).padStart(2, '0')}-01`;
+  const todayISO = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+
+  const { data: monthsData, error: monthsErr } = await supabase
+    .from('pagamentos')
+    .select('mes_ano')
+    .gte('mes_ano', minISO)
+    .lt('mes_ano', todayISO)
+    .order('mes_ano', { ascending: false });
+
+  if (monthsErr) {
+    console.error('[showPassadosView months]', monthsErr);
+    container.innerHTML = `<div class="empty-state"><h2 class="empty-state-title">Erro ao carregar histórico</h2><p class="empty-state-message">${escapeHtml(monthsErr.message)}</p></div>`;
+    return;
+  }
+
+  // Deduplica meses
+  const monthSet = new Set();
+  for (const r of (monthsData || [])) monthSet.add(r.mes_ano);
+  const availableMonths = Array.from(monthSet).sort((a, b) => b.localeCompare(a));
+
+  if (availableMonths.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="margin-top: var(--space-6);">
+        <div class="empty-state-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+        </div>
+        <h2 class="empty-state-title">Nenhum mês com dados ainda</h2>
+        <p class="empty-state-message">A aba <strong>Meses passados</strong> mostrará o realizado quando houver pagamentos lançados nos últimos 12 meses.</p>
       </div>
-      <h2 class="empty-state-title">Em breve: histórico de meses passados</h2>
-      <p class="empty-state-message">A aba <strong>Meses passados</strong> vai mostrar o realizado dos últimos 12 meses, apenas para visualização. Disponível na próxima versão.</p>
+    `;
+    return;
+  }
+
+  // Pré-seleciona o mês mais recente
+  const selected = availableMonths[0];
+  await renderPassadosForMonth(container, availableMonths, selected);
+}
+
+function monthAnoLabel(mesAno) {
+  const [y, m] = mesAno.split('-').map(Number);
+  const date = new Date(y, m - 1, 1);
+  const fmt = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  return fmt.charAt(0).toUpperCase() + fmt.slice(1);
+}
+
+async function renderPassadosForMonth(container, availableMonths, selectedMesAno) {
+  container.innerHTML = '<div class="loading-overlay"><span class="spinner"></span>Carregando…</div>';
+
+  // Carrega pagamentos do mês selecionado
+  const { data: pagamentos, error } = await supabase
+    .from('pagamentos')
+    .select('id, subcategoria_id, valor_previsto, valor_real, moeda, status, data_vencimento, observacao')
+    .eq('mes_ano', selectedMesAno)
+    .order('data_vencimento', { ascending: true });
+
+  if (error) {
+    console.error('[renderPassadosForMonth]', error);
+    container.innerHTML = `<div class="empty-state"><p class="empty-state-message">${escapeHtml(error.message)}</p></div>`;
+    return;
+  }
+
+  // Agrupa por categoria → subcategoria
+  const subById = new Map(cachedSubcategorias.map((s) => [s.id, s]));
+  const catById = new Map(cachedCategorias.map((c) => [c.id, c]));
+  const groups = new Map(); // categoriaId → { categoria, rows: [] }
+
+  for (const p of (pagamentos || [])) {
+    const sub = subById.get(p.subcategoria_id);
+    if (!sub) continue;
+    const cat = catById.get(sub.categoria_id);
+    if (!cat) continue;
+    if (!groups.has(cat.id)) groups.set(cat.id, { categoria: cat, rows: [] });
+    groups.get(cat.id).rows.push({ pagamento: p, sub });
+  }
+
+  // Picker + cards por categoria
+  const pickerHtml = `
+    <div class="orcamento-monthnav" style="justify-content: flex-start; gap: var(--space-3); margin-bottom: var(--space-4);">
+      <label for="passados-mes-picker" style="font-size: var(--fs-sm); color: var(--color-text-muted); font-weight: var(--fw-medium);">Mês:</label>
+      <select id="passados-mes-picker" class="select" style="max-width: 240px;">
+        ${availableMonths.map((m) => `<option value="${m}" ${m === selectedMesAno ? 'selected' : ''}>${monthAnoLabel(m)}</option>`).join('')}
+      </select>
     </div>
   `;
+
+  if (groups.size === 0) {
+    container.innerHTML = `
+      ${pickerHtml}
+      <div class="empty-state"><p class="empty-state-message">Sem pagamentos lançados em ${monthAnoLabel(selectedMesAno)}.</p></div>
+    `;
+    bindPassadosPicker(container, availableMonths);
+    return;
+  }
+
+  // Render por categoria (apenas visualização)
+  let totalRealizado = 0;
+  let totalPrevisto = 0;
+  const html = Array.from(groups.values()).map(({ categoria, rows }) => {
+    const subRows = rows.map(({ pagamento, sub }) => {
+      const real     = Number(pagamento.valor_real) || 0;
+      const previsto = Number(pagamento.valor_previsto) || 0;
+      totalRealizado += real;
+      totalPrevisto  += previsto;
+      const statusClass = ({
+        'Pago':        'status-pago',
+        'Cartão':      'status-cartao',
+        'Transferido': 'status-pago',
+        'Agendado':    'status-agendado',
+        'Cancelado':   'status-cancelado',
+        'Parcial':     'status-parcial',
+      })[pagamento.status] || '';
+      return `
+        <tr class="orcamento-row" data-pagamento-id="${pagamento.id}">
+          <td>${escapeHtml(sub.apelido?.trim() || sub.nome)}</td>
+          <td><span class="status-pill ${statusClass}">${pagamento.status}</span></td>
+          <td class="text-right tabular">${formatCurrency(previsto, pagamento.moeda || 'BRL')}</td>
+          <td class="text-right tabular">${formatCurrency(real, pagamento.moeda || 'BRL')}</td>
+          <td class="text-muted" style="font-size: var(--fs-xs);">${escapeHtml(pagamento.observacao || '')}</td>
+        </tr>
+      `;
+    }).join('');
+
+    return `
+      <section class="orcamento-categoria-section" style="margin-bottom: var(--space-5);">
+        <header class="orcamento-categoria-header" style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2);">
+          <span style="width: 10px; height: 10px; border-radius: 50%; background: ${categoria.cor};"></span>
+          <h3 style="font-family: var(--font-display); font-size: var(--fs-base); font-weight: var(--fw-semibold); margin: 0;">${escapeHtml(categoria.nome)}</h3>
+        </header>
+        <table class="table table-sm">
+          <thead><tr>
+            <th>Compromisso</th>
+            <th style="width: 130px;">Status</th>
+            <th class="text-right" style="width: 130px;">Previsto</th>
+            <th class="text-right" style="width: 130px;">Realizado</th>
+            <th>Observação</th>
+          </tr></thead>
+          <tbody>${subRows}</tbody>
+        </table>
+      </section>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    ${pickerHtml}
+    ${html}
+    <div class="orcamento-summary" id="passados-summary" style="margin-top: var(--space-4);">
+      <div class="orcamento-summary-card">
+        <div class="orcamento-summary-label">Total previsto</div>
+        <div class="orcamento-summary-value">${formatCurrency(totalPrevisto, 'BRL')}</div>
+      </div>
+      <div class="orcamento-summary-card">
+        <div class="orcamento-summary-label">Total realizado</div>
+        <div class="orcamento-summary-value">${formatCurrency(totalRealizado, 'BRL')}</div>
+      </div>
+      <div class="orcamento-summary-card">
+        <div class="orcamento-summary-label">Diferença</div>
+        <div class="orcamento-summary-value ${totalRealizado <= totalPrevisto ? 'dre-positive' : 'dre-negative'}">${formatCurrency(totalRealizado - totalPrevisto, 'BRL')}</div>
+      </div>
+    </div>
+  `;
+
+  bindPassadosPicker(container, availableMonths);
+}
+
+function bindPassadosPicker(container, availableMonths) {
+  const picker = container.querySelector('#passados-mes-picker');
+  if (!picker) return;
+  picker.addEventListener('change', (e) => {
+    renderPassadosForMonth(container, availableMonths, e.target.value);
+  });
 }
 
 function navigate(delta) {
