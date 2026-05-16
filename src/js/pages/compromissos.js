@@ -308,7 +308,7 @@ async function criarProjeto(nome) {
 async function loadDividas() {
   const { data, error } = await supabase
     .from('dividas')
-    .select('id, nome, credor, status, valor_total, valor_pago')
+    .select('id, nome, credor, status, valor_total, valor_pago, configurada')
     .order('nome');
   if (error) {
     if (!/relation.*dividas/i.test(error.message)) {

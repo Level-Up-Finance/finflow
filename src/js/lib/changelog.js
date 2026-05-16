@@ -7,6 +7,19 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-16-dividas-pendente-config',
+    version: '0.3.9',
+    date: '16/05/2026',
+    title: 'Dívidas — indicador de configuração pendente',
+    items: [
+      { type: 'new', text: 'Dívidas sem configuração (regime não definido) exibem badge amarelo "⚠ Configurar" no card e na tabela — clique direto abre o modal para configurar' },
+      { type: 'new', text: 'Modal da dívida: banner de aviso quando a dívida ainda não foi configurada + campos pré-preenchidos automaticamente a partir dos compromissos vinculados (valor, data de início, conta, credor)' },
+      { type: 'new', text: 'Botão "Confirmar configuração" no modal: marca a dívida como configurada de forma explícita, sem alterar os demais campos' },
+      { type: 'new', text: 'Página de Compromissos: chip "⚠ Configurar" ao lado do nome da dívida em linhas vinculadas a dívidas não configuradas' },
+      { type: 'improvement', text: 'Migration retroativa: dívidas existentes com regime definido são automaticamente marcadas como configuradas' },
+    ],
+  },
+  {
     id: '2026-05-16-kpi-cambio-real',
     version: '0.3.8',
     date: '16/05/2026',
