@@ -334,6 +334,7 @@
   animation: modal-slide-up var(--transition-slow);
 }
 
+.modal-xl { max-width: 1060px; }
 .modal-lg { max-width: 760px; }
 .modal-md { max-width: 560px; }
 .modal-sm { max-width: 420px; }
