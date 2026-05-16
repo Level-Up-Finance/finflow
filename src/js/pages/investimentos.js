@@ -20,6 +20,7 @@ import { initContatoPicker } from '../components/contato-picker.js';
 import { parseDecimal, formatDecimal, autoAttachDecimalInputs } from '../lib/number-format.js';
 import { bindSimulador } from './investimentos/simulator.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
+import { fetchExchangeRate } from '../lib/currency.js';
 
 let cachedProjetos = [];
 let cachedSubcategorias = []; // só as do grupo investimentos
@@ -256,7 +257,7 @@ function bindEvents() {
 // -----------------------------
 // Render
 // -----------------------------
-function render() {
+async function render() {
   // Counters por status
   const counts = { todos: cachedProjetos.length, ativo: 0, concluido: 0, pausado: 0, arquivado: 0 };
   cachedProjetos.forEach((p) => { counts[p.status] = (counts[p.status] || 0) + 1; });
@@ -266,7 +267,7 @@ function render() {
   });
 
   // KPIs (Widget 1: total universal · Widget 2: projetos com meta)
-  renderWidgets(counts);
+  await renderWidgets(counts);
 
   const container  = document.getElementById('projetos-container');
   const emptyState = document.getElementById('empty-state');
@@ -310,18 +311,56 @@ function render() {
 // -----------------------------
 // KPI widgets (topo da página)
 // -----------------------------
-function renderWidgets(counts) {
-  // ===== Widget 1: Total investido universal =====
-  const ativosNaoArq = cachedProjetos.filter((p) => p.status !== 'arquivado');
-  const totalUniversal = ativosNaoArq.reduce((sum, p) => sum + calcRealizado(p.id), 0);
+async function renderWidgets(counts) {
+  const ativosNaoArq = cachedProjetos.filter(p => p.status !== 'arquivado');
 
-  document.getElementById('kpi-universal-value').textContent = formatCurrency(totalUniversal, 'BRL');
+  // Agrupa realizado por moeda do projeto
+  const byCurrency = {};
+  for (const p of ativosNaoArq) {
+    const moeda = p.moeda || 'BRL';
+    if (!byCurrency[moeda]) byCurrency[moeda] = { realizado: 0, meta: 0, comMeta: 0 };
+    byCurrency[moeda].realizado += calcRealizado(p.id);
+    if (Number(p.meta_valor) > 0) {
+      byCurrency[moeda].meta    += Number(p.meta_valor);
+      byCurrency[moeda].comMeta += 1;
+    }
+  }
+
+  const allCodes = Object.keys(byCurrency);
+  const nonBRL   = allCodes.filter(c => c !== 'BRL');
+
+  // Câmbio para moedas estrangeiras (paralelo)
+  const ratesMap = {};
+  if (nonBRL.length > 0) {
+    await Promise.all(nonBRL.map(async code => {
+      try { ratesMap[code] = await fetchExchangeRate(code, 'BRL'); }
+      catch { ratesMap[code] = 0; }
+    }));
+  }
+
+  const toBRL = (val, code) => code === 'BRL' ? val : val * (ratesMap[code] || 0);
+
+  // ===== Widget 1: Total investido universal (convertido p/ BRL) =====
+  let totalUniversalBRL = 0;
+  for (const [code, { realizado }] of Object.entries(byCurrency)) {
+    totalUniversalBRL += toBRL(realizado, code);
+  }
+
+  const hasMultiple = allCodes.length > 1;
+  const breakdownHTML = hasMultiple
+    ? ['BRL', ...nonBRL.sort()]
+        .filter(code => byCurrency[code])
+        .map(code => `<span class="kpi-extra-moeda">${formatCurrencyHTML(byCurrency[code].realizado, code)}</span>`)
+        .join('')
+    : '';
+
+  document.getElementById('kpi-universal-value').innerHTML = formatCurrencyHTML(totalUniversalBRL, 'BRL') + breakdownHTML;
   document.getElementById('kpi-universal-sub').textContent =
     `${counts.ativo} projeto${counts.ativo === 1 ? '' : 's'} ativo${counts.ativo === 1 ? '' : 's'}`;
   document.getElementById('kpi-universal-chart').innerHTML = renderUniversalSparkline(ativosNaoArq);
 
-  // ===== Widget 2: Projetos com meta =====
-  const projetosComMeta = ativosNaoArq.filter((p) => Number(p.meta_valor) > 0);
+  // ===== Widget 2: Projetos com meta (convertido p/ BRL) =====
+  const projetosComMeta = ativosNaoArq.filter(p => Number(p.meta_valor) > 0);
   const valueEl = document.getElementById('kpi-meta-value');
   const subEl   = document.getElementById('kpi-meta-sub');
   const chartEl = document.getElementById('kpi-meta-chart');
@@ -333,14 +372,23 @@ function renderWidgets(counts) {
     return;
   }
 
-  const metaTotal = projetosComMeta.reduce((sum, p) => sum + (Number(p.meta_valor) || 0), 0);
-  const metaRealizado = projetosComMeta.reduce((sum, p) => sum + calcRealizado(p.id), 0);
-  const pctMeta = metaTotal > 0 ? Math.min(100, (metaRealizado / metaTotal) * 100) : 0;
+  let metaTotalBRL    = 0;
+  let metaRealizadoBRL = 0;
+  for (const [code, { meta, realizado, comMeta }] of Object.entries(byCurrency)) {
+    if (comMeta === 0) continue;
+    metaTotalBRL    += toBRL(meta, code);
+    metaRealizadoBRL += toBRL(
+      projetosComMeta
+        .filter(p => (p.moeda || 'BRL') === code)
+        .reduce((s, p) => s + calcRealizado(p.id), 0),
+      code
+    );
+  }
+  const pctMeta = metaTotalBRL > 0 ? Math.min(100, (metaRealizadoBRL / metaTotalBRL) * 100) : 0;
 
-  // Valor agora é o total investido em projetos com meta; % vai pro centro do donut
-  valueEl.textContent = formatCurrency(metaRealizado, 'BRL');
+  valueEl.innerHTML = formatCurrencyHTML(metaRealizadoBRL, 'BRL');
   subEl.textContent =
-    `${projetosComMeta.length} projeto${projetosComMeta.length === 1 ? '' : 's'} · meta ${formatCurrency(metaTotal, 'BRL')}`;
+    `${projetosComMeta.length} projeto${projetosComMeta.length === 1 ? '' : 's'} · meta ${formatCurrency(metaTotalBRL, 'BRL')}`;
   chartEl.innerHTML = renderMetaDonut(pctMeta);
 }
 

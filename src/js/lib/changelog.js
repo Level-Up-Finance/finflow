@@ -7,6 +7,18 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-16-kpi-cambio-real',
+    version: '0.3.8',
+    date: '16/05/2026',
+    title: 'KPIs com câmbio do dia — Dívidas e Investimentos',
+    items: [
+      { type: 'improvement', text: 'Dívidas — "Total em aberto": valor principal agora é a soma de todas as dívidas convertidas para R$ usando o câmbio do dia (Frankfurter API); abaixo aparecem os valores originais por moeda (R$, USD, EUR, GBP…)' },
+      { type: 'improvement', text: 'Dívidas — "Total pago": exibe apenas o total pago em R$ (moeda principal), sem linhas adicionais de outras moedas' },
+      { type: 'improvement', text: 'Investimentos — "Total investido": valor principal convertido para R$ usando câmbio do dia; breakdown por moeda nas linhas abaixo quando há projetos em múltiplas moedas' },
+      { type: 'improvement', text: 'Investimentos — "Projetos com meta": realizado e meta também convertidos para R$ para comparação consistente' },
+    ],
+  },
+  {
     id: '2026-05-16-dividas-multimoeda-kpi',
     version: '0.3.7',
     date: '16/05/2026',
