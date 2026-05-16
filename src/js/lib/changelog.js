@@ -7,6 +7,21 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-16-dividas-tabelas-pdf',
+    version: '0.3.6',
+    date: '16/05/2026',
+    title: 'Dívidas — taxa efetiva nas tabelas, layout consistente e exportar PDF',
+    items: [
+      { type: 'new',         text: 'Tabela de amortização e histórico de pagamentos: nova coluna "Taxa (% a.m.)" mostrando a taxa real de cada parcela paga (juros ÷ saldo inicial), e a taxa estimada vigente para parcelas futuras' },
+      { type: 'new',         text: 'Tabela de amortização: nova coluna "Pago em" mostrando a data real de pagamento nas parcelas já quitadas' },
+      { type: 'new',         text: 'Exportar PDF: botão em ambos os modais (tabela de amortização e histórico) gera PDF completo com cabeçalho, resumo e tabela formatada' },
+      { type: 'improvement', text: 'Tabela de amortização: resumo reformulado — exibe saldo devedor atual, próxima parcela, taxa vigente e totais projetados' },
+      { type: 'improvement', text: 'Cards de dívida: meta-informações reorganizadas em duas linhas fixas (linha 1: datas e taxa; linha 2: regime, parcelas e conta) — visual idêntico em todos os cards' },
+      { type: 'improvement', text: 'KPI widgets: "Total em aberto" e "Total pago" agora com o mesmo estilo de fonte e peso' },
+      { type: 'improvement', text: 'Aba "Taxas" removida do histórico de dívidas — a taxa já é exibida por linha na tabela de pagamentos' },
+    ],
+  },
+  {
     id: '2026-05-16-dividas-form-simplificado',
     version: '0.3.5',
     date: '16/05/2026',
