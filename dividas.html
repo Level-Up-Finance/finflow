@@ -97,6 +97,15 @@
       </div>
       <form id="form-divida">
         <div class="modal-body">
+          <!-- Toggle Básico / Avançado -->
+          <div class="div-mode-bar" id="div-mode-bar">
+            <span class="div-mode-bar-label">Modo:</span>
+            <div class="view-toggle view-toggle--text div-mode-toggle" id="div-mode-toggle">
+              <button type="button" class="view-toggle-btn active" id="btn-modo-basico" data-mode="basico">Básico</button>
+              <button type="button" class="view-toggle-btn" id="btn-modo-avancado" data-mode="avancado">Avançado</button>
+            </div>
+          </div>
+
           <div class="field-group" style="grid-template-columns: 1fr 1fr;">
             <div class="field">
               <label class="field-label" for="div-nome" data-i18n-key="dividas.modal.label.nome">Nome da dívida *</label>
@@ -116,7 +125,7 @@
               <label class="field-label" for="div-valor-total">Valor total *</label>
               <input class="input input-decimal" id="div-valor-total" type="text" inputmode="decimal" placeholder="0,00" required>
             </div>
-            <div class="field">
+            <div class="field div-advanced-only">
               <label class="field-label" for="div-juros-tipo">Origem da taxa</label>
               <select class="select" id="div-juros-tipo">
                 <optgroup label="Manual">
@@ -135,6 +144,15 @@
             </div>
           </div>
 
+          <!-- Básico: tem juros? -->
+          <div class="field div-basic-only" id="div-tem-juros-field">
+            <label class="field-label">A dívida tem juros?</label>
+            <div class="view-toggle view-toggle--text" id="div-tem-juros-toggle" style="max-width:240px;">
+              <button type="button" class="view-toggle-btn" id="btn-juros-nao" data-juros="nao">Não</button>
+              <button type="button" class="view-toggle-btn active" id="btn-juros-sim" data-juros="sim">Sim</button>
+            </div>
+          </div>
+
           <div class="field-group" style="grid-template-columns: 1fr 1fr;">
             <div class="field">
               <label class="field-label" id="div-juros-label" for="div-juros">Juros ao mês (%)</label>
@@ -150,11 +168,35 @@
           <!-- Regime de amortização (linha completa) -->
           <div class="field">
             <label class="field-label">Regime</label>
-            <div class="view-toggle view-toggle--text" id="div-regime-seg" style="width:100%;">
-              <button type="button" class="view-toggle-btn active" data-regime="" style="flex:1;">Nenhum</button>
-              <button type="button" class="view-toggle-btn" data-regime="SAC" style="flex:1;">SAC</button>
-              <button type="button" class="view-toggle-btn" data-regime="Price" style="flex:1;">Price</button>
-              <button type="button" class="view-toggle-btn" data-regime="Customizado" style="flex:1;">Customizado</button>
+            <div class="div-advanced-only">
+              <div class="view-toggle view-toggle--text" id="div-regime-seg" style="width:100%;">
+                <button type="button" class="view-toggle-btn active" data-regime="" style="flex:1;">Nenhum</button>
+                <button type="button" class="view-toggle-btn" data-regime="SAC" style="flex:1;">SAC</button>
+                <button type="button" class="view-toggle-btn" data-regime="Price" style="flex:1;">Price</button>
+                <button type="button" class="view-toggle-btn" data-regime="Customizado" style="flex:1;">Customizado</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Básico: cards de regime amigáveis -->
+          <div class="field div-basic-only" id="div-regime-basico-field">
+            <label class="field-label">Como são as parcelas?</label>
+            <div class="div-regime-cards" id="div-regime-cards">
+              <button type="button" class="div-regime-card" data-basic-regime="" id="brc-nenhum">
+                <span class="div-regime-card-icon">➖</span>
+                <span class="div-regime-card-title">Sem parcelas fixas</span>
+                <span class="div-regime-card-desc">Registro os pagamentos manualmente</span>
+              </button>
+              <button type="button" class="div-regime-card active" data-basic-regime="Price" id="brc-price">
+                <span class="div-regime-card-icon">🔄</span>
+                <span class="div-regime-card-title">Parcelas iguais</span>
+                <span class="div-regime-card-desc">Pago o mesmo valor todo mês</span>
+              </button>
+              <button type="button" class="div-regime-card" data-basic-regime="SAC" id="brc-sac">
+                <span class="div-regime-card-icon">📉</span>
+                <span class="div-regime-card-title">Parcelas que diminuem</span>
+                <span class="div-regime-card-desc">Começo pagando mais e vou diminuindo</span>
+              </button>
             </div>
           </div>
 
@@ -178,6 +220,13 @@
           <div class="field hidden" id="div-fases-field">
             <label class="field-label">Fases das parcelas</label>
             <div id="div-fases-list" class="div-fases-list"></div>
+            <div class="field" id="div-auto-ultima-field" style="margin-top:var(--space-3);">
+              <label class="div-auto-ultima-toggle" id="div-auto-ultima-label">
+                <input type="checkbox" id="div-auto-ultima" style="width:16px;height:16px;accent-color:var(--color-primary);cursor:pointer;flex-shrink:0;">
+                <span>Calcular última parcela pelo saldo devedor</span>
+                <span class="field-hint" style="display:block;margin-top:2px;">O sistema quita automaticamente o saldo restante + juros do mês.</span>
+              </label>
+            </div>
             <button type="button" class="btn btn-sm btn-ghost" id="btn-add-fase" style="margin-top: var(--space-2);">+ Adicionar fase</button>
             <p class="field-hint">Ex: parcelas 1–6 de R$124,48 + parcelas 7–60 de R$216,70 (carência ou parcelas variáveis).</p>
           </div>
@@ -200,7 +249,7 @@
           </div>
 
           <!-- Correção monetária -->
-          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+          <div class="field-group div-advanced-only" style="grid-template-columns: 1fr 1fr;">
             <div class="field">
               <label class="field-label" for="div-indice-correcao">Correção monetária</label>
               <select class="select" id="div-indice-correcao">
@@ -412,6 +461,10 @@
             <span class="pagar-parcela-row-label">Desconto</span>
             <span class="pagar-parcela-row-val" id="pagar-parcela-desconto-val">—</span>
           </div>
+          <div class="pagar-parcela-row hidden" id="pagar-ultima-parcela-row">
+            <span class="pagar-parcela-row-label">Nova última parcela (estimada)</span>
+            <span class="pagar-parcela-row-val" id="pagar-ultima-parcela-val">—</span>
+          </div>
           <div class="pagar-parcela-row pagar-parcela-row--total">
             <span class="pagar-parcela-row-label">Total sugerido</span>
             <span class="pagar-parcela-row-val" id="pagar-parcela-total-val">—</span>
@@ -496,6 +549,7 @@
                 <th class="text-right tabular">Saldo inicial</th>
                 <th class="text-right tabular">Amortização</th>
                 <th class="text-right tabular">Juros</th>
+                <th class="text-right tabular">Desconto</th>
                 <th class="text-right tabular">Parcela</th>
                 <th class="text-right tabular">Saldo final</th>
               </tr>

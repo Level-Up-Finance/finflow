@@ -54,19 +54,19 @@ function _price(P, i, n) {
  * Customizado: parcelas seguem fases pré-definidas.
  * Cada fase é { de, ate, valor }. Juros é calculado da taxa × saldo,
  * amortização = parcela − juros (mas nunca negativa).
+ *
+ * Fase com { auto: true } calcula a parcela como saldo residual + juros
+ * (útil para a última parcela de quitação total do saldo devedor).
  */
 function _customizado(P, i, n, fases) {
   const rows = [];
   let S = P;
-  const valorParcela = (k) => {
-    for (const f of fases) {
-      if (k >= f.de && k <= f.ate) return Number(f.valor) || 0;
-    }
-    return 0;
-  };
+  const getFase  = (k) => fases.find((f) => k >= f.de && k <= f.ate);
   for (let k = 1; k <= n; k++) {
-    const pmt = valorParcela(k);
+    const f   = getFase(k);
     const J   = S * i;
+    // Se a fase é "auto", a parcela quita exatamente o saldo restante + juros deste mês
+    const pmt = f?.auto ? S + J : (Number(f?.valor) || 0);
     const A   = Math.max(0, pmt - J);  // carência só de juros → amortização zerada
     const Sf  = Math.max(0, S - A);
     rows.push({ n: k, saldo_inicial: S, amortizacao: A, juros: J, parcela: pmt, saldo_final: Sf });
@@ -109,7 +109,8 @@ export function validarFases(fases, nTotal) {
   for (let k = 0; k < sorted.length; k++) {
     const f = sorted[k];
     if (f.de > f.ate) return `Fase inválida: ${f.de}–${f.ate}`;
-    if (!(Number(f.valor) > 0)) return `Fase ${f.de}–${f.ate}: valor deve ser positivo`;
+    // Fases com auto:true não precisam de valor fixo
+    if (!f.auto && !(Number(f.valor) > 0)) return `Fase ${f.de}–${f.ate}: valor deve ser positivo`;
     if (k > 0 && sorted[k].de !== sorted[k - 1].ate + 1) {
       return `Gap entre fases ${sorted[k - 1].ate} e ${sorted[k].de}`;
     }

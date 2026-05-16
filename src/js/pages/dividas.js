@@ -56,6 +56,10 @@ function setRegime(regime) {
   document.querySelectorAll('#div-regime-seg .view-toggle-btn').forEach((b) => {
     b.classList.toggle('active', b.dataset.regime === (regime ?? ''));
   });
+  // Keep basic mode cards in sync
+  document.querySelectorAll('#div-regime-cards .div-regime-card').forEach((c) => {
+    c.classList.toggle('active', c.dataset.basicRegime === (regime ?? ''));
+  });
   document.getElementById('div-n-parcelas-field').classList.toggle('hidden', !regime);
   document.getElementById('div-fases-field').classList.toggle('hidden', regime !== 'Customizado');
 
@@ -138,6 +142,30 @@ function setIndiceCorrecao(idx) {
   document.getElementById('div-correcao-taxa-field').classList.toggle('hidden', i !== 'fixo');
 }
 
+function setDivFormMode(mode) {
+  divFormMode = mode || 'basico';
+  localStorage.setItem('finflow_div_form_mode', divFormMode);
+  const modal = document.getElementById('modal-divida');
+  if (!modal) return;
+  modal.classList.toggle('div-mode-basico', divFormMode === 'basico');
+  document.querySelectorAll('#div-mode-toggle .view-toggle-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.mode === divFormMode);
+  });
+  // Sync basic regime cards with the active advanced regime
+  if (divFormMode === 'basico') {
+    const activeRegime = document.querySelector('#div-regime-seg .view-toggle-btn.active')?.dataset.regime ?? '';
+    document.querySelectorAll('#div-regime-cards .div-regime-card').forEach((c) => {
+      c.classList.toggle('active', c.dataset.basicRegime === activeRegime);
+    });
+    // Sync "tem juros?" toggle
+    const taxa = parseFloat(document.getElementById('div-juros')?.value?.replace(',', '.') || '0') || 0;
+    const temJuros = taxa > 0;
+    document.querySelectorAll('#div-tem-juros-toggle .view-toggle-btn').forEach((b) => {
+      b.classList.toggle('active', b.dataset.juros === (temJuros ? 'sim' : 'nao'));
+    });
+  }
+}
+
 // -----------------------------
 // Fases editor
 // -----------------------------
@@ -145,27 +173,40 @@ function renderFasesList() {
   const list = document.getElementById('div-fases-list');
   if (!list) return;
   if (editingFases.length === 0) { list.innerHTML = ''; return; }
-  list.innerHTML = editingFases.map((f, idx) => `
+
+  const autoUltimaChecked = document.getElementById('div-auto-ultima')?.checked ?? false;
+
+  list.innerHTML = editingFases.map((f, idx) => {
+    const isLast = idx === editingFases.length - 1;
+    const isAutoRow = isLast && autoUltimaChecked;
+    return `
     <div class="div-fase-row" data-idx="${idx}">
       <span class="div-fase-row-label">Parcelas</span>
       <input type="number" class="input input-sm fase-de"  value="${f.de}"  min="1" step="1" placeholder="de">
       <span class="div-fase-row-label">a</span>
       <input type="number" class="input input-sm fase-ate" value="${f.ate}" min="1" step="1" placeholder="até">
       <span class="div-fase-row-label">de R$</span>
-      <input type="text" inputmode="decimal" class="input input-sm input-decimal fase-valor" value="${f.valor ? formatDecimal(f.valor, 2) : ''}" placeholder="0,00">
+      ${isAutoRow
+        ? `<span class="input input-sm" style="background:var(--color-surface-alt);color:var(--color-text-muted);font-size:var(--fs-xs);display:inline-flex;align-items:center;width:140px;">Automático</span>`
+        : `<input type="text" inputmode="decimal" class="input input-sm input-decimal fase-valor" value="${f.valor ? formatDecimal(f.valor, 2) : ''}" placeholder="0,00">`
+      }
       <button type="button" class="btn btn-ghost btn-sm fase-remove" aria-label="Remover">×</button>
     </div>
-  `).join('');
+  `;
+  }).join('');
+
   list.querySelectorAll('.div-fase-row').forEach((row) => {
     const idx = parseInt(row.dataset.idx);
     row.querySelector('.fase-de').addEventListener('input', (e) => editingFases[idx].de = parseInt(e.target.value) || 0);
     row.querySelector('.fase-ate').addEventListener('input', (e) => editingFases[idx].ate = parseInt(e.target.value) || 0);
     const valorEl = row.querySelector('.fase-valor');
-    valorEl.addEventListener('input', (e) => editingFases[idx].valor = parseDecimal(e.target.value) || 0);
-    valorEl.addEventListener('blur', (e) => {
-      const n = parseDecimal(e.target.value);
-      e.target.value = n == null ? '' : formatDecimal(n, 2);
-    });
+    if (valorEl) {
+      valorEl.addEventListener('input', (e) => editingFases[idx].valor = parseDecimal(e.target.value) || 0);
+      valorEl.addEventListener('blur', (e) => {
+        const n = parseDecimal(e.target.value);
+        e.target.value = n == null ? '' : formatDecimal(n, 2);
+      });
+    }
     row.querySelector('.fase-remove').addEventListener('click', () => {
       editingFases.splice(idx, 1);
       renderFasesList();
@@ -252,6 +293,9 @@ let pagarDescEditado       = false; // true após o usuário editar manualmente 
 let atualizarTaxaId        = null;
 let editingFases           = []; // fases sendo editadas no modal de dívida
 let viewMode               = 'cards'; // 'cards' | 'table' | 'gantt'
+
+// ── Modo do formulário (básico / avançado) ────────────────────────────────
+let divFormMode = localStorage.getItem('finflow_div_form_mode') || 'basico';
 let ganttZoom              = '1ano';  // '1ano' | '3anos' | '5anos'
 let colVisEl               = null;
 
@@ -639,6 +683,39 @@ function bindEvents() {
   // Correção monetária
   document.getElementById('div-indice-correcao').addEventListener('change', (e) => setIndiceCorrecao(e.target.value));
 
+  // Mode toggle (Básico / Avançado)
+  document.getElementById('div-mode-toggle')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-mode]');
+    if (btn) setDivFormMode(btn.dataset.mode);
+  });
+
+  // Basic: tem juros toggle
+  document.getElementById('div-tem-juros-toggle')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-juros]');
+    if (!btn) return;
+    document.querySelectorAll('#div-tem-juros-toggle .view-toggle-btn').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    const temJuros = btn.dataset.juros === 'sim';
+    document.getElementById('div-juros').closest('.field').classList.toggle('hidden', !temJuros);
+    if (!temJuros) writeDecimal('div-juros', 0, 4);
+  });
+
+  // Basic: regime cards
+  document.getElementById('div-regime-cards')?.addEventListener('click', (e) => {
+    const card = e.target.closest('[data-basic-regime]');
+    if (!card) return;
+    const regime = card.dataset.basicRegime;
+    document.querySelectorAll('#div-regime-cards .div-regime-card').forEach((c) => {
+      c.classList.toggle('active', c.dataset.basicRegime === regime);
+    });
+    setRegime(regime);
+  });
+
+  // Auto última parcela checkbox
+  document.getElementById('div-auto-ultima')?.addEventListener('change', () => {
+    renderFasesList();
+  });
+
   // Fases (Customizado)
   document.getElementById('btn-add-fase').addEventListener('click', addFaseRow);
 
@@ -942,7 +1019,7 @@ function openModalDivida(id) {
   writeDecimal('div-juros-spread',d?.juros_spread     ?? null, 4);
 
   // Carrega fases ANTES de chamar setRegime (para evitar criar fase default)
-  editingFases = Array.isArray(d?.fases) ? d.fases.map((f) => ({ de: f.de, ate: f.ate, valor: Number(f.valor) })) : [];
+  editingFases = Array.isArray(d?.fases) ? d.fases.map((f) => ({ de: f.de, ate: f.ate, valor: Number(f.valor), auto: f.auto ?? false })) : [];
   setRegime(d?.regime ?? '');
   document.getElementById('div-n-parcelas').value      = d?.n_parcelas       ?? '';
   if (d?.regime === 'Customizado') renderFasesList();
@@ -986,6 +1063,16 @@ function openModalDivida(id) {
   }
 
   document.getElementById('div-observacao').value      = d?.observacao       ?? '';
+
+  // Auto-última parcela checkbox
+  const autoUltimaEl = document.getElementById('div-auto-ultima');
+  if (autoUltimaEl) {
+    const lastFase = editingFases[editingFases.length - 1];
+    autoUltimaEl.checked = lastFase?.auto === true;
+  }
+
+  // Apply form mode (persists across open/close)
+  setDivFormMode(divFormMode);
 
   openModal('modal-divida');
 }
@@ -1066,9 +1153,21 @@ async function saveDivida(e) {
   let fases = null;
   if (regime === 'Customizado') {
     if (!n_parcelas) { showToast(t('dividas.validacao.parcelas_obrigatorias', 'Informe o número de parcelas'), 'error'); return; }
-    const erro = validarFases(editingFases, n_parcelas);
+    const autoUltimaChecked = document.getElementById('div-auto-ultima')?.checked ?? false;
+    // Apply auto flag to last fase before validation
+    const fasesParaValidar = editingFases.map((f, idx) => {
+      const isLast = idx === editingFases.length - 1;
+      return isLast && autoUltimaChecked
+        ? { ...f, auto: true }
+        : { ...f, auto: false };
+    });
+    const erro = validarFases(fasesParaValidar, n_parcelas);
     if (erro) { showToast(erro, 'error'); return; }
-    fases = editingFases.map((f) => ({ de: f.de, ate: f.ate, valor: Number(f.valor) }));
+    fases = fasesParaValidar.map((f) => {
+      const out = { de: f.de, ate: f.ate, valor: f.auto ? 0 : Number(f.valor) };
+      if (f.auto) out.auto = true;
+      return out;
+    });
   }
 
   btn.disabled = true;
@@ -1190,7 +1289,7 @@ function openHistoricoViewDivida(id) {
 
   document.getElementById('hist-view-divida-title').textContent = `Histórico — ${d.nome}`;
 
-  const entradas  = cachedDividaHistorico.filter((h) => h.divida_id === id).sort((a, b) => b.data.localeCompare(a.data));
+  const entradas  = cachedDividaHistorico.filter((h) => h.divida_id === id).sort((a, b) => a.data.localeCompare(b.data));
   const taxaHist  = cachedTaxaHistorico.filter((h) => h.divida_id === id).sort((a, b) => b.data_vigencia.localeCompare(a.data_vigencia));
   const hasVariavel = d.juros_tipo === 'manual_variavel' ||
                       (d.juros_tipo && d.juros_tipo !== 'manual_fixo' && d.juros_tipo !== 'manual');
@@ -1202,24 +1301,89 @@ function openHistoricoViewDivida(id) {
       <div style="text-align:center;padding:var(--space-6);color:var(--color-text-muted);font-size:var(--fs-sm);">
         Nenhum pagamento registrado ainda.<br>Use <strong>Pagamento</strong> para registrar.
       </div>`;
-    const rows = entradas.map((h) => {
-      const venc = h.n_parcela ? calcVencimentoParcela(d.data_inicio, h.n_parcela) : '';
-      return `
-      <div class="proj-hist-row hist-row-divida">
-        <span class="hist-divida-dates">
-          ${venc ? `<span class="hist-divida-venc"><span class="hist-divida-date-label">Venc.</span> ${venc}</span>` : ''}
-          <span class="hist-divida-pago"><span class="hist-divida-date-label">Pago em</span> ${fmtDate(h.data)}</span>
-        </span>
-        <span class="proj-hist-name">${escapeHtml(h.descricao || 'Pagamento')}${h.n_parcela && h.valor_amortizacao
-          ? `<span class="hist-breakdown"> · amort. ${formatCurrencyHTML(h.valor_amortizacao)} + juros ${formatCurrencyHTML(h.valor_juros)}${h.valor_correcao ? ` corr. ${formatCurrencyHTML(h.valor_correcao)}` : ''}${h.desconto_antecipacao ? ` desc. ${formatCurrencyHTML(-h.desconto_antecipacao)}` : ''}</span>`
-          : ''}</span>
-        <span class="proj-hist-value">${formatCurrencyHTML(Number(h.valor))}</span>
+
+    const totalAmort = entradas.reduce((s, h) => s + Number(h.valor_amortizacao || 0), 0);
+    const totalJuros = entradas.reduce((s, h) => s + Number(h.valor_juros || 0), 0);
+    const totalDesc  = entradas.reduce((s, h) => s + Number(h.desconto_antecipacao || 0), 0);
+    const totalPago  = entradas.reduce((s, h) => s + Number(h.valor), 0);
+    const hasParcDetail = entradas.some((h) => h.n_parcela && h.valor_amortizacao != null);
+
+    const summaryHtml = `
+      <div class="tabela-amort-summary" style="margin-bottom:var(--space-4);">
+        <div class="tabela-amort-summary-item">
+          <span class="tabela-amort-summary-label">Pagamentos</span>
+          <span class="tabela-amort-summary-value">${entradas.length}</span>
+        </div>
+        ${hasParcDetail ? `
+        <div class="tabela-amort-summary-item">
+          <span class="tabela-amort-summary-label">Amortização</span>
+          <span class="tabela-amort-summary-value">${formatCurrencyHTML(totalAmort)}</span>
+        </div>
+        <div class="tabela-amort-summary-item">
+          <span class="tabela-amort-summary-label">Juros pagos</span>
+          <span class="tabela-amort-summary-value tabela-amort-danger">${formatCurrencyHTML(totalJuros)}</span>
+        </div>
+        <div class="tabela-amort-summary-item">
+          <span class="tabela-amort-summary-label">Desconto obtido</span>
+          <span class="tabela-amort-summary-value tabela-amort-success">${formatCurrencyHTML(totalDesc)}</span>
+        </div>` : ''}
+        <div class="tabela-amort-summary-item">
+          <span class="tabela-amort-summary-label">Total pago</span>
+          <span class="tabela-amort-summary-value">${formatCurrencyHTML(totalPago)}</span>
+        </div>
       </div>`;
+
+    const rows = entradas.map((h) => {
+      const venc   = h.n_parcela ? calcVencimentoParcela(d.data_inicio, h.n_parcela) : '—';
+      const amort  = Number(h.valor_amortizacao || 0);
+      const juros  = Number(h.valor_juros || 0);
+      const desc   = Number(h.desconto_antecipacao || 0);
+      const hasDet = h.n_parcela && h.valor_amortizacao != null;
+      const parcelaLabel = h.n_parcela
+        ? `${h.n_parcela}${d.n_parcelas ? `/${d.n_parcelas}` : ''}`
+        : escapeHtml(h.descricao || 'Pagamento');
+      return `
+      <tr>
+        <td class="tabular">${parcelaLabel}</td>
+        <td class="tabular">${venc}</td>
+        <td class="tabular">${fmtDate(h.data)}</td>
+        ${hasDet ? `
+        <td class="tabular text-right">${formatCurrencyHTML(amort)}</td>
+        <td class="tabular text-right tabela-amort-juros-cell">${formatCurrencyHTML(juros)}</td>
+        <td class="tabular text-right ${desc > 0 ? 'tabela-amort-success' : 'tabela-amort-zero'}">${formatCurrencyHTML(desc)}</td>
+        ` : `<td class="tabular text-right" colspan="3" style="color:var(--color-text-muted)">—</td>`}
+        <td class="tabular text-right tabela-amort-pmt-cell">${formatCurrencyHTML(Number(h.valor))}</td>
+      </tr>`;
     }).join('');
-    const total = entradas.reduce((s, h) => s + Number(h.valor), 0);
-    return `<div class="proj-hist-list">${rows}</div>
-      <div style="display:flex;justify-content:flex-end;padding:var(--space-3) var(--space-4);font-weight:var(--fw-bold);font-size:var(--fs-sm);border-top:1px solid var(--color-border);margin-top:var(--space-1);">
-        Total pago: ${formatCurrencyHTML(total)}</div>`;
+
+    const totalRow = `
+      <tr class="hist-pagamentos-total">
+        <td colspan="3" class="tabular">Total</td>
+        ${hasParcDetail ? `
+        <td class="tabular text-right">${formatCurrencyHTML(totalAmort)}</td>
+        <td class="tabular text-right tabela-amort-danger">${formatCurrencyHTML(totalJuros)}</td>
+        <td class="tabular text-right tabela-amort-success">${formatCurrencyHTML(totalDesc)}</td>
+        ` : `<td colspan="3"></td>`}
+        <td class="tabular text-right">${formatCurrencyHTML(totalPago)}</td>
+      </tr>`;
+
+    return `${summaryHtml}
+      <div class="tabela-amort-wrapper">
+        <table class="tabela-amort">
+          <thead>
+            <tr>
+              <th class="tabular">Parcela</th>
+              <th class="tabular">Vencimento</th>
+              <th class="tabular">Pago em</th>
+              <th class="text-right tabular">Amortização</th>
+              <th class="text-right tabular">Juros</th>
+              <th class="text-right tabular">Desconto</th>
+              <th class="text-right tabular">Total</th>
+            </tr>
+          </thead>
+          <tbody>${rows}${totalRow}</tbody>
+        </table>
+      </div>`;
   })();
 
   const taxasHtml = (() => {
@@ -1415,6 +1579,27 @@ function renderPagarCard() {
   descontoRow.classList.toggle('hidden', desconto <= 0);
   if (desconto > 0) document.getElementById('pagar-parcela-desconto-val').textContent = `${formatCurrency(-desconto)}`;
 
+  // Estimate new last installment after paying these parcelas (only when paying multiple)
+  const ultimaRow = document.getElementById('pagar-ultima-parcela-row');
+  if (ultimaRow) {
+    const lastPaidIdx = pagas + pagarParcelaN - 1; // 0-based index of last row being paid
+    if (pagarParcelaN > 1 && lastPaidIdx < n - 1 && tabela.length > 0) {
+      const saldoApos = tabela[lastPaidIdx]?.saldo_final ?? 0;
+      const taxaMensal = Number(d.juros_percentual || 0) / 100;
+      const ultimaEstimada = saldoApos * (1 + taxaMensal);
+      const ultimaAtual = tabela[n - 1]?.parcela ?? 0;
+      if (Math.abs(ultimaEstimada - ultimaAtual) > 0.01) {
+        ultimaRow.classList.remove('hidden');
+        const el = document.getElementById('pagar-ultima-parcela-val');
+        if (el) el.innerHTML = formatCurrencyHTML(ultimaEstimada);
+      } else {
+        ultimaRow.classList.add('hidden');
+      }
+    } else {
+      ultimaRow.classList.add('hidden');
+    }
+  }
+
   // Auto-fill valor real (= total sugerido) se usuário não editou
   if (!pagarValorRealEditado) {
     writeDecimal('pagar-valor-real', totalPmt, 2);
@@ -1551,6 +1736,13 @@ function openTabelaAmort(id) {
     ? formatCurrencyHTML(tabela[0]?.parcela || 0)
     : `${formatCurrencyHTML(tabela[0]?.parcela || 0)} → ${formatCurrencyHTML(tabela[n - 1]?.parcela || 0)}`;
 
+  // Mapa de descontos reais por número de parcela
+  const descontoMap = {};
+  cachedDividaHistorico
+    .filter((h) => h.divida_id === id && h.n_parcela != null)
+    .forEach((h) => { descontoMap[h.n_parcela] = Number(h.desconto_antecipacao || 0); });
+  const totalDescPago = Object.values(descontoMap).reduce((s, v) => s + v, 0);
+
   document.getElementById('tabela-amort-summary').innerHTML = `
     <div class="tabela-amort-summary-item">
       <span class="tabela-amort-summary-label">Regime</span>
@@ -1572,6 +1764,11 @@ function openTabelaAmort(id) {
       <span class="tabela-amort-summary-label">Total juros</span>
       <span class="tabela-amort-summary-value tabela-amort-danger">${formatCurrencyHTML(totalJuros)}</span>
     </div>
+    ${totalDescPago > 0 ? `
+    <div class="tabela-amort-summary-item">
+      <span class="tabela-amort-summary-label">Desconto obtido</span>
+      <span class="tabela-amort-summary-value tabela-amort-success">${formatCurrencyHTML(totalDescPago)}</span>
+    </div>` : ''}
     <div class="tabela-amort-summary-item">
       <span class="tabela-amort-summary-label">Total a pagar</span>
       <span class="tabela-amort-summary-value">${formatCurrencyHTML(totalPmt)}</span>
@@ -1583,6 +1780,10 @@ function openTabelaAmort(id) {
     const isProxima = r.n === pagas + 1;
     const cls = isPaga ? 'tabela-amort-paga' : (isProxima ? 'tabela-amort-proxima' : '');
     const venc = calcVencimentoParcela(d.data_inicio, r.n);
+    const desc = isPaga ? (descontoMap[r.n] ?? 0) : null;
+    const descontoCell = isPaga
+      ? `<td class="tabular text-right ${desc > 0 ? 'tabela-amort-success' : 'tabela-amort-zero'}">${formatCurrencyHTML(desc)}</td>`
+      : `<td class="tabular text-right" style="color:var(--color-text-muted)">—</td>`;
     return `
       <tr class="${cls}">
         <td class="tabular">${r.n}${isProxima ? ' <span class="tabela-amort-next-badge">próxima</span>' : ''}</td>
@@ -1590,6 +1791,7 @@ function openTabelaAmort(id) {
         <td class="tabular text-right">${formatCurrencyHTML(r.saldo_inicial)}</td>
         <td class="tabular text-right">${formatCurrencyHTML(r.amortizacao)}</td>
         <td class="tabular text-right tabela-amort-juros-cell">${formatCurrencyHTML(r.juros)}</td>
+        ${descontoCell}
         <td class="tabular text-right tabela-amort-pmt-cell">${formatCurrencyHTML(r.parcela)}</td>
         <td class="tabular text-right">${formatCurrencyHTML(r.saldo_final)}</td>
       </tr>`;

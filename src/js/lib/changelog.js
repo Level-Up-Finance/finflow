@@ -7,6 +7,19 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-16-dividas-form-simplificado',
+    version: '0.3.5',
+    date: '16/05/2026',
+    title: 'Dívidas — formulário simplificado + última parcela automática + simulador',
+    items: [
+      { type: 'new',         text: 'Formulário de dívida em modo Básico/Avançado — modo básico esconde campos técnicos e apresenta linguagem do dia a dia ("Parcelas iguais", "Parcelas que diminuem", "A dívida tem juros?")' },
+      { type: 'new',         text: 'Última parcela automática (Customizado): ative "Calcular última parcela pelo saldo devedor" e o sistema quita o saldo residual + juros do mês — recalcula automaticamente conforme a taxa muda e pagamentos são feitos' },
+      { type: 'new',         text: 'Simulador de antecipação: ao pagar múltiplas parcelas de uma vez, o modal de pagamento mostra a estimativa da nova última parcela após a antecipação' },
+      { type: 'improvement', text: 'Histórico de dívidas: colunas separadas por tipo (amortização, juros em vermelho, desconto em verde), ordem cronológica (mais antiga primeiro) e resumo no topo' },
+      { type: 'improvement', text: 'Tabela de amortização: nova coluna Desconto mostrando desconto real obtido em cada parcela paga; resumo ganha "Desconto obtido" quando houver' },
+    ],
+  },
+  {
     id: '2026-05-16-dividas-historico-layout',
     version: '0.3.4',
     date: '16/05/2026',
