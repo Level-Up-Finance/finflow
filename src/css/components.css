@@ -6578,6 +6578,8 @@ td .currency-split {
 .div-card-credor {
   font-size: var(--fs-sm);
   color: var(--color-text-muted);
+  min-height: 1.25em; /* placeholder garante altura igual quando vazio */
+  display: block;
 }
 
 /* Progress bar */
@@ -6621,7 +6623,6 @@ td .currency-split {
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-2);
   padding: var(--space-3) 0;
-  border-top: 1px solid var(--color-border);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -6666,6 +6667,22 @@ td .currency-split {
   color: var(--color-text-muted);
 }
 
+.div-card-meta-label {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-secondary);
+  min-width: 54px;   /* alinha os valores nas linhas Duração / Juros / Parcelas */
+}
+
+.div-card-meta-row--regime {
+  margin-bottom: var(--space-1);
+}
+
+.div-card-proxima-parcela {
+  font-weight: var(--fw-semibold);
+  color: var(--color-primary);
+}
+
 .div-card-venc-alert {
   font-size: var(--fs-xs);
   font-weight: var(--fw-semibold);
@@ -6690,7 +6707,7 @@ td .currency-split {
   justify-content: center;
   padding: var(--space-3) 0;
   border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
+  /* sem border-bottom — a divisória inferior fica no .div-card-values */
   margin-bottom: var(--space-3);
 }
 
@@ -12169,11 +12186,6 @@ td .currency-split {
 }
 
 /* "Próx. R$X" no card meta */
-.div-card-proxima-parcela {
-  font-weight: var(--fw-semibold);
-  color: var(--color-primary);
-}
-
 /* =============================================================
    Feedback page
    ============================================================= */

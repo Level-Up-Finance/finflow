@@ -600,7 +600,7 @@ function renderCard(d) {
           <span class="div-card-badge" style="color:${st.color}; background:${st.bg};">${st.label}</span>
           ${quitada && pago < total ? `<span class="tag-parcial" title="Encerrada antes de quitar o valor total">Parcial</span>` : ''}
         </div>
-        ${d.credor ? `<span class="div-card-credor">${d.credor}</span>` : ''}
+        <span class="div-card-credor">${d.credor || ''}</span>
       </div>
 
       <div class="div-card-charts">
@@ -630,17 +630,27 @@ function renderCard(d) {
       </div>
 
       <div class="div-card-meta">
+        ${d.regime ? `
+        <div class="div-card-meta-row div-card-meta-row--regime">
+          <span class="div-regime-badge div-regime-badge--${d.regime.toLowerCase()}">${d.regime}</span>
+        </div>` : ''}
+        ${(inicio || vencInfo || vencimento) ? `
         <div class="div-card-meta-row">
-          ${inicio ? `<span class="div-card-meta-item">📅 ${inicio}` + (d.regime && d.n_parcelas && d.data_inicio ? ` → ${calcTermino(d.data_inicio, d.n_parcelas)}` : '') + `</span>` : ''}
-          ${!d.regime && (vencInfo || vencimento) ? `<span class="div-card-meta-item">${vencInfo || `Venc.: ${vencimento}`}</span>` : ''}
-          ${d.juros_percentual ? `<span class="div-card-meta-item">${Number(d.juros_percentual).toFixed(2)}% a.m.</span>` : ''}
-        </div>
+          <span class="div-card-meta-label">Duração</span>
+          <span class="div-card-meta-item">
+            ${inicio ? `${inicio}${d.regime && d.n_parcelas && d.data_inicio ? ` → ${calcTermino(d.data_inicio, d.n_parcelas)}` : ''}` : (vencInfo || `Venc.: ${vencimento}`)}
+          </span>
+        </div>` : ''}
+        ${d.juros_percentual ? `
         <div class="div-card-meta-row">
-          ${d.regime ? `<span class="div-card-meta-item"><span class="div-regime-badge div-regime-badge--${d.regime.toLowerCase()}">${d.regime}</span></span>` : ''}
-          ${d.n_parcelas ? `<span class="div-card-meta-item">${d.parcelas_pagas || 0}/${d.n_parcelas}x</span>` : ''}
-          ${proximaParcela != null ? `<span class="div-card-meta-item div-card-proxima-parcela">Próx. ${formatCurrencyHTML(proximaParcela)}</span>` : ''}
-          ${contaNome ? `<span class="div-card-meta-item">🏦 ${contaNome}</span>` : ''}
-        </div>
+          <span class="div-card-meta-label">Juros</span>
+          <span class="div-card-meta-item">${Number(d.juros_percentual).toFixed(2)}% a.m.</span>
+        </div>` : ''}
+        ${d.n_parcelas ? `
+        <div class="div-card-meta-row">
+          <span class="div-card-meta-label">Parcelas</span>
+          <span class="div-card-meta-item">${d.parcelas_pagas || 0}/${d.n_parcelas}x${proximaParcela != null ? ` &nbsp;<span class="div-card-proxima-parcela">Próx. ${formatCurrencyHTML(proximaParcela)}</span>` : ''}</span>
+        </div>` : ''}
       </div>
 
       ${d.observacao ? `<p class="div-card-obs">${d.observacao}</p>` : ''}
