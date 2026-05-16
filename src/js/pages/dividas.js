@@ -571,6 +571,9 @@ function renderCard(d) {
     return buildTabelaDisplay(d)[pagas]?.parcela ?? null;
   })();
 
+  const moeda = d.moeda || 'BRL';
+  const fmt   = (v) => formatCurrencyHTML(v, moeda);
+
   const fmtDate = (iso) => {
     if (!iso) return null;
     const [y, m, day] = iso.split('-');
@@ -617,15 +620,15 @@ function renderCard(d) {
       <div class="div-card-values">
         <div class="div-card-value-item">
           <span class="div-card-value-label">Total</span>
-          <span class="div-card-value-num">${formatCurrencyHTML(total)}</span>
+          <span class="div-card-value-num">${fmt(total)}</span>
         </div>
         <div class="div-card-value-item">
           <span class="div-card-value-label">Pago</span>
-          <span class="div-card-value-num div-card-value-num--success">${formatCurrencyHTML(pago)}</span>
+          <span class="div-card-value-num div-card-value-num--success">${fmt(pago)}</span>
         </div>
         <div class="div-card-value-item">
           <span class="div-card-value-label">Restante</span>
-          <span class="div-card-value-num ${quitada ? '' : 'div-card-value-num--danger'}">${formatCurrencyHTML(restante)}</span>
+          <span class="div-card-value-num ${quitada ? '' : 'div-card-value-num--danger'}">${fmt(restante)}</span>
         </div>
       </div>
 
@@ -649,7 +652,7 @@ function renderCard(d) {
         ${d.n_parcelas ? `
         <div class="div-card-meta-row">
           <span class="div-card-meta-label">Parcelas</span>
-          <span class="div-card-meta-item">${d.parcelas_pagas || 0}/${d.n_parcelas}x${proximaParcela != null ? ` &nbsp;<span class="div-card-proxima-parcela">Próx. ${formatCurrencyHTML(proximaParcela)}</span>` : ''}</span>
+          <span class="div-card-meta-item">${d.parcelas_pagas || 0}/${d.n_parcelas}x${proximaParcela != null ? ` &nbsp;<span class="div-card-proxima-parcela">Próx. ${fmt(proximaParcela)}</span>` : ''}</span>
         </div>` : ''}
       </div>
 
@@ -1076,6 +1079,7 @@ function openModalDivida(id) {
   // Marca como "editado pelo usuário" se já tinha valor salvo (não sobrescreve)
   vencEl.dataset.userEdited = d?.data_vencimento ? 'true' : 'false';
   document.getElementById('div-status').value          = d?.status           ?? 'Ativa';
+  document.getElementById('div-moeda').value           = d?.moeda            ?? 'BRL';
   divContaPicker?.setValue(d?.conta_id || '');
 
   // Credor agora é contato-picker — vincula ao contato_id da dívida
@@ -1143,6 +1147,7 @@ async function saveDivida(e) {
   const conta_id        = document.getElementById('div-conta').value || null;
   // contato_id agora vem do credor (Cliente/Fornecedor foi removido)
   const contato_id      = credorContatoId;
+  const moeda           = document.getElementById('div-moeda').value || 'BRL';
   const observacao      = document.getElementById('div-observacao').value.trim() || null;
 
   if (!nome)              { showToast(t('dividas.validacao.nome_obrigatorio', 'Informe o nome da dívida'), 'error'); return; }
@@ -1200,7 +1205,7 @@ async function saveDivida(e) {
 
   const user = await getCurrentUser();
   const payload = {
-    nome, credor, valor_total,
+    nome, credor, valor_total, moeda,
     juros_tipo, juros_percentual, juros_spread,
     regime: regime || null, n_parcelas, fases,
     taxa_tipo, taxa_referencia,
@@ -1294,7 +1299,7 @@ async function ensureSubcategoriaForDivida(dividaId, dvd) {
     vencimento_dia: vencDia,
     periodo:        'Mensal',
     iniciado_em:    dvd.data_inicio,
-    moeda:          'BRL',
+    moeda:          dvd.moeda || 'BRL',
     valor_base:     valorBase,
     status:         'ativa',
     descricao:      `Auto-criado para a dívida "${dvd.nome}"`,
@@ -1312,6 +1317,7 @@ function openHistoricoViewDivida(id) {
   const d = cachedDividas.find((x) => x.id === id);
   if (!d) return;
 
+  const fmt = (v) => formatCurrencyHTML(v, d.moeda || 'BRL');
   document.getElementById('hist-view-divida-title').textContent = `Histórico — ${d.nome}`;
 
   const entradas  = cachedDividaHistorico.filter((h) => h.divida_id === id).sort((a, b) => a.data.localeCompare(b.data));
@@ -1344,23 +1350,23 @@ function openHistoricoViewDivida(id) {
         ${hasParcDetail ? `
         <div class="tabela-amort-summary-item">
           <span class="tabela-amort-summary-label">Saldo devedor</span>
-          <span class="tabela-amort-summary-value">${formatCurrencyHTML(saldoAtual)}</span>
+          <span class="tabela-amort-summary-value">${fmt(saldoAtual)}</span>
         </div>
         <div class="tabela-amort-summary-item">
           <span class="tabela-amort-summary-label">Amortização</span>
-          <span class="tabela-amort-summary-value">${formatCurrencyHTML(totalAmort)}</span>
+          <span class="tabela-amort-summary-value">${fmt(totalAmort)}</span>
         </div>
         <div class="tabela-amort-summary-item">
           <span class="tabela-amort-summary-label">Juros pagos</span>
-          <span class="tabela-amort-summary-value tabela-amort-danger">${formatCurrencyHTML(totalJuros)}</span>
+          <span class="tabela-amort-summary-value tabela-amort-danger">${fmt(totalJuros)}</span>
         </div>
         <div class="tabela-amort-summary-item">
           <span class="tabela-amort-summary-label">Desconto obtido</span>
-          <span class="tabela-amort-summary-value tabela-amort-success">${formatCurrencyHTML(totalDesc)}</span>
+          <span class="tabela-amort-summary-value tabela-amort-success">${fmt(totalDesc)}</span>
         </div>` : ''}
         <div class="tabela-amort-summary-item">
           <span class="tabela-amort-summary-label">Total pago</span>
-          <span class="tabela-amort-summary-value">${formatCurrencyHTML(totalPago)}</span>
+          <span class="tabela-amort-summary-value">${fmt(totalPago)}</span>
         </div>
       </div>`;
 
@@ -1386,15 +1392,15 @@ function openHistoricoViewDivida(id) {
         <td class="tabular">${fmtDate(h.data)}</td>
         <td class="tabular text-right">${taxa != null ? `${formatDecimal(taxa, 4)}%` : '—'}</td>
         ${hasDet ? `
-        <td class="tabular text-right">${formatCurrencyHTML(saldoInicial)}</td>
-        <td class="tabular text-right">${formatCurrencyHTML(amort)}</td>
-        <td class="tabular text-right tabela-amort-juros-cell">${formatCurrencyHTML(juros)}</td>
-        <td class="tabular text-right ${desc > 0 ? 'tabela-amort-success' : 'tabela-amort-zero'}">${formatCurrencyHTML(desc)}</td>
-        <td class="tabular text-right tabela-amort-pmt-cell">${formatCurrencyHTML(Number(h.valor))}</td>
-        <td class="tabular text-right">${formatCurrencyHTML(saldoFinal)}</td>
+        <td class="tabular text-right">${fmt(saldoInicial)}</td>
+        <td class="tabular text-right">${fmt(amort)}</td>
+        <td class="tabular text-right tabela-amort-juros-cell">${fmt(juros)}</td>
+        <td class="tabular text-right ${desc > 0 ? 'tabela-amort-success' : 'tabela-amort-zero'}">${fmt(desc)}</td>
+        <td class="tabular text-right tabela-amort-pmt-cell">${fmt(Number(h.valor))}</td>
+        <td class="tabular text-right">${fmt(saldoFinal)}</td>
         ` : `
         <td colspan="5" class="tabular text-right" style="color:var(--color-text-muted)">—</td>
-        <td class="tabular text-right tabela-amort-pmt-cell">${formatCurrencyHTML(Number(h.valor))}</td>
+        <td class="tabular text-right tabela-amort-pmt-cell">${fmt(Number(h.valor))}</td>
         <td class="tabular text-right">—</td>
         `}
       </tr>`;
@@ -1405,10 +1411,10 @@ function openHistoricoViewDivida(id) {
         <td colspan="4" class="tabular">Total</td>
         ${hasParcDetail ? `
         <td class="tabular text-right">—</td>
-        <td class="tabular text-right">${formatCurrencyHTML(totalAmort)}</td>
-        <td class="tabular text-right tabela-amort-danger">${formatCurrencyHTML(totalJuros)}</td>
-        <td class="tabular text-right tabela-amort-success">${formatCurrencyHTML(totalDesc)}</td>
-        <td class="tabular text-right">${formatCurrencyHTML(totalPago)}</td>
+        <td class="tabular text-right">${fmt(totalAmort)}</td>
+        <td class="tabular text-right tabela-amort-danger">${fmt(totalJuros)}</td>
+        <td class="tabular text-right tabela-amort-success">${fmt(totalDesc)}</td>
+        <td class="tabular text-right">${fmt(totalPago)}</td>
         <td class="tabular text-right">—</td>
         ` : `<td colspan="6"></td>`}
       </tr>`;
@@ -1793,6 +1799,7 @@ function openTabelaAmort(id) {
   const d = cachedDividas.find((x) => x.id === id);
   if (!d || !d.regime || !d.n_parcelas) return;
 
+  const fmt = (v) => formatCurrencyHTML(v, d.moeda || 'BRL');
   const n         = d.n_parcelas;
   const pagas     = d.parcelas_pagas || 0;
 
@@ -1806,8 +1813,8 @@ function openTabelaAmort(id) {
   const totalPmt   = tabela.reduce((s, r) => s + r.parcela, 0);
   const regimeBadge = `<span class="div-regime-badge div-regime-badge--${d.regime.toLowerCase()}">${d.regime}</span>`;
   const parcelaInfo = d.regime === 'Price'
-    ? formatCurrencyHTML(tabela[0]?.parcela || 0)
-    : `${formatCurrencyHTML(tabela[0]?.parcela || 0)} → ${formatCurrencyHTML(tabela[n - 1]?.parcela || 0)}`;
+    ? fmt(tabela[0]?.parcela || 0)
+    : `${fmt(tabela[0]?.parcela || 0)} → ${fmt(tabela[n - 1]?.parcela || 0)}`;
 
   // Mapas por número de parcela a partir do histórico real
   const descontoMap = {};
@@ -1858,25 +1865,25 @@ function openTabelaAmort(id) {
     </div>
     <div class="tabela-amort-summary-item">
       <span class="tabela-amort-summary-label">Saldo devedor atual</span>
-      <span class="tabela-amort-summary-value tabela-amort-danger">${formatCurrencyHTML(saldoDevedor)}</span>
+      <span class="tabela-amort-summary-value tabela-amort-danger">${fmt(saldoDevedor)}</span>
     </div>
     ${proxParcelaVal != null ? `
     <div class="tabela-amort-summary-item">
       <span class="tabela-amort-summary-label">Próxima parcela</span>
-      <span class="tabela-amort-summary-value">${formatCurrencyHTML(proxParcelaVal)}</span>
+      <span class="tabela-amort-summary-value">${fmt(proxParcelaVal)}</span>
     </div>` : ''}
     <div class="tabela-amort-summary-item">
       <span class="tabela-amort-summary-label">Total juros (projetado)</span>
-      <span class="tabela-amort-summary-value tabela-amort-danger">${formatCurrencyHTML(totalJuros)}</span>
+      <span class="tabela-amort-summary-value tabela-amort-danger">${fmt(totalJuros)}</span>
     </div>
     ${totalDescPago > 0 ? `
     <div class="tabela-amort-summary-item">
       <span class="tabela-amort-summary-label">Desconto obtido</span>
-      <span class="tabela-amort-summary-value tabela-amort-success">${formatCurrencyHTML(totalDescPago)}</span>
+      <span class="tabela-amort-summary-value tabela-amort-success">${fmt(totalDescPago)}</span>
     </div>` : ''}
     <div class="tabela-amort-summary-item">
       <span class="tabela-amort-summary-label">Total a pagar (projetado)</span>
-      <span class="tabela-amort-summary-value">${formatCurrencyHTML(totalPmt)}</span>
+      <span class="tabela-amort-summary-value">${fmt(totalPmt)}</span>
     </div>
   `;
 
@@ -1903,7 +1910,7 @@ function openTabelaAmort(id) {
     // Desconto
     const desc = isPaga ? (descontoMap[r.n] ?? 0) : null;
     const descontoCell = isPaga
-      ? `<td class="tabular text-right ${desc > 0 ? 'tabela-amort-success' : 'tabela-amort-zero'}">${formatCurrencyHTML(desc)}</td>`
+      ? `<td class="tabular text-right ${desc > 0 ? 'tabela-amort-success' : 'tabela-amort-zero'}">${fmt(desc)}</td>`
       : `<td class="tabular text-right" style="color:var(--color-text-muted)">—</td>`;
 
     return `
@@ -1912,12 +1919,12 @@ function openTabelaAmort(id) {
         <td class="tabular">${venc}</td>
         ${pagoEmCell}
         ${taxaCell}
-        <td class="tabular text-right">${formatCurrencyHTML(r.saldo_inicial)}</td>
-        <td class="tabular text-right">${formatCurrencyHTML(r.amortizacao)}</td>
-        <td class="tabular text-right tabela-amort-juros-cell">${formatCurrencyHTML(r.juros)}</td>
+        <td class="tabular text-right">${fmt(r.saldo_inicial)}</td>
+        <td class="tabular text-right">${fmt(r.amortizacao)}</td>
+        <td class="tabular text-right tabela-amort-juros-cell">${fmt(r.juros)}</td>
         ${descontoCell}
-        <td class="tabular text-right tabela-amort-pmt-cell">${formatCurrencyHTML(r.parcela)}</td>
-        <td class="tabular text-right">${formatCurrencyHTML(r.saldo_final)}</td>
+        <td class="tabular text-right tabela-amort-pmt-cell">${fmt(r.parcela)}</td>
+        <td class="tabular text-right">${fmt(r.saldo_final)}</td>
       </tr>`;
   }).join('');
 

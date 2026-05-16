@@ -120,10 +120,19 @@
             </div>
           </div>
 
-          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+          <div class="field-group" style="grid-template-columns: 1fr 120px 1fr;">
             <div class="field">
               <label class="field-label" for="div-valor-total">Valor total *</label>
               <input class="input input-decimal" id="div-valor-total" type="text" inputmode="decimal" placeholder="0,00" required>
+            </div>
+            <div class="field">
+              <label class="field-label" for="div-moeda">Moeda</label>
+              <select class="select" id="div-moeda">
+                <option value="BRL">R$ BRL</option>
+                <option value="USD">$ USD</option>
+                <option value="EUR">€ EUR</option>
+                <option value="GBP">£ GBP</option>
+              </select>
             </div>
             <div class="field div-advanced-only">
               <label class="field-label" for="div-juros-tipo">Origem da taxa</label>
