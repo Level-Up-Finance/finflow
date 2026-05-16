@@ -7585,14 +7585,15 @@ td .currency-split {
 }
 
 
-.cfg-th-cor,
-.cfg-th-actions { width: 48px; text-align: center; }
+.cfg-th-cor     { width: 48px; text-align: center; }
+.cfg-th-actions { width: 24px; text-align: center; padding-right: 0 !important; }
+.cfg-td-actions { padding-right: 0 !important; }
 .cfg-th-cat     { width: 33%; }
 .cfg-th-sub     { width: 33%; }
 .cfg-th-vinculo { width: 33%; }
 .cfg-th-comp    { width: 33%; }
-.cfg-th-tx      { width: 1%; white-space: nowrap; text-align: center; }
-.cfg-td-tx      { text-align: center; }
+.cfg-th-tx      { width: 1%; white-space: nowrap; text-align: center; padding-right: 0 !important; }
+.cfg-td-tx      { text-align: center; padding-right: 0 !important; }
 
 .cfg-tr td {
   padding: var(--space-2) var(--space-3);
