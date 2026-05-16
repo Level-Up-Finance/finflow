@@ -85,12 +85,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadStrings();
   applyTranslationsToDom();
   initCurrencyWidget('currency-widget');
+
+  // Tab strip: Configurações | Mensal | 12 meses | Meses passados
+  const { mountOrcamentoTabs, getActiveTabFromUrl } = await import('../components/orcamento-tabs.js');
+  const activeTab = getActiveTabFromUrl();
+  // Redirect quando alguém chega via /orcamento.html?tab=configuracoes
+  if (activeTab === 'configuracoes') {
+    location.replace('/compromissos.html');
+    return;
+  }
+  mountOrcamentoTabs('orc-tabs', activeTab);
+  // Map tab → viewMode interno
+  viewMode = activeTab === '12meses' ? 'yearly'
+           : activeTab === 'passados' ? 'passados'
+           : 'monthly';
+
   bindEvents();
   await loadCategorias();
   await loadSubcategorias();
   await loadProjetos();
   await Promise.all([loadDividas(), loadRealizadoProjetos()]);
-  await loadMonth();
+
+  if (viewMode === 'passados') {
+    showPassadosPlaceholder();
+  } else {
+    await dispatchLoad();
+  }
 
   // Auto-refresh das cotações a cada 5 min
   if (autoRefreshHandle) clearInterval(autoRefreshHandle);
@@ -101,27 +121,42 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function bindEvents() {
-  document.getElementById('orc-prev').addEventListener('click', () => navigate(-1));
-  document.getElementById('orc-next').addEventListener('click', () => navigate(1));
-  document.getElementById('btn-hoje').addEventListener('click', () => {
+  document.getElementById('orc-prev')?.addEventListener('click', () => navigate(-1));
+  document.getElementById('orc-next')?.addEventListener('click', () => navigate(1));
+  document.getElementById('btn-hoje')?.addEventListener('click', () => {
     const t = new Date();
     viewYear = t.getFullYear();
     viewMonth = t.getMonth();
     dispatchLoad();
   });
-  document.getElementById('view-toggle').addEventListener('click', (e) => {
-    const btn = e.target.closest('.view-toggle-btn');
-    if (!btn) return;
-    document.querySelectorAll('#view-toggle .view-toggle-btn').forEach((b) => b.classList.remove('active'));
-    btn.classList.add('active');
-    viewMode = btn.dataset.view;
-    dispatchLoad();
-  });
 }
 
 function dispatchLoad() {
-  if (viewMode === 'yearly') loadYearly();
-  else loadMonth();
+  if (viewMode === 'yearly') return loadYearly();
+  if (viewMode === 'passados') return showPassadosPlaceholder();
+  return loadMonth();
+}
+
+/**
+ * Placeholder pra aba "Meses passados" — v0.5.0 ainda não implementa a view.
+ * Esconde os controles de mensal e mostra um cartão "Em breve".
+ */
+function showPassadosPlaceholder() {
+  document.querySelector('.orcamento-monthnav')?.classList.add('hidden');
+  document.getElementById('frozen-banner')?.classList.add('hidden');
+  document.getElementById('orcamento-summary')?.classList.add('hidden');
+  document.getElementById('empty-state')?.classList.add('hidden');
+  const container = document.getElementById('orcamento-container');
+  if (!container) return;
+  container.innerHTML = `
+    <div class="empty-state" style="margin-top: var(--space-8);">
+      <div class="empty-state-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <h2 class="empty-state-title">Em breve: histórico de meses passados</h2>
+      <p class="empty-state-message">A aba <strong>Meses passados</strong> vai mostrar o realizado dos últimos 12 meses, apenas para visualização. Disponível na próxima versão.</p>
+    </div>
+  `;
 }
 
 function navigate(delta) {

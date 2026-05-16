@@ -7,6 +7,18 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-16-orcamento-unificado-tabs',
+    version: '0.5.0',
+    date: '16/05/2026',
+    title: 'Orçamento unificado — Compromissos vira aba de Configurações',
+    items: [
+      { type: 'new', text: 'Página unificada "Orçamento" com 4 abas: Configurações, Mensal, 12 meses e Meses passados (placeholder).' },
+      { type: 'improvement', text: 'A entrada "Compromissos" foi removida do menu lateral — agora vive como aba Configurações dentro de Orçamento.' },
+      { type: 'improvement', text: 'Página atual de Compromissos passa a exibir título "Orçamento" e a tab strip ativa em Configurações.' },
+      { type: 'improvement', text: 'Página atual de Orçamento exibe a mesma tab strip; URLs `/orcamento.html?tab=mensal|12meses|passados` selecionam a aba; `/orcamento.html?tab=configuracoes` redireciona para a página de Compromissos.' },
+    ],
+  },
+  {
     id: '2026-05-16-criar-compromisso-divida-projeto',
     version: '0.4.1',
     date: '16/05/2026',

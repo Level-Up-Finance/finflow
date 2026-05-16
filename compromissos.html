@@ -26,7 +26,7 @@
 
     <header class="app-header header">
       <div class="header-left">
-        <h2 class="header-title">Compromissos</h2>
+        <h2 class="header-title">Orçamento</h2>
       </div>
     </header>
 
@@ -37,13 +37,16 @@
       <div class="page-header">
         <div class="page-header-content">
           <p class="page-eyebrow">Configuração mestre</p>
-          <h1 class="page-title" data-i18n-key="compromissos.titulo">Compromissos</h1>
-          <p class="page-description" data-i18n-key="compromissos.descricao">Suas entradas e saídas recorrentes. Organizadas em Categorias e Subcategorias.</p>
+          <h1 class="page-title" data-i18n-key="compromissos.titulo">Orçamento</h1>
+          <p class="page-description" data-i18n-key="compromissos.descricao">Configure aqui suas entradas e saídas recorrentes. As demais abas (Mensal, 12 meses, Meses passados) são apenas visualização.</p>
         </div>
         <button class="btn btn-primary" id="btn-novo-compromisso" type="button">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg> Novo compromisso
         </button>
       </div>
+
+      <!-- Tab strip: Configurações / Mensal / 12 meses / Meses passados -->
+      <div id="orc-tabs"></div>
 
       <!-- View toggle + busca -->
       <div class="toolbar">

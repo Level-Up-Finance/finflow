@@ -101,8 +101,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (_isEmbedded) {
     document.body.classList.add('comp-embedded');
   } else {
-    await initSidebar('compromissos');
+    await initSidebar('orcamento');
     initTutorial('compromissos');
+    // Tab strip "Orçamento" — Configurações é o tab ativo nesta página
+    const { mountOrcamentoTabs } = await import('../components/orcamento-tabs.js');
+    mountOrcamentoTabs('orc-tabs', 'configuracoes');
   }
   await loadStrings();
   applyTranslationsToDom();
