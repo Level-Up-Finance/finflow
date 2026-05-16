@@ -48,6 +48,24 @@
       <!-- Tab strip: Configurações / Mensal / 12 meses / Meses passados -->
       <div id="orc-tabs"></div>
 
+      <!-- Cabe no orçamento? — somatórias + indicador (v0.5.3) -->
+      <div id="orc-budget-summary" class="orc-budget-summary hidden">
+        <div class="orc-budget-card receitas">
+          <span class="orc-budget-label">Receitas mensais</span>
+          <span class="orc-budget-value" id="orc-budget-receitas">R$ 0,00</span>
+        </div>
+        <div class="orc-budget-card despesas">
+          <span class="orc-budget-label">Despesas mensais</span>
+          <span class="orc-budget-value" id="orc-budget-despesas">R$ 0,00</span>
+        </div>
+        <div class="orc-budget-card saldo" id="orc-budget-saldo-card">
+          <span class="orc-budget-label">Saldo</span>
+          <span class="orc-budget-value" id="orc-budget-saldo">R$ 0,00</span>
+          <span class="orc-budget-indicator" id="orc-budget-indicator">—</span>
+        </div>
+      </div>
+      <div id="orc-bloco-breakdown" class="orc-bloco-breakdown hidden"></div>
+
       <!-- View toggle + busca -->
       <div class="toolbar">
         <div class="view-toggle" id="view-toggle">

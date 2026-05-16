@@ -4465,6 +4465,59 @@ td .currency-split {
   font-weight: var(--fw-semibold);
 }
 
+/* v0.5.3 — Sumário "Cabe no orçamento?" no topo da aba Configurações */
+.orc-budget-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+.orc-budget-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.orc-budget-label { font-size: var(--fs-xs); color: var(--color-text-muted); font-weight: var(--fw-medium); text-transform: uppercase; letter-spacing: 0.04em; }
+.orc-budget-value { font-size: var(--fs-lg); font-weight: var(--fw-semibold); color: var(--color-text-main); font-variant-numeric: tabular-nums; }
+.orc-budget-card.receitas .orc-budget-value { color: var(--color-success); }
+.orc-budget-card.despesas .orc-budget-value { color: var(--color-danger); }
+.orc-budget-card.saldo { gap: 4px; position: relative; }
+.orc-budget-indicator {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: var(--fs-xs); font-weight: var(--fw-semibold);
+  padding: 2px 8px; border-radius: var(--radius-full); width: max-content;
+}
+.orc-budget-card.saldo--verde   { border-color: color-mix(in srgb, var(--color-success) 40%, transparent); }
+.orc-budget-card.saldo--verde   .orc-budget-indicator { color: var(--color-success); background: color-mix(in srgb, var(--color-success) 12%, transparent); }
+.orc-budget-card.saldo--amarelo { border-color: color-mix(in srgb, var(--color-warning) 40%, transparent); }
+.orc-budget-card.saldo--amarelo .orc-budget-indicator { color: var(--color-warning); background: color-mix(in srgb, var(--color-warning) 12%, transparent); }
+.orc-budget-card.saldo--vermelho{ border-color: color-mix(in srgb, var(--color-danger) 40%, transparent); }
+.orc-budget-card.saldo--vermelho .orc-budget-indicator { color: var(--color-danger); background: color-mix(in srgb, var(--color-danger) 12%, transparent); }
+@media (max-width: 720px) {
+  .orc-budget-summary { grid-template-columns: 1fr; }
+}
+
+.orc-bloco-breakdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-2);
+  margin: 0 0 var(--space-5);
+}
+.orc-bloco-mini {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-alt);
+  border-left: 3px solid var(--bloco-accent, var(--color-border));
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+}
+.orc-bloco-mini-label { color: var(--color-text-muted); font-weight: var(--fw-medium); }
+.orc-bloco-mini-value { color: var(--color-text-main); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
+
 /* v0.5.1 — abas Mensal e 12 meses são read-only. Inputs aparecem como texto. */
 .orcamento-cell-edit[disabled],
 .orcamento-cell-edit[readonly],

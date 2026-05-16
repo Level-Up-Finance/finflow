@@ -1561,9 +1561,101 @@ function renderCompromissos() {
       },
     });
   }
+
+  // v0.5.3: atualiza o sumário "Cabe no orçamento?"
+  updateBudgetSummary();
 }
 
+/**
+ * Calcula receitas vs despesas mensais agregando todos os compromissos
+ * configurados e ativos. Indicador verde/amarelo/vermelho baseado no saldo.
+ *
+ *   • Verde:    saldo ≥ 20% das receitas (folga saudável)
+ *   • Amarelo:  saldo ≥ 0 mas < 20% (passa, mas justo)
+ *   • Vermelho: saldo < 0 (não cabe no orçamento)
+ */
+function updateBudgetSummary() {
+  const summary = document.getElementById('orc-budget-summary');
+  if (!summary) return;
 
+  // Multiplicador mensal por período
+  const periodoMult = (p) => ({
+    'Mensal':    1,
+    'Quinzenal': 2,
+    'Semanal':   4.33,
+    'Anual':     1 / 12,
+    'Único':     0,
+  })[p] ?? 1;
+
+  let receitas = 0;
+  let despesas = 0;
+  const porBloco = new Map(); // blocoId → { label, accent, total }
+  SUPER_BLOCOS_LIST.forEach((b) => porBloco.set(b.id, { label: b.label, accent: b.accent, total: 0 }));
+
+  const catToBloco = new Map();
+  for (const bloco of SUPER_BLOCOS_LIST) {
+    for (const cat of cachedCategorias) {
+      if (bloco.grupos.includes(cat.grupo || 'custo_vida')) catToBloco.set(cat.id, bloco.id);
+    }
+  }
+
+  for (const sub of cachedCompromissos) {
+    if (sub.status !== 'ativa') continue;
+    if (!isRowConfigured(sub)) continue;
+    const valor = Number(sub.valor_base) || 0;
+    const mensal = valor * periodoMult(sub.periodo);
+    const tipo = (sub.tipo || '').toLowerCase();
+    if (tipo === 'receita') receitas += mensal;
+    else if (tipo === 'despesa') despesas += mensal;
+
+    const blocoId = catToBloco.get(sub.categoria_id);
+    if (blocoId) porBloco.get(blocoId).total += mensal;
+  }
+
+  if (receitas === 0 && despesas === 0) {
+    summary.classList.add('hidden');
+    return;
+  }
+  summary.classList.remove('hidden');
+
+  const saldo  = receitas - despesas;
+  const ratio  = receitas > 0 ? saldo / receitas : (despesas > 0 ? -1 : 0);
+  const status = ratio >= 0.2 ? 'verde' : (ratio >= 0 ? 'amarelo' : 'vermelho');
+  const label  = status === 'verde'   ? '✓ Cabe com folga'
+               : status === 'amarelo' ? '⚠ Cabe, mas justo'
+               : '✕ Não cabe no orçamento';
+
+  document.getElementById('orc-budget-receitas').textContent = formatCurrencyBRL(receitas);
+  document.getElementById('orc-budget-despesas').textContent = formatCurrencyBRL(despesas);
+  document.getElementById('orc-budget-saldo').textContent    = formatCurrencyBRL(saldo);
+  document.getElementById('orc-budget-indicator').textContent = label;
+
+  const card = document.getElementById('orc-budget-saldo-card');
+  card.classList.remove('saldo--verde', 'saldo--amarelo', 'saldo--vermelho');
+  card.classList.add(`saldo--${status}`);
+
+  // Breakdown por super-bloco
+  const breakdownEl = document.getElementById('orc-bloco-breakdown');
+  if (breakdownEl) {
+    const blocosWithTotal = Array.from(porBloco.values()).filter((b) => b.total > 0);
+    if (blocosWithTotal.length === 0) {
+      breakdownEl.classList.add('hidden');
+      breakdownEl.innerHTML = '';
+    } else {
+      breakdownEl.classList.remove('hidden');
+      breakdownEl.innerHTML = blocosWithTotal.map((b) => `
+        <div class="orc-bloco-mini" style="--bloco-accent: ${b.accent};">
+          <span class="orc-bloco-mini-label">${b.label}</span>
+          <span class="orc-bloco-mini-value">${formatCurrencyBRL(b.total)}</span>
+        </div>
+      `).join('');
+    }
+  }
+}
+
+function formatCurrencyBRL(v) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+}
 
 
 function navigateCalendar(delta) {

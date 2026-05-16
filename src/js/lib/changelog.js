@@ -7,6 +7,17 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-16-orcamento-indicador-cabe',
+    version: '0.5.3',
+    date: '16/05/2026',
+    title: 'Orçamento — somatórias e indicador "Cabe no orçamento?"',
+    items: [
+      { type: 'new', text: 'Aba Configurações: sumário no topo com Receitas mensais / Despesas mensais / Saldo + indicador colorido (verde = folga ≥20%, amarelo = passa apertado, vermelho = não cabe).' },
+      { type: 'new', text: 'Breakdown por super-bloco (Contribuição, Sonhos, Custo de vida) com somatórias mensais — visual rápido de para onde está indo o dinheiro.' },
+      { type: 'improvement', text: 'Cálculo mensal considera o período do compromisso: Mensal ×1, Quinzenal ×2, Semanal ×4.33, Anual ÷12, Único ignorado.' },
+    ],
+  },
+  {
     id: '2026-05-16-orcamento-meses-passados',
     version: '0.5.2',
     date: '16/05/2026',
