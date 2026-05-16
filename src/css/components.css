@@ -334,7 +334,7 @@
   animation: modal-slide-up var(--transition-slow);
 }
 
-.modal-xl { max-width: 1060px; }
+.modal-xl { max-width: min(1200px, 96vw); }
 .modal-lg { max-width: 760px; }
 .modal-md { max-width: 560px; }
 .modal-sm { max-width: 420px; }
@@ -12115,7 +12115,7 @@ td .currency-split {
 
 .tabela-amort-wrapper {
   overflow-x: auto;
-  max-height: 400px;
+  max-height: 480px;
   overflow-y: auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -12123,11 +12123,11 @@ td .currency-split {
 .tabela-amort {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-xs);
 }
 .tabela-amort th,
 .tabela-amort td {
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-2);
   border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
 }
