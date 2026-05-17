@@ -536,10 +536,18 @@ async function ensureOrcamentoForMonth(year, month) {
 
   // Pra cada subcategoria ativa, calcula valor default
   const rows = [];
+  const staleSubIds = []; // subs com row em orcamento_geral mas que não ocorrem mais
   for (const sub of cachedSubcategorias) {
-    if (!isActiveInMonth(sub, year, month)) continue;
-    const occurrences = countOccurrencesInMonth(sub, year, month);
-    if (occurrences === 0) continue;
+    const activeInMonth = isActiveInMonth(sub, year, month);
+    const occurrences   = activeInMonth ? countOccurrencesInMonth(sub, year, month) : 0;
+
+    if (!activeInMonth || occurrences === 0) {
+      // Esta sub não tem ocorrência neste mês. Se sobrou um row no banco
+      // (provavelmente gerado por uma versão anterior com bug de recorrência),
+      // marcamos pra limpar antes de re-renderizar.
+      staleSubIds.push(sub.id);
+      continue;
+    }
     const valor = (Number(sub.valor_base) || 0) * occurrences;
     rows.push({
       user_id: user.id,
@@ -548,6 +556,20 @@ async function ensureOrcamentoForMonth(year, month) {
       valor_previsto: valor,
       moeda: sub.moeda,
     });
+  }
+
+  // Self-healing: apaga rows órfãos (compromisso não recorre mais neste mês).
+  // Importante: só apaga rows ainda não realizados — se a coluna cambio_travado
+  // estiver preenchida, o usuário/sistema já tocou nesse row e preservamos.
+  if (staleSubIds.length > 0) {
+    const { error: delErr } = await supabase
+      .from('orcamento_geral')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('mes_ano', mesAno)
+      .in('subcategoria_id', staleSubIds)
+      .is('cambio_travado', null);
+    if (delErr) console.warn('[ensureOrcamentoForMonth] cleanup stale:', delErr.message);
   }
 
   if (rows.length === 0) return;
