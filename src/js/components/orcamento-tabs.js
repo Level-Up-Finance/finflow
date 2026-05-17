@@ -6,7 +6,7 @@
 // =============================================================
 
 const TABS = [
-  { id: 'configuracoes', label: 'Configurações', href: '/compromissos.html' },
+  { id: 'configuracoes', label: 'Compromissos',  href: '/compromissos.html' },
   { id: 'mensal',        label: 'Mensal',        href: '/orcamento.html?tab=mensal' },
   { id: '12meses',       label: '12 meses',      href: '/orcamento.html?tab=12meses' },
   { id: 'passados',      label: 'Meses passados',href: '/orcamento.html?tab=passados' },
