@@ -1752,7 +1752,12 @@ async function renderOcorrenciasSections(c) {
         </div>
       `).join('');
 
-  // ── Últimas 3 ── (busca em pagamentos)
+  // ── Últimas 3 ── (busca em pagamentos com skeleton enquanto carrega)
+  ultimasEl.innerHTML = `
+    <div class="details-skeleton-row"></div>
+    <div class="details-skeleton-row"></div>
+    <div class="details-skeleton-row"></div>
+  `;
   try {
     const { data: pags } = await supabase
       .from('pagamentos')

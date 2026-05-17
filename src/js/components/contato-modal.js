@@ -217,7 +217,7 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
 // ── HTML do modal (idêntico ao usado em contatos.html) ───────────
 function renderModalHtml(title) {
   return `
-    <div class="modal modal-md">
+    <div class="modal modal-lg">
       <div class="modal-header">
         <h3 class="modal-title">${escapeHtml(title)}</h3>
         <button type="button" class="modal-close" data-cancel aria-label="Fechar">
@@ -288,15 +288,15 @@ function renderModalHtml(title) {
           <div class="field">
             <label class="field-label" for="ct-telefone">Telefone</label>
             <input type="text" id="ct-telefone" maxlength="40" placeholder="(11) 99999-9999">
-            <div class="phone-same-row">
-              <input type="checkbox" id="ct-mesmo-numero">
-              <label for="ct-mesmo-numero">Mesmo número do WhatsApp</label>
-            </div>
           </div>
           <div class="field">
             <label class="field-label" for="ct-whatsapp">WhatsApp</label>
             <input type="text" id="ct-whatsapp" maxlength="40" placeholder="(11) 99999-9999">
           </div>
+        </div>
+        <div class="phone-same-row" style="margin-top: -8px; margin-bottom: 4px;">
+          <input type="checkbox" id="ct-mesmo-numero">
+          <label for="ct-mesmo-numero">Telefone e WhatsApp são o mesmo número</label>
         </div>
 
         <!-- Redes sociais -->
