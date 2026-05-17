@@ -21,6 +21,22 @@ export const CHANGELOG = [
     ],
   },
   {
+    id: '2026-05-17-fases-fixes-pos-v0-5-4',
+    version: '0.5.5',
+    date: '17/05/2026',
+    title: 'Tracker de tickets com fases + fixes pós v0.5.4',
+    items: [
+      { type: 'new', text: 'Página de Desenvolvimento ganha coluna "Fase" (A..I) com badges coloridas, filtro por fase no topo e ordenação automática por fase. Cada ticket pode ter fase setada via dropdown clicável direto na linha — mesma UX de módulo/status.' },
+      { type: 'new', text: 'Modal de detalhe do ticket: status e fase migrados para o header como chips de classificação, deixando o corpo do modal só com conteúdo descritivo.' },
+      { type: 'fix', text: 'Aba "Configurações" do Orçamento ficava vazia após v0.5.4 — initColVisibility tentava ler .toolbar (renomeado para .orc-filter-bar) e quebrava todo o init.' },
+      { type: 'improvement', text: 'Aba "Configurações" agrupa categorias em 3 seções coloridas (Contribuição / Sonhos / Custo de Vida) — mesmo layout da página de Configurações de Categorias.' },
+      { type: 'fix', text: 'Página de Categorias: coluna "Vínculos" não permite mais criar compromisso. Mostra apenas vínculos existentes (badges); placeholder "—" quando não há.' },
+      { type: 'fix', text: 'Página de Categorias: prompt "Criar compromisso" após salvar nova categoria/subcategoria foi removido. Modal fecha direto.' },
+      { type: 'fix', text: 'Contato picker: mostra logo/foto quando disponível (campo logo_url agora é puxado no SELECT em Compromissos, Dívidas e Investimentos).' },
+      { type: 'fix', text: 'Página de Categorias: criar/reordenar não joga mais o scroll pro topo. reloadAll preserva window.scrollY entre re-renders.' },
+    ],
+  },
+  {
     id: '2026-05-16-orcamento-filtros-layout',
     version: '0.5.4',
     date: '16/05/2026',
