@@ -261,7 +261,7 @@ function renderTree() {
           <tr class="cfg-tr cfg-tr--first cfg-tr-cat-only">
             ${catCell(1)}
             <td class="cfg-td-sub cfg-td-empty">Sem subcategorias</td>
-            <td class="cfg-td-comp"><button class="btn-add-comp" data-cfg-cat="${cat.id}" data-cfg-tipo="${cat.grupo === 'receitas' ? 'Receita' : 'Despesa'}" data-cfg-nome="${escapeHtml(cat.nome)}" title="Criar compromisso" type="button"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> compromisso</button></td>
+            <td class="cfg-td-comp"><span class="cfg-tx-none">—</span></td>
             <td class="cfg-td-tx"><span class="cfg-tx-none">—</span></td>
             <td class="cfg-td-actions"></td>
           </tr>`;
@@ -284,7 +284,7 @@ function renderTree() {
           }
           const compHtml = compParts.length
             ? `<div style="display:flex;flex-wrap:nowrap;gap:4px;align-items:center;">${compParts.join('')}</div>`
-            : `<button class="btn-add-comp" data-cfg-sub="${sub.id}" title="Criar compromisso" type="button"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> compromisso</button>`;
+            : `<span class="cfg-tx-none">—</span>`;
 
           // — Transações column —
           const txCount = cachedTxCountMap.get(sub.id) || 0;
