@@ -220,9 +220,15 @@ function renderVencCell(c) {
     const label = diaSemanaLabel(c.dia_semana);
     if (c.periodo === 'Semanal') {
       const n = Number(c.intervalo_semanas) || 1;
-      return n > 1 ? `${label} / ${n}sem` : label;
+      if (n > 1) {
+        // Badge circular destacando "a cada N semanas" — visual igual ao
+        // badge de ocorrências da aba Mensal
+        return `${label}<span class="occurrence-badge" title="A cada ${n} semanas" style="margin-left:6px;">${n}</span>`;
+      }
+      return label;
     }
-    return label;
+    // Quinzenal — badge fixo "2" (a cada 2 semanas)
+    return `${label}<span class="occurrence-badge" title="A cada 2 semanas" style="margin-left:6px;">2</span>`;
   }
   return c.vencimento_dia ? `Dia ${c.vencimento_dia}` : '—';
 }
@@ -338,11 +344,28 @@ export function calcNextDueDate(c, today = new Date()) {
 
   if (c.periodo === 'Semanal') {
     if (c.dia_semana === null || c.dia_semana === undefined) return null;
+    const n = Number(c.intervalo_semanas) || 1;
     const todayDow = t.getDay();
     const daysUntil = (c.dia_semana - todayDow + 7) % 7;
-    const next = new Date(t);
-    next.setDate(t.getDate() + daysUntil);
-    return next;
+    const candidate = new Date(t);
+    candidate.setDate(t.getDate() + daysUntil);
+    // Sem intervalo (ou semanal puro = 1) → o próximo dia da semana já é a resposta
+    if (n <= 1 || !start) return candidate;
+    // Com intervalo > 1: o próximo precisa estar no ciclo de N semanas
+    // contado a partir de iniciado_em. Avança N*7 dias até cair no ciclo.
+    const cycleDays = n * 7;
+    let diff = Math.round((candidate - start) / (24 * 60 * 60 * 1000));
+    // Se candidate é antes da data de início, pula pra primeira ocorrência ≥ start
+    if (diff < 0) {
+      const weeksToAdd = Math.ceil(-diff / 7);
+      candidate.setDate(candidate.getDate() + weeksToAdd * 7);
+      diff = Math.round((candidate - start) / (24 * 60 * 60 * 1000));
+    }
+    const remainder = diff % cycleDays;
+    if (remainder !== 0) {
+      candidate.setDate(candidate.getDate() + (cycleDays - remainder));
+    }
+    return candidate;
   }
 
   if (c.periodo === 'Quinzenal') {

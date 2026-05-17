@@ -32,6 +32,7 @@ import {
   TIPOS_PAGAMENTO,
   MOEDAS,
   formatCurrency,
+  formatCurrencyHTML,
   CATEGORIAS_DEFAULT,
   renderMoedaOptions,
   moedaInputPlaceholder,
@@ -1062,6 +1063,9 @@ async function openDetailsModal(c) {
 
   document.getElementById('btn-encerrar').classList.toggle('hidden', c.status === 'arquivada' || !!c.terminado_em);
 
+  // ── Próximas 3 / Últimas 3 ocorrências (v0.6.x) ──
+  renderOcorrenciasSections(c);
+
   // ── Compromisso vinculado a Dívida/Projeto → modo read-only ──
   // Esconde botões de edição/duplicação/arquivamento, mostra "Ir para Dívida/Projeto"
   const ehVinculado    = !!(c.divida_id || c.projeto_id);
@@ -1696,6 +1700,101 @@ function formatCurrencyBRL(v) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 }
 
+
+/**
+ * Calcula as próximas N ocorrências de um compromisso recorrente a partir
+ * de hoje, varrendo dia a dia e testando `occursOn` (até 730 dias = 2 anos).
+ */
+function nextOccurrences(c, n = 3, fromDate = new Date()) {
+  const out = [];
+  const t = new Date(fromDate);
+  t.setHours(0, 0, 0, 0);
+  const limit = new Date(t);
+  limit.setDate(t.getDate() + 730);
+  const cursor = new Date(t);
+  while (out.length < n && cursor <= limit) {
+    if (occursOn(c, cursor)) out.push(new Date(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return out;
+}
+
+/**
+ * Renderiza as 2 seções no modal de detalhes:
+ *   • Próximas 3 ocorrências (datas planejadas)
+ *   • Últimas 3 ocorrências (planejada + data real do pagamento)
+ */
+async function renderOcorrenciasSections(c) {
+  const wrap         = document.getElementById('details-ocorrencias');
+  const proximasEl   = document.getElementById('details-proximas-list');
+  const ultimasEl    = document.getElementById('details-ultimas-list');
+  if (!wrap || !proximasEl || !ultimasEl) return;
+
+  // Só faz sentido pra compromissos recorrentes configurados
+  if (!c || !c.periodo || c.periodo === 'Único') {
+    wrap.classList.add('hidden');
+    return;
+  }
+  wrap.classList.remove('hidden');
+
+  const fmt = (d) => {
+    const dt = d instanceof Date ? d : new Date(d + 'T00:00:00');
+    return dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' });
+  };
+
+  // ── Próximas 3 ──
+  const proximas = nextOccurrences(c, 3);
+  proximasEl.innerHTML = proximas.length === 0
+    ? '<p class="text-muted" style="font-size: var(--fs-sm);">Sem ocorrências futuras.</p>'
+    : proximas.map((d, i) => `
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;${i < proximas.length - 1 ? 'border-bottom:1px solid var(--color-border);' : ''}">
+          <span style="font-variant-numeric:tabular-nums;font-size:var(--fs-sm);font-weight:var(--fw-medium);">${fmt(d)}</span>
+        </div>
+      `).join('');
+
+  // ── Últimas 3 ── (busca em pagamentos)
+  try {
+    const { data: pags } = await supabase
+      .from('pagamentos')
+      .select('mes_ano, valor_real, status, data_vencimento, updated_at')
+      .eq('subcategoria_id', c.id)
+      .in('status', ['Pago', 'Cartão', 'Transferido', 'Parcial'])
+      .order('mes_ano', { ascending: false })
+      .limit(3);
+
+    if (!pags || pags.length === 0) {
+      ultimasEl.innerHTML = '<p class="text-muted" style="font-size: var(--fs-sm);">Nenhum pagamento registrado ainda.</p>';
+      return;
+    }
+
+    ultimasEl.innerHTML = pags.map((p, i) => {
+      const planejada = p.data_vencimento ? fmt(p.data_vencimento) : fmt(p.mes_ano);
+      const realizada = p.updated_at ? fmt(p.updated_at.slice(0, 10)) : '—';
+      const valor     = Number(p.valor_real) || 0;
+      const statusColor = ({
+        'Pago': 'var(--color-success)',
+        'Cartão': 'var(--color-info)',
+        'Transferido': 'var(--color-success)',
+        'Parcial': 'var(--color-warning)',
+      })[p.status] || 'var(--color-text-muted)';
+      return `
+        <div style="display:flex;flex-direction:column;gap:2px;padding:6px 0;${i < pags.length - 1 ? 'border-bottom:1px solid var(--color-border);' : ''}">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;">
+            <span style="font-variant-numeric:tabular-nums;font-size:var(--fs-sm);font-weight:var(--fw-medium);">${planejada}</span>
+            <span style="color:${statusColor};font-size:var(--fs-xs);font-weight:var(--fw-semibold);">${p.status}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:var(--fs-xs);color:var(--color-text-muted);">
+            <span>Pago em ${realizada}</span>
+            <span style="font-variant-numeric:tabular-nums;">${formatCurrencyHTML(valor, c.moeda || 'BRL')}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.warn('[renderOcorrenciasSections] últimas:', err);
+    ultimasEl.innerHTML = '<p class="text-muted" style="font-size: var(--fs-sm);">Não foi possível carregar o histórico.</p>';
+  }
+}
 
 function navigateCalendar(delta) {
   calendarMonth += delta;
