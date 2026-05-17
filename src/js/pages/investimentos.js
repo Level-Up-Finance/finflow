@@ -118,7 +118,7 @@ async function loadAll() {
     supabase.from('orcamento_geral')
       .select('*, subcategorias(projeto_id, categorias(grupo))')
       .eq('mes_ano', mesAno),
-    supabase.from('contatos').select('id, nome, tipo, status').neq('status', 'arquivado').order('nome'),
+    supabase.from('contatos').select('id, nome, tipo, status, logo_url').neq('status', 'arquivado').order('nome'),
     supabase.from('aportes_projeto').select('*').order('data'),
     supabase.from('categorias').select('id, nome, grupo, ordem').eq('grupo', 'investimentos').order('ordem'),
   ]);

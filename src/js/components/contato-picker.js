@@ -15,7 +15,10 @@ import { openContatoModal } from './contato-modal.js';
 
 const TIPO_LABELS = { cliente: 'Cliente', fornecedor: 'Fornecedor', ambos: 'Ambos' };
 
-function contaAvatar(nome) {
+function contaAvatar(nome, logoUrl) {
+  if (logoUrl) {
+    return `<div class="cp-contato-avatar cp-contato-avatar--img"><img src="${escapeHtml(logoUrl)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('cp-contato-avatar--fallback');this.remove();" /></div>`;
+  }
   const init = getInitials(nome);
   let hash = 0;
   for (let i = 0; i < nome.length; i++) hash = nome.charCodeAt(i) + ((hash << 5) - hash);
@@ -118,7 +121,7 @@ export function initContatoPicker({ rootEl, contatos, defaultTipo = 'fornecedor'
     for (const c of filtered) {
       html += `
         <button type="button" class="contato-picker-item" data-id="${c.id}">
-          ${contaAvatar(c.nome)}
+          ${contaAvatar(c.nome, c.logo_url)}
           <span class="contato-picker-name">${escapeHtml(c.nome)}</span>
           <span class="contato-picker-tipos">${renderTipoPills(c.tipo)}</span>
         </button>

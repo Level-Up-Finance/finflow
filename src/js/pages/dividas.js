@@ -391,7 +391,7 @@ async function loadAll() {
   const [divRes, contRes, contatosRes, histRes, taxaHistRes, subsRes] = await Promise.all([
     supabase.from('dividas').select('*').order('created_at', { ascending: false }),
     supabase.from('contas').select('id, nome, apelido, tipo, icone_cor, moeda').neq('status', 'arquivada').order('nome'),
-    supabase.from('contatos').select('id, nome, tipo, status').neq('status', 'arquivado').order('nome'),
+    supabase.from('contatos').select('id, nome, tipo, status, logo_url').neq('status', 'arquivado').order('nome'),
     supabase.from('pagamentos_divida_historico').select('*').order('data'),
     supabase.from('divida_taxa_historico').select('*').order('data_vigencia'),
     supabase.from('subcategorias').select('divida_id').not('divida_id', 'is', null),

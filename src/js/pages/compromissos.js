@@ -361,7 +361,7 @@ function toggleDividaField() {
 async function loadContatos() {
   const { data, error } = await supabase
     .from('contatos')
-    .select('id, nome, tipo, status')
+    .select('id, nome, tipo, status, logo_url')
     .neq('status', 'arquivado')
     .order('nome');
   if (error) {
