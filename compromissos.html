@@ -48,14 +48,19 @@
       <!-- Tab strip: Compromissos / Mensal / Anual / Histórico -->
       <div id="orc-tabs"></div>
 
-      <!-- Cabe no orçamento? — somatórias + indicador (v0.5.3) -->
+      <!-- Cabe no orçamento? — somatórias (média mensal teórica) + indicador (v0.5.3) -->
       <div id="orc-budget-summary" class="orc-budget-summary hidden">
         <div class="orc-budget-card receitas">
-          <span class="orc-budget-label">Receitas mensais</span>
+          <span class="orc-budget-label">
+            Receitas mensais (média)
+            <button type="button" class="orc-budget-info-btn" aria-label="Como o valor é calculado?" data-info-toggle>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            </button>
+          </span>
           <span class="orc-budget-value" id="orc-budget-receitas">R$ 0,00</span>
         </div>
         <div class="orc-budget-card despesas">
-          <span class="orc-budget-label">Despesas mensais</span>
+          <span class="orc-budget-label">Despesas mensais (média)</span>
           <span class="orc-budget-value" id="orc-budget-despesas">R$ 0,00</span>
         </div>
         <div class="orc-budget-card saldo" id="orc-budget-saldo-card">
@@ -64,6 +69,23 @@
           <span class="orc-budget-indicator" id="orc-budget-indicator">—</span>
         </div>
       </div>
+
+      <!-- Painel explicativo do cálculo (escondido até clicar no ⓘ) -->
+      <div id="orc-budget-info-panel" class="orc-budget-info-panel hidden" role="region" aria-label="Como o valor é calculado">
+        <h3>Como esses valores são calculados?</h3>
+        <p>Esses números são uma <strong>média mensal teórica</strong> dos seus compromissos — não o valor exato de um mês específico. O cálculo considera o período de cada compromisso:</p>
+        <ul>
+          <li><strong>Mensal</strong> — entra com o valor cheio (×1)</li>
+          <li><strong>Quinzenal</strong> — multiplica por 2 (≈ 2 ocorrências por mês)</li>
+          <li><strong>Semanal</strong> — multiplica por 4,33 (≈ 52 semanas ÷ 12 meses)</li>
+          <li><strong>Anual</strong> — divide por 12 (rateio mensal)</li>
+          <li><strong>Único</strong> — ignorado (não recorre)</li>
+        </ul>
+        <p>Valores em moeda estrangeira (USD, EUR, GBP) são convertidos para R$ pelo câmbio do dia antes de serem somados.</p>
+        <p><strong>Para ver o valor exato de um mês específico</strong>, use a aba <a href="/orcamento.html?tab=mensal">Mensal</a> — lá o cálculo conta as ocorrências reais daquele mês (um compromisso quinzenal pode cair 2 ou 3 vezes dependendo da data e do mês).</p>
+        <button type="button" class="btn btn-sm btn-ghost" data-info-close>Entendi</button>
+      </div>
+
       <div id="orc-bloco-breakdown" class="orc-bloco-breakdown hidden"></div>
 
       <!-- Filtros + view toggle + busca (v0.5.4 — layout horizontal compacto) -->

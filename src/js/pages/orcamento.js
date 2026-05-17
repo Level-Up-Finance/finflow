@@ -15,7 +15,7 @@ import { initSidebar } from '../components/sidebar.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { formatCurrency, formatCurrencyHTML, MOEDAS } from '../lib/compromissos-config.js';
-import { fetchExchangeRate, startCurrencyAutoRefresh } from '../lib/currency.js';
+import { fetchExchangeRate, startCurrencyAutoRefresh, toBRL } from '../lib/currency.js';
 import { initCurrencyWidget } from '../components/currency-widget.js';
 import { escapeHtml, isoMonth, parseUserNumber } from '../lib/utils.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
@@ -601,15 +601,47 @@ async function refreshRates() {
  *
  * Retorna null se nenhuma das duas estiver disponível.
  */
-function convertToBRL(value, currency, entry) {
-  if (!currency || currency === 'BRL') return Number(value) || 0;
-  // Prioriza câmbio congelado se existir
-  if (entry?.cambio_travado) {
-    return (Number(value) || 0) * Number(entry.cambio_travado);
+/**
+ * Monta um title= explicando a aritmética por trás do valor exibido.
+ * Foca em moeda estrangeira (onde a conta envolve câmbio) — em BRL puro
+ * mostra só "N × valor = total" se houver mais de 1 ocorrência.
+ */
+function calcTooltipForRow(entry, sub, valorOrig, moeda, valorBRL, ocurrencias, isVariavel) {
+  if (!sub) return '';
+  const baseUnit = isVariavel ? valorOrig : (Number(sub.valor_base) || 0);
+  const fmtN = (v) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const moedaSym = ({ BRL: 'R$', USD: '$', EUR: '€', GBP: '£' })[moeda] || moeda;
+  const isBRL = moeda === 'BRL';
+  // BRL puro
+  if (isBRL) {
+    if (isVariavel) return `title="Valor variável definido pelo usuário: R$ ${fmtN(valorOrig)}"`;
+    if (ocurrencias > 1) return `title="${ocurrencias} × R$ ${fmtN(baseUnit)} = R$ ${fmtN(valorOrig)}"`;
+    return '';
   }
-  const rate = ratesMap.get(currency);
-  if (!rate) return null;
-  return (Number(value) || 0) * rate;
+  // Moeda estrangeira
+  if (valorBRL === null) {
+    return `title="Câmbio ${moeda} não disponível — exibindo valor original ${moedaSym} ${fmtN(valorOrig)}"`;
+  }
+  const rate = (Number(valorBRL) / Number(valorOrig || 1)).toFixed(4);
+  const isFrozen = !!entry.cambio_travado;
+  const rateLabel = isFrozen ? `R$ ${rate} (câmbio congelado)` : `R$ ${rate} (câmbio do dia)`;
+  if (isVariavel) {
+    return `title="${moedaSym} ${fmtN(valorOrig)} × ${rateLabel} = R$ ${fmtN(valorBRL)}"`;
+  }
+  if (ocurrencias > 1) {
+    return `title="${ocurrencias} × ${moedaSym} ${fmtN(baseUnit)} × ${rateLabel} = R$ ${fmtN(valorBRL)}"`;
+  }
+  return `title="${moedaSym} ${fmtN(valorOrig)} × ${rateLabel} = R$ ${fmtN(valorBRL)}"`;
+}
+
+function convertToBRL(value, currency, entry) {
+  // Wrapper fino sobre toBRL() de currency.js — mantém compat com chamadas
+  // que passam `entry` (objeto com cambio_travado).
+  return toBRL(value, currency, {
+    rateMap: ratesMap,
+    frozenRate: entry?.cambio_travado,
+    onMissing: 'null',
+  });
 }
 
 /**
@@ -947,7 +979,7 @@ function renderEntryRow(entry) {
               <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
             </svg>
           </span>
-          <span class="orcamento-input-group">
+          <span class="orcamento-input-group" ${calcTooltipForRow(entry, sub, valorOrig, moeda, valorBRL, ocurrencias, isVariavel)}>
             <span class="brl-prefix">${getMainCurrencySymbol()}</span>
             <input
               type="text"
@@ -1127,12 +1159,17 @@ async function saveCell(input) {
 // -----------------------------
 function updateSummary() {
   let totalReceitas = 0, totalDespesas = 0;
+  const skippedByMoeda = new Map(); // moeda → count
   for (const entry of cachedOrcamento) {
     const tipo = entry.subcategorias?.tipo;
     const v = Number(entry.valor_previsto) || 0;
     const moeda = entry.moeda || 'BRL';
     const vBRL = convertToBRL(v, moeda, entry);
-    if (vBRL === null) continue; // skip se cotação não disponível
+    if (vBRL === null) {
+      // Câmbio indisponível: registra pra avisar o usuário (em vez de sumir silenciosamente)
+      skippedByMoeda.set(moeda, (skippedByMoeda.get(moeda) || 0) + 1);
+      continue;
+    }
     if (tipo === 'Receita') totalReceitas += vBRL;
     else if (tipo === 'Despesa') totalDespesas += vBRL;
   }
@@ -1140,6 +1177,25 @@ function updateSummary() {
 
   document.getElementById('summary-receitas').innerHTML = formatCurrencyHTML(totalReceitas, 'BRL');
   document.getElementById('summary-despesas').innerHTML = formatCurrencyHTML(-totalDespesas, 'BRL');
+
+  // Aviso de linhas excluídas do total
+  let warnEl = document.getElementById('summary-cambio-warning');
+  if (skippedByMoeda.size > 0) {
+    const parts = [...skippedByMoeda.entries()].map(([m, n]) => `${n} em ${m}`).join(', ');
+    if (!warnEl) {
+      warnEl = document.createElement('div');
+      warnEl.id = 'summary-cambio-warning';
+      warnEl.className = 'summary-cambio-warning';
+      document.getElementById('orcamento-summary')?.parentNode?.insertBefore(
+        warnEl,
+        document.getElementById('orcamento-summary'),
+      );
+    }
+    warnEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ${parts} ${skippedByMoeda.size === 1 && [...skippedByMoeda.values()][0] === 1 ? 'linha não foi incluída no total — câmbio indisponível.' : 'linhas não foram incluídas no total — câmbio indisponível.'}`;
+    warnEl.classList.remove('hidden');
+  } else if (warnEl) {
+    warnEl.classList.add('hidden');
+  }
 
   const saldoEl = document.getElementById('summary-saldo');
   const saldoCard = document.getElementById('saldo-card');

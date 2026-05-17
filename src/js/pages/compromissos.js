@@ -39,7 +39,7 @@ import {
 import { initColVisibility } from '../lib/col-visibility.js';
 import { escapeHtml, formatDateBR, todayISO } from '../lib/utils.js';
 import { createContaPicker } from '../lib/conta-picker.js';
-import { fetchExchangeRate } from '../lib/currency.js';
+import { fetchExchangeRate, toBRL } from '../lib/currency.js';
 import { initContatoPicker } from '../components/contato-picker.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 import {
@@ -107,6 +107,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Tab strip "Orçamento" — Compromissos é o tab ativo nesta página
     const { mountOrcamentoTabs } = await import('../components/orcamento-tabs.js');
     mountOrcamentoTabs('orc-tabs', 'configuracoes');
+
+    // Toggle do painel explicativo "Como esses valores são calculados?"
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('[data-info-toggle]')) {
+        document.getElementById('orc-budget-info-panel')?.classList.toggle('hidden');
+      } else if (e.target.closest('[data-info-close]')) {
+        document.getElementById('orc-budget-info-panel')?.classList.add('hidden');
+      }
+    });
   }
   await loadStrings();
   applyTranslationsToDom();
@@ -1351,13 +1360,14 @@ async function refreshLocalRates() {
 }
 
 function convertToLocalBRL(value, currency) {
-  if (!currency || currency === 'BRL') return Number(value) || 0;
-  const rate = ratesMapLocal.get(currency);
-  if (!rate) {
+  // Wrapper fino sobre toBRL() de currency.js — única fonte de verdade
+  // pra conversão. Comportamento legado: fallback para valor cru se a
+  // taxa falhar (em vez de null), com console.warn.
+  const result = toBRL(value, currency, { rateMap: ratesMapLocal, onMissing: 'raw' });
+  if (currency && currency !== 'BRL' && !ratesMapLocal.get(currency)) {
     console.warn(`[convertToLocalBRL] taxa ${currency}→BRL ausente; usando valor cru.`);
-    return Number(value) || 0;
   }
-  return (Number(value) || 0) * rate;
+  return result;
 }
 
 // Carrega o próximo valor (orcamento_geral mais recente >= hoje) pra cada
@@ -1604,9 +1614,16 @@ function updateBudgetSummary() {
   for (const sub of cachedCompromissos) {
     if (sub.status !== 'ativa') continue;
     if (!isRowConfigured(sub)) continue;
-    // Converte valor_base para BRL (moeda principal) — antes somávamos
-    // USD/GBP como se fossem BRL.
-    const valorBRL = convertToLocalBRL(Number(sub.valor_base) || 0, sub.moeda || 'BRL');
+    // Para compromissos com valor_variavel, usa o valor do próximo mês
+    // (orcamento_geral via cachedProxValores). Senão, usa valor_base.
+    let valorOrig = Number(sub.valor_base) || 0;
+    let moedaOrig = sub.moeda || 'BRL';
+    if (sub.valor_variavel && cachedProxValores.has(sub.id)) {
+      const prox = cachedProxValores.get(sub.id);
+      valorOrig = Number(prox.valor_previsto) || 0;
+      moedaOrig = prox.moeda || moedaOrig;
+    }
+    const valorBRL = convertToLocalBRL(valorOrig, moedaOrig);
     const mensal = valorBRL * periodoMult(sub.periodo);
     const tipo = (sub.tipo || '').toLowerCase();
     if (tipo === 'receita') receitas += mensal;

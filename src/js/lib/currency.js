@@ -74,3 +74,28 @@ export async function getFrozenRate(mesAno, moeda) {
 export function startCurrencyAutoRefresh(callback, intervalMs = CACHE_TTL_MS) {
   return setInterval(callback, intervalMs);
 }
+
+/**
+ * Converter um valor para BRL — função canônica usada por todas as páginas.
+ * Centraliza a lógica de:
+ *   • câmbio congelado (entry.cambio_travado) tem prioridade sobre taxa do dia
+ *   • taxa do dia vem do rateMap (Map<moeda, number>)
+ *   • valores em BRL passam reto
+ *
+ * @param {number} value      valor na moeda original
+ * @param {string} moeda      'BRL' | 'USD' | 'EUR' | 'GBP' | …
+ * @param {Object} options
+ * @param {Map}    options.rateMap   Map<moeda, number> com taxas pré-carregadas
+ * @param {number} [options.frozenRate]  câmbio congelado pra esse valor (overrides rateMap)
+ * @param {string} [options.onMissing='null']  'null' (retorna null) | 'raw' (retorna valor cru)
+ *
+ * @returns {number|null}  valor em BRL, ou null/raw se taxa indisponível conforme onMissing
+ */
+export function toBRL(value, moeda, { rateMap, frozenRate, onMissing = 'null' } = {}) {
+  const v = Number(value) || 0;
+  if (!moeda || moeda === 'BRL') return v;
+  if (frozenRate) return v * Number(frozenRate);
+  const rate = rateMap?.get(moeda);
+  if (!rate) return onMissing === 'raw' ? v : null;
+  return v * rate;
+}
