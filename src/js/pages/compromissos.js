@@ -881,7 +881,10 @@ function openCompromissoModal(c = null) {
   document.getElementById('comp-vencimento-data-anual').value = anualDateFromCompromisso(c);
   document.getElementById('comp-dia-semana').value = c?.dia_semana ?? '';
   document.getElementById('comp-intervalo-semanas').value = c?.intervalo_semanas || 1;
-  document.getElementById('comp-valor-base').value = c?.valor_base ?? '';
+  // Se valor_base é 0/null, deixa o input vazio pra o placeholder "0,00"
+  // aparecer — o usuário começa a digitar sem precisar apagar o 0
+  document.getElementById('comp-valor-base').value =
+    (c?.valor_base != null && Number(c.valor_base) !== 0) ? c.valor_base : '';
   const openMoedaCode = c?.moeda || 'BRL';
   document.getElementById('comp-moeda').innerHTML = renderMoedaOptions(openMoedaCode);
   document.getElementById('comp-valor-base').placeholder = moedaInputPlaceholder(openMoedaCode);
@@ -919,6 +922,21 @@ function openCompromissoModal(c = null) {
   }
 
   openModal('modal-compromisso');
+
+  // Bonus: select-all em foco pra inputs decimais — usuário começa a
+  // digitar direto sem precisar apagar o valor existente
+  const modalEl = document.getElementById('modal-compromisso');
+  if (modalEl && !modalEl._selectAllBound) {
+    modalEl._selectAllBound = true;
+    modalEl.addEventListener('focusin', (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLInputElement)) return;
+      if (t.type === 'number' || t.inputMode === 'decimal' || t.classList.contains('input-decimal')) {
+        // setTimeout p/ garantir que o cursor já está no campo antes do select
+        setTimeout(() => t.select?.(), 0);
+      }
+    });
+  }
 
   // Se rodando dentro do overlay do iframe (configuracoes.html), restaura a
   // visibilidade do documentElement (escondida pelo inline script do <head>
