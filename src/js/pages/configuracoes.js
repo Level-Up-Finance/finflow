@@ -177,9 +177,13 @@ async function computeHistorico() {
 }
 
 async function reloadAll() {
-  document.getElementById('cfg-tree').innerHTML = '';
+  // Preserva a posição de scroll — antes wipávamos o tree (flash visual)
+  // e re-renderizávamos do zero, o que jogava o usuário pro topo da página.
+  const scrollY = window.scrollY;
   await loadAll();
   renderTree();
+  // Restaura scroll após o paint do novo HTML
+  requestAnimationFrame(() => window.scrollTo({ top: scrollY, left: 0, behavior: 'instant' }));
 }
 
 // -----------------------------
@@ -562,15 +566,13 @@ async function saveCat() {
       .limit(1);
     const newCatId = freshCats?.[0]?.id || null;
 
-    await reloadAll();
-    scrollToTreeItem('.cfg-cat-nome-cell', savedNome);
     // v0.5.x: criação de compromisso vive nas páginas de Dívidas/Projetos
     // e na aba Configurações de Orçamento — não mais aqui.
     closeCatModal();
+    await reloadAll();
   } else {
     closeCatModal();
     await reloadAll();
-    scrollToTreeItem('.cfg-cat-nome-cell', savedNome);
   }
 }
 
@@ -776,15 +778,13 @@ async function saveSub() {
       .limit(1);
     const newSubId = freshSubs?.[0]?.id || null;
 
-    await reloadAll();
-    scrollToTreeItem('.cfg-sub-nome-cell', savedNome);
     // v0.5.x: criação de compromisso vive nas páginas de Dívidas/Projetos
     // e na aba Configurações de Orçamento — não mais aqui.
     closeSubModal();
+    await reloadAll();
   } else {
     closeSubModal();
     await reloadAll();
-    scrollToTreeItem('.cfg-sub-nome-cell', savedNome);
   }
 }
 
