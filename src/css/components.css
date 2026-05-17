@@ -4428,7 +4428,7 @@ td .currency-split {
 
 /* ───────────────────────────────────────────────────────────────
    Tab strip "Orçamento" — compartilhado entre orcamento.html e
-   compromissos.html (Configurações / Mensal / 12 meses / Passados)
+   compromissos.html (Compromissos / Mensal / Anual / Histórico)
    ─────────────────────────────────────────────────────────────── */
 .orc-tab-strip {
   display: flex;
@@ -4447,10 +4447,14 @@ td .currency-split {
   justify-content: center;
   flex: 1 1 auto;
   min-width: max-content;
-  padding: var(--space-2) var(--space-4);
+  /* Altura de toque ≥44px (WCAG 2.5.5) — antes 32-36px */
+  min-height: 44px;
+  padding: 10px var(--space-4);
   font-size: var(--fs-sm);
   font-weight: var(--fw-medium);
-  color: var(--color-text-muted);
+  /* Cor mais escura que --color-text-muted pra garantir contraste ≥4.5:1
+     em aba inativa sobre o fundo --color-surface-alt */
+  color: var(--color-text-secondary, #4B5563);
   background: transparent;
   border-radius: calc(var(--radius-md) - 4px);
   text-decoration: none;
@@ -4458,11 +4462,19 @@ td .currency-split {
   transition: background 0.15s ease, color 0.15s ease;
 }
 .orc-tab:hover { color: var(--color-text-main); background: color-mix(in srgb, var(--color-primary) 6%, transparent); }
+.orc-tab:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
 .orc-tab.active {
   color: var(--color-text-main);
   background: var(--color-surface);
   box-shadow: 0 1px 3px rgba(0,0,0,.06);
   font-weight: var(--fw-semibold);
+}
+/* Respeita preferência do usuário por menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  .orc-tab { transition: none; }
 }
 
 /* v0.5.3 — Sumário "Cabe no orçamento?" no topo da aba Configurações */

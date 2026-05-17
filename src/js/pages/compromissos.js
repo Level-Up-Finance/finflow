@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else {
     await initSidebar('orcamento');
     initTutorial('compromissos');
-    // Tab strip "Orçamento" — Configurações é o tab ativo nesta página
+    // Tab strip "Orçamento" — Compromissos é o tab ativo nesta página
     const { mountOrcamentoTabs } = await import('../components/orcamento-tabs.js');
     mountOrcamentoTabs('orc-tabs', 'configuracoes');
   }

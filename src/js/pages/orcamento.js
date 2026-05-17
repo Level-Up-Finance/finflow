@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyTranslationsToDom();
   initCurrencyWidget('currency-widget');
 
-  // Tab strip: Configurações | Mensal | 12 meses | Meses passados
+  // Tab strip: Compromissos | Mensal | Anual | Histórico
   const { mountOrcamentoTabs, getActiveTabFromUrl } = await import('../components/orcamento-tabs.js');
   const activeTab = getActiveTabFromUrl();
   // Redirect quando alguém chega via /orcamento.html?tab=configuracoes
@@ -99,6 +99,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   viewMode = activeTab === '12meses' ? 'yearly'
            : activeTab === 'passados' ? 'passados'
            : 'monthly';
+  // Botão "Hoje" só faz sentido nas abas que têm o conceito de "mês atual"
+  if (activeTab === 'passados') {
+    document.getElementById('btn-hoje')?.classList.add('hidden');
+  }
 
   bindEvents();
   await loadCategorias();
@@ -116,7 +120,54 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 });
 
+/**
+ * Intercepta cliques nas abas internas (mensal/12meses/passados) e
+ * troca via pushState — sem full reload nem flash. A aba "Compromissos"
+ * continua sendo full navigation (página diferente).
+ */
+function bindClientSideTabNav() {
+  document.getElementById('orc-tabs')?.addEventListener('click', (e) => {
+    const link = e.target.closest('a.orc-tab');
+    if (!link) return;
+    const href = link.getAttribute('href') || '';
+    // Só intercepta links da própria orcamento.html
+    if (!href.startsWith('/orcamento.html')) return;
+    e.preventDefault();
+    const url = new URL(href, location.origin);
+    const newTab = url.searchParams.get('tab') || 'mensal';
+    if (newTab === getActiveTabFromUrlSafe()) return;
+    history.pushState({ tab: newTab }, '', href);
+    applyTabChange(newTab);
+  });
+  // Back/forward do navegador
+  window.addEventListener('popstate', () => {
+    applyTabChange(getActiveTabFromUrlSafe());
+  });
+}
+
+function getActiveTabFromUrlSafe() {
+  const t = new URLSearchParams(location.search).get('tab') || 'mensal';
+  return ['mensal', '12meses', 'passados'].includes(t) ? t : 'mensal';
+}
+
+function applyTabChange(newTab) {
+  // Atualiza visual do tab strip
+  document.querySelectorAll('#orc-tabs .orc-tab').forEach((a) => {
+    const href = a.getAttribute('href') || '';
+    const tabId = new URL(href, location.origin).searchParams.get('tab') || (href.includes('compromissos') ? 'configuracoes' : 'mensal');
+    const active = tabId === newTab;
+    a.classList.toggle('active', active);
+    if (active) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+  // Atualiza viewMode + visibilidade do botão Hoje + re-render
+  viewMode = newTab === '12meses' ? 'yearly' : newTab === 'passados' ? 'passados' : 'monthly';
+  const btnHoje = document.getElementById('btn-hoje');
+  if (btnHoje) btnHoje.classList.toggle('hidden', newTab === 'passados');
+  dispatchLoad();
+}
+
 function bindEvents() {
+  bindClientSideTabNav();
   document.getElementById('orc-prev')?.addEventListener('click', () => navigate(-1));
   document.getElementById('orc-next')?.addEventListener('click', () => navigate(1));
   document.getElementById('btn-hoje')?.addEventListener('click', () => {
@@ -825,7 +876,7 @@ function renderEntryRow(entry) {
   // Input mostra valor em BRL (convertido). Edição em BRL → save converte de volta.
   const valorOrig = Number(entry.valor_previsto) || 0;
   const valorBRL = convertToBRL(valorOrig, moeda, entry);
-  // v0.5.1: aba Mensal/12meses é apenas visualização — edição vive em Configurações
+  // v0.5.1: aba Mensal/Anual é apenas visualização — edição vive em Compromissos
   const canEdit = false;
   const inputValue = (valorBRL !== null ? valorBRL : valorOrig).toFixed(2);
 

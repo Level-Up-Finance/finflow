@@ -1,15 +1,19 @@
 // =============================================================
 // FinFlow — Tab strip compartilhada entre orcamento.html e
 // compromissos.html. Une as duas páginas sob a nova
-// "Orçamento" com 4 abas: Configurações / Mensal / 12 meses /
-// Meses passados.
+// "Orçamento" com 4 abas: Compromissos / Mensal / Anual /
+// Histórico.
+//
+// Semântica: <nav> com <a> + `aria-current="page"` na ativa
+// (NÃO usa role=tablist/tab — esse padrão é pra tab-control
+// dentro da mesma página; nosso caso é navegação multi-página).
 // =============================================================
 
 const TABS = [
-  { id: 'configuracoes', label: 'Compromissos',  href: '/compromissos.html' },
-  { id: 'mensal',        label: 'Mensal',        href: '/orcamento.html?tab=mensal' },
-  { id: '12meses',       label: '12 meses',      href: '/orcamento.html?tab=12meses' },
-  { id: 'passados',      label: 'Meses passados',href: '/orcamento.html?tab=passados' },
+  { id: 'configuracoes', label: 'Compromissos', href: '/compromissos.html' },
+  { id: 'mensal',        label: 'Mensal',       href: '/orcamento.html?tab=mensal' },
+  { id: '12meses',       label: 'Anual',        href: '/orcamento.html?tab=12meses' },
+  { id: 'passados',      label: 'Histórico',    href: '/orcamento.html?tab=passados' },
 ];
 
 /**
@@ -20,12 +24,11 @@ export function mountOrcamentoTabs(containerId, activeTab) {
   const el = document.getElementById(containerId);
   if (!el) return;
   el.innerHTML = `
-    <nav class="orc-tab-strip" role="tablist" aria-label="Abas do Orçamento">
+    <nav class="orc-tab-strip" aria-label="Abas do Orçamento">
       ${TABS.map((t) => `
         <a href="${t.href}"
            class="orc-tab${t.id === activeTab ? ' active' : ''}"
-           role="tab"
-           aria-selected="${t.id === activeTab ? 'true' : 'false'}">
+           ${t.id === activeTab ? 'aria-current="page"' : ''}>
           ${t.label}
         </a>
       `).join('')}
