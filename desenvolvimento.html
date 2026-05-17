@@ -152,6 +152,20 @@
           <option value="Muito Baixa">Muito Baixa</option>
         </select>
 
+        <select id="dev-fil-fase" class="input dev-filter-select" title="Fase de desenvolvimento sugerida">
+          <option value="">Fase</option>
+          <option value="A">A — Fundações / Infraestrutura</option>
+          <option value="B">B — Marca e UX</option>
+          <option value="C">C — Quality of life UX</option>
+          <option value="D">D — Onboarding, ajuda, academia</option>
+          <option value="E">E — Funcionalidades nativas</option>
+          <option value="F">F — Integrações externas</option>
+          <option value="G">G — Integrações financeiras</option>
+          <option value="H">H — AI</option>
+          <option value="I">I — Comunidade e educação</option>
+          <option value="__null__">Sem fase</option>
+        </select>
+
         <button type="button" class="btn btn-ghost dev-filter-clear" id="btn-clear-filters">
           Limpar
         </button>
@@ -172,6 +186,7 @@
           <thead>
             <tr>
               <th class="dev-th dev-th--codigo">Código</th>
+              <th class="dev-th dev-th--fase" title="Fase de desenvolvimento sugerida">Fase</th>
               <th class="dev-th dev-th--tipo">Tipo</th>
               <th class="dev-th dev-th--titulo">Título</th>
               <th class="dev-th dev-th--modulo">Módulo</th>

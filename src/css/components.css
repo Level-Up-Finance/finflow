@@ -15703,6 +15703,30 @@ body.comp-embedded { background: transparent; }
   white-space: nowrap;
 }
 
+/* ── Fase badges (A..I) ───────────────────────────────────── */
+.dev-fase-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  background: var(--color-surface-alt);
+  color: var(--color-text-main);
+  border: 1px solid var(--color-border);
+}
+.dev-fase-badge--A { background: #FEE2E2; color: #991B1B; border-color: #FCA5A5; } /* Fundações */
+.dev-fase-badge--B { background: #FEF3C7; color: #92400E; border-color: #FCD34D; } /* Marca/UX */
+.dev-fase-badge--C { background: #FEF9C3; color: #854D0E; border-color: #FDE68A; } /* QoL */
+.dev-fase-badge--D { background: #DCFCE7; color: #166534; border-color: #86EFAC; } /* Onboarding */
+.dev-fase-badge--E { background: #DBEAFE; color: #1E40AF; border-color: #93C5FD; } /* Nativas */
+.dev-fase-badge--F { background: #E0E7FF; color: #3730A3; border-color: #A5B4FC; } /* Externas */
+.dev-fase-badge--G { background: #EDE9FE; color: #5B21B6; border-color: #C4B5FD; } /* Financeiras */
+.dev-fase-badge--H { background: #FCE7F3; color: #9D174D; border-color: #F9A8D4; } /* AI */
+.dev-fase-badge--I { background: #F3E8FF; color: #6B21A8; border-color: #D8B4FE; } /* Comunidade */
+
 /* ── Tipo pills ───────────────────────────────────────────── */
 .dev-tipo-pill {
   display: inline-flex;

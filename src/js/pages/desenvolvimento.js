@@ -74,6 +74,7 @@ let filTipo    = '';
 let filModulo  = '';
 let filImpacto = '';
 let filComplex = '';
+let filFase    = ''; // '', 'A'..'I', '__null__' (sem fase)
 
 // Controle de modais
 let viewingId  = null;  // id do item em detalhe
@@ -185,8 +186,18 @@ function getFiltered() {
     if (filModulo  && item.modulo        !== filModulo)  return false;
     if (filImpacto && item.impacto       !== filImpacto) return false;
     if (filComplex && item.complexidade  !== filComplex) return false;
+    if (filFase) {
+      if (filFase === '__null__' && item.fase) return false;
+      if (filFase !== '__null__' && item.fase !== filFase) return false;
+    }
 
     return true;
+  }).sort((a, b) => {
+    // Ordena por fase (A→I), depois por codigo
+    const fa = a.fase || 'Z';
+    const fb = b.fase || 'Z';
+    if (fa !== fb) return fa.localeCompare(fb);
+    return (a.codigo || '').localeCompare(b.codigo || '');
   });
 }
 
@@ -213,9 +224,14 @@ function buildRow(item) {
   const typeLabel    = TYPE_LABELS[item.type] ?? item.type ?? '—';
   const statusLabel  = STATUS_LABELS[item.status] ?? item.status ?? '—';
 
+  const faseCell = item.fase
+    ? `<span class="dev-fase-badge dev-fase-badge--${escapeHtml(item.fase)}" title="Fase ${escapeHtml(item.fase)}">${escapeHtml(item.fase)}</span>`
+    : '<span class="dev-muted">—</span>';
+
   return `
     <tr class="dev-tr" data-id="${escapeHtml(item.id)}">
       <td class="dev-td dev-td-codigo" data-action="detail">${escapeHtml(item.codigo ?? '—')}</td>
+      <td class="dev-td dev-td-fase" data-action="detail">${faseCell}</td>
       <td class="dev-td" data-action="detail">
         <span class="dev-tipo-pill dev-tipo-pill--${escapeHtml(item.type ?? '')}">${escapeHtml(typeLabel)}</span>
       </td>
@@ -261,6 +277,10 @@ function bindEvents() {
     filTipo = e.target.value;
     renderTable();
   });
+  document.getElementById('dev-fil-fase')?.addEventListener('change', (e) => {
+    filFase = e.target.value;
+    renderTable();
+  });
   document.getElementById('dev-fil-modulo').addEventListener('change', (e) => {
     filModulo = e.target.value;
     renderTable();
@@ -280,6 +300,9 @@ function bindEvents() {
     document.getElementById('dev-fil-modulo').value = '';
     document.getElementById('dev-fil-impacto').value = '';
     document.getElementById('dev-fil-complex').value = '';
+    const fEl = document.getElementById('dev-fil-fase');
+    if (fEl) fEl.value = '';
+    filFase = '';
     renderTable();
   });
 
