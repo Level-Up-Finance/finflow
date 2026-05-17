@@ -52,6 +52,8 @@ const DEFAULT_TIPO = 'Corrente';
 let cachedContas = [];
 let cachedFaturasAbertas = new Map(); // conta_id → valor_total acumulado das faturas abertas
 let cachedCompromissosContas = new Map(); // conta_id → { comprometido, count }
+let cachedCaixinhas = []; // subcategorias tipo='Caixinha' carregadas (sub_id → full row)
+let cachedCaixinhasMaps = { saldo: new Map(), contrib: new Map(), hist: new Map() };
 let editingId = null;
 let detailsConta = null;        // conta sendo exibida no modal de detalhes
 let pendingAction = null;       // { type, id, label }
@@ -242,6 +244,23 @@ function bindEvents() {
       `Arquivar <strong>${escapeHtml(displayName(detailsConta))}</strong>? Ela vai parar de aparecer nas listagens ativas, mas o histórico fica preservado. Você pode reativar depois editando a conta.`,
       'Arquivar'
     );
+  });
+
+  document.getElementById('btn-cx-editar').addEventListener('click', () => {
+    if (!detailsCaixinha) return;
+    closeModal('modal-caixinha-details');
+    location.href = `compromissos.html?cfg_sub=${encodeURIComponent(detailsCaixinha.id)}`;
+  });
+
+  document.getElementById('btn-cx-arquivar').addEventListener('click', async () => {
+    if (!detailsCaixinha) return;
+    const display = detailsCaixinha.apelido?.trim() || detailsCaixinha.nome;
+    if (!confirm(`Arquivar caixinha "${display}"? Ela vai parar de aparecer nas listagens ativas.`)) return;
+    const { error } = await supabase.from('subcategorias').update({ status: 'arquivada' }).eq('id', detailsCaixinha.id);
+    if (error) { showToast('Erro ao arquivar: ' + error.message, 'error', 6000); return; }
+    showToast('Caixinha arquivada.', 'success');
+    closeModal('modal-caixinha-details');
+    await renderCaixinhasSection();
   });
 
   document.getElementById('btn-deletar-conta').addEventListener('click', () => {
@@ -987,6 +1006,7 @@ async function loadContas() {
   ]);
 
   renderContas();
+  renderCaixinhasSection(); // fire-and-forget — carrega dados e preenche #caixinhas-section
 }
 
 function renderContas() {
@@ -1306,6 +1326,263 @@ function renderComprometidoCell(conta) {
 // -----------------------------
 // Bank avatar render
 // -----------------------------
+// ─────────────────────────────────────────────────────────────────────────────
+// CAIXINHAS — seção dedicada abaixo das contas normais
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function renderCaixinhasSection() {
+  const section = document.getElementById('caixinhas-section');
+  if (!section) return;
+
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  // 1. Subcategorias tipo='Caixinha' ativas
+  const { data: caixinhas } = await supabase
+    .from('subcategorias')
+    .select('id, nome, apelido, categoria_id, conta_id, conta_destino_id, valor_base, valor_variavel, moeda, periodo, vencimento_dia, dia_semana, intervalo_semanas, iniciado_em, terminado_em, descricao, tipo_pagamento, status, tipo')
+    .eq('user_id', user.id)
+    .eq('tipo', 'Caixinha')
+    .eq('status', 'ativa')
+    .order('nome');
+
+  if (!caixinhas?.length) { cachedCaixinhas = []; section.innerHTML = ''; return; }
+  cachedCaixinhas = caixinhas;
+
+  const subIds = caixinhas.map((c) => c.id);
+
+  // 2. Saldo acumulado = soma de pagamentos Transferido
+  const { data: pagsTrn } = await supabase
+    .from('pagamentos')
+    .select('subcategoria_id, valor_real')
+    .eq('user_id', user.id)
+    .eq('status', 'Transferido')
+    .in('subcategoria_id', subIds);
+
+  const saldoMap = new Map(subIds.map((id) => [id, 0]));
+  for (const p of (pagsTrn || [])) {
+    saldoMap.set(p.subcategoria_id, (saldoMap.get(p.subcategoria_id) || 0) + Number(p.valor_real || 0));
+  }
+
+  // 3. Contribuição do mês atual (previsto ou real, não cancelados)
+  const now    = new Date();
+  const mesAno = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+
+  const { data: pagsMes } = await supabase
+    .from('pagamentos')
+    .select('subcategoria_id, valor_previsto, valor_real, status')
+    .eq('user_id', user.id)
+    .eq('mes_ano', mesAno)
+    .neq('status', 'Cancelado')
+    .in('subcategoria_id', subIds);
+
+  const contribMap = new Map(subIds.map((id) => [id, 0]));
+  for (const p of (pagsMes || [])) {
+    const val = Number(p.valor_real ?? p.valor_previsto) || 0;
+    contribMap.set(p.subcategoria_id, (contribMap.get(p.subcategoria_id) || 0) + val);
+  }
+
+  // 4. Histórico — últimas 5 transferências Transferido por caixinha
+  const { data: pagsHist } = await supabase
+    .from('pagamentos')
+    .select('subcategoria_id, data_vencimento, valor_real')
+    .eq('user_id', user.id)
+    .eq('status', 'Transferido')
+    .in('subcategoria_id', subIds)
+    .order('data_vencimento', { ascending: false })
+    .limit(subIds.length * 5);
+
+  const histMap = new Map(subIds.map((id) => [id, []]));
+  for (const p of (pagsHist || [])) {
+    const arr = histMap.get(p.subcategoria_id);
+    if (arr && arr.length < 5) arr.push(p);
+  }
+
+  cachedCaixinhasMaps = { saldo: saldoMap, contrib: contribMap, hist: histMap };
+
+  section.innerHTML = `
+    <div class="caixinhas-section-wrapper">
+      ${renderSectionHeader('Caixinhas', caixinhas.length)}
+      <div class="caixinhas-grid">
+        ${caixinhas.map((cx) => renderCaixinhaCard(cx, saldoMap, contribMap, histMap)).join('')}
+      </div>
+    </div>
+  `;
+  bindCaixinhaCardClicks();
+}
+
+function bindCaixinhaCardClicks() {
+  document.querySelectorAll('.caixinha-card').forEach((card) => {
+    card.addEventListener('click', () => {
+      const cx = cachedCaixinhas.find((c) => c.id === card.dataset.id);
+      if (cx) openCaixinhaDetailsModal(cx);
+    });
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        const cx = cachedCaixinhas.find((c) => c.id === card.dataset.id);
+        if (cx) openCaixinhaDetailsModal(cx);
+      }
+    });
+  });
+}
+
+let detailsCaixinha = null;
+
+async function openCaixinhaDetailsModal(cx) {
+  detailsCaixinha = cx;
+  const display = cx.apelido?.trim() || cx.nome;
+  const saldo   = cachedCaixinhasMaps.saldo.get(cx.id) ?? 0;
+  const contrib = cachedCaixinhasMaps.contrib.get(cx.id) ?? 0;
+
+  const contaReserva = cx.conta_destino_id ? cachedContas.find((c) => c.id === cx.conta_destino_id) : null;
+  const contaOrigem  = cx.conta_id ? cachedContas.find((c) => c.id === cx.conta_id) : null;
+
+  // Avatar (piggy bank)
+  document.getElementById('cx-details-avatar').innerHTML = `
+    <div class="caixinha-card-icon" style="width:64px;height:64px;color:#F59E0B;">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.6.5 2.8 1.5 3.8L4 18h3l1-1.7c1 .4 2 .7 3 .7s2-.3 3-.7L15 18h3l-1.5-2.2c.7-.7 1.2-1.5 1.5-2.3 1 0 2-1 2-2v-2c0-1-1-2-2-2 0-1-1-2.5-1-2.5z"/><circle cx="16" cy="10" r="0.5" fill="currentColor"/><path d="M2 11v1c0 1 1 2 2 2"/></svg>
+    </div>
+  `;
+
+  document.getElementById('cx-details-name').textContent = display;
+  const officialEl = document.getElementById('cx-details-official-name');
+  if (cx.apelido && cx.apelido.trim() && cx.apelido !== cx.nome) {
+    officialEl.textContent = `Nome oficial: ${cx.nome}`;
+    officialEl.classList.remove('hidden');
+  } else {
+    officialEl.textContent = '';
+  }
+
+  const statusLabel = { ativa: 'Ativa', inativa: 'Inativa', arquivada: 'Arquivada' }[cx.status] || cx.status;
+  document.getElementById('cx-details-meta').innerHTML = `
+    <span class="status-pill" style="background: #F59E0B1A; color: #F59E0B;">
+      <span style="width:6px;height:6px;border-radius:50%;background:currentColor;"></span>Caixinha
+    </span>
+    <span class="status-pill status-${cx.status}">${statusLabel}</span>
+  `;
+
+  // Saldo destaque
+  const saldoCls = saldo < 0 ? 'negativo' : saldo === 0 ? 'zero' : 'positivo';
+  document.getElementById('cx-details-saldo-card').innerHTML = `
+    <div class="cx-saldo-row">
+      <div>
+        <span class="caixinha-stat-label">Saldo acumulado</span>
+        <span class="caixinha-stat-valor ${saldoCls}" style="font-size: var(--fs-2xl);">${formatCurrencyHTML(saldo)}</span>
+      </div>
+      ${contrib > 0 ? `
+        <div>
+          <span class="caixinha-stat-label">Contribuição este mês</span>
+          <span class="caixinha-stat-valor">${formatCurrencyHTML(contrib)}</span>
+        </div>` : ''}
+    </div>
+  `;
+
+  // Vencimento
+  let venc = '—';
+  if (cx.periodo === 'Semanal' || cx.periodo === 'Quinzenal') {
+    if (cx.dia_semana != null) {
+      const dias = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+      const n = Number(cx.intervalo_semanas) || 1;
+      venc = cx.periodo === 'Quinzenal' ? `Toda outra ${dias[cx.dia_semana]}` : (n > 1 ? `A cada ${n} semanas (${dias[cx.dia_semana]})` : `Toda ${dias[cx.dia_semana]}`);
+    }
+  } else if (cx.vencimento_dia) {
+    venc = `Dia ${cx.vencimento_dia}`;
+  }
+
+  const valorLabel = cx.valor_variavel ? 'Valor (varia por mês)' : 'Valor base';
+  const valorDisplay = cx.valor_variavel ? '—' : formatCurrency(Number(cx.valor_base) || 0, cx.moeda);
+
+  const fields = [
+    { label: 'Conta Reserva', value: contaReserva ? (contaReserva.apelido?.trim() || contaReserva.nome) : null },
+    { label: 'Banco/Cartão de origem', value: contaOrigem ? (contaOrigem.apelido?.trim() || contaOrigem.nome) : null },
+    { label: 'Tipo de pagamento', value: cx.tipo_pagamento || null },
+    { label: 'Período', value: cx.periodo || null },
+    { label: 'Vencimento', value: venc },
+    { label: valorLabel, value: valorDisplay },
+    { label: 'Iniciada em', value: cx.iniciado_em ? formatDateBR(cx.iniciado_em) : null },
+    { label: 'Termina em', value: cx.terminado_em ? formatDateBR(cx.terminado_em) : 'Em curso' },
+    { label: 'Descrição', value: cx.descricao, full: true },
+  ];
+
+  document.getElementById('cx-details-grid').innerHTML = fields.map((f) => `
+    <div class="details-field" ${f.full ? 'style="grid-column: 1 / -1;"' : ''}>
+      <span class="details-field-label">${f.label}</span>
+      <span class="details-field-value ${!f.value ? 'details-field-empty' : ''}">${f.value ? escapeHtml(String(f.value)) : '—'}</span>
+    </div>
+  `).join('');
+
+  // Histórico completo (não só 5)
+  document.getElementById('cx-details-historico').innerHTML = '<div class="loading-overlay" style="position:relative;min-height:48px;"><span class="spinner"></span></div>';
+  const { data: pagsFull } = await supabase
+    .from('pagamentos')
+    .select('id, data_vencimento, valor_real, valor_previsto, status')
+    .eq('subcategoria_id', cx.id)
+    .eq('status', 'Transferido')
+    .order('data_vencimento', { ascending: false });
+
+  const histEl = document.getElementById('cx-details-historico');
+  if (!pagsFull?.length) {
+    histEl.innerHTML = '<p class="cartao-faturas-empty">Nenhuma transferência registrada.</p>';
+  } else {
+    histEl.innerHTML = pagsFull.map((p) => `
+      <div class="caixinha-trn-row">
+        <span class="caixinha-trn-data">${formatDateBR(p.data_vencimento)}</span>
+        <span class="caixinha-trn-desc">Transferência</span>
+        <span class="caixinha-trn-valor positivo">${formatCurrencyHTML(Number(p.valor_real || 0))}</span>
+      </div>`).join('');
+  }
+
+  openModal('modal-caixinha-details');
+}
+
+function renderCaixinhaCard(cx, saldoMap, contribMap, histMap) {
+  const display  = cx.apelido?.trim() || cx.nome;
+  const saldo    = saldoMap.get(cx.id) ?? 0;
+  const contrib  = contribMap.get(cx.id) ?? 0;
+  const hist     = histMap.get(cx.id) || [];
+
+  const contaReserva = cx.conta_destino_id
+    ? cachedContas.find((c) => c.id === cx.conta_destino_id) : null;
+  const reservaName  = contaReserva ? (contaReserva.apelido?.trim() || contaReserva.nome) : null;
+
+  const trnRows = hist.map((p) => `
+    <div class="caixinha-trn-row">
+      <span class="caixinha-trn-data">${formatDateBR(p.data_vencimento)}</span>
+      <span class="caixinha-trn-desc">Transferência</span>
+      <span class="caixinha-trn-valor positivo">${formatCurrencyHTML(Number(p.valor_real || 0))}</span>
+    </div>`).join('');
+
+  return `
+    <div class="caixinha-card" data-id="${cx.id}" tabindex="0" role="button" aria-label="Ver detalhes da caixinha ${escapeHtml(display)}">
+      <div class="caixinha-card-top">
+        <div class="caixinha-card-icon" style="color: #F59E0B;">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.6.5 2.8 1.5 3.8L4 18h3l1-1.7c1 .4 2 .7 3 .7s2-.3 3-.7L15 18h3l-1.5-2.2c.7-.7 1.2-1.5 1.5-2.3 1 0 2-1 2-2v-2c0-1-1-2-2-2 0-1-1-2.5-1-2.5z"/><circle cx="16" cy="10" r="0.5" fill="currentColor"/><path d="M2 11v1c0 1 1 2 2 2"/></svg>
+        </div>
+        <div class="caixinha-card-title">
+          <h3 class="caixinha-card-name">${escapeHtml(display)}</h3>
+          ${reservaName ? `<p class="caixinha-card-desc">Reserva: ${escapeHtml(reservaName)}</p>` : ''}
+        </div>
+      </div>
+      <div class="caixinha-card-stats">
+        <div class="caixinha-stat">
+          <span class="caixinha-stat-label">Saldo acumulado</span>
+          <span class="caixinha-stat-valor ${saldo < 0 ? 'negativo' : saldo === 0 ? 'zero' : 'positivo'}">${formatCurrencyHTML(saldo)}</span>
+        </div>
+        ${contrib > 0 ? `
+        <div class="caixinha-stat">
+          <span class="caixinha-stat-label">Contribuição este mês</span>
+          <span class="caixinha-stat-valor">${formatCurrencyHTML(contrib)}</span>
+        </div>` : ''}
+      </div>
+      <div class="caixinha-card-historico">
+        <div class="caixinha-historico-title">Últimas transferências</div>
+        ${hist.length > 0 ? trnRows : '<p class="caixinha-historico-empty">Nenhuma transferência registrada.</p>'}
+      </div>
+    </div>
+  `;
+}
+
 function renderBankAvatar({ banco, tipo, cor, size = 'lg' }) {
   const bank = findBank(banco);
   const sizeClass = size === 'sm' ? 'size-sm' : '';

@@ -13,6 +13,7 @@ import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 import { PhonePicker } from '../components/phone-picker.js';
 import { AddressPicker, renderAddressFieldsHtml } from '../components/address-picker.js';
 import { FotoPicker } from '../components/foto-picker.js';
+import { buildEmbedMapUrl } from '../lib/google-places.js';
 
 // ── State ─────────────────────────────────────────────────────
 let cachedContatos      = [];
@@ -86,6 +87,13 @@ function initPhonePickersContatos() {
   document.getElementById('ct-nome')?.addEventListener('input', (e) => {
     fpCtg?.setNome(e.target.value.trim());
   });
+
+  // Atualiza mini-mapa ao digitar endereço
+  ['ct-logradouro', 'ct-numero', 'ct-bairro', 'ct-cidade', 'ct-estado-uf', 'ct-pais', 'ct-cep']
+    .forEach((id) => {
+      document.getElementById(id)?.addEventListener('input',  scheduleMapaUpdate);
+      document.getElementById(id)?.addEventListener('change', scheduleMapaUpdate);
+    });
 }
 
 async function loadData() {
@@ -337,12 +345,28 @@ function renderDadosTab(c) {
     { label: 'Bio',  value: c.bio, full: true },
   ];
 
-  document.getElementById('ct-dados-content').innerHTML = fields.map((f) => `
+  const fieldsHtml = fields.map((f) => `
     <div class="ctp-field${f.full ? ' ctp-field--full' : ''}">
       <div class="ctp-field-label">${f.label}</div>
       <div class="${f.value ? 'ctp-field-value' : 'ctp-field-empty'}">${f.value ? (f.html || escapeHtml(f.value)) : '—'}</div>
       ${f.hint && f.value ? `<div class="ctp-field-hint">${f.hint}</div>` : ''}
     </div>`).join('');
+
+  // Mini-mapa no card (só se tiver endereço mínimo)
+  const enderecoFormatado = [
+    c.logradouro, c.numero ? `nº ${c.numero}` : '', c.complemento,
+    c.bairro, c.cidade && c.estado_uf ? `${c.cidade}/${c.estado_uf}` : (c.cidade || c.estado_uf || ''),
+    c.cep, c.pais && c.pais !== 'Brasil' ? c.pais : '',
+  ].filter(Boolean).join(', ');
+  const mapUrl = (c.cidade || (c.logradouro && (c.bairro || c.estado_uf))) ? buildEmbedMapUrl(enderecoFormatado) : null;
+  const mapaHtml = mapUrl ? `
+    <div class="ctp-field ctp-field--full ctp-mapa-wrap">
+      <iframe class="mapa-preview__iframe" loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade" allowfullscreen
+        src="${escapeHtml(mapUrl)}" title="Mapa do endereço"></iframe>
+    </div>` : '';
+
+  document.getElementById('ct-dados-content').innerHTML = fieldsHtml + mapaHtml;
 }
 
 const DIVIDA_STATUS_LABELS = {
@@ -700,6 +724,7 @@ function bindEvents() {
       });
     }
     fpCtg?.setNome(nomeEl.value.trim());
+    updateMapaPreview();
     showToast('Dados da empresa preenchidos. Revise e salve.', 'success');
   });
 
@@ -778,6 +803,28 @@ function applyEstrangeiroUI() {
   }
 }
 
+let mapaDebounce = null;
+function updateMapaPreview() {
+  const wrap   = document.getElementById('ct-mapa-preview');
+  const iframe = document.getElementById('ct-mapa-iframe');
+  if (!wrap || !iframe || !apCtg) return;
+  const v = apCtg.getValue();
+  const hasMinimo = !!v.cidade || (!!v.logradouro && (!!v.bairro || !!v.estado_uf));
+  if (!hasMinimo) {
+    wrap.classList.add('hidden');
+    if (iframe.src) iframe.src = '';
+    return;
+  }
+  const url = buildEmbedMapUrl(apCtg.getFormatted());
+  if (!url) { wrap.classList.add('hidden'); return; }
+  if (iframe.src !== url) iframe.src = url;
+  wrap.classList.remove('hidden');
+}
+function scheduleMapaUpdate() {
+  clearTimeout(mapaDebounce);
+  mapaDebounce = setTimeout(updateMapaPreview, 400);
+}
+
 function openModal(id) {
   editingId = id;
   const c = id ? cachedContatos.find((x) => x.id === id) : null;
@@ -820,6 +867,7 @@ function openModal(id) {
 
   document.getElementById('modal-contato').classList.remove('hidden');
   document.getElementById('ct-nome').focus();
+  updateMapaPreview();
 }
 
 function closeModal() {

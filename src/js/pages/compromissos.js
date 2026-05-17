@@ -147,7 +147,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     openCompromissoModal,
     openValorUpdateModal,
     openEncerrarModal,
-    duplicateCompromisso,
     // save / status
     saveCompromisso,
     saveQuickValor,
@@ -418,7 +417,11 @@ function initContaPickersOnce() {
       hiddenInputId: 'comp-conta-destino',
       avatarWrapId:  'comp-conta-destino-avatar-wrap',
       nameElId:      'comp-conta-destino-name',
-      getContas:     () => cachedContas,
+      getContas:     () => {
+        const tipo = document.getElementById('comp-tipo').value;
+        if (tipo === 'Caixinha') return cachedContas.filter((c) => c.tipo === 'Cofrinho' && c.status !== 'arquivada');
+        return cachedContas;
+      },
       placeholder:   'Selecione a conta destino…',
       allowBlank:    false,
     });
@@ -759,14 +762,30 @@ function toggleRendaPrincipalRow() {
 function toggleTransferFields() {
   const tipo = document.getElementById('comp-tipo').value;
   const isTransfer = tipo === 'Transferência';
-  const destField = document.getElementById('comp-conta-destino-field');
-  const oriLabel  = document.getElementById('comp-conta-label');
-  const oriHint   = document.getElementById('comp-conta-hint');
-  if (destField) destField.classList.toggle('hidden', !isTransfer);
-  if (oriLabel) oriLabel.textContent = isTransfer ? 'De (origem)' : 'Banco / Cartão (opcional)';
-  if (oriHint)  oriHint.textContent  = isTransfer
-    ? 'Conta de onde o dinheiro sai.'
-    : 'Pode deixar em branco e preencher depois.';
+  const isCaixinha = tipo === 'Caixinha';
+  const needsDestino = isTransfer || isCaixinha;
+  const destField  = document.getElementById('comp-conta-destino-field');
+  const destLabel  = document.getElementById('comp-conta-destino-label');
+  const destHint   = document.getElementById('comp-conta-destino-hint');
+  const oriLabel   = document.getElementById('comp-conta-label');
+  const oriHint    = document.getElementById('comp-conta-hint');
+  if (destField) destField.classList.toggle('hidden', !needsDestino);
+  if (destLabel) destLabel.innerHTML = isCaixinha
+    ? 'Conta Reserva <span class="required">*</span>'
+    : 'Para (destino) <span class="required">*</span>';
+  if (destHint) destHint.textContent = isCaixinha
+    ? 'Conta bancária de reserva onde o dinheiro fica guardado.'
+    : 'Conta que vai receber o valor transferido.';
+  if (oriLabel) {
+    if (isTransfer) oriLabel.innerHTML = 'De (origem) <span class="required">*</span>';
+    else if (isCaixinha) oriLabel.innerHTML = 'Banco / Cartão <span class="required">*</span>';
+    else oriLabel.innerHTML = 'Banco / Cartão (opcional)';
+  }
+  if (oriHint) {
+    if (isTransfer) oriHint.textContent = 'Obrigatório — conta de onde o dinheiro sai.';
+    else if (isCaixinha) oriHint.textContent = 'Conta de onde sai o dinheiro pra abastecer a caixinha.';
+    else oriHint.textContent = 'Pode deixar em branco e preencher depois.';
+  }
 }
 
 // Shows committed credit limit when a Cartão de Crédito is selected
@@ -949,15 +968,66 @@ function openCompromissoModal(c = null) {
   }
 }
 
-// Opens the create modal pre-filled with an existing compromisso's data (no editingId)
-function duplicateCompromisso(c) {
-  openCompromissoModal(c);
-  editingId = null;
-  document.getElementById('modal-compromisso-title').textContent = 'Duplicar compromisso';
-  document.getElementById('btn-salvar-compromisso').textContent = 'Criar cópia';
-  // Clear motivo field (not relevant for new record)
-  document.getElementById('motivo-field').classList.add('hidden');
+// Abre o modal em modo edição para compromissos configurados diretamente na categoria
+// (sem subcategoria). Chamado quando o usuário clica em uma linha _type='cat' configurada.
+function openCatEditModal(cat) {
+  editingId    = null;
+  editingCatId = cat.id;
+
+  document.getElementById('modal-compromisso-title').textContent = 'Editar compromisso';
+  document.getElementById('btn-salvar-compromisso').textContent  = 'Salvar alterações';
+
+  document.getElementById('form-compromisso').reset();
+  renderModalDropdowns(); // popula todos os selects + renderCatExistenteOptions
+
+  setNivelMode('categoria');
+  document.getElementById('nivel-field').classList.add('hidden');
+
+  const tipo   = cat.tipo   || DEFAULT_TIPO;
+  const status = cat.status || 'ativa';
+
+  document.getElementById('comp-cat-existente').value    = cat.id;
+  document.getElementById('comp-tipo').value             = tipo;
+  document.getElementById('comp-tipo-pagamento').value   = cat.tipo_pagamento || '';
+  document.getElementById('comp-periodo').value          = cat.periodo || 'Mensal';
+  document.getElementById('comp-vencimento-dia').value   = cat.vencimento_dia || '';
+  document.getElementById('comp-vencimento-data-anual').value = anualDateFromCompromisso(cat);
+  document.getElementById('comp-dia-semana').value       = cat.dia_semana ?? '';
+  document.getElementById('comp-intervalo-semanas').value = cat.intervalo_semanas || 1;
+  document.getElementById('comp-valor-base').value =
+    (cat.valor_base != null && Number(cat.valor_base) !== 0) ? cat.valor_base : '';
+  const openMoedaCode = cat.moeda || 'BRL';
+  document.getElementById('comp-moeda').innerHTML           = renderMoedaOptions(openMoedaCode);
+  document.getElementById('comp-valor-base').placeholder    = moedaInputPlaceholder(openMoedaCode);
+  const moedaVarEl = document.getElementById('comp-moeda-var');
+  if (moedaVarEl) moedaVarEl.innerHTML = renderMoedaOptions(openMoedaCode);
+  document.getElementById('comp-iniciado-em').value  = cat.iniciado_em || todayISO();
+  document.getElementById('comp-terminado-em').value = cat.terminado_em || '';
+  document.getElementById('comp-descricao').value    = cat.descricao || '';
+  document.getElementById('motivo-field').classList.remove('hidden');
   document.getElementById('comp-motivo').value = '';
+  document.getElementById('comp-status').value = status;
+  document.getElementById('comp-valor-variavel').checked   = !!cat.valor_variavel;
+  document.getElementById('comp-renda-principal').checked  = !!cat.eh_renda_principal;
+
+  compContaPicker?.setValue(cat.conta_id || '');
+  compContaDestinoPicker?.setValue(cat.conta_destino_id || '');
+
+  document.querySelectorAll('.tipo-btn').forEach((b) => b.classList.toggle('active', b.dataset.tipo === tipo));
+  document.querySelectorAll('#status-segmented .segmented-btn').forEach((b) => b.classList.toggle('active', b.dataset.status === status));
+
+  toggleVencimentoFields();
+  toggleValorVariavelFields();
+  toggleRendaPrincipalRow();
+  toggleTransferFields();
+  updateLimiteInfo(cat.conta_id || '');
+  if (cat.valor_variavel) {
+    populateValoresMensaisGrid(cat);
+  } else {
+    document.getElementById('valores-mensais-grid').innerHTML = '';
+  }
+
+  openModal('modal-compromisso');
 }
 
 // -----------------------------
@@ -1090,11 +1160,9 @@ async function openDetailsModal(c) {
   const ehDivida       = !!c.divida_id;
   const btnIrVinculo   = document.getElementById('btn-ir-vinculo');
   const btnEditar      = document.getElementById('btn-editar');
-  const btnDuplicar    = document.getElementById('btn-duplicar');
   const btnAtualizar   = document.getElementById('btn-atualizar-valor');
   if (ehVinculado) {
     btnEditar.classList.add('hidden');
-    btnDuplicar.classList.add('hidden');
     btnAtualizar.classList.add('hidden');
     btnArq.classList.add('hidden');
     btnDel.classList.add('hidden');
@@ -1606,10 +1674,17 @@ function renderCompromissos() {
         if (c) openDetailsModal(c);
       },
       onCatRowClick: (catId) => {
-        openCompromissoModal(null);
-        document.getElementById('comp-categoria').value = catId;
-        toggleDividaField();
-        toggleProjetoField();
+        const cat = cachedCategorias.find((x) => x.id === catId);
+        if (cat && (Number(cat.valor_base) > 0 || cat.valor_variavel === true)) {
+          openCatEditModal(cat);
+        } else {
+          // Não configurado → novo compromisso com nome e categoria pré-preenchidos
+          openCompromissoModal(null);
+          document.getElementById('comp-categoria').value = catId;
+          if (cat?.nome) document.getElementById('comp-nome').value = cat.nome;
+          toggleDividaField();
+          toggleProjetoField();
+        }
       },
     });
   }

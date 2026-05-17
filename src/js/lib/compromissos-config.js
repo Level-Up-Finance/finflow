@@ -13,18 +13,21 @@ const TIPO_ICONS = {
   Receita:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>`,
   Despesa:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>`,
   Transferência: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>`,
+  Caixinha:      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.6.5 2.8 1.5 3.8L4 18h3l1-1.7c1 .4 2 .7 3 .7s2-.3 3-.7L15 18h3l-1.5-2.2c.7-.7 1.2-1.5 1.5-2.3 1 0 2-1 2-2v-2c0-1-1-2-2-2 0-1-1-2.5-1-2.5z"/><circle cx="16" cy="10" r="0.5" fill="currentColor"/><path d="M2 11v1c0 1 1 2 2 2"/></svg>`,
 };
 
 const TIPO_COLORS = {
   Receita:       '#10B981', // verde
   Despesa:       '#EF4444', // vermelho
   Transferência: '#6366F1', // índigo
+  Caixinha:      '#F59E0B', // âmbar
 };
 
 export const TIPOS = [
   { value: 'Receita',       label: 'Receita',       icon: TIPO_ICONS.Receita,       color: TIPO_COLORS.Receita       },
   { value: 'Despesa',       label: 'Despesa',       icon: TIPO_ICONS.Despesa,       color: TIPO_COLORS.Despesa       },
   { value: 'Transferência', label: 'Transferência', icon: TIPO_ICONS.Transferência, color: TIPO_COLORS.Transferência },
+  { value: 'Caixinha',      label: 'Caixinha',      icon: TIPO_ICONS.Caixinha,      color: TIPO_COLORS.Caixinha      },
 ];
 
 const TIPO_BY_VALUE = Object.fromEntries(TIPOS.map((t) => [t.value, t]));

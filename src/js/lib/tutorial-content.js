@@ -95,7 +95,7 @@ Tudo no sistema é vinculado a uma conta: de onde o dinheiro sai, para onde vai,
 
 • <strong>Banco / Cartão (oficial)</strong> — Comece a digitar e o sistema sugere bancos da lista oficial do Banco Central. Se o seu banco não aparecer, pode digitar livremente.
 • <strong>Apelido</strong> — Nome personalizado que aparece nas listagens. Ex: "Itaú Principal", "Nubank Pessoal".
-• <strong>Tipo</strong> — Corrente, Poupança, Cofrinho, Investimento ou Cartão de Crédito.
+• <strong>Tipo</strong> — Corrente, Poupança, Caixinha, Investimento ou Cartão de Crédito.
 • <strong>Cor do avatar</strong> — Auto-preenchida com a cor oficial do banco. Você pode trocar.
 • <strong>Moeda</strong> — BRL por padrão. Contas em moeda estrangeira são suportadas.
 • <strong>Desde</strong> — Data de abertura da conta (obrigatório).`),

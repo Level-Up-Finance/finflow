@@ -22,6 +22,7 @@ import {
 import { PhonePicker } from './phone-picker.js';
 import { AddressPicker, renderAddressFieldsHtml } from './address-picker.js';
 import { FotoPicker } from './foto-picker.js';
+import { buildEmbedMapUrl } from '../lib/google-places.js';
 
 const FIELDS = [
   'nome', 'nome_extrato', 'tipo', 'pessoa_tipo',
@@ -78,6 +79,33 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
       }
     }
 
+    let mapaDebounce = null;
+    function updateMapaPreview() {
+      const wrap   = $('ct-mapa-preview');
+      const iframe = $('ct-mapa-iframe');
+      if (!wrap || !iframe || !apCm) return;
+      const v = apCm.getValue();
+      // Requer no mínimo cidade OU (logradouro + algum locale)
+      const hasMinimo = !!v.cidade || (!!v.logradouro && (!!v.bairro || !!v.estado_uf));
+      if (!hasMinimo) {
+        wrap.classList.add('hidden');
+        if (iframe.src) iframe.src = '';
+        return;
+      }
+      const addr = apCm.getFormatted();
+      const url  = buildEmbedMapUrl(addr);
+      if (!url) {
+        wrap.classList.add('hidden');
+        return;
+      }
+      if (iframe.src !== url) iframe.src = url;
+      wrap.classList.remove('hidden');
+    }
+    function scheduleMapaUpdate() {
+      clearTimeout(mapaDebounce);
+      mapaDebounce = setTimeout(updateMapaPreview, 400);
+    }
+
     function fillFromInitial() {
       for (const k of FIELDS) {
         const el = $(`ct-${k.replace(/_/g, '-')}`);
@@ -102,6 +130,7 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
       if (estrEl) estrEl.checked = initialData?.estrangeiro ?? false;
       applyPessoaTipoUI();
       applyEstrangeiroUI();
+      updateMapaPreview();
     }
 
     function collectPayload() {
@@ -224,8 +253,16 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
       // Atualiza nome no foto-picker se foi preenchido agora
       fpCm.setNome($('ct-nome').value.trim());
 
+      updateMapaPreview();
       showToast('Dados da empresa preenchidos. Revise e salve.', 'success');
     });
+
+    // Listeners pra atualizar o mini-mapa quando o endereço muda
+    ['ct-logradouro', 'ct-numero', 'ct-bairro', 'ct-cidade', 'ct-estado-uf', 'ct-pais', 'ct-cep']
+      .forEach((id) => {
+        $(id)?.addEventListener('input',  scheduleMapaUpdate);
+        $(id)?.addEventListener('change', scheduleMapaUpdate);
+      });
 
     // "Mesmo número" toggle
     const mesmoElCm = $('ct-mesmo-numero');
@@ -388,6 +425,17 @@ function renderModalHtml(title) {
           <label class="field-label">Endereço</label>
           <div id="ct-address-picker">
             ${renderAddressFieldsHtml('ct-')}
+          </div>
+          <div id="ct-mapa-preview" class="mapa-preview hidden">
+            <iframe
+              id="ct-mapa-iframe"
+              class="mapa-preview__iframe"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              allowfullscreen
+              src=""
+              title="Mapa do endereço">
+            </iframe>
           </div>
         </div>
 

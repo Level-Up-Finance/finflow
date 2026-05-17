@@ -7,7 +7,7 @@
 // =============================================================
 import { supabase } from './supabase.js';
 
-const PAID_STATUSES = ['Pago', 'Cartão', 'Transferido', 'Parcial'];
+const PAID_STATUSES = ['Pago', 'Cartão', 'Transferido'];
 
 export function isPaidStatus(status) {
   return PAID_STATUSES.includes(status);

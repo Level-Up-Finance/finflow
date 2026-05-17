@@ -979,7 +979,7 @@ async function loadAll() {
   const [transRes, contRes, subRes, catRes, contatosRes, divRes, splitsRes] = await Promise.all([
     supabase
       .from('transacoes')
-      .select('*, pagamento:pagamentos(data_vencimento, status)')
+      .select('*, pagamento:pagamentos(id, data_vencimento, status, subcategoria_id)')
       .order('data', { ascending: false })
       .order('created_at', { ascending: false }),
     supabase
@@ -989,7 +989,7 @@ async function loadAll() {
       .order('nome'),
     supabase
       .from('subcategorias')
-      .select('id, nome, apelido, categoria_id, descricao, contato_id, status, is_parcial')
+      .select('id, nome, apelido, categoria_id, descricao, contato_id, status, is_parcial, tipo, conta_destino_id')
       .neq('status', 'arquivada')
       .order('nome'),
     supabase
@@ -1071,18 +1071,33 @@ function populateMoedaSelect(selectedCode = 'BRL') {
 function populateContaSelects() {
   // filter-conta is now a visual picker (hidden input) — init once, no innerHTML needed
   if (!_filterContaPicker) {
+    const PIGGY_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.6.5 2.8 1.5 3.8L4 18h3l1-1.7c1 .4 2 .7 3 .7s2-.3 3-.7L15 18h3l-1.5-2.2c.7-.7 1.2-1.5 1.5-2.3 1 0 2-1 2-2v-2c0-1-1-2-2-2 0-1-1-2.5-1-2.5z"/><circle cx="16" cy="10" r="0.5" fill="currentColor"/></svg>`;
     _filterContaPicker = createContaPicker({
       triggerBtnId:  'filter-conta-btn',
       hiddenInputId: 'filter-conta',
       avatarWrapId:  'filter-conta-avatar-wrap',
       nameElId:      'filter-conta-name',
       getContas:     () => cachedContas,
+      getExtraGroups: () => {
+        const caixinhas = cachedSubcategorias.filter((s) => s.tipo === 'Caixinha' && s.status !== 'arquivada');
+        if (!caixinhas.length) return [];
+        return [{
+          label: 'Caixinha',
+          items: caixinhas.map((cx) => ({
+            id: `cx:${cx.id}`,
+            display: cx.apelido || cx.nome,
+            iconHtml: PIGGY_SVG,
+            iconColor: '#F59E0B',
+          })),
+        }];
+      },
       placeholder:   'Todas',
       allowBlank:    true,
       blankLabel:    'Todas as contas',
       avatarSize:    'xs',
-      onChange: (contaId) => {
-        filterConta = contaId || '';
+      hideAvatarWhenBlank: true,
+      onChange: (id) => {
+        filterConta = id || '';
         render();
       },
     });
@@ -1294,7 +1309,7 @@ function render() {
 
   // Saldo: só exibe quando uma única conta está filtrada
   const table = document.querySelector('.trans-table');
-  if (table) table.classList.toggle('saldo-hidden', !filterConta);
+  if (table) table.classList.toggle('saldo-hidden', !filterConta || filterConta.startsWith('cx:'));
 }
 
 function applyFilters(items) {
@@ -1309,7 +1324,21 @@ function applyFilters(items) {
       if (filterStart && t.data < filterStart) return false;
       if (filterEnd   && t.data > filterEnd)   return false;
     }
-    if (filterConta && t.conta_id !== filterConta) return false;
+    if (filterConta) {
+      if (filterConta.startsWith('cx:')) {
+        // Filtro por Caixinha: a transação precisa vir de um pagamento de uma sub Caixinha
+        const cxId = filterConta.slice(3);
+        let pagSubId = t.pagamento?.subcategoria_id;
+        // Caso seja entrada de transferência (lado par), buscar pagamento via par
+        if (!pagSubId && t.transferencia_par_id) {
+          const par = cachedTransacoes.find((x) => x.id === t.transferencia_par_id);
+          pagSubId = par?.pagamento?.subcategoria_id;
+        }
+        if (pagSubId !== cxId) return false;
+      } else if (t.conta_id !== filterConta) {
+        return false;
+      }
+    }
     if (filterTipo  && t.tipo     !== filterTipo)  return false;
     if (buscaNorm) {
       const contato   = t.contato_id ? cachedContatos.find((c) => c.id === t.contato_id) : null;
@@ -1442,6 +1471,19 @@ function renderDataRows(items) {
     const tipoCls = t.tipo === 'Receita' ? 'trans-tipo-receita' : t.tipo === 'Despesa' ? 'trans-tipo-despesa' : 'trans-tipo-transferencia';
     const sinal   = (t.tipo === 'Receita' || isTransferEntrada) ? '+' : '−';
 
+    // Detecta se a transferência é de uma Caixinha (saída ou entrada, via pagamento_id direto ou via par)
+    let caixinhaSub = null;
+    if (isTransfer) {
+      const pagSubId = t.pagamento?.subcategoria_id;
+      let linkedSub = pagSubId ? cachedSubcategorias.find((s) => s.id === pagSubId) : null;
+      if (!linkedSub && isTransferEntrada && t.transferencia_par_id) {
+        const par = parById.get(t.transferencia_par_id);
+        const parSubId = par?.pagamento?.subcategoria_id;
+        if (parSubId) linkedSub = cachedSubcategorias.find((s) => s.id === parSubId);
+      }
+      if (linkedSub?.tipo === 'Caixinha') caixinhaSub = linkedSub;
+    }
+
     const splits   = splitsByTransId.get(t.id) || [];
     const hasSplits = splits.length > 0;
 
@@ -1452,13 +1494,17 @@ function renderDataRows(items) {
         : (bloco ? `<span class="trans-bloco-pill" style="--bloco-color:${bloco.color};">${escapeHtml(bloco.label)}</span>` : '<span class="trans-bloco-empty">—</span>');
 
     const catHtml = isTransfer
-      ? '<span class="trans-cat-transfer">Transferência</span>'
+      ? (caixinhaSub
+          ? `<span class="trans-cat-caixinha"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.6.5 2.8 1.5 3.8L4 18h3l1-1.7c1 .4 2 .7 3 .7s2-.3 3-.7L15 18h3l-1.5-2.2c.7-.7 1.2-1.5 1.5-2.3 1 0 2-1 2-2v-2c0-1-1-2-2-2 0-1-1-2.5-1-2.5z"/><circle cx="16" cy="10" r="0.5" fill="currentColor"/></svg>Caixinha</span>`
+          : '<span class="trans-cat-transfer">Transferência</span>')
       : hasSplits
         ? `<span class="trans-varios-cell">${splits.length} partes</span>`
         : (cat ? `<span class="trans-cat-pill" style="--cat-cor:${cat.cor || '#6B7280'};">${escapeHtml(cat.nome)}</span>` : '<span class="trans-cat-empty">—</span>');
 
     const subHtml = isTransfer
-      ? `<span class="trans-transfer-side">${isTransferEntrada ? 'entrada' : 'saída'}</span>`
+      ? (caixinhaSub
+          ? `<span class="trans-sub-name">${escapeHtml(caixinhaSub.apelido || caixinhaSub.nome)} <span class="trans-transfer-side">${isTransferEntrada ? '(entrada)' : '(saída)'}</span></span>`
+          : `<span class="trans-transfer-side">${isTransferEntrada ? 'entrada' : 'saída'}</span>`)
       : hasSplits
         ? '<span class="trans-varios-cell">—</span>'
         : (sub ? `<span class="trans-sub-name">${escapeHtml(sub.apelido || sub.nome)}</span>` : '<span class="trans-sub-empty">—</span>');

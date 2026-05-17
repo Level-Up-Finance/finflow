@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       showToast('Sua conta está suspensa. Entre em contato com o suporte.', 'error', 8000);
     }
   } finally {
-    document.body.style.visibility = 'visible';
+    document.body.classList.remove('body-loading');
   }
 
   await loadStrings();

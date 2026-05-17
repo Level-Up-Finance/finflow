@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <title>Contatos · FinFlow</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -247,6 +248,17 @@
           <label class="field-label">Endereço</label>
           <div id="ct-address-picker">
             <!-- campos injetados por address-picker.js -->
+          </div>
+          <div id="ct-mapa-preview" class="mapa-preview hidden">
+            <iframe
+              id="ct-mapa-iframe"
+              class="mapa-preview__iframe"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              allowfullscreen
+              src=""
+              title="Mapa do endereço">
+            </iframe>
           </div>
         </div>
 

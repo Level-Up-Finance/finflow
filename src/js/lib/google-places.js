@@ -47,6 +47,25 @@ export function isConfigured() {
 }
 
 /**
+ * Monta a URL do iframe do Google Maps Embed API para um endereço livre.
+ * Embed Maps é gratuito ilimitado (não conta na cota paga do Places).
+ * Requer a Maps Embed API habilitada no mesmo projeto do Cloud Console.
+ *
+ * @param {string} address  endereço como string (ex: "Av. Boa Viagem, 123, Recife/PE")
+ * @param {Object} [opts]
+ * @param {number} [opts.zoom=15]
+ * @returns {string|null}   URL pronta pra usar em <iframe src> ou null se sem chave/endereço
+ */
+export function buildEmbedMapUrl(address, opts = {}) {
+  const key = getApiKey();
+  if (!key) return null;
+  const q = (address || '').trim();
+  if (!q) return null;
+  const zoom = opts.zoom ?? 15;
+  return `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(key)}&q=${encodeURIComponent(q)}&zoom=${zoom}`;
+}
+
+/**
  * Busca empresas/locais por texto livre.
  * @param {string} query  ex: "Apple Store Recife" ou "Padaria Pão Quente"
  * @param {Object} [opts]

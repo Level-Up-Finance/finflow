@@ -81,7 +81,7 @@ export function renderContaOptions(contas, selectedId = '', { blankLabel = 'Sele
   const GROUPS = [
     { label: 'Conta Corrente',   test: (c) => c.tipo === 'Corrente'    && (!c.moeda || c.moeda === 'BRL') },
     { label: 'Conta Poupança',   test: (c) => c.tipo === 'Poupança'    && (!c.moeda || c.moeda === 'BRL') },
-    { label: 'Cofrinho',         test: (c) => c.tipo === 'Cofrinho'    && (!c.moeda || c.moeda === 'BRL') },
+    { label: 'Caixinha',         test: (c) => c.tipo === 'Cofrinho'    && (!c.moeda || c.moeda === 'BRL') },
     { label: 'Investimento',     test: (c) => c.tipo === 'Investimento' && (!c.moeda || c.moeda === 'BRL') },
     { label: 'Cartão de Crédito',test: (c) => c.tipo === 'Cartão de Crédito' },
     { label: 'Conta Estrangeira',test: (c) => c.tipo !== 'Cartão de Crédito' && c.moeda && c.moeda !== 'BRL' },

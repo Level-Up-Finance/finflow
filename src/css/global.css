@@ -77,6 +77,43 @@ input, select, textarea {
   color: inherit;
 }
 
+/* Evita flash de conteúdo sem estilo na tela de login */
+body.body-loading { opacity: 0; transition: opacity 0.15s ease; }
+
+/* Links inline estilizados como <a> mas usando <button> (sem href="#") */
+.auth-link {
+  color: var(--color-secondary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+}
+.auth-link:hover { color: var(--color-secondary-dark); text-decoration: underline; }
+
+.auth-forgot-link {
+  color: var(--color-text-secondary);
+  font-size: var(--fs-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  transition: color var(--transition-fast);
+}
+.auth-forgot-link:hover { color: var(--color-text-main); }
+
+.auth-lgpd-links {
+  margin-top: var(--space-6);
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted, var(--color-text-secondary));
+}
+.auth-lgpd-links a { color: var(--color-text-secondary); }
+
 img, svg {
   display: block;
   max-width: 100%;

@@ -10,7 +10,7 @@ const ICONS = {
   // Poupança — porquinho
   Poupança: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.6.5 2.8 1.5 3.8L4 18h3l1-1.7c1 .4 2 .7 3 .7s2-.3 3-.7L15 18h3l-1.5-2.2c.7-.7 1.2-1.5 1.5-2.3 1 0 2-1 2-2v-2c0-1-1-2-2-2 0-1-1-2.5-1-2.5z"/><circle cx="16" cy="10" r="0.5" fill="currentColor"/><path d="M2 11v1c0 1 1 2 2 2"/></svg>`,
 
-  // Cofrinho — pote de moedas
+  // Reserva — pote de moedas (banco físico de reserva)
   Cofrinho: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="2"/><path d="M4 6v12c0 1.5 3.6 2 8 2s8-.5 8-2V6"/><path d="M4 12c0 1.5 3.6 2 8 2s8-.5 8-2"/></svg>`,
 
   // Investimento — gráfico ascendente
@@ -31,7 +31,7 @@ const COLORS = {
 export const ACCOUNT_TYPES = [
   { value: 'Corrente',          label: 'Corrente',          icon: ICONS.Corrente,             color: COLORS.Corrente },
   { value: 'Poupança',          label: 'Poupança',          icon: ICONS.Poupança,             color: COLORS.Poupança },
-  { value: 'Cofrinho',          label: 'Cofrinho',          icon: ICONS.Cofrinho,             color: COLORS.Cofrinho },
+  { value: 'Cofrinho',          label: 'Reserva',           icon: ICONS.Cofrinho,             color: COLORS.Cofrinho },
   { value: 'Investimento',      label: 'Investimento',      icon: ICONS.Investimento,         color: COLORS.Investimento },
   { value: 'Cartão de Crédito', label: 'Cartão de Crédito', icon: ICONS['Cartão de Crédito'], color: COLORS['Cartão de Crédito'] },
 ];

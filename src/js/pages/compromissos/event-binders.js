@@ -23,7 +23,6 @@ import {
  *     getPendingAction, getCachedCompromissos,
  *     // modal openers
  *     openCompromissoModal, openValorUpdateModal, openEncerrarModal,
- *     duplicateCompromisso,
  *     // save / status
  *     saveCompromisso, saveQuickValor, changeStatus, deleteCompromisso,
  *     confirmarEncerrar,
@@ -228,13 +227,6 @@ export function bindAllEvents(deps) {
   document.getElementById('btn-comp-ir-pagina').addEventListener('click', () => {
     const destino = document.getElementById('btn-comp-ir-pagina').dataset.destino;
     location.href = destino === 'investimentos' ? 'investimentos.html' : 'dividas.html';
-  });
-
-  document.getElementById('btn-duplicar').addEventListener('click', () => {
-    const c = d.getDetailsCompromisso();
-    if (!c) return;
-    closeModal('modal-details');
-    d.duplicateCompromisso(c);
   });
 
   document.getElementById('btn-atualizar-valor').addEventListener('click', () => {

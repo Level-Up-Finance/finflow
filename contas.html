@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <title>Contas · FinFlow</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -82,6 +83,9 @@
       <!-- Lista (cards ou tabela renderizada aqui) -->
       <div id="contas-container"></div>
 
+      <!-- Seção dedicada de Caixinhas (renderizada pelo JS) -->
+      <div id="caixinhas-section"></div>
+
       <!-- Empty state global -->
       <div id="empty-state" class="empty-state hidden">
         <div class="empty-state-icon">
@@ -146,6 +150,48 @@
         <button type="button" class="btn btn-primary" id="btn-editar-conta">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
           Editar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Caixinha details
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-caixinha-details" role="dialog" aria-modal="true">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <button type="button" class="modal-close" data-close-modal="modal-caixinha-details" aria-label="Fechar" style="margin-left: auto;">×</button>
+      </div>
+
+      <div class="details-header" style="padding-top: 0;">
+        <div id="cx-details-avatar"></div>
+        <div class="details-header-info">
+          <h2 class="details-name" id="cx-details-name">—</h2>
+          <p class="details-official-name" id="cx-details-official-name"></p>
+          <div class="details-meta" id="cx-details-meta"></div>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="cx-details-saldo-card" id="cx-details-saldo-card"></div>
+
+        <div class="details-grid" id="cx-details-grid"></div>
+
+        <div class="cx-details-historico-section">
+          <h3 class="cartao-faturas-title">Transferências</h3>
+          <div id="cx-details-historico"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn btn-ghost" id="btn-cx-arquivar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+          Arquivar
+        </button>
+        <button type="button" class="btn btn-primary" id="btn-cx-editar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+          Editar caixinha
         </button>
       </div>
     </div>

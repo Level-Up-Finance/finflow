@@ -245,6 +245,18 @@ export async function saveCompromisso(event, deps) {
   if (!categoria_id) { showToast(t('compromissos.validacao.cat_obrigatoria', 'Escolha uma categoria'), 'error'); return; }
   if (!iniciado_em) { showToast('Informe a data de início', 'error'); return; }
   if (isDividasCat && !dividaRaw) { showToast('Vincule uma dívida existente ou crie uma nova', 'error'); return; }
+  if (tipo === 'Transferência' && !conta_id) {
+    showToast('Transferências precisam de uma conta de origem (De).', 'error'); return;
+  }
+  if (tipo === 'Transferência' && !conta_destino_id) {
+    showToast('Transferências precisam de uma conta destino (Para).', 'error'); return;
+  }
+  if (tipo === 'Caixinha' && !conta_id) {
+    showToast('Caixinhas precisam de um Banco / Cartão de origem.', 'error'); return;
+  }
+  if (tipo === 'Caixinha' && !conta_destino_id) {
+    showToast('Caixinhas precisam de uma Conta Reserva.', 'error'); return;
+  }
   const valorBaseParsedSub = parseUserNumber(valorBaseRaw);
   if (!valorVariavel && (valorBaseRaw === '' || isNaN(valorBaseParsedSub))) {
     showToast(t('compromissos.validacao.valor_invalido', 'Informe um valor válido'), 'error'); return;
@@ -278,7 +290,7 @@ export async function saveCompromisso(event, deps) {
     tipo,
     categoria_id,
     conta_id,
-    conta_destino_id: tipo === 'Transferência' ? conta_destino_id : null,
+    conta_destino_id: (tipo === 'Transferência' || tipo === 'Caixinha') ? conta_destino_id : null,
     tipo_pagamento,
     periodo,
     vencimento_dia: ehAnual ? anualDia : ((usaDiaSemana || ehUnico) ? null : Number(vencimentoRaw)),
@@ -319,18 +331,23 @@ export async function saveCompromisso(event, deps) {
         (c) => (c.nome || '').trim().toLowerCase() === nomeNorm && c.categoria_id === payload.categoria_id
       );
 
+      const isCaixinha = tipo === 'Caixinha';
+      const entidade   = isCaixinha ? 'caixinha' : 'subcategoria';
+      const Entidade   = isCaixinha ? 'Caixinha' : 'Subcategoria';
       if (existing) {
         const isFull = Number(existing.valor_base) > 0 || existing.valor_variavel === true;
         if (!isFull) {
           response = await supabase.from('subcategorias').update({ ...payload }).eq('id', existing.id).select().single();
-          subcategoriaMsg = 'Esta subcategoria já existia em Configurações. O compromisso foi vinculado a ela.';
+          subcategoriaMsg = `Esta ${entidade} já existia em Configurações. O compromisso foi vinculado a ela.`;
         } else {
           response = await supabase.from('subcategorias').insert({ ...payload, user_id: user.id }).select().single();
-          subcategoriaMsg = 'Já existe um compromisso com esse nome nessa categoria. Um novo foi criado mesmo assim.';
+          subcategoriaMsg = `Já existe um compromisso com esse nome nessa categoria. Um novo foi criado mesmo assim.`;
         }
       } else {
         response = await supabase.from('subcategorias').insert({ ...payload, user_id: user.id }).select().single();
-        subcategoriaMsg = 'Uma nova subcategoria foi criada junto com este compromisso.';
+        subcategoriaMsg = isCaixinha
+          ? 'Uma nova caixinha foi criada.'
+          : 'Uma nova subcategoria foi criada junto com este compromisso.';
       }
     }
     if (response.error) throw response.error;
@@ -372,7 +389,7 @@ export async function saveCompromisso(event, deps) {
     }
 
     showToast(editingId ? t('compromissos.toast.atualizado', 'Compromisso atualizado') : t('compromissos.toast.criado', 'Compromisso criado'), 'success');
-    if (subcategoriaMsg) showInfoPopup('Subcategoria', subcategoriaMsg);
+    if (subcategoriaMsg) showInfoPopup(tipo === 'Caixinha' ? 'Caixinha' : 'Subcategoria', subcategoriaMsg);
 
     // Signal embedded mode that a save occurred before modal closes
     window._embeddedCompSaved = true;

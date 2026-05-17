@@ -9,7 +9,7 @@ import { escapeHtml } from './utils.js';
 const GROUPS = [
   { label: 'Conta Corrente',    test: (c) => c.tipo === 'Corrente'           && (!c.moeda || c.moeda === 'BRL') },
   { label: 'Conta Poupança',    test: (c) => c.tipo === 'Poupança'           && (!c.moeda || c.moeda === 'BRL') },
-  { label: 'Cofrinho',          test: (c) => c.tipo === 'Cofrinho'           && (!c.moeda || c.moeda === 'BRL') },
+  { label: 'Reserva',           test: (c) => c.tipo === 'Cofrinho'           && (!c.moeda || c.moeda === 'BRL') },
   { label: 'Investimento',      test: (c) => c.tipo === 'Investimento'       && (!c.moeda || c.moeda === 'BRL') },
   { label: 'Cartão de Crédito', test: (c) => c.tipo === 'Cartão de Crédito' },
   { label: 'Conta Estrangeira', test: (c) => c.tipo !== 'Cartão de Crédito' && c.moeda && c.moeda !== 'BRL' },
@@ -61,10 +61,12 @@ export function createContaPicker({
   avatarWrapId,
   nameElId,
   getContas,
+  getExtraGroups,           // () => [{ label, items: [{ id, display, iconHtml, iconColor }] }]  IDs já prefixados pelo caller
   placeholder = 'Selecione uma conta…',
   allowBlank = false,
   blankLabel = '— Nenhuma —',
   avatarSize = 'sm',
+  hideAvatarWhenBlank = false, // se true, oculta o avatar no botão quando nenhum valor está selecionado
   onChange,
 } = {}) {
   let _dropdownEl = null;
@@ -109,6 +111,26 @@ export function createContaPicker({
         html += `<button type="button" class="cp-item${sel}" data-id="${c.id}">
           ${_avatarHtml(c, 'sm')}
           <span class="cp-item-name">${escapeHtml(c.apelido || c.nome)}</span>
+        </button>`;
+      }
+    }
+
+    // Grupos extras (ex: Caixinhas) — itens já vem com IDs prefixados pelo caller
+    const extras = getExtraGroups ? (getExtraGroups() || []) : [];
+    for (const g of extras) {
+      let items = g.items || [];
+      if (qn) items = items.filter((it) => (it.display || '').toLowerCase().includes(qn));
+      if (!items.length) continue;
+      any = true;
+      html += `<div class="cp-group-label">${escapeHtml(g.label)}</div>`;
+      for (const it of items) {
+        const sel = it.id === currentId ? ' cp-item--selected' : '';
+        const iconColor = it.iconColor || '#6B7280';
+        const iconHtml  = it.iconHtml || '';
+        const avatarHtml = `<div class="bank-avatar size-sm cp-avatar-icon"><div class="bank-avatar-fallback" style="background:color-mix(in srgb, ${iconColor} 18%, transparent); color:${iconColor};">${iconHtml}</div></div>`;
+        html += `<button type="button" class="cp-item${sel}" data-id="${escapeHtml(it.id)}">
+          ${avatarHtml}
+          <span class="cp-item-name">${escapeHtml(it.display)}</span>
         </button>`;
       }
     }
@@ -174,8 +196,33 @@ export function createContaPicker({
 
     const c = contas.find((x) => x.id === contaId);
 
-    if (avatarWrap) avatarWrap.innerHTML = _avatarHtml(c || null, avatarSize);
-    if (nameEl) nameEl.textContent = c ? (c.apelido || c.nome) : placeholder;
+    // Pode ser item de grupo extra (ex: caixinha)
+    let extraItem = null;
+    if (!c && contaId && getExtraGroups) {
+      const extras = getExtraGroups() || [];
+      for (const g of extras) {
+        const found = (g.items || []).find((it) => it.id === contaId);
+        if (found) { extraItem = found; break; }
+      }
+    }
+
+    if (avatarWrap) {
+      if (c) {
+        avatarWrap.innerHTML = _avatarHtml(c, avatarSize);
+        avatarWrap.classList.remove('hidden');
+      } else if (extraItem) {
+        const iconColor = extraItem.iconColor || '#6B7280';
+        avatarWrap.innerHTML = `<div class="bank-avatar size-${avatarSize} cp-avatar-icon"><div class="bank-avatar-fallback" style="background:color-mix(in srgb, ${iconColor} 18%, transparent); color:${iconColor};">${extraItem.iconHtml || ''}</div></div>`;
+        avatarWrap.classList.remove('hidden');
+      } else if (hideAvatarWhenBlank) {
+        avatarWrap.innerHTML = '';
+        avatarWrap.classList.add('hidden');
+      } else {
+        avatarWrap.innerHTML = _avatarHtml(null, avatarSize);
+        avatarWrap.classList.remove('hidden');
+      }
+    }
+    if (nameEl) nameEl.textContent = c ? (c.apelido || c.nome) : (extraItem ? extraItem.display : placeholder);
 
     hidden?.dispatchEvent(new Event('change', { bubbles: true }));
 

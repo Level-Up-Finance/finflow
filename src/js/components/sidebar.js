@@ -70,10 +70,10 @@ export async function initSidebar(activePage) {
 
   container.innerHTML = `
     <aside class="sidebar">
-      <div class="sidebar-logo">
+      <a href="/dashboard.html" class="sidebar-logo" aria-label="FinFlow — ir para o Dashboard">
         <span class="sidebar-logo-mark"></span>
         <span class="sidebar-logo-name">FinFlow</span>
-      </div>
+      </a>
       <nav class="sidebar-nav">
         ${NAV_ITEMS.map(item => {
           if (item.divider) return '<hr class="sidebar-divider">';

@@ -51,6 +51,8 @@
   --status-agendado-text: #92400E;
   --status-cancelado-bg: #F3F4F6;
   --status-cancelado-text: #4B5563;
+  --status-a-transferir-bg: #E0F2FE;
+  --status-a-transferir-text: #0369A1;
   --status-cartao-bg: #EDE9FE;
   --status-cartao-text: #5B21B6;
   --status-parcial-bg: #FFEDD5;
@@ -171,6 +173,8 @@
   --status-agendado-text: #FCD34D;
   --status-cancelado-bg: #1F2937;
   --status-cancelado-text: #9CA3AF;
+  --status-a-transferir-bg: #0C4A6E;
+  --status-a-transferir-text: #7DD3FC;
   --status-cartao-bg: #4C1D95;
   --status-cartao-text: #C4B5FD;
   --status-parcial-bg: #7C2D12;

@@ -20,7 +20,7 @@ import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.j
 import { fetchExchangeRate } from '../lib/currency.js';
 import { initCurrencyWidget } from '../components/currency-widget.js';
 import { findBank, logoUrl } from '../lib/banks.js';
-import { syncPagamentoToTransacao, isPaidStatus } from '../lib/transacao-pagamento-sync.js';
+import { syncPagamentoToTransacao, isPaidStatus, findTransacaoLinkedToPagamento } from '../lib/transacao-pagamento-sync.js';
 import { escapeHtml, formatDateBR, isoMonth, showConfirm, parseUserNumber } from '../lib/utils.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 import { MOEDAS } from '../lib/compromissos-config.js';
@@ -38,12 +38,16 @@ let cachedContas = [];        // pra display de banco
 let cachedPagamentos = [];    // entries do mês visível com subcategoria + categoria aninhadas
 let detailsPagamento = null;  // pagamento exibido no modal de detalhes
 let filterStatus = 'todos';   // 'todos' | 'pendentes' | 'atrasados' | 'pagos' | 'cancelados'
-let parcialState  = null;     // { pag, restanteOrig, restanteBRL } — preenchido ao abrir modais de parcial
+
 
 const ratesMap = new Map();          // 'USD' → 5.15
 const finalizedItemsByBloco = new Map(); // num → items[], para o modal de finalizados
+const canceledItemsByBloco  = new Map(); // num → items[], para o modal de cancelados
 
-const FINALIZADOS_STATUS = new Set(['Pago', 'Transferido', 'Cartão']);
+const FINALIZADOS_STATUS = new Set(['Pago', 'Transferido']);
+
+// Status removido da UI mas mantido no DB enquanto dados históricos existirem
+const DEPRECATED_STATUSES = new Set(['Cartão']);
 
 function getMainCurrencySymbol() {
   const code = localStorage.getItem('finflow.moeda_padrao') || 'BRL';
@@ -53,12 +57,13 @@ function getMainCurrencySymbol() {
 const MONTH_LABELS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 const STATUS_OPTIONS = [
-  { value: 'Agendado',    label: 'Agendado',    cls: 'status-agendado' },
-  { value: 'Pago',        label: 'Pago',        cls: 'status-pago' },
-  { value: 'Transferido', label: 'Transferido', cls: 'status-transferido' },
-  { value: 'Cartão',      label: 'Cartão',      cls: 'status-cartao' },
-  { value: 'Parcial',     label: 'Parcial',     cls: 'status-parcial' },
-  { value: 'Cancelado',   label: 'Cancelado',   cls: 'status-cancelado' },
+  { value: 'Agendado',      label: 'A Pagar',       cls: 'status-agendado' },
+  { value: 'Pago',          label: 'Pago',          cls: 'status-pago' },
+  { value: 'A Transferir',  label: 'A Transferir',  cls: 'status-a-transferir' },
+  { value: 'Transferido',   label: 'Transferido',   cls: 'status-transferido' },
+  { value: 'Cancelado',     label: 'Cancelado',     cls: 'status-cancelado' },
+  // Legado — só aparece no select quando o pagamento JÁ tem esse status
+  { value: 'Cartão',        label: 'Cartão',        cls: 'status-cartao' },
 ];
 
 // -----------------------------
@@ -106,13 +111,6 @@ async function loadContas() {
 function bindEvents() {
   document.getElementById('pag-prev').addEventListener('click', () => navigate(-1));
   document.getElementById('pag-next').addEventListener('click', () => navigate(1));
-  document.getElementById('btn-hoje').addEventListener('click', () => {
-    const t = new Date();
-    viewYear = t.getFullYear();
-    viewMonth = t.getMonth();
-    loadMonth();
-  });
-  document.getElementById('btn-regen-blocos').addEventListener('click', regenerateBlocosForCurrentMonth);
 
   // Close modals (data-close-modal)
   document.querySelectorAll('[data-close-modal]').forEach((btn) => {
@@ -121,14 +119,6 @@ function bindEvents() {
 
   // Salvar observação no modal de detalhes
   document.getElementById('btn-salvar-observacao').addEventListener('click', saveObservacao);
-
-  // Modais de pagamento parcial
-  document.getElementById('btn-parcial-nao').addEventListener('click', () => {
-    closeModal('modal-parcial-confirm');
-    parcialState = null;
-  });
-  document.getElementById('btn-parcial-sim').addEventListener('click', openParcialNovoComp);
-  document.getElementById('btn-pns-criar').addEventListener('click', criarCompromissoParcial);
 
   // Filtros
   document.getElementById('status-filters').addEventListener('click', (e) => {
@@ -145,7 +135,7 @@ function bindEvents() {
 // Status helpers (Fase 5.C)
 // -----------------------------
 function isAtrasado(p) {
-  if (p.status !== 'Agendado') return false;
+  if (p.status !== 'Agendado' && p.status !== 'A Transferir') return false;
   if (!p.data_vencimento) return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -155,8 +145,8 @@ function isAtrasado(p) {
 
 function getStatusGroup(p) {
   if (p.status === 'Cancelado') return 'cancelados';
-  if (['Pago', 'Transferido', 'Cartão', 'Parcial'].includes(p.status)) return 'pagos';
-  if (p.status === 'Agendado' && isAtrasado(p)) return 'atrasados';
+  if (['Pago', 'Transferido', 'Cartão'].includes(p.status)) return 'pagos'; // Cartão: legado
+  if (isAtrasado(p)) return 'atrasados'; // cobre Agendado e A Transferir
   return 'pendentes';
 }
 
@@ -170,40 +160,6 @@ function navigate(delta) {
   if (viewMonth < 0)  { viewMonth = 11; viewYear -= 1; }
   if (viewMonth > 11) { viewMonth = 0;  viewYear += 1; }
   loadMonth();
-}
-
-// Apaga pagamentos pendentes do mês visível e recria com a divisão de blocos atual.
-// Preserva pagamentos com status diferente de "Agendado" OU com valor_real preenchido
-// (esses são "tocados" pelo usuário).
-async function regenerateBlocosForCurrentMonth() {
-  const ok = await showConfirm(
-    'Isso vai apagar os pagamentos do mês que ainda estão como "Agendado" sem valor real preenchido, ' +
-    'e gerar de novo com a divisão de blocos atual.\n\nPagamentos já marcados como Pago/Cartão/etc ' +
-    'OU com valor real preenchido NÃO serão apagados.\n\nContinuar?',
-    { okLabel: 'Regenerar', danger: false }
-  );
-  if (!ok) return;
-
-  const user = await getCurrentUser();
-  if (!user) return;
-  const mesAno = isoMonth(viewYear, viewMonth);
-
-  const { error: delError } = await supabase
-    .from('pagamentos')
-    .delete()
-    .eq('user_id', user.id)
-    .eq('mes_ano', mesAno)
-    .eq('status', 'Agendado')
-    .is('valor_real', null);
-
-  if (delError) {
-    showToast(`${t('pagamentos.toast.erro_limpar', 'Erro ao limpar pagamentos')}: ${delError.message}`, 'error', 8000);
-    return;
-  }
-
-  showToast(t('pagamentos.toast.limpos', 'Pagamentos pendentes limpos. Regenerando…'), 'info', 3000);
-  await loadMonth();
-  showToast(t('pagamentos.toast.regenerados', 'Blocos regenerados'), 'success');
 }
 
 // -----------------------------
@@ -338,26 +294,27 @@ async function ensurePagamentosForMonth(year, month) {
     for (const bloco of blocos) {
       const cell = dist.get(bloco.indice);
       if (!cell || cell.count === 0) continue;
-      const valorBloco = valorPorOcorrencia * cell.count;
-      rows.push({
-        user_id: user.id,
-        orcamento_id: orc.id,
-        subcategoria_id: sub.id,
-        mes_ano: mesAno,
-        bloco_quinzenal: bloco.indice,
-        valor_previsto: valorBloco,
-        valor_real: valorBloco, // começa preenchido com o previsto; user pode alterar
-        moeda: orc.moeda,
-        status: 'Agendado',
-        data_vencimento: cell.firstDate,
-      });
+      for (const dataVenc of cell.dates) {
+        rows.push({
+          user_id: user.id,
+          orcamento_id: orc.id,
+          subcategoria_id: sub.id,
+          mes_ano: mesAno,
+          bloco_quinzenal: bloco.indice,
+          valor_previsto: valorPorOcorrencia,
+          valor_real: valorPorOcorrencia, // começa preenchido com o previsto; user pode alterar
+          moeda: orc.moeda,
+          status: (sub.tipo === 'Transferência' || sub.tipo === 'Caixinha') ? 'A Transferir' : 'Agendado',
+          data_vencimento: dataVenc,
+        });
+      }
     }
   }
 
   if (rows.length === 0) return;
 
   const { error: insertError } = await supabase.from('pagamentos').upsert(rows, {
-    onConflict: 'user_id,subcategoria_id,mes_ano,bloco_quinzenal',
+    onConflict: 'user_id,subcategoria_id,mes_ano,data_vencimento',
     ignoreDuplicates: true,
   });
   if (insertError) console.error('[ensurePagamentosForMonth]', insertError);
@@ -457,11 +414,11 @@ function formatPeriod(start, end) {
 /**
  * Distribui ocorrências de uma subcategoria nos blocos do mês.
  * Itera dia a dia dentro de cada bloco (inclusive dias do mês seguinte
- * quando o bloco atravessa). Retorna Map<indice, {count, firstDate}>.
+ * quando o bloco atravessa). Retorna Map<indice, {count, dates: string[]}>.
  */
 function distributeToBlocosDinamico(sub, blocos) {
   const result = new Map();
-  blocos.forEach((b) => result.set(b.indice, { count: 0, firstDate: null }));
+  blocos.forEach((b) => result.set(b.indice, { count: 0, dates: [] }));
 
   for (const b of blocos) {
     const cell = result.get(b.indice);
@@ -469,7 +426,7 @@ function distributeToBlocosDinamico(sub, blocos) {
     while (cur <= b.endDate) {
       if (occursOn(sub, cur)) {
         cell.count++;
-        if (!cell.firstDate) cell.firstDate = isoDate(cur.getFullYear(), cur.getMonth(), cur.getDate());
+        cell.dates.push(isoDate(cur.getFullYear(), cur.getMonth(), cur.getDate()));
       }
       cur = addDays(cur, 1);
     }
@@ -594,10 +551,12 @@ function renderBloco(num, title, period, items) {
 
   const alertCls = saldoBRL <= 0 ? 'alerta-negativo' : '';
 
-  // Separa finalizados (Pago, Transferido, Cartão) dos demais
+  // Separa finalizados, cancelados e ativos
   const finalizedItems = items.filter((p) => FINALIZADOS_STATUS.has(p.status));
-  const activeItems    = items.filter((p) => !FINALIZADOS_STATUS.has(p.status));
+  const canceledItems  = items.filter((p) => p.status === 'Cancelado');
+  const activeItems    = items.filter((p) => !FINALIZADOS_STATUS.has(p.status) && p.status !== 'Cancelado');
   finalizedItemsByBloco.set(num, finalizedItems);
+  canceledItemsByBloco.set(num, canceledItems);
 
   // Agrupa items ativos por categoria parent
   const groups = new Map();
@@ -609,14 +568,15 @@ function renderBloco(num, title, period, items) {
     else orphans.push(p);
   });
 
-  // Monta rows com section headers (4 colunas: Compromisso, Vto, Valor, Status)
+  // Monta rows com section headers (7 colunas: Compromisso, Conta, Destino, Vto, Dias, Valor, Status)
+  const COL_SPAN = 7;
   const sectionRows = [];
   for (const cat of cachedCategorias) {
     const arr = groups.get(cat.id) || [];
     if (arr.length === 0) continue;
     sectionRows.push(`
       <tr class="cat-section" style="--cat-color: ${cat.cor};">
-        <td colspan="4"><span class="cat-dot"></span>${escapeHtml(cat.nome)}</td>
+        <td colspan="${COL_SPAN}"><span class="cat-dot"></span>${escapeHtml(cat.nome)}</td>
       </tr>
     `);
     arr.forEach((p) => sectionRows.push(renderPagamentoRow(p, cat.cor)));
@@ -624,19 +584,36 @@ function renderBloco(num, title, period, items) {
   if (orphans.length > 0) {
     sectionRows.push(`
       <tr class="cat-section" style="--cat-color: #9CA3AF;">
-        <td colspan="4"><span class="cat-dot"></span>Sem categoria</td>
+        <td colspan="${COL_SPAN}"><span class="cat-dot"></span>Sem categoria</td>
       </tr>
     `);
     orphans.forEach((p) => sectionRows.push(renderPagamentoRow(p, '#9CA3AF')));
   }
 
-  // Linha "Finalizados" colapsada no final da tabela
-  const finalizadosRow = finalizedItems.length > 0 ? `
-    <tr class="finalizados-row" data-bloco="${num}" role="button" tabindex="0" title="Ver pagamentos finalizados">
-      <td colspan="4">
-        <span class="finalizados-row-label">Finalizados</span>
-        <span class="finalizados-badge">${finalizedItems.length}</span>
-        <svg class="finalizados-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+  // Linha unificada: Finalizados (esq) · Cancelados (dir)
+  const finalizadosBtn = finalizedItems.length > 0 ? `
+    <span class="pag-summary-btn pag-summary-finalizados" data-bloco="${num}" role="button" tabindex="0" title="Ver pagamentos finalizados">
+      <span class="finalizados-row-label">Finalizados</span>
+      <span class="finalizados-badge">${finalizedItems.length}</span>
+      <svg class="finalizados-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </span>
+  ` : '<span></span>';
+
+  const canceladosBtn = canceledItems.length > 0 ? `
+    <span class="pag-summary-btn pag-summary-cancelados" data-bloco="${num}" role="button" tabindex="0" title="Ver pagamentos cancelados">
+      <svg class="cancelados-row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      <span class="cancelados-badge">${canceledItems.length}</span>
+      <span class="cancelados-row-label">Cancelados</span>
+    </span>
+  ` : '';
+
+  const summaryRow = (finalizedItems.length > 0 || canceledItems.length > 0) ? `
+    <tr class="pag-summary-row">
+      <td colspan="${COL_SPAN}">
+        <div class="pag-summary-row-inner">
+          ${finalizadosBtn}
+          ${canceladosBtn}
+        </div>
       </td>
     </tr>
   ` : '';
@@ -646,15 +623,27 @@ function renderBloco(num, title, period, items) {
     : `
       <div class="pagamento-bloco-scroll">
         <table class="pagamento-bloco-table">
+          <colgroup>
+            <col>
+            <col style="width:150px;">
+            <col style="width:100px;">
+            <col style="width:45px;">
+            <col style="width:72px;">
+            <col style="width:130px;">
+            <col style="width:120px;">
+          </colgroup>
           <thead>
             <tr>
               <th>Compromisso</th>
+              <th class="pag-conta-header">Conta Pgto</th>
+              <th>Destino</th>
               <th class="text-center">Vto</th>
+              <th class="text-center">Dias</th>
               <th class="text-right">Valor</th>
               <th>Status</th>
             </tr>
           </thead>
-          <tbody>${sectionRows.join('')}${finalizadosRow}</tbody>
+          <tbody>${sectionRows.join('')}${summaryRow}</tbody>
         </table>
       </div>
     `;
@@ -721,11 +710,11 @@ function renderPagamentoRow(p, catColor) {
   // Vencimento dia
   const vto = p.data_vencimento ? p.data_vencimento.slice(8, 10) : '—';
 
-  // Status select
-  const statusOptions = STATUS_OPTIONS.map((s) =>
-    `<option value="${s.value}" ${p.status === s.value ? 'selected' : ''}>${s.label}</option>`
-  ).join('');
-
+  // Status select — filtra deprecated (Cartão) exceto se o pagamento já tem esse status
+  const statusOptions = STATUS_OPTIONS
+    .filter((s) => !DEPRECATED_STATUSES.has(s.value) || s.value === p.status)
+    .map((s) => `<option value="${s.value}" ${p.status === s.value ? 'selected' : ''}>${s.label}</option>`)
+    .join('');
   const currentStatus = STATUS_OPTIONS.find((s) => s.value === p.status) || STATUS_OPTIONS[0];
 
   // Indicador de observação
@@ -744,21 +733,59 @@ function renderPagamentoRow(p, catColor) {
        </span>`
     : '';
 
-  // Indicador "atrasado"
-  const atrasadoBadge = atrasadoFlag
-    ? '<span class="atrasado-indicator">atrasado</span>'
-    : '';
+  // Coluna Conta — logo do banco/cartão de origem
+  const contaOrigem = cachedContas.find((c) => c.id === sub?.conta_id);
+  const contaLabel  = contaOrigem ? escapeHtml(contaOrigem.apelido?.trim() || contaOrigem.nome) : '';
+  let contaLogoHtml = '';
+  if (contaOrigem) {
+    const bank = findBank(contaOrigem.nome);
+    const logoEl = bank
+      ? `<img src="${logoUrl(bank.domain)}" alt="${contaLabel}" class="pag-conta-logo">`
+      : `<span class="pag-conta-logo-fallback" style="--conta-color:${contaOrigem.icone_cor || '#9CA3AF'}">${(contaLabel[0] || '?').toUpperCase()}</span>`;
+    contaLogoHtml = `<div class="pag-conta-inner">${logoEl}<span class="pag-conta-name">${contaLabel}</span></div>`;
+  }
 
-  // Indicador "restante de parcial"
-  const parcialBadge = sub?.is_parcial
-    ? '<span class="parcial-indicator" title="Compromisso criado de pagamento parcial">½ rest.</span>'
-    : '';
+  // Coluna Destino — badge Caixinha/Reserva p/ compromissos de poupança, Regular p/ os demais
+  const isCaixinhaTipo = sub?.tipo === 'Caixinha';
+  const destContaRaw = (sub?.tipo === 'Transferência' || isCaixinhaTipo) && sub?.conta_destino_id
+    ? cachedContas.find((c) => c.id === sub.conta_destino_id) : null;
+  let tipoBadgeHtml;
+  if (isCaixinhaTipo) {
+    const subLabel = escapeHtml(sub?.apelido?.trim() || sub?.nome || '');
+    tipoBadgeHtml = `<span class="pag-destino-badge destino-caixinha">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.6.5 2.8 1.5 3.8L4 18h3l1-1.7c1 .4 2 .7 3 .7s2-.3 3-.7L15 18h3l-1.5-2.2c.7-.7 1.2-1.5 1.5-2.3 1 0 2-1 2-2v-2c0-1-1-2-2-2 0-1-1-2.5-1-2.5z"/><circle cx="16" cy="10" r="0.5" fill="currentColor"/><path d="M2 11v1c0 1 1 2 2 2"/></svg>
+      ${subLabel}
+    </span>`;
+  } else if (destContaRaw?.tipo === 'Cofrinho') {
+    const destLabel = escapeHtml(destContaRaw.apelido?.trim() || destContaRaw.nome);
+    tipoBadgeHtml = `<span class="pag-destino-badge destino-caixinha">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="2"/><path d="M4 6v12c0 1.5 3.6 2 8 2s8-.5 8-2V6"/><path d="M4 12c0 1.5 3.6 2 8 2s8-.5 8-2"/></svg>
+      ${destLabel}
+    </span>`;
+  } else {
+    tipoBadgeHtml = `<span class="pag-destino-badge destino-regular">Regular</span>`;
+  }
 
-  // Quick-pay button (só ativo pra status Agendado, mas sempre ocupa espaço pra não shiftar layout)
-  const isAgendado = p.status === 'Agendado';
-  const quickPayBtn = `<button class="btn-quick-pay ${isAgendado ? '' : 'is-hidden'}" data-quick-pay="${p.id}" title="Marcar como pago (status=Pago, valor real = previsto)" type="button" ${isAgendado ? '' : 'tabindex="-1" aria-hidden="true"'}>
-         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-       </button>`;
+  // Coluna Dias — countdown até vencimento para pagamentos pendentes
+  const isPendingDias = p.status === 'Agendado' || p.status === 'A Transferir';
+  let diasHtml = '—';
+  if (isPendingDias && p.data_vencimento) {
+    const todayDias = new Date();
+    todayDias.setHours(0, 0, 0, 0);
+    const vencDias = new Date(p.data_vencimento + 'T00:00:00');
+    const days = Math.round((vencDias - todayDias) / 86400000);
+    if (days < 0) {
+      diasHtml = `<span class="pag-dias-badge pag-dias-atrasado">${Math.abs(days)}d atr.</span>`;
+    } else if (days === 0) {
+      diasHtml = `<span class="pag-dias-badge pag-dias-hoje">hoje</span>`;
+    } else if (days === 1) {
+      diasHtml = `<span class="pag-dias-badge pag-dias-urgente">amanhã</span>`;
+    } else if (days <= 7) {
+      diasHtml = `<span class="pag-dias-badge pag-dias-proximo">${days}d</span>`;
+    } else {
+      diasHtml = `<span class="pag-dias-badge pag-dias-ok">${days}d</span>`;
+    }
+  }
 
   return `
     <tr class="pag-row ${isCancelado ? 'cancelado' : ''} ${atrasadoFlag ? 'atrasado' : ''}" style="--cat-color: ${catColor};" data-id="${p.id}" data-moeda="${moeda}">
@@ -766,13 +793,14 @@ function renderPagamentoRow(p, catColor) {
         <div style="display: flex; align-items: center; gap: var(--space-2); min-width: 0;">
           <span style="color: ${tipoColor}; font-weight: var(--fw-bold); font-size: var(--fs-sm);">${tipoSymbol}</span>
           <span style="font-weight: var(--fw-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(display)}</span>
-          ${parcialBadge}
-          ${atrasadoBadge}
           ${obsIcon}
           ${descIcon}
         </div>
       </td>
+      <td class="pag-conta-cell">${contaLogoHtml}</td>
+      <td>${tipoBadgeHtml}</td>
       <td class="tabular text-center" style="font-size: var(--fs-xs); color: var(--color-text-secondary);">${vto}</td>
+      <td class="text-center pag-dias-cell">${diasHtml}</td>
       <td class="text-right">
         <span class="orcamento-input-group">
           <span class="brl-prefix">${displaySymbol}</span>
@@ -788,12 +816,9 @@ function renderPagamentoRow(p, catColor) {
         </span>
       </td>
       <td>
-        <span class="pag-actions-cell">
-          <select class="pagamento-status-select ${currentStatus.cls}" data-pagamento-id="${p.id}">
-            ${statusOptions}
-          </select>
-          ${quickPayBtn}
-        </span>
+        <select class="pagamento-status-select ${currentStatus.cls}" data-pagamento-id="${p.id}">
+          ${statusOptions}
+        </select>
       </td>
     </tr>
   `;
@@ -820,7 +845,7 @@ function bindEdits() {
     if (inp) saveValorReal(inp);
   }, true); // capture phase — blur não bubbles
 
-  // CLICK: stop-propagation em inputs + dispatch quick-pay vs row
+  // CLICK: stop-propagation em inputs + dispatch row click
   container.addEventListener('click', (e) => {
     // Inputs/selects: não abrir modal ao clicar
     if (e.target.closest('.pagamento-status-select, .pagamento-valor-real')) {
@@ -828,17 +853,17 @@ function bindEdits() {
       return;
     }
 
-    const quickBtn = e.target.closest('[data-quick-pay]');
-    if (quickBtn) {
-      e.stopPropagation();
-      quickPay(quickBtn.dataset.quickPay);
+    const finBtn = e.target.closest('.pag-summary-finalizados');
+    if (finBtn) {
+      const num = Number(finBtn.dataset.bloco);
+      openFinalizadosModal(num);
       return;
     }
 
-    const finalizadosRow = e.target.closest('.finalizados-row');
-    if (finalizadosRow) {
-      const num = Number(finalizadosRow.dataset.bloco);
-      openFinalizadosModal(num);
+    const canBtn = e.target.closest('.pag-summary-cancelados');
+    if (canBtn) {
+      const num = Number(canBtn.dataset.bloco);
+      openFinalizadosModal(num, 'cancelados');
       return;
     }
 
@@ -851,8 +876,10 @@ function bindEdits() {
 
   // KEYDOWN: Enter/Escape no valor-real + Enter no finalizados-row
   container.addEventListener('keydown', (e) => {
-    const finRow = e.target.closest('.finalizados-row');
+    const finRow = e.target.closest('.pag-summary-finalizados');
     if (finRow && e.key === 'Enter') { openFinalizadosModal(Number(finRow.dataset.bloco)); return; }
+    const canRow = e.target.closest('.pag-summary-cancelados');
+    if (canRow && e.key === 'Enter') { openFinalizadosModal(Number(canRow.dataset.bloco), 'cancelados'); return; }
     const inp = e.target.closest('.pagamento-valor-real');
     if (!inp) return;
     if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
@@ -870,13 +897,16 @@ function bindEdits() {
 // -----------------------------
 // Modal: Finalizados do bloco
 // -----------------------------
-function openFinalizadosModal(blocoNum) {
-  const items = finalizedItemsByBloco.get(blocoNum) || [];
+function openFinalizadosModal(blocoNum, type = 'finalizados') {
+  const items = type === 'cancelados'
+    ? (canceledItemsByBloco.get(blocoNum) || [])
+    : (finalizedItemsByBloco.get(blocoNum) || []);
   const title = document.getElementById('modal-finalizados-title');
   const tbody = document.getElementById('modal-finalizados-tbody');
   if (!title || !tbody) return;
 
-  title.textContent = `Finalizados — Bloco ${blocoNum} (${items.length})`;
+  const typeLabel = type === 'cancelados' ? 'Cancelados' : 'Finalizados';
+  title.textContent = `${typeLabel} — Bloco ${blocoNum} (${items.length})`;
 
   // Agrupa por categoria para manter consistência visual
   const groups = new Map();
@@ -892,11 +922,11 @@ function openFinalizadosModal(blocoNum) {
   for (const cat of cachedCategorias) {
     const arr = groups.get(cat.id) || [];
     if (!arr.length) continue;
-    rows.push(`<tr class="cat-section" style="--cat-color: ${cat.cor};"><td colspan="4"><span class="cat-dot"></span>${escapeHtml(cat.nome)}</td></tr>`);
+    rows.push(`<tr class="cat-section" style="--cat-color: ${cat.cor};"><td colspan="7"><span class="cat-dot"></span>${escapeHtml(cat.nome)}</td></tr>`);
     arr.forEach((p) => rows.push(renderPagamentoRow(p, cat.cor)));
   }
   if (orphans.length) {
-    rows.push(`<tr class="cat-section" style="--cat-color: #9CA3AF;"><td colspan="4"><span class="cat-dot"></span>Sem categoria</td></tr>`);
+    rows.push(`<tr class="cat-section" style="--cat-color: #9CA3AF;"><td colspan="7"><span class="cat-dot"></span>Sem categoria</td></tr>`);
     orphans.forEach((p) => rows.push(renderPagamentoRow(p, '#9CA3AF')));
   }
 
@@ -909,46 +939,8 @@ function closeFinalizadosModal() {
 }
 
 // -----------------------------
-// Quick action: marcar como pago (Fase 5.C)
-// -----------------------------
-async function quickPay(id) {
-  const p = cachedPagamentos.find((x) => x.id === id);
-  if (!p) return;
-  if (p.status !== 'Agendado') return;
-
-  // valor_real já vem preenchido — só muda o status
-  const update = { status: 'Pago' };
-  // Edge case: pagamento legado sem valor_real → preenche com valor_previsto
-  if (p.valor_real === null || p.valor_real === undefined) {
-    update.valor_real = Number(p.valor_previsto) || 0;
-  }
-
-  const { error } = await supabase
-    .from('pagamentos')
-    .update(update)
-    .eq('id', id);
-
-  if (error) {
-    console.error('[quickPay]', error);
-    showToast(`${t('pagamentos.toast.erro_marcar_pago', 'Erro ao marcar como pago')}: ${error.message}`, 'error', 8000);
-    return;
-  }
-
-  Object.assign(p, update);
-  showToast(t('pagamentos.toast.marcado_pago', 'Marcado como pago'), 'success');
-  renderPagamentos();
-
-  // Propaga valor pago para a dívida vinculada (fire-and-forget)
-  const dividaId = p.subcategorias?.divida_id;
-  if (dividaId) propagateDivida(dividaId);
-
-  // Sync transação vinculada (com feedback se falhar)
-  syncWithFeedback(p, p.subcategorias);
-}
-
-// -----------------------------
 // Propaga valor pago para dívida vinculada
-// Recalcula do zero somando todos os pagamentos Pago/Cartão/Transferido/Parcial
+// Recalcula do zero somando todos os pagamentos Pago/Cartão/Transferido
 // das subcategorias atreladas à dívida — idempotente e livre de delta bugs.
 // -----------------------------
 async function propagateDivida(dividaId) {
@@ -965,7 +957,7 @@ async function propagateDivida(dividaId) {
     .from('pagamentos')
     .select('valor_real')
     .in('subcategoria_id', subs.map((s) => s.id))
-    .in('status', ['Pago', 'Transferido', 'Cartão', 'Parcial']);
+    .in('status', ['Pago', 'Transferido', 'Cartão']);
 
   const totalPago = (pags || []).reduce((s, p) => s + (Number(p.valor_real) || 0), 0);
 
@@ -1076,128 +1068,17 @@ async function saveObservacao() {
 }
 
 
-// -----------------------------
-// Fluxo de pagamento parcial
-// -----------------------------
-
-// Verifica se há restante significativo e abre o modal de confirmação.
-// Chamado por saveStatus (status → Parcial) e por saveValorReal (status já Parcial).
-function checkParcialAndSuggest(pag) {
-  if (pag.valor_real == null) return;
-  const prevBRL  = convertToBRL(Number(pag.valor_previsto ?? 0), pag.moeda);
-  const realBRL  = convertToBRL(Number(pag.valor_real), pag.moeda);
-  if (prevBRL === null || realBRL === null) return;
-  const restanteBRL = prevBRL - realBRL;
-  if (restanteBRL < 0.01) return;
-
-  parcialState = {
-    pag,
-    restanteOrig: Number(pag.valor_previsto) - Number(pag.valor_real),
-    restanteBRL,
-  };
-
-  document.getElementById('parcial-restante-valor').textContent = formatCurrency(restanteBRL, 'BRL');
-  openModal('modal-parcial-confirm');
-}
-
-// Passa do modal de confirmação para o modal com o pré-preenchimento.
-function openParcialNovoComp() {
-  closeModal('modal-parcial-confirm');
-  if (!parcialState) return;
-
-  const { restanteBRL, pag } = parcialState;
-  const sub   = pag.subcategorias;
-  const conta = cachedContas.find((c) => c.id === sub?.conta_id);
-
-  const fields = [
-    { label: 'Nome',            value: sub?.apelido?.trim() || sub?.nome || '—' },
-    { label: 'Valor restante',  value: formatCurrency(restanteBRL, 'BRL') },
-    { label: 'Categoria',       value: sub?.categorias?.nome || '—' },
-    { label: 'Tipo',            value: sub?.tipo || '—' },
-    { label: 'Período',         value: sub?.periodo || '—' },
-    { label: 'Conta',           value: conta ? (conta.apelido?.trim() || conta.nome) : '—' },
-    { label: 'Tipo pagamento',  value: sub?.tipo_pagamento || '—' },
-  ];
-
-  document.getElementById('pns-summary').innerHTML = fields.map((f) => `
-    <div class="details-field">
-      <span class="details-field-label">${escapeHtml(f.label)}</span>
-      <span class="details-field-value">${escapeHtml(String(f.value))}</span>
-    </div>`).join('');
-
-  // Sugere o dia seguinte ao vencimento como data de início
-  const base = pag.data_vencimento ? new Date(pag.data_vencimento + 'T00:00:00') : new Date();
-  base.setDate(base.getDate() + 1);
-  document.getElementById('pns-data-inicio').value =
-    `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-${String(base.getDate()).padStart(2, '0')}`;
-
-  openModal('modal-parcial-novo-comp');
-}
-
-// Cria a subcategoria/compromisso com is_parcial = true.
-async function criarCompromissoParcial() {
-  if (!parcialState) return;
-  const dataInicio = document.getElementById('pns-data-inicio').value;
-  if (!dataInicio) { showToast(t('pagamentos.validacao.data_inicio', 'Informe a data de início'), 'error'); return; }
-
-  const { pag, restanteOrig } = parcialState;
-  const sub  = pag.subcategorias;
-  const user = await getCurrentUser();
-  if (!user) return;
-
-  const btn      = document.getElementById('btn-pns-criar');
-  const original = btn.textContent;
-  btn.disabled   = true;
-  btn.innerHTML  = '<span class="spinner"></span>';
-
-  const { data, error } = await supabase
-    .from('subcategorias')
-    .insert({
-      user_id:        user.id,
-      nome:           sub.nome,
-      apelido:        sub.apelido || null,
-      tipo:           sub.tipo,
-      categoria_id:   sub.categoria_id,
-      conta_id:       sub.conta_id       || null,
-      tipo_pagamento: sub.tipo_pagamento || null,
-      periodo:        sub.periodo,
-      vencimento_dia: sub.vencimento_dia || null,
-      dia_semana:     sub.dia_semana     ?? null,
-      valor_base:     restanteOrig,
-      moeda:          sub.moeda,
-      iniciado_em:    dataInicio,
-      terminado_em:   null,
-      projeto_id:     sub.projeto_id  || null,
-      divida_id:      sub.divida_id   || null,
-      contato_id:     sub.contato_id  || null,
-      is_parcial:     true,
-      status:         'ativa',
-      valor_variavel: false,
-      descricao:      sub.descricao   || null,
-    })
-    .select()
-    .single();
-
-  btn.disabled  = false;
-  btn.textContent = original;
-
-  if (error) {
-    let msg = error.message;
-    if (/column.*is_parcial/i.test(msg)) msg = 'Coluna is_parcial não existe — rode a migration 0027 no Supabase.';
-    showToast('Erro ao criar compromisso: ' + msg, 'error', 8000);
-    return;
-  }
-
-  showToast(`Compromisso "${data.apelido?.trim() || data.nome}" criado com o valor restante`, 'success');
-  closeModal('modal-parcial-novo-comp');
-  parcialState = null;
-}
-
 async function saveStatus(select) {
   const id = select.dataset.pagamentoId;
   const newStatus = select.value;
   const pag = cachedPagamentos.find((p) => p.id === id);
   if (!pag || pag.status === newStatus) return;
+
+  if (newStatus === 'Transferido') {
+    select.value = pag.status; // revert enquanto processa
+    await createTransferPairAndUpdateStatus(pag, select);
+    return;
+  }
 
   const { error } = await supabase
     .from('pagamentos')
@@ -1211,22 +1092,87 @@ async function saveStatus(select) {
   }
 
   pag.status = newStatus;
-  // Atualiza classe do select pra refletir cor
   STATUS_OPTIONS.forEach((s) => select.classList.remove(s.cls));
   const cur = STATUS_OPTIONS.find((s) => s.value === newStatus);
   if (cur) select.classList.add(cur.cls);
-  // Re-render pra recalcular saldo do bloco
   renderPagamentos();
 
-  // Propaga para dívida vinculada (qualquer mudança de status pode alterar o total)
   const dividaId = pag.subcategorias?.divida_id;
   if (dividaId) propagateDivida(dividaId);
 
-  // Sync transação vinculada (com feedback se falhar)
   syncWithFeedback(pag, pag.subcategorias);
+}
 
-  // Se ficou Parcial, oferece criar compromisso pro restante
-  if (newStatus === 'Parcial') checkParcialAndSuggest(pag);
+// -----------------------------
+// Transferência automática — usa contas já definidas no compromisso
+// -----------------------------
+async function createTransferPairAndUpdateStatus(pag, select) {
+  const contaOrigemId  = pag.subcategorias?.conta_id;
+  const contaDestinoId = pag.subcategorias?.conta_destino_id;
+
+  if (!contaOrigemId || !contaDestinoId) {
+    showToast(
+      'Configure as contas de origem e destino no compromisso antes de marcar como Transferido.',
+      'warning', 7000
+    );
+    return;
+  }
+
+  select.disabled = true;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuário não autenticado');
+
+    const valor    = Number(pag.valor_real ?? pag.valor_previsto ?? 0);
+    const moeda    = pag.moeda || 'BRL';
+    const data     = pag.data_vencimento || new Date().toISOString().slice(0, 10);
+    const descricao = `Transferência — ${displayName(pag)}`;
+
+    // Desvincula transação de sync anterior (se houver)
+    const existing = await findTransacaoLinkedToPagamento(pag.id);
+    if (existing) {
+      await supabase.from('transacoes').update({ pagamento_id: null }).eq('id', existing.id);
+    }
+
+    // Insere saída
+    const { data: saida, error: saidaErr } = await supabase.from('transacoes').insert({
+      data, tipo: 'Transferência', user_id: user.id,
+      conta_id: contaOrigemId, valor, moeda, descricao,
+      conta_destino_id: contaDestinoId,
+      pagamento_id: pag.id,
+    }).select().single();
+    if (saidaErr) throw saidaErr;
+
+    // Insere entrada
+    const { data: entrada, error: entradaErr } = await supabase.from('transacoes').insert({
+      data, tipo: 'Transferência', user_id: user.id,
+      conta_id: contaDestinoId, valor, moeda, descricao,
+      transferencia_par_id: saida.id,
+    }).select().single();
+    if (entradaErr) {
+      await supabase.from('transacoes').delete().eq('id', saida.id);
+      throw entradaErr;
+    }
+
+    // Liga saída ↔ entrada
+    await supabase.from('transacoes').update({ transferencia_par_id: entrada.id }).eq('id', saida.id);
+
+    // Atualiza pagamento
+    const { error: pagErr } = await supabase
+      .from('pagamentos').update({ status: 'Transferido' }).eq('id', pag.id);
+    if (pagErr) throw pagErr;
+
+    pag.status = 'Transferido';
+    renderPagamentos();
+    const dividaId = pag.subcategorias?.divida_id;
+    if (dividaId) propagateDivida(dividaId);
+    showToast('Transferência registrada · transações criadas em Transações', 'success', 5000);
+  } catch (err) {
+    console.error('[createTransferPairAndUpdateStatus]', err);
+    showToast('Erro ao registrar transferência: ' + (err.message || err), 'error', 8000);
+  } finally {
+    select.disabled = false;
+  }
 }
 
 async function saveValorReal(input) {
@@ -1297,8 +1243,6 @@ async function saveValorReal(input) {
     syncWithFeedback(pag, pag.subcategorias);
   }
 
-  // Se ficou Parcial, oferece criar compromisso pro restante
-  if (pag.status === 'Parcial') checkParcialAndSuggest(pag);
 }
 
 // -----------------------------
@@ -1325,7 +1269,7 @@ function syncWithFeedback(pagamento, subcategoria) {
       } else if (result.action === 'updated') {
         showToast('Transação vinculada atualizada', 'success', 3000);
       } else if (result.action === 'unlinked') {
-        showToast('Transação desvinculada (status voltou pra agendado)', 'info', 3000);
+        showToast('Transação desvinculada (status voltou para pendente)', 'info', 3000);
       } else if (result.action === 'skipped') {
         showToast('Sync pulado: ' + (result.reason || ''), 'warning', 5000);
       }
