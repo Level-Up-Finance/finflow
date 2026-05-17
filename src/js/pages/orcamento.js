@@ -16,6 +16,11 @@ import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { formatCurrency, formatCurrencyHTML, MOEDAS } from '../lib/compromissos-config.js';
 import { fetchExchangeRate, startCurrencyAutoRefresh, toBRL } from '../lib/currency.js';
+import {
+  occursOn,
+  countOccurrencesInMonth,
+  getOccurrenceDatesInMonth,
+} from '../lib/recurrence.js';
 import { initCurrencyWidget } from '../components/currency-widget.js';
 import { escapeHtml, isoMonth, parseUserNumber } from '../lib/utils.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
@@ -1610,69 +1615,8 @@ function bindCellEdits12m() {
   });
 }
 
-// -----------------------------
-// Recurrence helpers (occursOn / countOccurrencesInMonth)
-// Mantidos locais nesta tela; espelham a lógica do calendário em compromissos.js
-// -----------------------------
-function occursOn(c, date) {
-  const target = new Date(date);
-  target.setHours(0, 0, 0, 0);
-
-  const start = c.iniciado_em ? new Date(c.iniciado_em + 'T00:00:00') : null;
-  if (start && target < start) return false;
-
-  if (c.terminado_em) {
-    const term = new Date(c.terminado_em + 'T00:00:00');
-    if (target > term) return false;
-  }
-
-  if (c.periodo === 'Único') {
-    return start && target.getTime() === start.getTime();
-  }
-  if (c.periodo === 'Mensal') {
-    return c.vencimento_dia === target.getDate();
-  }
-  if (c.periodo === 'Anual') {
-    return start
-      && c.vencimento_dia === target.getDate()
-      && start.getMonth() === target.getMonth();
-  }
-  if (c.periodo === 'Semanal') {
-    if (c.dia_semana !== target.getDay()) return false;
-    const n = Number(c.intervalo_semanas) || 1;
-    if (n <= 1) return true;
-    if (!start) return true;
-    // Alinha ao ciclo de N semanas a partir de iniciado_em
-    const diff = Math.round((target - start) / (24 * 60 * 60 * 1000));
-    return diff >= 0 && diff % (n * 7) === 0;
-  }
-  if (c.periodo === 'Quinzenal') {
-    if (!start || c.dia_semana !== target.getDay()) return false;
-    const diff = Math.round((target - start) / (24 * 60 * 60 * 1000));
-    return diff >= 0 && diff % 14 === 0;
-  }
-  return false;
-}
-
-function countOccurrencesInMonth(sub, year, month) {
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  let count = 0;
-  for (let day = 1; day <= daysInMonth; day++) {
-    const d = new Date(year, month, day);
-    if (occursOn(sub, d)) count++;
-  }
-  return count;
-}
-
-function getOccurrenceDatesInMonth(sub, year, month) {
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const dates = [];
-  for (let day = 1; day <= daysInMonth; day++) {
-    const d = new Date(year, month, day);
-    if (occursOn(sub, d)) dates.push(new Date(d));
-  }
-  return dates;
-}
+// (v0.6.x — occursOn/countOccurrencesInMonth/getOccurrenceDatesInMonth
+// migrados pra src/js/lib/recurrence.js; importados no topo do arquivo)
 
 function isActiveInMonth(sub, year, month) {
   if (sub.status !== 'ativa') return false;

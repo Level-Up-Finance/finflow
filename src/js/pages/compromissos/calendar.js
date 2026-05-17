@@ -10,49 +10,15 @@
 import { escapeHtml } from '../../lib/utils.js';
 import { formatCurrency, formatCurrencyHTML, tipoPill } from '../../lib/compromissos-config.js';
 import { openModal, closeModal } from '../../components/modal.js';
+// v0.6.x — usa helper compartilhado de recorrência pra eliminar drift entre
+// calendar.js, orcamento.js e table.js
+import { occursOn as recOccursOn } from '../../lib/recurrence.js';
 
 const WEEKDAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTH_LABELS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-/** Verifica se um compromisso tem ocorrência num dia específico. */
-export function occursOn(c, date) {
-  const target = new Date(date);
-  target.setHours(0, 0, 0, 0);
-
-  const start = c.iniciado_em ? new Date(c.iniciado_em + 'T00:00:00') : null;
-  if (start && target < start) return false;
-
-  if (c.terminado_em) {
-    const term = new Date(c.terminado_em + 'T00:00:00');
-    if (target > term) return false;
-  }
-
-  if (c.periodo === 'Único') {
-    return start && target.getTime() === start.getTime();
-  }
-  if (c.periodo === 'Mensal') {
-    return c.vencimento_dia === target.getDate();
-  }
-  if (c.periodo === 'Anual') {
-    return start
-      && c.vencimento_dia === target.getDate()
-      && start.getMonth() === target.getMonth();
-  }
-  if (c.periodo === 'Semanal') {
-    if (c.dia_semana !== target.getDay()) return false;
-    const n = Number(c.intervalo_semanas) || 1;
-    if (n <= 1) return true;
-    if (!start) return true;
-    const diff = Math.round((target - start) / (24 * 60 * 60 * 1000));
-    return diff >= 0 && diff % (n * 7) === 0;
-  }
-  if (c.periodo === 'Quinzenal') {
-    if (!start || c.dia_semana !== target.getDay()) return false;
-    const diff = Math.round((target - start) / (24 * 60 * 60 * 1000));
-    return diff >= 0 && diff % 14 === 0;
-  }
-  return false;
-}
+/** Re-exporta o helper compartilhado pra manter compat com callers antigos. */
+export const occursOn = recOccursOn;
 
 function renderCalendarPopover(events, day, month, deps) {
   const { displayName, getDisplayValor } = deps;

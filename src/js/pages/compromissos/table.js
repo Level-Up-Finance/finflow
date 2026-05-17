@@ -18,6 +18,7 @@ import {
   diaSemanaLabel,
 } from '../../lib/compromissos-config.js';
 import { findBank, logoUrl } from '../../lib/banks.js';
+import { nextOccurrence as calcNextDueDate } from '../../lib/recurrence.js';
 
 /** Converte 'YYYY-MM-DD' em 'mar/26' — também usado fora do table. */
 export function monthLabelFromIso(iso) {
@@ -318,81 +319,10 @@ function renderContaTransferCell(c, contaOrigem, getConta) {
 // -----------------------------
 // Próximo vencimento — cálculo + render
 // -----------------------------
-export function calcNextDueDate(c, today = new Date()) {
-  const t = new Date(today);
-  t.setHours(0, 0, 0, 0);
-
-  if (c.terminado_em) {
-    const term = new Date(c.terminado_em + 'T00:00:00');
-    if (term < t) return null;
-  }
-
-  const start = c.iniciado_em ? new Date(c.iniciado_em + 'T00:00:00') : null;
-
-  if (c.periodo === 'Único') {
-    if (!start) return null;
-    return start >= t ? start : null;
-  }
-
-  if (c.periodo === 'Anual') {
-    const dia = c.vencimento_dia;
-    if (!dia) return null;
-    const refMonth = start ? start.getMonth() : t.getMonth();
-    let next = new Date(t.getFullYear(), refMonth, dia);
-    if (next < t) next = new Date(t.getFullYear() + 1, refMonth, dia);
-    return next;
-  }
-
-  if (c.periodo === 'Mensal') {
-    const dia = c.vencimento_dia;
-    if (!dia) return null;
-    let next = new Date(t.getFullYear(), t.getMonth(), dia);
-    if (next < t) next = new Date(t.getFullYear(), t.getMonth() + 1, dia);
-    return next;
-  }
-
-  if (c.periodo === 'Semanal') {
-    if (c.dia_semana === null || c.dia_semana === undefined) return null;
-    const n = Number(c.intervalo_semanas) || 1;
-    const todayDow = t.getDay();
-    const daysUntil = (c.dia_semana - todayDow + 7) % 7;
-    const candidate = new Date(t);
-    candidate.setDate(t.getDate() + daysUntil);
-    // Sem intervalo (ou semanal puro = 1) → o próximo dia da semana já é a resposta
-    if (n <= 1 || !start) return candidate;
-    // Com intervalo > 1: o próximo precisa estar no ciclo de N semanas
-    // contado a partir de iniciado_em. Avança N*7 dias até cair no ciclo.
-    const cycleDays = n * 7;
-    let diff = Math.round((candidate - start) / (24 * 60 * 60 * 1000));
-    // Se candidate é antes da data de início, pula pra primeira ocorrência ≥ start
-    if (diff < 0) {
-      const weeksToAdd = Math.ceil(-diff / 7);
-      candidate.setDate(candidate.getDate() + weeksToAdd * 7);
-      diff = Math.round((candidate - start) / (24 * 60 * 60 * 1000));
-    }
-    const remainder = diff % cycleDays;
-    if (remainder !== 0) {
-      candidate.setDate(candidate.getDate() + (cycleDays - remainder));
-    }
-    return candidate;
-  }
-
-  if (c.periodo === 'Quinzenal') {
-    if (c.dia_semana === null || c.dia_semana === undefined || !start) return null;
-    const todayDow = t.getDay();
-    const daysUntil = (c.dia_semana - todayDow + 7) % 7;
-    const candidate = new Date(t);
-    candidate.setDate(t.getDate() + daysUntil);
-
-    const diff = Math.round((candidate - start) / (24 * 60 * 60 * 1000));
-    if (diff >= 0 && diff % 14 !== 0) {
-      candidate.setDate(candidate.getDate() + 7);
-    }
-    return candidate;
-  }
-
-  return null;
-}
+// v0.6.x — lógica de "próxima ocorrência" centralizada em recurrence.js
+// (eliminando drift entre tabela, calendário e orçamento). Re-export pra
+// callers que importavam de table.js.
+export { calcNextDueDate };
 
 export function daysFromToday(date) {
   const today = new Date();
