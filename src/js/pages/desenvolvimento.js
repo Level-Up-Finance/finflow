@@ -633,6 +633,10 @@ function openDetailModal(id) {
   document.getElementById('ddd-status').innerHTML =
     `<span class="dev-status-badge dev-status-badge--${escapeHtml(item.status ?? '')}">${escapeHtml(STATUS_LABELS[item.status] ?? item.status ?? '—')}</span>`;
 
+  document.getElementById('ddd-fase').innerHTML = item.fase
+    ? `<span class="dev-fase-badge dev-fase-badge--${escapeHtml(item.fase)}" style="margin-right:6px;">${escapeHtml(item.fase)}</span><span style="font-size:var(--fs-sm);color:var(--color-text-secondary);">${escapeHtml(FASES[item.fase] || '').replace(/^[A-I]\s+—\s+/, '')}</span>`
+    : '<span class="dev-fase-badge dev-fase-badge--empty">—</span> <span style="font-size:var(--fs-sm);color:var(--color-text-muted);">Sem fase</span>';
+
   const notasWrap = document.getElementById('ddd-notas-wrap');
   if (item.notas) {
     notasWrap.classList.remove('hidden');
