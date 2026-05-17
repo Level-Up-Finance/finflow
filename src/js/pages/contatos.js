@@ -671,6 +671,38 @@ function bindEvents() {
     saveContato();
   });
 
+  // Botão "Buscar no Google" → abre modal de busca de empresa (Places API)
+  document.getElementById('ct-btn-places-search')?.addEventListener('click', async () => {
+    const { openPlacesSearchModal } = await import('../components/places-search-modal.js');
+    const { parseAddressComponents } = await import('../lib/google-places.js');
+    const nomeEl    = document.getElementById('ct-nome');
+    const telEl     = document.getElementById('ct-telefone');
+    const websiteEl = document.getElementById('ct-website');
+
+    const place = await openPlacesSearchModal({ initialQuery: nomeEl.value.trim() });
+    if (!place) return;
+
+    if (!nomeEl.value.trim()) nomeEl.value = place.displayName?.text || '';
+    const tel = place.nationalPhoneNumber || place.internationalPhoneNumber;
+    if (tel && telEl && !telEl.value.trim()) telEl.value = tel;
+    if (websiteEl && !websiteEl.value.trim() && place.websiteUri) websiteEl.value = place.websiteUri;
+
+    const addr = parseAddressComponents(place.addressComponents || []);
+    if (apCtg) {
+      apCtg.setValue({
+        pais:       addr.pais || 'Brasil',
+        cep:        addr.cep,
+        logradouro: addr.logradouro,
+        numero:     addr.numero,
+        bairro:     addr.bairro,
+        cidade:     addr.cidade,
+        estado_uf:  addr.estado_uf,
+      });
+    }
+    fpCtg?.setNome(nomeEl.value.trim());
+    showToast('Dados da empresa preenchidos. Revise e salve.', 'success');
+  });
+
   // Delete
   document.getElementById('btn-deletar-contato').addEventListener('click', (e) => {
     const id = e.currentTarget.dataset.id;
@@ -731,6 +763,10 @@ function applyPessoaTipoUI() {
   if (pessoaTipo === 'fisica')        labelEl.textContent = 'CPF';
   else if (pessoaTipo === 'juridica') labelEl.textContent = 'CNPJ';
   else                                labelEl.textContent = 'Documento (CPF/CNPJ)';
+  // Botão "Buscar no Google" só pra PJ não-estrangeira
+  const estrangeiro = document.getElementById('ct-estrangeiro')?.checked ?? false;
+  const showPlacesBtn = pessoaTipo === 'juridica' && !estrangeiro;
+  document.getElementById('ct-btn-places-search')?.classList.toggle('hidden', !showPlacesBtn);
 }
 
 function applyEstrangeiroUI() {

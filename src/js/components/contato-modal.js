@@ -62,6 +62,11 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
       else                                labelEl.textContent = 'Documento (CPF/CNPJ)';
       // Botão "Buscar pelo CNPJ" foi removido — o campo Documento agora aceita
       // CPF ou CNPJ livre, e o label se adapta ao pessoa_tipo selecionado acima.
+
+      // Botão "Buscar no Google" só aparece pra PJ não-estrangeira
+      const estrangeiroPJ = $('ct-estrangeiro')?.checked ?? false;
+      const showPlacesBtn = pessoaTipo === 'juridica' && !estrangeiroPJ;
+      $('ct-btn-places-search')?.classList.toggle('hidden', !showPlacesBtn);
     }
 
     function applyEstrangeiroUI() {
@@ -178,6 +183,50 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
     });
     $('btn-save-contato').addEventListener('click', handleSave);
 
+    // Botão "Buscar no Google" → abre modal de busca de empresa
+    $('ct-btn-places-search')?.addEventListener('click', async () => {
+      const { openPlacesSearchModal } = await import('./places-search-modal.js');
+      const { parseAddressComponents } = await import('../lib/google-places.js');
+      const place = await openPlacesSearchModal({ initialQuery: $('ct-nome').value.trim() });
+      if (!place) return;
+
+      // Preenche apenas campos vazios (não sobrescreve dados que o usuário já digitou)
+      const nomeEl = $('ct-nome');
+      if (!nomeEl.value.trim()) nomeEl.value = place.displayName?.text || '';
+
+      // Telefone (só se vazio) — usa nacional preferencialmente
+      const tel = place.nationalPhoneNumber || place.internationalPhoneNumber;
+      if (tel && ppTelCm && !$('ct-telefone').value.trim()) {
+        ppTelCm.setValue(tel);
+      }
+
+      // Website (só se vazio)
+      const websiteEl = $('ct-website');
+      if (websiteEl && !websiteEl.value.trim() && place.websiteUri) {
+        websiteEl.value = place.websiteUri;
+      }
+
+      // Endereço — SEMPRE sobrescreve (Google é mais completo)
+      const addr = parseAddressComponents(place.addressComponents || []);
+      apCm.setValue({
+        pais:        addr.pais || 'Brasil',
+        cep:         addr.cep,
+        logradouro:  addr.logradouro,
+        numero:      addr.numero,
+        bairro:      addr.bairro,
+        cidade:      addr.cidade,
+        estado_uf:   addr.estado_uf,
+      });
+
+      // Atualiza foto/avatar se vier algo (Places New não retorna logo diretamente;
+      // omitimos esse campo)
+
+      // Atualiza nome no foto-picker se foi preenchido agora
+      fpCm.setNome($('ct-nome').value.trim());
+
+      showToast('Dados da empresa preenchidos. Revise e salve.', 'success');
+    });
+
     // "Mesmo número" toggle
     const mesmoElCm = $('ct-mesmo-numero');
     if (mesmoElCm) {
@@ -258,7 +307,13 @@ function renderModalHtml(title) {
         </label>
         <div class="field-group" style="grid-template-columns: 1fr 1fr;">
           <div class="field">
-            <label class="field-label" for="ct-nome">Nome <span class="required">*</span></label>
+            <label class="field-label" for="ct-nome">
+              Nome <span class="required">*</span>
+              <button type="button" class="btn-link-search hidden" id="ct-btn-places-search" title="Buscar empresa no Google e preencher dados automaticamente">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                Buscar no Google
+              </button>
+            </label>
             <input type="text" class="input" id="ct-nome" required maxlength="120" placeholder="Nome do contato">
           </div>
           <div class="field" id="ct-documento-wrap">

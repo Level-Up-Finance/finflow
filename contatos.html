@@ -162,7 +162,13 @@
         </label>
         <div class="field-group" style="grid-template-columns: 1fr 1fr;">
           <div class="field">
-            <label class="field-label" for="ct-nome">Nome <span class="required">*</span></label>
+            <label class="field-label" for="ct-nome">
+              Nome <span class="required">*</span>
+              <button type="button" class="btn-link-search hidden" id="ct-btn-places-search" title="Buscar empresa no Google e preencher dados automaticamente">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                Buscar no Google
+              </button>
+            </label>
             <input type="text" class="input" id="ct-nome" required maxlength="120" placeholder="Nome do contato">
           </div>
           <div class="field" id="ct-documento-wrap">
