@@ -255,7 +255,7 @@ function bindEvents() {
   document.getElementById('btn-cx-arquivar').addEventListener('click', async () => {
     if (!detailsCaixinha) return;
     const display = detailsCaixinha.apelido?.trim() || detailsCaixinha.nome;
-    if (!confirm(`Arquivar caixinha "${display}"? Ela vai parar de aparecer nas listagens ativas.`)) return;
+    if (!window.confirm(`Arquivar caixinha "${display}"? Ela vai parar de aparecer nas listagens ativas.`)) return;
     const { error } = await supabase.from('subcategorias').update({ status: 'arquivada' }).eq('id', detailsCaixinha.id);
     if (error) { showToast('Erro ao arquivar: ' + error.message, 'error', 6000); return; }
     showToast('Caixinha arquivada.', 'success');

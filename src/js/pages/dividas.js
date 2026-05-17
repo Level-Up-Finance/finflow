@@ -1970,7 +1970,7 @@ function exportarTabelaPDF(modalId, titulo) {
   const legend  = '<p style="font-size:11px;color:#666;margin-top:8px">* Taxa estimada com base na taxa vigente</p>';
 
   const win = window.open('', '_blank', 'width=1100,height=800');
-  if (!win) { alert('Permita pop-ups para exportar o PDF.'); return; }
+  if (!win) { window.alert('Permita pop-ups para exportar o PDF.'); return; }
 
   win.document.write(`<!DOCTYPE html>
 <html lang="pt-BR">

@@ -7,6 +7,21 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-17-caixinha-detalhes-transacoes',
+    version: '0.6.1',
+    date: '17/05/2026',
+    title: 'Caixinha — detalhes, histórico e badge em Transações',
+    items: [
+      { type: 'new', text: 'Card de Caixinha na página Contas é clicável e abre modal de detalhes com saldo atual, número de contribuições, histórico de transferências e opções Editar / Arquivar.' },
+      { type: 'new', text: 'Página de Transações: transferências vinculadas a uma Caixinha exibem badge âmbar "Caixinha" + nome da caixinha (saída/entrada) na coluna de categoria.' },
+      { type: 'new', text: 'Filtro de conta em Transações ganhou grupo "Caixinha" com ícone piggy bank — permite filtrar todas as movimentações de uma caixinha específica.' },
+      { type: 'improvement', text: 'Grupo do conta-picker renomeado de "Caixinha" para "Reserva" (alinhado com o tipo de conta Cofrinho). Avatar no filtro usa círculo proporcional igual às contas bancárias.' },
+      { type: 'fix', text: 'Filtro "Todas as contas" não exibe mais o círculo cinza "?" — avatar fica oculto quando nenhuma conta está selecionada.' },
+      { type: 'fix', text: 'Modal de compromisso: sub-row sempre abre em modo visualização (detalhes + Arquivar / Atualizar / Editar). Botão Duplicar removido.' },
+      { type: 'fix', text: 'Formulário de Caixinha: campo Banco/Cartão passou a ser obrigatório; mensagem de criação diz "caixinha criada" (antes dizia "subcategoria").' },
+    ],
+  },
+  {
     id: '2026-05-17-dividas-a-receber',
     version: '0.6.0',
     date: '17/05/2026',
