@@ -182,7 +182,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         { key: 'descricao',    label: 'Descrição',    defaultVisible: false },
         { key: 'status',       label: 'Status',       defaultVisible: true  },
       ],
-      toolbarEl: document.querySelector('.toolbar'),
+      // v0.5.4 renomeou .toolbar para .orc-filter-bar
+      toolbarEl: document.querySelector('.orc-filter-bar') || document.querySelector('.toolbar'),
     });
   }
 
