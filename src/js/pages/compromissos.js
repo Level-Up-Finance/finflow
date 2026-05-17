@@ -38,7 +38,8 @@ import {
   moedaInputPlaceholder,
 } from '../lib/compromissos-config.js';
 import { initColVisibility } from '../lib/col-visibility.js';
-import { escapeHtml, formatDateBR, todayISO } from '../lib/utils.js';
+import { escapeHtml, formatDateBR, todayISO, getInitials } from '../lib/utils.js';
+import { findBank, logoUrl } from '../lib/banks.js';
 import { createContaPicker } from '../lib/conta-picker.js';
 import { fetchExchangeRate, toBRL } from '../lib/currency.js';
 import { initContatoPicker } from '../components/contato-picker.js';
@@ -994,6 +995,12 @@ async function openDetailsModal(c) {
 
   const conta = getConta(c.conta_id);
   const contaDisplay = conta ? (conta.apelido?.trim() || conta.nome) : '— (não vinculado)';
+  // Banco/cartão com avatar (mesmo padrão de renderContaInline em table.js)
+  const contaHtmlValue = conta ? renderContaAvatarInline(conta) : '<span class="details-field-empty">— (não vinculado)</span>';
+
+  // Contato vinculado (cliente/fornecedor)
+  const contato = c.contato_id ? cachedContatos.find((ct) => ct.id === c.contato_id) : null;
+  const contatoHtmlValue = contato ? renderContatoAvatarInline(contato) : null;
 
   // Vencimento
   let venc = '—';
@@ -1030,7 +1037,12 @@ async function openDetailsModal(c) {
       label: 'Dívida vinculada',
       value: getDivida(c.divida_id)?.nome || '— (dívida removida)'
     }] : []),
-    { label: 'Banco/Cartão',      value: contaDisplay },
+    { label: 'Banco/Cartão',      value: contaHtmlValue, html: true },
+    ...(contatoHtmlValue ? [{
+      label: 'Contato',
+      value: contatoHtmlValue,
+      html: true,
+    }] : []),
     { label: 'Tipo de pagamento', value: c.tipo_pagamento || '—' },
     { label: 'Vencimento',        value: venc },
     { label: 'Período',           value: c.periodo },
@@ -1043,12 +1055,18 @@ async function openDetailsModal(c) {
     { label: 'Modificado em',     value: c.modificado_em ? formatDateTimeBR(c.modificado_em) : '—' },
   ];
 
-  document.getElementById('details-grid').innerHTML = fields.map((f) => `
-    <div class="details-field" ${f.full ? 'style="grid-column: 1 / -1;"' : ''}>
-      <span class="details-field-label">${f.label}</span>
-      <span class="details-field-value ${!f.value ? 'details-field-empty' : ''}">${f.value ? escapeHtml(String(f.value)) : '—'}</span>
-    </div>
-  `).join('');
+  document.getElementById('details-grid').innerHTML = fields.map((f) => {
+    // Campos com html:true pulam o escapeHtml (já trazem HTML controlado).
+    const valueHtml = f.value
+      ? (f.html ? String(f.value) : escapeHtml(String(f.value)))
+      : '—';
+    const emptyCls  = !f.value ? 'details-field-empty' : '';
+    return `
+      <div class="details-field" ${f.full ? 'style="grid-column: 1 / -1;"' : ''}>
+        <span class="details-field-label">${f.label}</span>
+        <span class="details-field-value ${emptyCls}">${valueHtml}</span>
+      </div>`;
+  }).join('');
 
   // Botões: Arquivar (ativa/inativa) ou Deletar (arquivada)
   const btnArq = document.getElementById('btn-arquivar');
@@ -1799,6 +1817,40 @@ async function renderOcorrenciasSections(c) {
     console.warn('[renderOcorrenciasSections] últimas:', err);
     ultimasEl.innerHTML = '<p class="text-muted" style="font-size: var(--fs-sm);">Não foi possível carregar o histórico.</p>';
   }
+}
+
+/**
+ * Renderiza nome do banco/cartão com avatar/logo inline.
+ * Reaproveita o mesmo padrão da tabela (renderContaInline em table.js).
+ */
+function renderContaAvatarInline(conta) {
+  const display = conta.apelido?.trim() || conta.nome;
+  const bank = findBank(conta.nome);
+  const fallbackColor = conta.icone_cor || '#6B7280';
+  const initials = getInitials(display);
+  const avatar = bank
+    ? `<img src="${logoUrl(bank.domain)}" alt="" style="width:22px;height:22px;border-radius:50%;background:#fff;border:1px solid var(--color-border);object-fit:contain;padding:1px;flex-shrink:0;" onerror="this.outerHTML='<span style=&quot;width:22px;height:22px;border-radius:50%;background:${fallbackColor};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;flex-shrink:0;&quot;>${escapeHtml(initials)}</span>'">`
+    : `<span style="width:22px;height:22px;border-radius:50%;background:${fallbackColor};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;flex-shrink:0;">${escapeHtml(initials)}</span>`;
+  return `<span style="display:inline-flex;align-items:center;gap:8px;">${avatar}<span>${escapeHtml(display)}</span></span>`;
+}
+
+/**
+ * Renderiza contato (cliente/fornecedor) com avatar/foto inline.
+ * Usa logo_url quando disponível, fallback pra iniciais coloridas
+ * (mesmo padrão do contato-picker).
+ */
+function renderContatoAvatarInline(contato) {
+  const display = contato.nome || '—';
+  const initials = getInitials(display);
+  // Gera cor consistente a partir do nome
+  let hash = 0;
+  for (let i = 0; i < display.length; i++) hash = display.charCodeAt(i) + ((hash << 5) - hash);
+  const colors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#06B6D4', '#F97316', '#84CC16'];
+  const color = colors[Math.abs(hash) % colors.length];
+  const avatar = contato.logo_url
+    ? `<img src="${escapeHtml(contato.logo_url)}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;background:var(--color-surface-alt);flex-shrink:0;" onerror="this.outerHTML='<span style=&quot;width:22px;height:22px;border-radius:50%;background:${color};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;flex-shrink:0;&quot;>${escapeHtml(initials)}</span>'">`
+    : `<span style="width:22px;height:22px;border-radius:50%;background:${color};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;flex-shrink:0;">${escapeHtml(initials)}</span>`;
+  return `<span style="display:inline-flex;align-items:center;gap:8px;">${avatar}<span>${escapeHtml(display)}</span></span>`;
 }
 
 function navigateCalendar(delta) {
