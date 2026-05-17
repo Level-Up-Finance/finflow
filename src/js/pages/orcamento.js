@@ -1616,7 +1616,13 @@ function occursOn(c, date) {
       && start.getMonth() === target.getMonth();
   }
   if (c.periodo === 'Semanal') {
-    return c.dia_semana === target.getDay();
+    if (c.dia_semana !== target.getDay()) return false;
+    const n = Number(c.intervalo_semanas) || 1;
+    if (n <= 1) return true;
+    if (!start) return true;
+    // Alinha ao ciclo de N semanas a partir de iniciado_em
+    const diff = Math.round((target - start) / (24 * 60 * 60 * 1000));
+    return diff >= 0 && diff % (n * 7) === 0;
   }
   if (c.periodo === 'Quinzenal') {
     if (!start || c.dia_semana !== target.getDay()) return false;

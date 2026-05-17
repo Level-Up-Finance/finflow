@@ -4513,6 +4513,18 @@ td .currency-split {
   .orc-budget-summary { grid-template-columns: 1fr; }
 }
 
+/* Pill informativo no Vencimento — "a cada N sem" para Semanal/Quinzenal */
+.venc-cycle-pill {
+  display: inline-flex;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  width: fit-content;
+  background: var(--color-info-bg, #DBEAFE);
+  color: #1E40AF;
+}
+
 /* Modal de detalhes do compromisso — seções "próximas 3" / "últimas 3" */
 .details-ocorrencias {
   margin-top: var(--space-6);

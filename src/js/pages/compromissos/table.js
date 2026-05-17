@@ -218,17 +218,26 @@ function renderVencCell(c) {
   if (c.periodo === 'Semanal' || c.periodo === 'Quinzenal') {
     if (c.dia_semana == null) return '—';
     const label = diaSemanaLabel(c.dia_semana);
+    // Pill no mesmo estilo dos badges da coluna PRÓXIMO
+    const pill = (txt, title) =>
+      `<span class="venc-cycle-pill" title="${title}">${txt}</span>`;
     if (c.periodo === 'Semanal') {
       const n = Number(c.intervalo_semanas) || 1;
       if (n > 1) {
-        // Badge circular destacando "a cada N semanas" — visual igual ao
-        // badge de ocorrências da aba Mensal
-        return `${label}<span class="occurrence-badge" title="A cada ${n} semanas" style="margin-left:6px;">${n}</span>`;
+        return `
+          <div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start;">
+            <span>${label}</span>
+            ${pill(`a cada ${n} sem`, `Repete a cada ${n} semanas`)}
+          </div>`;
       }
       return label;
     }
-    // Quinzenal — badge fixo "2" (a cada 2 semanas)
-    return `${label}<span class="occurrence-badge" title="A cada 2 semanas" style="margin-left:6px;">2</span>`;
+    // Quinzenal — pill "a cada 2 sem"
+    return `
+      <div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start;">
+        <span>${label}</span>
+        ${pill('a cada 2 sem', 'Repete a cada 2 semanas (quinzenal)')}
+      </div>`;
   }
   return c.vencimento_dia ? `Dia ${c.vencimento_dia}` : '—';
 }
