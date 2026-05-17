@@ -8,7 +8,7 @@ import { supabase }                     from '../lib/supabase.js';
 import { showToast }                    from '../components/toast.js';
 import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.js';
 import { escapeHtml, formatDateBR } from '../lib/utils.js';
-import { fetchCnpjData, isValidCnpj, digitsOnly, googleCnpjSearchUrl, inferLogoUrl, checkImageExists } from '../lib/cnpj-lookup.js';
+import { isValidCnpj, digitsOnly } from '../lib/cnpj-lookup.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 import { PhonePicker } from '../components/phone-picker.js';
 import { AddressPicker, renderAddressFieldsHtml } from '../components/address-picker.js';
@@ -601,10 +601,8 @@ function bindEvents() {
     applyEstrangeiroUI();
   });
 
-  // Busca por CNPJ (Brasil API)
-  document.getElementById('ct-documento').addEventListener('input', updateCnpjActions);
-  document.getElementById('ct-nome').addEventListener('input', updateCnpjActions);
-  document.getElementById('btn-buscar-cnpj').addEventListener('click', handleBuscarCnpj);
+  // Botão "Buscar pelo CNPJ" foi removido — documento agora é texto livre
+  // (CPF ou CNPJ) e o label se adapta ao pessoa_tipo selecionado.
 
   // Atalho "/" foca a busca (ignora se já estiver digitando em input/textarea/modal aberto)
   document.addEventListener('keydown', (e) => {
@@ -724,115 +722,6 @@ const MODAL_FIELDS = [
 // logo_url é gerenciado fora do form (auto-preenchido pela busca CNPJ)
 let modalLogoUrl = null;
 
-async function handleBuscarCnpj() {
-  const cnpjEl = document.getElementById('ct-documento');
-  const cnpj = cnpjEl.value;
-  if (!isValidCnpj(cnpj)) {
-    showToast('CNPJ precisa ter 14 dígitos.', 'error');
-    return;
-  }
-
-  const btn = document.getElementById('btn-buscar-cnpj');
-  const origLabel = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = 'Buscando…';
-
-  try {
-    const data = await fetchCnpjData(cnpj);
-    // Tenta inferir logo do email
-    const logoCandidate = inferLogoUrl(data.email);
-    const validLogo = logoCandidate ? await checkImageExists(logoCandidate) : null;
-    showCnpjPreviewModal(data, validLogo);
-  } catch (err) {
-    showToast(err.message || 'Erro ao buscar CNPJ.', 'error', 6000);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = origLabel;
-  }
-}
-
-function showCnpjPreviewModal(data, logoUrl) {
-  return new Promise((resolve) => {
-    const backdrop = document.createElement('div');
-    backdrop.className = 'modal-backdrop';
-    backdrop.setAttribute('role', 'dialog');
-    backdrop.setAttribute('aria-modal', 'true');
-
-    const enderecoLines = (data.endereco || '').split('\n').map((l) => escapeHtml(l)).join('<br>');
-
-    backdrop.innerHTML = `
-      <div class="modal modal-md">
-        <div class="modal-header"><h3 class="modal-title">Confirmar dados encontrados</h3></div>
-        <div class="modal-body">
-          <div class="cnpj-preview">
-            ${logoUrl ? `<img class="cnpj-preview-logo" src="${escapeHtml(logoUrl)}" alt="Logo">` : ''}
-            <div class="cnpj-preview-info">
-              <div class="cnpj-preview-name">${escapeHtml(data.nome || data.razao_social)}</div>
-              ${data.razao_social && data.nome_fantasia && data.razao_social !== data.nome_fantasia
-                ? `<div class="cnpj-preview-meta">Razão social: ${escapeHtml(data.razao_social)}</div>` : ''}
-              <div class="cnpj-preview-meta">CNPJ: ${escapeHtml(data.cnpj)}</div>
-              ${data.situacao ? `<div class="cnpj-preview-meta">Situação: <strong>${escapeHtml(data.situacao)}</strong></div>` : ''}
-            </div>
-          </div>
-          <dl class="cnpj-preview-fields">
-            ${enderecoLines ? `<dt>Endereço</dt><dd>${enderecoLines}</dd>` : ''}
-            ${data.telefone ? `<dt>Telefone</dt><dd>${escapeHtml(data.telefone)}</dd>` : ''}
-            ${data.email    ? `<dt>E-mail</dt><dd>${escapeHtml(data.email)}</dd>` : ''}
-            ${data.cnae     ? `<dt>Atividade</dt><dd>${escapeHtml(data.cnae)}</dd>` : ''}
-          </dl>
-          <p class="field-hint">Os dados serão preenchidos no formulário. Você ainda pode editar antes de salvar.</p>
-        </div>
-        <div class="modal-footer" style="justify-content:space-between;">
-          <button type="button" class="btn btn-ghost" data-cancel>Cancelar</button>
-          <button type="button" class="btn btn-primary" data-apply>Aplicar dados</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(backdrop);
-
-    function cleanup(applied) {
-      backdrop.remove();
-      document.removeEventListener('keydown', onKey);
-      resolve(applied);
-    }
-    function onKey(e) { if (e.key === 'Escape') cleanup(false); }
-
-    backdrop.addEventListener('click', (e) => {
-      if (e.target === backdrop) return cleanup(false);
-      if (e.target.closest('[data-cancel]')) return cleanup(false);
-      if (e.target.closest('[data-apply]')) {
-        applyCnpjDataToForm(data, logoUrl);
-        cleanup(true);
-      }
-    });
-    document.addEventListener('keydown', onKey);
-  });
-}
-
-function applyCnpjDataToForm(data, logoUrl) {
-  // Só preenche campos vazios pra não sobrescrever edições do usuário
-  const setIfEmpty = (id, value) => {
-    if (!value) return;
-    const el = document.getElementById(id);
-    if (el && !el.value.trim()) el.value = value;
-  };
-  // Nome: usa fantasia primeiro, depois razão social
-  const nomeEl = document.getElementById('ct-nome');
-  if (!nomeEl.value.trim()) nomeEl.value = data.nome || data.razao_social || '';
-
-  setIfEmpty('ct-email', data.email);
-  setIfEmpty('ct-telefone', data.telefone);
-  // CNPJ formatado
-  document.getElementById('ct-documento').value = data.cnpj;
-
-  if (logoUrl) {
-    modalLogoUrl = logoUrl;
-    fpCtg?.setValue(logoUrl);
-  }
-
-  showToast('Dados preenchidos. Revise e salve.', 'success');
-}
-
 function applyPessoaTipoUI() {
   const pessoaTipo = document.getElementById('ct-pessoa-tipo').value;
   // Profissional só faz sentido pra PF
@@ -842,10 +731,6 @@ function applyPessoaTipoUI() {
   if (pessoaTipo === 'fisica')        labelEl.textContent = 'CPF';
   else if (pessoaTipo === 'juridica') labelEl.textContent = 'CNPJ';
   else                                labelEl.textContent = 'Documento (CPF/CNPJ)';
-  // Ações de busca CNPJ só pra PJ e não-estrangeiro
-  const estrangeiro = document.getElementById('ct-estrangeiro')?.checked ?? false;
-  document.getElementById('ct-cnpj-actions').classList.toggle('hidden', pessoaTipo !== 'juridica' || estrangeiro);
-  updateCnpjActions();
 }
 
 function applyEstrangeiroUI() {
@@ -854,17 +739,7 @@ function applyEstrangeiroUI() {
   if (checked) {
     const docEl = document.getElementById('ct-documento');
     if (docEl) docEl.value = '';
-    document.getElementById('ct-cnpj-actions')?.classList.add('hidden');
   }
-}
-
-function updateCnpjActions() {
-  const cnpj = document.getElementById('ct-documento').value;
-  const btn = document.getElementById('btn-buscar-cnpj');
-  btn.disabled = !isValidCnpj(cnpj);
-  // Atualiza o link do Google com o nome atual (se já preenchido)
-  const nome = document.getElementById('ct-nome').value.trim();
-  document.getElementById('link-buscar-google').href = googleCnpjSearchUrl(nome || 'empresa');
 }
 
 function openModal(id) {

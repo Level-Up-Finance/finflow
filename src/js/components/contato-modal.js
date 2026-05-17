@@ -17,8 +17,7 @@ import { getCurrentUser } from '../lib/auth.js';
 import { showToast } from './toast.js';
 import { escapeHtml } from '../lib/utils.js';
 import {
-  fetchCnpjData, isValidCnpj, formatCnpj, googleCnpjSearchUrl,
-  inferLogoUrl, checkImageExists,
+  isValidCnpj, formatCnpj,
 } from '../lib/cnpj-lookup.js';
 import { PhonePicker } from './phone-picker.js';
 import { AddressPicker, renderAddressFieldsHtml } from './address-picker.js';
@@ -61,9 +60,8 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
       if (pessoaTipo === 'fisica')        labelEl.textContent = 'CPF';
       else if (pessoaTipo === 'juridica') labelEl.textContent = 'CNPJ';
       else                                labelEl.textContent = 'Documento (CPF/CNPJ)';
-      const estrangeiro = $('ct-estrangeiro')?.checked ?? false;
-      $('ct-cnpj-actions').classList.toggle('hidden', pessoaTipo !== 'juridica' || estrangeiro);
-      updateCnpjActions();
+      // Botão "Buscar pelo CNPJ" foi removido — o campo Documento agora aceita
+      // CPF ou CNPJ livre, e o label se adapta ao pessoa_tipo selecionado acima.
     }
 
     function applyEstrangeiroUI() {
@@ -72,47 +70,6 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
       if (checked) {
         const docEl = $('ct-documento');
         if (docEl) docEl.value = '';
-        $('ct-cnpj-actions')?.classList.add('hidden');
-      }
-    }
-
-    function updateCnpjActions() {
-      const cnpj = $('ct-documento').value;
-      $('btn-buscar-cnpj').disabled = !isValidCnpj(cnpj);
-      const nome = $('ct-nome').value.trim();
-      $('link-buscar-google').href = googleCnpjSearchUrl(nome || 'empresa');
-    }
-
-    function applyCnpjDataToForm(data, logoUrl) {
-      const setIfEmpty = (id, value) => {
-        if (!value) return;
-        const el = $(id);
-        if (el && !el.value.trim()) el.value = value;
-      };
-      const nomeEl = $('ct-nome');
-      if (!nomeEl.value.trim()) nomeEl.value = data.nome || data.razao_social || '';
-      setIfEmpty('ct-email', data.email);
-      setIfEmpty('ct-telefone', data.telefone);
-      $('ct-documento').value = data.cnpj;
-      if (logoUrl) { modalLogoUrl = logoUrl; fpCm.setValue(logoUrl); }
-      showToast('Dados preenchidos. Revise e salve.', 'success');
-    }
-
-    async function handleBuscarCnpj() {
-      const cnpj = $('ct-documento').value;
-      if (!isValidCnpj(cnpj)) { showToast('CNPJ precisa ter 14 dígitos.', 'error'); return; }
-      const btn = $('btn-buscar-cnpj');
-      const orig = btn.innerHTML;
-      btn.disabled = true; btn.innerHTML = 'Buscando…';
-      try {
-        const data = await fetchCnpjData(cnpj);
-        const logoCandidate = inferLogoUrl(data.email);
-        const validLogo = logoCandidate ? await checkImageExists(logoCandidate) : null;
-        applyCnpjDataToForm(data, validLogo);
-      } catch (err) {
-        showToast(err.message || 'Erro ao buscar CNPJ.', 'error', 6000);
-      } finally {
-        btn.disabled = false; btn.innerHTML = orig;
       }
     }
 
@@ -210,17 +167,15 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
       estrEl.checked = !!pais && pais !== 'Brasil';
       applyEstrangeiroUI();
     });
-    $('ct-documento').addEventListener('input', updateCnpjActions);
     $('ct-documento').addEventListener('blur', () => {
+      // Formata CNPJ automaticamente quando o usuário sai do campo
       const cnpj = $('ct-documento').value;
       if (isValidCnpj(cnpj)) $('ct-documento').value = formatCnpj(cnpj);
     });
     $('ct-nome').addEventListener('input', () => {
       $('ct-nome').classList.remove('input--error');
-      updateCnpjActions();
       fpCm.setNome($('ct-nome').value.trim());
     });
-    $('btn-buscar-cnpj').addEventListener('click', handleBuscarCnpj);
     $('btn-save-contato').addEventListener('click', handleSave);
 
     // "Mesmo número" toggle
@@ -309,13 +264,6 @@ function renderModalHtml(title) {
           <div class="field" id="ct-documento-wrap">
             <label class="field-label" for="ct-documento" id="ct-documento-label">Documento (CPF/CNPJ)</label>
             <input type="text" class="input" id="ct-documento" maxlength="30">
-            <div class="ct-cnpj-actions hidden" id="ct-cnpj-actions">
-              <button type="button" class="btn btn-secondary btn-sm" id="btn-buscar-cnpj" disabled>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                Buscar pelo CNPJ
-              </button>
-              <a class="btn-link btn-sm" id="link-buscar-google" href="#" target="_blank" rel="noopener">Não sei o CNPJ →</a>
-            </div>
           </div>
         </div>
         <div class="field">
