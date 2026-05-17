@@ -15726,6 +15726,13 @@ body.comp-embedded { background: transparent; }
 .dev-fase-badge--G { background: #EDE9FE; color: #5B21B6; border-color: #C4B5FD; } /* Financeiras */
 .dev-fase-badge--H { background: #FCE7F3; color: #9D174D; border-color: #F9A8D4; } /* AI */
 .dev-fase-badge--I { background: #F3E8FF; color: #6B21A8; border-color: #D8B4FE; } /* Comunidade */
+.dev-fase-badge--empty {
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  border-style: dashed;
+}
+.dev-fase-clickable { cursor: pointer; display: inline-flex; }
+.dev-fase-clickable:hover .dev-fase-badge { opacity: 0.85; transform: scale(1.05); transition: all 0.12s ease; }
 
 /* ── Tipo pills ───────────────────────────────────────────── */
 .dev-tipo-pill {

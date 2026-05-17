@@ -84,6 +84,20 @@ let addingNew  = false;
 // Controle de dropdowns inline
 let statusDropId = null;
 let moduloDropId = null;
+let faseDropId   = null;
+
+const FASES = {
+  'A': 'A — Fundações / Infraestrutura',
+  'B': 'B — Marca e UX',
+  'C': 'C — Quality of life UX',
+  'D': 'D — Onboarding, ajuda, academia',
+  'E': 'E — Funcionalidades nativas',
+  'F': 'F — Integrações externas',
+  'G': 'G — Integrações financeiras',
+  'H': 'H — AI',
+  'I': 'I — Comunidade e educação',
+  '': '— Sem fase',
+};
 
 // Arquivos em edição (array de objetos {name, size, type, data:base64})
 let editArquivos = [];
@@ -224,14 +238,16 @@ function buildRow(item) {
   const typeLabel    = TYPE_LABELS[item.type] ?? item.type ?? '—';
   const statusLabel  = STATUS_LABELS[item.status] ?? item.status ?? '—';
 
-  const faseCell = item.fase
-    ? `<span class="dev-fase-badge dev-fase-badge--${escapeHtml(item.fase)}" title="Fase ${escapeHtml(item.fase)}">${escapeHtml(item.fase)}</span>`
-    : '<span class="dev-muted">—</span>';
+  const faseLabel = item.fase
+    ? `<span class="dev-fase-badge dev-fase-badge--${escapeHtml(item.fase)}" title="Fase ${escapeHtml(item.fase)} — clique para alterar">${escapeHtml(item.fase)}</span>`
+    : `<span class="dev-fase-badge dev-fase-badge--empty" title="Sem fase — clique para definir">—</span>`;
 
   return `
     <tr class="dev-tr" data-id="${escapeHtml(item.id)}">
       <td class="dev-td dev-td-codigo" data-action="detail">${escapeHtml(item.codigo ?? '—')}</td>
-      <td class="dev-td dev-td-fase" data-action="detail">${faseCell}</td>
+      <td class="dev-td dev-td-fase" style="position:relative">
+        <span class="dev-fase-clickable" data-fase-drop="${escapeHtml(item.id)}">${faseLabel}</span>
+      </td>
       <td class="dev-td" data-action="detail">
         <span class="dev-tipo-pill dev-tipo-pill--${escapeHtml(item.type ?? '')}">${escapeHtml(typeLabel)}</span>
       </td>
@@ -321,6 +337,12 @@ function bindEvents() {
       return;
     }
     // Dropdown de módulo
+    if (e.target.closest('[data-fase-drop]')) {
+      const dropId = e.target.closest('[data-fase-drop]').dataset.faseDrop;
+      toggleFaseDrop(dropId, e.target.closest('[data-fase-drop]'));
+      e.stopPropagation();
+      return;
+    }
     if (e.target.closest('[data-modulo-drop]')) {
       const dropId = e.target.closest('[data-modulo-drop]').dataset.moduloDrop;
       toggleModuloDrop(dropId, e.target.closest('[data-modulo-drop]'));
@@ -336,7 +358,8 @@ function bindEvents() {
   document.addEventListener('mousedown', (e) => {
     if (!e.target.closest('.dev-inline-drop') &&
         !e.target.closest('[data-status-drop]') &&
-        !e.target.closest('[data-modulo-drop]')) {
+        !e.target.closest('[data-modulo-drop]') &&
+        !e.target.closest('[data-fase-drop]')) {
       closeAllDrops();
     }
   });
@@ -460,6 +483,32 @@ function toggleModuloDrop(id, anchor) {
   positionDrop(drop, anchor);
 }
 
+function toggleFaseDrop(id, anchor) {
+  if (faseDropId === id) { closeAllDrops(); return; }
+  closeAllDrops();
+  faseDropId = id;
+
+  const drop = document.createElement('div');
+  drop.className = 'dev-inline-drop';
+  drop.id = 'fase-drop-' + id;
+
+  drop.innerHTML = Object.entries(FASES).map(([val, lbl]) => `
+    <button type="button" class="dev-inline-drop-item" data-val="${val}">
+      ${val ? `<span class="dev-fase-badge dev-fase-badge--${val}" style="margin-right:8px;">${val}</span>` : '<span class="dev-muted" style="margin-right:8px;">—</span>'}
+      ${escapeHtml(lbl)}
+    </button>
+  `).join('');
+
+  drop.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-val]');
+    if (!btn) return;
+    updateFase(id, btn.dataset.val || null);
+    closeAllDrops();
+  });
+
+  positionDrop(drop, anchor);
+}
+
 function positionDrop(drop, anchor) {
   document.body.appendChild(drop);
   const rect = anchor.getBoundingClientRect();
@@ -480,6 +529,7 @@ function closeAllDrops() {
   document.querySelectorAll('.dev-inline-drop').forEach(d => d.remove());
   statusDropId = null;
   moduloDropId = null;
+  faseDropId   = null;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -529,6 +579,28 @@ async function updateModulo(id, newModulo) {
   }
 
   showToast('Módulo atualizado.', 'success', 2000);
+}
+
+async function updateFase(id, newFase) {
+  const item = todos.find(i => i.id === id);
+  if (!item) return;
+  const oldFase = item.fase;
+  item.fase = newFase;
+  renderAll();
+
+  const { error } = await supabase
+    .from('feedback')
+    .update({ fase: newFase, updated_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) {
+    item.fase = oldFase;
+    renderAll();
+    showToast('Erro ao atualizar fase: ' + error.message, 'error');
+    return;
+  }
+
+  showToast(newFase ? `Fase definida como ${newFase}.` : 'Fase removida.', 'success', 2000);
 }
 
 // ─────────────────────────────────────────────────────────────
