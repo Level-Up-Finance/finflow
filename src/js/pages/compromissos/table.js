@@ -26,6 +26,35 @@ export function monthLabelFromIso(iso) {
   return d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }).replace('.', '');
 }
 
+/**
+ * Cabeçalho da tabela (extraído pra ser reusado em cada bloco).
+ */
+function tableHeadHtml() {
+  return `
+    <thead>
+      <tr>
+        <th>Compromisso</th>
+        <th>Categoria</th>
+        <th data-col="subcategoria">Subcategoria</th>
+        <th data-col="tipo">Tipo</th>
+        <th data-col="projeto">Vínculo</th>
+        <th data-col="conta">Banco/Cartão</th>
+        <th data-col="pagamento">Pagamento</th>
+        <th data-col="vencimento">Vencimento</th>
+        <th data-col="proximo">Próximo</th>
+        <th data-col="termina">Termina em</th>
+        <th data-col="periodo">Período</th>
+        <th data-col="valor" class="text-right">Valor</th>
+        <th data-col="descricao">Descrição</th>
+        <th data-col="status">Status</th>
+      </tr>
+    </thead>`;
+}
+
+/**
+ * Render plano (todas as rows em uma tabela). Usado em filtragens
+ * que cruzam blocos ou em modos que não fazem sentido agrupar.
+ */
 export function renderFlatTable(rows, deps) {
   if (rows.length === 0) {
     return '<div class="empty-state"><p class="empty-state-message">Nenhum item com os filtros selecionados.</p></div>';
@@ -33,28 +62,76 @@ export function renderFlatTable(rows, deps) {
   return `
     <div class="contas-table-wrapper">
       <table class="contas-table compromissos-grouped-table">
-        <thead>
-          <tr>
-            <th>Compromisso</th>
-            <th>Categoria</th>
-            <th data-col="subcategoria">Subcategoria</th>
-            <th data-col="tipo">Tipo</th>
-            <th data-col="projeto">Vínculo</th>
-            <th data-col="conta">Banco/Cartão</th>
-            <th data-col="pagamento">Pagamento</th>
-            <th data-col="vencimento">Vencimento</th>
-            <th data-col="proximo">Próximo</th>
-            <th data-col="termina">Termina em</th>
-            <th data-col="periodo">Período</th>
-            <th data-col="valor" class="text-right">Valor</th>
-            <th data-col="descricao">Descrição</th>
-            <th data-col="status">Status</th>
-          </tr>
-        </thead>
+        ${tableHeadHtml()}
         <tbody>${rows.map((row) => renderUnifiedRow(row, deps)).join('')}</tbody>
       </table>
     </div>
   `;
+}
+
+/**
+ * Render agrupado por super-bloco: uma seção por bloco com banner
+ * colorido + tabela só com as linhas daquele bloco. Espelha o
+ * layout da página de Configurações de Categorias.
+ *
+ * @param {Array} rows  pré-filtradas
+ * @param {Object} deps mesmas deps de renderFlatTable
+ * @param {Array} blocos [{ id, label, accent, grupos }]
+ * @param {Array} categorias categorias do usuário (para mapear cat → bloco)
+ */
+export function renderGroupedBySuperBloco(rows, deps, blocos, categorias) {
+  if (rows.length === 0) {
+    return '<div class="empty-state"><p class="empty-state-message">Nenhum item com os filtros selecionados.</p></div>';
+  }
+
+  // Mapa cat.id → blocoId
+  const catToBloco = new Map();
+  for (const bloco of blocos) {
+    for (const cat of categorias) {
+      if (bloco.grupos.includes(cat.grupo || 'custo_vida')) catToBloco.set(cat.id, bloco.id);
+    }
+  }
+
+  // Agrupa rows por bloco
+  const byBloco = new Map(blocos.map((b) => [b.id, []]));
+  const semBloco = [];
+  for (const row of rows) {
+    const blocoId = catToBloco.get(row._catId);
+    if (blocoId) byBloco.get(blocoId).push(row);
+    else semBloco.push(row);
+  }
+
+  const sections = [];
+  for (const bloco of blocos) {
+    const list = byBloco.get(bloco.id) || [];
+    if (list.length === 0) continue;
+    sections.push(`
+      <section class="comp-bloco" style="--bloco-accent: ${bloco.accent};">
+        <header class="comp-bloco-banner">${escapeHtml(bloco.label)}</header>
+        <div class="contas-table-wrapper">
+          <table class="contas-table compromissos-grouped-table">
+            ${tableHeadHtml()}
+            <tbody>${list.map((row) => renderUnifiedRow(row, deps)).join('')}</tbody>
+          </table>
+        </div>
+      </section>
+    `);
+  }
+  if (semBloco.length > 0) {
+    sections.push(`
+      <section class="comp-bloco" style="--bloco-accent: var(--color-text-muted);">
+        <header class="comp-bloco-banner">Sem grupo</header>
+        <div class="contas-table-wrapper">
+          <table class="contas-table compromissos-grouped-table">
+            ${tableHeadHtml()}
+            <tbody>${semBloco.map((row) => renderUnifiedRow(row, deps)).join('')}</tbody>
+          </table>
+        </div>
+      </section>
+    `);
+  }
+
+  return sections.join('');
 }
 
 function renderUnifiedRow(row, deps) {

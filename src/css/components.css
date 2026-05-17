@@ -4518,6 +4518,30 @@ td .currency-split {
 .orc-bloco-mini-label { color: var(--color-text-muted); font-weight: var(--fw-medium); }
 .orc-bloco-mini-value { color: var(--color-text-main); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
 
+/* v0.5.5 — Grupos de super-bloco na aba Configurações (CONTRIBUIÇÃO /
+   SONHOS / CUSTO DE VIDA). Cada bloco vira uma section com banner
+   colorido e tabela própria — mesmo padrão visual da página de
+   Configurações de Categorias. */
+.comp-bloco {
+  border: 1px solid color-mix(in srgb, var(--bloco-accent, var(--color-border)) 35%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bloco-accent, var(--color-surface)) 4%, var(--color-surface));
+  margin-bottom: var(--space-5);
+  overflow: hidden;
+}
+.comp-bloco-banner {
+  padding: var(--space-2) var(--space-4);
+  background: color-mix(in srgb, var(--bloco-accent, var(--color-primary)) 12%, transparent);
+  color: var(--bloco-accent, var(--color-text-main));
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid color-mix(in srgb, var(--bloco-accent, var(--color-border)) 30%, transparent);
+}
+.comp-bloco .contas-table-wrapper { background: transparent; border: none; }
+.comp-bloco .contas-table { background: transparent; }
+
 /* v0.5.4 — Filter bar horizontal compacto (substitui conta-filterbar nas
    abas de Configurações do Orçamento). Tudo numa linha (busca → grupos
    de filtros → view-toggle no canto direito). Linha extra apenas para

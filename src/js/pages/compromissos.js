@@ -52,6 +52,7 @@ import { renderDre } from './compromissos/dre.js';
 import { populateValoresMensaisGrid } from './compromissos/valores-mensais.js';
 import {
   renderFlatTable,
+  renderGroupedBySuperBloco,
   bindRowClicks,
   monthLabelFromIso,
 } from './compromissos/table.js';
@@ -1548,7 +1549,7 @@ function renderCompromissos() {
       getConta,
       isRowConfigured,
     };
-    container.innerHTML = renderFlatTable(filtered, tableDeps);
+    container.innerHTML = renderGroupedBySuperBloco(filtered, tableDeps, SUPER_BLOCOS_LIST, cachedCategorias);
     bindRowClicks({
       onSubRowClick: (id) => {
         const c = cachedCompromissos.find((x) => x.id === id);
