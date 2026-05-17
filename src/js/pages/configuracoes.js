@@ -1097,21 +1097,22 @@ async function seedDefaultCategories() {
   if (!user) return;
 
   const today = new Date().toISOString().slice(0, 10);
+  // is_default=true → Receita, Dívidas, Investimentos (protegidas, não editáveis/deletáveis)
+  // is_default=false → demais categorias de exemplo (usuário pode editar/deletar)
   const defaults = [
-    { nome: 'Receita',            grupo: 'receitas',      cor: '#22c55e', subs: ['Renda principal', '13º Salário', 'Ganhos de investimento', 'Extras'] },
-    { nome: 'Dívidas',            grupo: 'dividas',        cor: '#ef4444', subs: [] },
-    { nome: 'Investimentos',      grupo: 'investimentos',  cor: '#6D5EF5', subs: ['Renda fixa', 'Renda variável'] },
-    { nome: 'Objetivos',          grupo: 'investimentos',  cor: '#14b8a6', subs: ['Casa nova', 'Aniversário dos filhos', 'Presentes de natal'] },
-    { nome: 'Casa',               grupo: 'custo_vida',     cor: '#f97316', subs: [] },
-    { nome: 'Doações e Presentes', grupo: 'custo_vida',    cor: '#ec4899', subs: [] },
-    { nome: 'Educação e Saúde',   grupo: 'custo_vida',     cor: '#3b82f6', subs: [] },
+    { nome: 'Receita',            grupo: 'receitas',      cor: '#22c55e', isDefault: true,  subs: ['Renda principal', '13º Salário', 'Ganhos de investimento', 'Extras'] },
+    { nome: 'Dívidas',            grupo: 'dividas',        cor: '#ef4444', isDefault: true,  subs: [] },
+    { nome: 'Investimentos',      grupo: 'investimentos',  cor: '#6D5EF5', isDefault: true,  subs: ['Renda fixa', 'Renda variável'] },
+    { nome: 'Casa',               grupo: 'custo_vida',     cor: '#f97316', isDefault: false, subs: [] },
+    { nome: 'Doações e Presentes', grupo: 'custo_vida',    cor: '#ec4899', isDefault: false, subs: [] },
+    { nome: 'Educação e Saúde',   grupo: 'custo_vida',     cor: '#3b82f6', isDefault: false, subs: [] },
   ];
 
   for (let i = 0; i < defaults.length; i++) {
     const d = defaults[i];
     const { data: catData, error: catErr } = await supabase
       .from('categorias')
-      .insert({ user_id: user.id, nome: d.nome, cor: d.cor, grupo: d.grupo, ordem: i, is_default: true })
+      .insert({ user_id: user.id, nome: d.nome, cor: d.cor, grupo: d.grupo, ordem: i, is_default: d.isDefault })
       .select('id')
       .single();
     if (catErr) { console.warn('[seed] cat error:', catErr.message); continue; }

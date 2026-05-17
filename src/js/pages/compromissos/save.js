@@ -318,9 +318,14 @@ export async function saveCompromisso(event, deps) {
 
   try {
     let response;
-    let subcategoriaMsg = null; // mensagem do popup informativo (só em criação)
+    let subcategoriaMsg = null;
     if (editingId) {
+      const oldData = cachedCompromissos.find((c) => c.id === editingId);
+      const tipoChanged = oldData && oldData.tipo !== tipo;
       response = await supabase.from('subcategorias').update(payload).eq('id', editingId).select().single();
+      if (tipoChanged && tipo === 'Caixinha') {
+        subcategoriaMsg = 'Este compromisso foi convertido em caixinha.';
+      }
     } else {
       const user = await getCurrentUser();
       if (!user) throw new Error('Sessão expirada. Faça login novamente.');

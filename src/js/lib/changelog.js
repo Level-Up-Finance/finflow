@@ -7,6 +7,17 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-17-remove-objetivos',
+    version: '0.6.2',
+    date: '17/05/2026',
+    title: 'Categorias — remoção de Objetivos e proteção seletiva',
+    items: [
+      { type: 'fix', text: 'Categoria "Objetivos" removida do sistema: não é mais criada para novos usuários e foi excluída (junto com suas subcategorias: Casa nova, Aniversário dos filhos, Presentes de natal) de todos os usuários existentes.' },
+      { type: 'improvement', text: 'Apenas Receita, Dívidas e Investimentos continuam como categorias protegidas (is_default=true, sem botões Editar/Deletar). Casa, Doações e Presentes e Educação e Saúde passaram a is_default=false — o usuário pode editá-las e deletá-las normalmente.' },
+      { type: 'fix', text: 'Compromisso editado com mudança de tipo para Caixinha agora exibe o popup "Este compromisso foi convertido em caixinha."' },
+    ],
+  },
+  {
     id: '2026-05-17-caixinha-detalhes-transacoes',
     version: '0.6.1',
     date: '17/05/2026',
