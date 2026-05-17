@@ -15734,6 +15734,42 @@ body.comp-embedded { background: transparent; }
 .dev-fase-clickable { cursor: pointer; display: inline-flex; }
 .dev-fase-clickable:hover .dev-fase-badge { opacity: 0.85; transform: scale(1.05); transition: all 0.12s ease; }
 
+/* Chip de fase (modal de detalhe — letra + nome da fase juntos) */
+.dev-fase-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 3px;
+  border-radius: var(--radius-full);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+.dev-fase-chip-letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  font-weight: var(--fw-bold);
+  font-size: 11px;
+}
+.dev-fase-chip-label { color: var(--color-text-main); }
+.dev-fase-chip--A { background: #FEE2E2; border-color: #FCA5A5; color: #991B1B; } .dev-fase-chip--A .dev-fase-chip-letter { background: #fff; color: #991B1B; }
+.dev-fase-chip--B { background: #FEF3C7; border-color: #FCD34D; color: #92400E; } .dev-fase-chip--B .dev-fase-chip-letter { background: #fff; color: #92400E; }
+.dev-fase-chip--C { background: #FEF9C3; border-color: #FDE68A; color: #854D0E; } .dev-fase-chip--C .dev-fase-chip-letter { background: #fff; color: #854D0E; }
+.dev-fase-chip--D { background: #DCFCE7; border-color: #86EFAC; color: #166534; } .dev-fase-chip--D .dev-fase-chip-letter { background: #fff; color: #166534; }
+.dev-fase-chip--E { background: #DBEAFE; border-color: #93C5FD; color: #1E40AF; } .dev-fase-chip--E .dev-fase-chip-letter { background: #fff; color: #1E40AF; }
+.dev-fase-chip--F { background: #E0E7FF; border-color: #A5B4FC; color: #3730A3; } .dev-fase-chip--F .dev-fase-chip-letter { background: #fff; color: #3730A3; }
+.dev-fase-chip--G { background: #EDE9FE; border-color: #C4B5FD; color: #5B21B6; } .dev-fase-chip--G .dev-fase-chip-letter { background: #fff; color: #5B21B6; }
+.dev-fase-chip--H { background: #FCE7F3; border-color: #F9A8D4; color: #9D174D; } .dev-fase-chip--H .dev-fase-chip-letter { background: #fff; color: #9D174D; }
+.dev-fase-chip--I { background: #F3E8FF; border-color: #D8B4FE; color: #6B21A8; } .dev-fase-chip--I .dev-fase-chip-letter { background: #fff; color: #6B21A8; }
+.dev-fase-chip--empty { color: var(--color-text-muted); border-style: dashed; }
+
 /* ── Tipo pills ───────────────────────────────────────────── */
 .dev-tipo-pill {
   display: inline-flex;

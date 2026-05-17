@@ -213,12 +213,18 @@
        ============================================================ -->
   <div class="modal-backdrop hidden" id="modal-dev-detail" role="dialog" aria-modal="true">
     <div class="modal modal-md">
-      <div class="modal-header">
-        <div style="display:flex;align-items:center;gap:var(--space-2)">
+      <div class="modal-header" style="flex-direction:column;align-items:stretch;gap:var(--space-2)">
+        <div style="display:flex;align-items:center;gap:var(--space-2);width:100%">
           <span id="ddd-codigo" class="i18n-chave" style="font-family:monospace;font-size:var(--fs-xs);color:var(--color-text-muted)"></span>
           <span id="ddd-tipo-pill"></span>
+          <span style="flex:1"></span>
+          <button type="button" class="modal-close" id="btn-close-ddd" aria-label="Fechar">×</button>
         </div>
-        <button type="button" class="modal-close" id="btn-close-ddd" aria-label="Fechar">×</button>
+        <!-- Linha de chips: status + fase (classificadores rápidos) -->
+        <div style="display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap">
+          <span id="ddd-status"></span>
+          <span id="ddd-fase"></span>
+        </div>
       </div>
       <div class="modal-body" style="gap:var(--space-4)">
         <div>
@@ -241,16 +247,6 @@
           <div>
             <p class="field-label" style="margin-bottom:var(--space-1)">Complexidade</p>
             <span id="ddd-complex"></span>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
-          <div>
-            <p class="field-label" style="margin-bottom:var(--space-1)">Status</p>
-            <span id="ddd-status"></span>
-          </div>
-          <div>
-            <p class="field-label" style="margin-bottom:var(--space-1)">Fase</p>
-            <span id="ddd-fase"></span>
           </div>
         </div>
         <div id="ddd-notas-wrap">

@@ -633,9 +633,16 @@ function openDetailModal(id) {
   document.getElementById('ddd-status').innerHTML =
     `<span class="dev-status-badge dev-status-badge--${escapeHtml(item.status ?? '')}">${escapeHtml(STATUS_LABELS[item.status] ?? item.status ?? '—')}</span>`;
 
+  // Fase como chip único no header (letra + nome da fase, colorido)
   document.getElementById('ddd-fase').innerHTML = item.fase
-    ? `<span class="dev-fase-badge dev-fase-badge--${escapeHtml(item.fase)}" style="margin-right:6px;">${escapeHtml(item.fase)}</span><span style="font-size:var(--fs-sm);color:var(--color-text-secondary);">${escapeHtml(FASES[item.fase] || '').replace(/^[A-I]\s+—\s+/, '')}</span>`
-    : '<span class="dev-fase-badge dev-fase-badge--empty">—</span> <span style="font-size:var(--fs-sm);color:var(--color-text-muted);">Sem fase</span>';
+    ? `<span class="dev-fase-chip dev-fase-chip--${escapeHtml(item.fase)}">
+         <span class="dev-fase-chip-letter">${escapeHtml(item.fase)}</span>
+         <span class="dev-fase-chip-label">${escapeHtml((FASES[item.fase] || '').replace(/^[A-I]\s+—\s+/, ''))}</span>
+       </span>`
+    : `<span class="dev-fase-chip dev-fase-chip--empty">
+         <span class="dev-fase-chip-letter">—</span>
+         <span class="dev-fase-chip-label">Sem fase</span>
+       </span>`;
 
   const notasWrap = document.getElementById('ddd-notas-wrap');
   if (item.notas) {
