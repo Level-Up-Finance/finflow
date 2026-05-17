@@ -297,6 +297,24 @@ async function renderPassadosForMonth(container, availableMonths, selectedMesAno
     return;
   }
 
+  // Pre-fetch de câmbio pras moedas estrangeiras presentes (evita somar
+  // valores em USD/GBP como se fossem BRL no rodapé).
+  const moedasEstrangeiras = new Set();
+  for (const p of (pagamentos || [])) {
+    const m = p.moeda || 'BRL';
+    if (m !== 'BRL') moedasEstrangeiras.add(m);
+  }
+  const ratesMap = new Map();
+  await Promise.all([...moedasEstrangeiras].map(async (m) => {
+    try { ratesMap.set(m, await fetchExchangeRate(m, 'BRL')); }
+    catch { ratesMap.set(m, null); }
+  }));
+  const toBRL = (val, moeda) => {
+    if (!moeda || moeda === 'BRL') return Number(val) || 0;
+    const rate = ratesMap.get(moeda);
+    return rate ? (Number(val) || 0) * rate : (Number(val) || 0);
+  };
+
   // Render por categoria (apenas visualização)
   let totalRealizado = 0;
   let totalPrevisto = 0;
@@ -304,8 +322,9 @@ async function renderPassadosForMonth(container, availableMonths, selectedMesAno
     const subRows = rows.map(({ pagamento, sub }) => {
       const real     = Number(pagamento.valor_real) || 0;
       const previsto = Number(pagamento.valor_previsto) || 0;
-      totalRealizado += real;
-      totalPrevisto  += previsto;
+      // Soma totais sempre em BRL (converte moeda estrangeira)
+      totalRealizado += toBRL(real, pagamento.moeda || 'BRL');
+      totalPrevisto  += toBRL(previsto, pagamento.moeda || 'BRL');
       const statusClass = ({
         'Pago':        'status-pago',
         'Cartão':      'status-cartao',
@@ -880,17 +899,20 @@ function renderEntryRow(entry) {
   const canEdit = false;
   const inputValue = (valorBRL !== null ? valorBRL : valorOrig).toFixed(2);
 
-  // Pra moeda estrangeira, mostra valor original abaixo como referência
+  // Pra moeda estrangeira, mostra valor original abaixo como referência.
+  // O aviso "câmbio indisponível" só aparece quando NÃO conseguimos a taxa
+  // (valorBRL === null). Em v0.5.1+ a aba é read-only por design — não
+  // confundir o usuário com "edição desabilitada".
   let origRef = '';
   if (!isBRL) {
     const isFrozen = !!entry.cambio_travado;
     const frozenIcon = isFrozen
       ? `<span class="frozen-rate-icon" title="Câmbio congelado em ${entry.travado_em ? new Date(entry.travado_em).toLocaleDateString('pt-BR') : '—'} a R$ ${Number(entry.cambio_travado).toFixed(4)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>`
       : '';
-    if (canEdit) {
+    if (valorBRL !== null) {
       origRef = `<div class="orcamento-brl-equivalent">${frozenIcon}orig: ${formatCurrency(valorOrig, moeda)}</div>`;
     } else {
-      origRef = `<div class="orcamento-brl-equivalent unavailable">câmbio ${moeda} indisponível — edição desabilitada</div>`;
+      origRef = `<div class="orcamento-brl-equivalent unavailable">câmbio ${moeda} indisponível — exibindo valor original</div>`;
     }
   }
 

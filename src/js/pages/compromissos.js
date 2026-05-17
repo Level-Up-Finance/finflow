@@ -1604,8 +1604,10 @@ function updateBudgetSummary() {
   for (const sub of cachedCompromissos) {
     if (sub.status !== 'ativa') continue;
     if (!isRowConfigured(sub)) continue;
-    const valor = Number(sub.valor_base) || 0;
-    const mensal = valor * periodoMult(sub.periodo);
+    // Converte valor_base para BRL (moeda principal) — antes somávamos
+    // USD/GBP como se fossem BRL.
+    const valorBRL = convertToLocalBRL(Number(sub.valor_base) || 0, sub.moeda || 'BRL');
+    const mensal = valorBRL * periodoMult(sub.periodo);
     const tipo = (sub.tipo || '').toLowerCase();
     if (tipo === 'receita') receitas += mensal;
     else if (tipo === 'despesa') despesas += mensal;
