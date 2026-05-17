@@ -564,8 +564,9 @@ async function saveCat() {
 
     await reloadAll();
     scrollToTreeItem('.cfg-cat-nome-cell', savedNome);
-    if (newCatId) showCatPostSave(newCatId, grupo, savedNome);
-    else closeCatModal();
+    // v0.5.x: criação de compromisso vive nas páginas de Dívidas/Projetos
+    // e na aba Configurações de Orçamento — não mais aqui.
+    closeCatModal();
   } else {
     closeCatModal();
     await reloadAll();
@@ -777,7 +778,9 @@ async function saveSub() {
 
     await reloadAll();
     scrollToTreeItem('.cfg-sub-nome-cell', savedNome);
-    showSubPostSave(newSubId, resolvedCatId, savedNome, isReceitas);
+    // v0.5.x: criação de compromisso vive nas páginas de Dívidas/Projetos
+    // e na aba Configurações de Orçamento — não mais aqui.
+    closeSubModal();
   } else {
     closeSubModal();
     await reloadAll();
