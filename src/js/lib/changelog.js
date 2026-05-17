@@ -7,6 +7,20 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-17-dividas-a-receber',
+    version: '0.6.0',
+    date: '17/05/2026',
+    title: 'Dívidas — suporte a "a pagar" e "a receber" (empréstimos)',
+    items: [
+      { type: 'new', text: 'Nova coluna `tipo` na tabela `dividas` (a_pagar | a_receber) — permite cadastrar tanto dívidas suas quanto empréstimos que outras pessoas devem a você.' },
+      { type: 'new', text: 'Modal de dívida: toggle no topo "Eu devo (a pagar)" vs "Me devem (a receber)". Labels e placeholders trocam dinamicamente (Credor ↔ Devedor).' },
+      { type: 'new', text: 'Cards de dívida a_receber ganham badge verde "↙ A receber" + borda esquerda verde para diferenciação visual.' },
+      { type: 'new', text: 'KPIs do topo passam a refletir apenas dívidas a_pagar. Empréstimos a_receber ganham um card-resumo separado abaixo, em verde, com total e quanto já foi recebido.' },
+      { type: 'improvement', text: 'Compromisso vinculado automático: dívidas a_receber geram compromisso do tipo `Receita` (entra como entrada no orçamento), enquanto a_pagar continuam gerando `Despesa`.' },
+      { type: 'improvement', text: 'Modal de pagamento: título e botão viram "Recebimento" / "Registrar recebimento" quando a dívida é a_receber.' },
+    ],
+  },
+  {
     id: '2026-05-16-orcamento-filtros-layout',
     version: '0.5.4',
     date: '16/05/2026',

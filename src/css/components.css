@@ -6833,6 +6833,52 @@ td .currency-split {
   border-radius: var(--radius-full);
 }
 
+/* v0.6.0 — Dívida tipo "a_receber" (alguém me deve) — visual verde */
+.div-card-tipo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+.div-card-tipo-badge--receber {
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
+}
+.div-card--receber {
+  border-left: 3px solid var(--color-success);
+}
+.div-modal--a-receber #div-tipo-toggle .view-toggle-btn.active {
+  background: var(--color-success);
+  border-color: var(--color-success);
+}
+
+/* KPI row de empréstimos a receber (v0.6.0) */
+.kpi-a-receber-row { margin-bottom: var(--space-4); }
+.kpi-a-receber-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: color-mix(in srgb, var(--color-success) 6%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
+  border-radius: var(--radius-md);
+}
+.kpi-a-receber-icon {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--color-success);
+  color: #fff; font-size: 18px; font-weight: var(--fw-bold);
+}
+.kpi-a-receber-content { display: flex; flex-direction: column; }
+.kpi-a-receber-label { font-size: var(--fs-xs); color: var(--color-text-muted); font-weight: var(--fw-medium); text-transform: uppercase; letter-spacing: 0.04em; }
+.kpi-a-receber-value { font-size: var(--fs-lg); font-weight: var(--fw-semibold); color: var(--color-success); }
+.kpi-a-receber-sub   { font-size: var(--fs-xs); color: var(--color-text-muted); }
+
 .div-card-credor {
   font-size: var(--fs-sm);
   color: var(--color-text-muted);

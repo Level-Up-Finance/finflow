@@ -55,6 +55,9 @@
         </div>
       </div>
 
+      <!-- Linha resumo de empréstimos a receber (v0.6.0) — só aparece se existir -->
+      <div id="kpi-a-receber" class="kpi-a-receber-row hidden"></div>
+
       <!-- Toolbar: view toggle -->
       <div class="toolbar">
         <div class="view-toggle" id="view-toggle">
@@ -97,6 +100,15 @@
       </div>
       <form id="form-divida">
         <div class="modal-body">
+          <!-- Toggle Tipo: A pagar / A receber -->
+          <div class="div-mode-bar" id="div-tipo-bar">
+            <span class="div-mode-bar-label">Direção:</span>
+            <div class="view-toggle view-toggle--text div-mode-toggle" id="div-tipo-toggle">
+              <button type="button" class="view-toggle-btn active" data-tipo="a_pagar">Eu devo (a pagar)</button>
+              <button type="button" class="view-toggle-btn" data-tipo="a_receber">Me devem (a receber)</button>
+            </div>
+          </div>
+
           <!-- Toggle Básico / Avançado -->
           <div class="div-mode-bar" id="div-mode-bar">
             <span class="div-mode-bar-label">Modo:</span>
@@ -112,7 +124,7 @@
               <input class="input" id="div-nome" type="text" data-i18n-placeholder="dividas.modal.placeholder.nome" placeholder="Ex: Financiamento carro" required>
             </div>
             <div class="field">
-              <label class="field-label" for="div-credor-search" data-i18n-key="dividas.modal.label.credor">Credor</label>
+              <label class="field-label" for="div-credor-search" id="div-credor-label" data-i18n-key="dividas.modal.label.credor">Credor</label>
               <div class="contato-picker" data-picker="div-credor">
                 <input type="text" id="div-credor-search" class="contato-picker-input input" autocomplete="off" data-i18n-placeholder="dividas.modal.placeholder.credor" placeholder="Buscar contato ou digitar novo nome…">
                 <input type="hidden" id="div-credor-contato-id" value="">

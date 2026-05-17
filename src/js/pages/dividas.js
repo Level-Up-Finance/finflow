@@ -53,6 +53,34 @@ const REGIME_INFO = {
   },
 };
 
+/**
+ * Define se a dívida é "a pagar" (eu devo) ou "a receber" (me devem).
+ * Atualiza visual do toggle + labels dinâmicos do modal.
+ */
+function setTipoDivida(tipo) {
+  if (tipo !== 'a_pagar' && tipo !== 'a_receber') tipo = 'a_pagar';
+  editingTipo = tipo;
+  document.querySelectorAll('#div-tipo-toggle [data-tipo]').forEach((b) => {
+    b.classList.toggle('active', b.dataset.tipo === tipo);
+  });
+  // Marca o modal pra estilização condicional (verde/badge "A receber" etc.)
+  document.getElementById('modal-divida')?.classList.toggle('div-modal--a-receber', tipo === 'a_receber');
+
+  // Labels dinâmicos
+  const credorLabel = document.getElementById('div-credor-label');
+  if (credorLabel) credorLabel.textContent = tipo === 'a_receber' ? 'Devedor' : 'Credor';
+  const credorInput = document.getElementById('div-credor-search');
+  if (credorInput) credorInput.placeholder = tipo === 'a_receber'
+    ? 'Quem te deve? Buscar contato…'
+    : 'Buscar contato ou digitar novo nome…';
+
+  // Título do modal (sutil)
+  const title = document.getElementById('modal-divida-title');
+  if (title && !editingId) {
+    title.textContent = tipo === 'a_receber' ? 'Novo empréstimo (a receber)' : 'Nova dívida';
+  }
+}
+
 function setRegime(regime) {
   document.querySelectorAll('#div-regime-seg .view-toggle-btn').forEach((b) => {
     b.classList.toggle('active', b.dataset.regime === (regime ?? ''));
@@ -294,6 +322,7 @@ let pagarValorRealEditado  = false; // true após o usuário editar manualmente 
 let pagarDescEditado       = false; // true após o usuário editar manualmente o desconto
 let atualizarTaxaId        = null;
 let editingFases           = []; // fases sendo editadas no modal de dívida
+let editingTipo            = 'a_pagar'; // 'a_pagar' | 'a_receber'
 let viewMode               = 'cards'; // 'cards' | 'table' | 'gantt'
 
 // ── Modo do formulário (básico / avançado) ────────────────────────────────
@@ -485,9 +514,14 @@ function initContatoPickerOnce() {
 // KPI widgets
 // -----------------------------
 async function renderWidgets() {
-  // Agrupa por moeda
+  // KPIs no topo só mostram dívidas "a_pagar" (passivo do usuário).
+  // Empréstimos "a_receber" entram em widgets/bloco separado abaixo.
+  const dividasAPagar   = cachedDividas.filter((d) => (d.tipo || 'a_pagar') === 'a_pagar');
+  const dividasAReceber = cachedDividas.filter((d) => d.tipo === 'a_receber');
+
+  // Agrupa por moeda (apenas a_pagar)
   const byCurrency = {};
-  for (const d of cachedDividas) {
+  for (const d of dividasAPagar) {
     const moeda = d.moeda || 'BRL';
     if (!byCurrency[moeda]) byCurrency[moeda] = { total: 0, pago: 0 };
     byCurrency[moeda].total += Number(d.valor_total);
@@ -545,6 +579,42 @@ async function renderWidgets() {
   document.getElementById('kpi-pago-value').innerHTML = formatCurrencyHTML(totalPagoBRL, 'BRL');
   document.getElementById('kpi-pago-sub').textContent  = `${fmtPct(pctPago)} do total já pago`;
   document.getElementById('kpi-pago-chart').innerHTML  = renderDonutSVG(pctPago, 'var(--color-success)', 'lg');
+
+  // Widget 3 — Empréstimos a receber (a_receber)
+  renderAReceberSummary(dividasAReceber);
+}
+
+/**
+ * Renderiza linha de resumo de empréstimos a receber abaixo dos KPIs.
+ * Aparece apenas quando há pelo menos 1 dívida a_receber.
+ */
+function renderAReceberSummary(dividasAReceber) {
+  const el = document.getElementById('kpi-a-receber');
+  if (!el) return;
+  if (dividasAReceber.length === 0) {
+    el.classList.add('hidden');
+    el.innerHTML = '';
+    return;
+  }
+  let totalReceber = 0;
+  let totalJaRecebido = 0;
+  for (const d of dividasAReceber) {
+    if ((d.moeda || 'BRL') !== 'BRL') continue; // simplificação MVP: só BRL aqui
+    totalReceber    += Number(d.valor_total);
+    totalJaRecebido += Number(d.valor_pago);
+  }
+  const restante = Math.max(0, totalReceber - totalJaRecebido);
+  el.classList.remove('hidden');
+  el.innerHTML = `
+    <div class="kpi-a-receber-card">
+      <div class="kpi-a-receber-icon">↙</div>
+      <div class="kpi-a-receber-content">
+        <span class="kpi-a-receber-label">Empréstimos a receber (${dividasAReceber.length})</span>
+        <span class="kpi-a-receber-value">${formatCurrencyHTML(restante, 'BRL')}</span>
+        <span class="kpi-a-receber-sub">${formatCurrencyHTML(totalJaRecebido, 'BRL')} já recebido de ${formatCurrencyHTML(totalReceber, 'BRL')}</span>
+      </div>
+    </div>
+  `;
 }
 
 // -----------------------------
@@ -645,15 +715,16 @@ function renderCard(d) {
   }
 
   return `
-    <div class="div-card" data-id="${d.id}">
+    <div class="div-card ${d.tipo === 'a_receber' ? 'div-card--receber' : ''}" data-id="${d.id}">
       <div class="div-card-header">
         <div class="div-card-title-row">
           <span class="div-card-nome">${d.nome}</span>
           <span class="div-card-badge" style="color:${st.color}; background:${st.bg};">${st.label}</span>
+          ${d.tipo === 'a_receber' ? `<span class="div-card-tipo-badge div-card-tipo-badge--receber" title="Empréstimo a receber">↙ A receber</span>` : ''}
           ${quitada && pago < total ? `<span class="tag-parcial" title="Encerrada antes de quitar o valor total">Parcial</span>` : ''}
           ${d.status !== 'Arquivada' && !cachedDividaCompromissoIds.has(d.id) ? `<button class="div-card-pendente-badge div-btn-editar" data-id="${d.id}" type="button" title="Configurar compromisso desta dívida">⚠ Configurar compromisso</button>` : ''}
         </div>
-        <span class="div-card-credor">${d.credor || ''}</span>
+        <span class="div-card-credor">${d.tipo === 'a_receber' ? `Devedor: ${d.credor || '—'}` : (d.credor || '')}</span>
       </div>
 
       <div class="div-card-charts">
@@ -731,6 +802,13 @@ function renderCard(d) {
 // Bind events
 // -----------------------------
 function bindEvents() {
+  // Tipo (a_pagar / a_receber) — toggle no topo do modal
+  document.getElementById('div-tipo-toggle')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-tipo]');
+    if (!btn) return;
+    setTipoDivida(btn.dataset.tipo);
+  });
+
   // Regime segmented
   document.getElementById('div-regime-seg').addEventListener('click', (e) => {
     const btn = e.target.closest('.view-toggle-btn');
@@ -1063,6 +1141,9 @@ async function openModalDivida(id) {
 
   document.getElementById('modal-divida-title').textContent = d ? 'Editar dívida' : 'Nova dívida';
 
+  // Tipo (a_pagar / a_receber) — default a_pagar pra novas
+  setTipoDivida(d?.tipo || 'a_pagar');
+
   // Botão de exclusão muda comportamento conforme estado da dívida:
   // - Nova dívida (sem id) → escondido
   // - Arquivada → "Restaurar" (verde)
@@ -1262,6 +1343,7 @@ async function saveDivida(e) {
     taxa_tipo, taxa_referencia,
     indice_correcao, correcao_taxa,
     data_inicio, data_vencimento, status, conta_id, contato_id, observacao,
+    tipo: editingTipo, // 'a_pagar' | 'a_receber'
     user_id: user.id,
   };
 
@@ -1363,10 +1445,13 @@ async function ensureSubcategoriaForDivida(dividaId, dvd) {
   const endDay   = Math.min(vencDia, lastDayOfMonth);
   const terminado_em = `${endYear}-${String(endMonth).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
 
+  // a_receber → Receita; a_pagar (default) → Despesa
+  const compTipo = (dvd.tipo === 'a_receber') ? 'Receita' : 'Despesa';
+
   const subPayload = {
     user_id:        dvd.user_id,
     nome:           dvd.nome,
-    tipo:           'Despesa',
+    tipo:           compTipo,
     categoria_id:   catDividas.id,
     conta_id:       dvd.conta_id,
     contato_id:     dvd.contato_id,
@@ -1380,7 +1465,7 @@ async function ensureSubcategoriaForDivida(dividaId, dvd) {
     valor_base,
     valor_variavel,
     status:         'ativa',
-    descricao:      `Auto-gerado a partir da dívida "${dvd.nome}" (${tabela.length} parcela${tabela.length > 1 ? 's' : ''}, regime ${dvd.regime})`,
+    descricao:      `Auto-gerado a partir ${dvd.tipo === 'a_receber' ? 'do empréstimo' : 'da dívida'} "${dvd.nome}" (${tabela.length} parcela${tabela.length > 1 ? 's' : ''}, regime ${dvd.regime})`,
   };
 
   let subId = subExistente;
@@ -1655,7 +1740,10 @@ function openPagarParcelaModal(id) {
   pagarValorRealEditado = false;
   pagarDescEditado = false;
 
-  document.getElementById('pagar-parcela-title').textContent = `Pagamento — ${d.nome}`;
+  const isReceber = d.tipo === 'a_receber';
+  document.getElementById('pagar-parcela-title').textContent = `${isReceber ? 'Recebimento' : 'Pagamento'} — ${d.nome}`;
+  const btnConfirmar = document.getElementById('btn-confirmar-pagar-parcela');
+  if (btnConfirmar) btnConfirmar.textContent = isReceber ? 'Registrar recebimento' : 'Registrar pagamento';
   document.getElementById('pagar-parcela-data').value = new Date().toISOString().slice(0, 10);
   document.getElementById('pagar-desc-input').value   = '';
   document.getElementById('pagar-valor-real').value   = '';
