@@ -2,14 +2,17 @@
 // FinFlow — Tabela de amortização (SAC / Price / Customizado)
 // =============================================================
 
+/** @typedef {import('./shapes.js').DividaFase} DividaFase */
+/** @typedef {import('./shapes.js').TabelaParcela} TabelaParcela */
+
 /**
  * Gera a tabela de amortização completa.
  * @param {'SAC'|'Price'|'Customizado'} regime
  * @param {number} principal  - valor financiado
  * @param {number} taxa       - taxa mensal decimal (ex: 0.01 = 1%)
  * @param {number} n          - número de parcelas
- * @param {Array<{de:number,ate:number,valor:number}>} [fases]  - obrigatório para Customizado
- * @returns {Array<{n, saldo_inicial, amortizacao, juros, parcela, saldo_final}>}
+ * @param {DividaFase[]} [fases]  - obrigatório para Customizado
+ * @returns {TabelaParcela[]}
  */
 export function gerarTabela(regime, principal, taxa, n, fases) {
   if (!regime || !principal || !n || n <= 0) return [];

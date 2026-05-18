@@ -8,6 +8,10 @@
 import { supabase } from './supabase.js';
 import { todayISO } from './utils.js';
 
+/** @typedef {import('./shapes.js').Pagamento} Pagamento */
+/** @typedef {import('./shapes.js').Subcategoria} Subcategoria */
+/** @typedef {import('./shapes.js').Transacao} Transacao */
+
 const PAID_STATUSES = ['Pago', 'Cartão', 'Transferido'];
 
 export function isPaidStatus(status) {
