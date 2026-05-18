@@ -451,7 +451,44 @@ export async function changeStatus(id, newStatus, deps) {
 }
 
 export async function deleteCompromisso(id, deps) {
-  const { error } = await supabase.from('subcategorias').delete().eq('id', id);
+  const c   = deps.getCachedCompromissos().find((x) => x.id === id);
+  const cat = deps.getCachedCategorias().find((cc) => cc.id === c?.categoria_id);
+
+  let error;
+  if (c?.divida_id && cat?.grupo === 'dividas') {
+    const { count } = await supabase
+      .from('pagamentos_divida_historico')
+      .select('id', { count: 'exact', head: true })
+      .eq('divida_id', c.divida_id);
+    if ((count || 0) > 0) {
+      await supabase.from('dividas').update({ status: 'Arquivada' }).eq('id', c.divida_id);
+      ({ error } = await supabase.from('subcategorias').delete().eq('id', id));
+    } else {
+      ({ error } = await supabase.from('dividas').delete().eq('id', c.divida_id));
+    }
+  } else if (c?.projeto_id && cat?.grupo === 'investimentos') {
+    const { count } = await supabase
+      .from('aportes_projeto')
+      .select('id', { count: 'exact', head: true })
+      .eq('projeto_id', c.projeto_id);
+    ({ error } = await supabase.from('subcategorias').delete().eq('id', id));
+    if (!error) {
+      if ((count || 0) > 0) {
+        await supabase.from('projetos_investimento').update({
+          status:            'arquivado',
+          comp_valor_base:   c.valor_base,
+          comp_periodo:      c.periodo,
+          comp_categoria_id: c.categoria_id,
+          comp_data_inicio:  c.iniciado_em,
+        }).eq('id', c.projeto_id);
+      } else {
+        await supabase.from('projetos_investimento').delete().eq('id', c.projeto_id);
+      }
+    }
+  } else {
+    ({ error } = await supabase.from('subcategorias').delete().eq('id', id));
+  }
+
   if (error) {
     showToast('Erro ao deletar: ' + error.message, 'error', 8000);
     return;

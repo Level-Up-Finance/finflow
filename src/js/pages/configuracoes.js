@@ -777,9 +777,15 @@ function confirmDelete(type, id) {
       `Excluir <strong>${escapeHtml(cat?.nome || '')}</strong>? Esta ação não pode ser desfeita.`;
   } else {
     const sub = cachedSubcategorias.find((s) => s.id === id);
+    const cat = cachedCategorias.find((c) => c.id === sub?.categoria_id);
     document.getElementById('cfg-confirm-title').textContent = 'Excluir subcategoria?';
-    document.getElementById('cfg-confirm-msg').innerHTML =
-      `Excluir <strong>${escapeHtml(sub?.nome || '')}</strong>? Esta ação não pode ser desfeita.`;
+    let msg = `Excluir <strong>${escapeHtml(sub?.nome || '')}</strong>?`;
+    if (sub?.divida_id && cat?.grupo === 'dividas') {
+      msg += '<br><small style="color:var(--color-muted)">O financiamento/dívida vinculado também será excluído ou arquivado.</small>';
+    } else if (sub?.projeto_id && cat?.grupo === 'investimentos') {
+      msg += '<br><small style="color:var(--color-muted)">O projeto de investimento vinculado também será excluído ou arquivado.</small>';
+    }
+    document.getElementById('cfg-confirm-msg').innerHTML = msg;
   }
 
   document.getElementById('modal-cfg-confirmar').classList.remove('hidden');
@@ -804,7 +810,48 @@ async function execDelete() {
     }
     ({ error } = await supabase.from('categorias').delete().eq('id', id));
   } else {
-    ({ error } = await supabase.from('subcategorias').delete().eq('id', id));
+    const sub = cachedSubcategorias.find((s) => s.id === id);
+    const cat = cachedCategorias.find((c) => c.id === sub?.categoria_id);
+
+    if (sub?.divida_id && cat?.grupo === 'dividas') {
+      // Cascade: apaga ou arquiva a dívida vinculada (1:1)
+      const { count } = await supabase
+        .from('pagamentos_divida_historico')
+        .select('id', { count: 'exact', head: true })
+        .eq('divida_id', sub.divida_id);
+      if ((count || 0) > 0) {
+        // Tem histórico → arquiva a dívida, apaga sub manualmente
+        await supabase.from('dividas').update({ status: 'Arquivada' }).eq('id', sub.divida_id);
+        ({ error } = await supabase.from('subcategorias').delete().eq('id', id));
+      } else {
+        // Sem histórico → hard delete da dívida (CASCADE apaga a sub via FK)
+        ({ error } = await supabase.from('dividas').delete().eq('id', sub.divida_id));
+      }
+    } else if (sub?.projeto_id && cat?.grupo === 'investimentos') {
+      // Cascade: apaga ou arquiva o projeto vinculado (1:1)
+      const { count } = await supabase
+        .from('aportes_projeto')
+        .select('id', { count: 'exact', head: true })
+        .eq('projeto_id', sub.projeto_id);
+      // Apaga a sub primeiro (FK é SET NULL, projeto sobrevive para arquivar/deletar)
+      ({ error } = await supabase.from('subcategorias').delete().eq('id', id));
+      if (!error) {
+        if ((count || 0) > 0) {
+          // Tem histórico → arquiva projeto com backup do compromisso
+          await supabase.from('projetos_investimento').update({
+            status:            'arquivado',
+            comp_valor_base:   sub.valor_base,
+            comp_periodo:      sub.periodo,
+            comp_categoria_id: sub.categoria_id,
+            comp_data_inicio:  sub.iniciado_em,
+          }).eq('id', sub.projeto_id);
+        } else {
+          await supabase.from('projetos_investimento').delete().eq('id', sub.projeto_id);
+        }
+      }
+    } else {
+      ({ error } = await supabase.from('subcategorias').delete().eq('id', id));
+    }
   }
 
   if (error) { showToast('Erro ao excluir: ' + error.message, 'error', 8000); return; }
