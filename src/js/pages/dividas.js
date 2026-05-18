@@ -1807,7 +1807,7 @@ function openHistoricoViewDivida(id) {
   const fmt = (v) => formatCurrencyHTML(v, d.moeda || 'BRL');
   document.getElementById('hist-view-divida-title').textContent = `Histórico — ${d.nome}`;
 
-  const entradas  = cachedDividaHistorico.filter((h) => h.divida_id === id).sort((a, b) => a.data.localeCompare(b.data));
+  const entradas  = cachedDividaHistorico.filter((h) => h.divida_id === id).sort((a, b) => (a.n_parcela || 9999) - (b.n_parcela || 9999) || a.data.localeCompare(b.data));
   const taxaHist  = cachedTaxaHistorico.filter((h) => h.divida_id === id).sort((a, b) => b.data_vigencia.localeCompare(a.data_vigencia));
   const hasVariavel = d.juros_tipo === 'manual_variavel' ||
                       (d.juros_tipo && d.juros_tipo !== 'manual_fixo' && d.juros_tipo !== 'manual');
@@ -2317,7 +2317,8 @@ function openTabelaAmort(id) {
   cachedDividaHistorico
     .filter((h) => h.divida_id === id && h.n_parcela != null)
     .forEach((h) => {
-      descontoMap[h.n_parcela] = Number(h.desconto_antecipacao || 0);
+      const corrVal = Number(h.valor_correcao || 0);
+      descontoMap[h.n_parcela] = Number(h.desconto_antecipacao || 0) + (corrVal < 0 ? -corrVal : 0);
       if (h.data) {
         const juros        = Number(h.valor_juros || 0);
         const saldoInicial = Number(h.saldo_inicial || 0);  // se gravado

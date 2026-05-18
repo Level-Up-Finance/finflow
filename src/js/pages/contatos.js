@@ -553,12 +553,21 @@ async function loadTransacoesTab(contatoId) {
   const panel = document.getElementById('ct-trans-content');
   panel.innerHTML = '<div class="ctp-loading">Carregando…</div>';
 
-  const { data, error } = await supabase
+  const dividaIds = cachedDividas
+    .filter((d) => d.contato_id === contatoId)
+    .map((d) => d.id);
+
+  let query = supabase
     .from('transacoes')
-    .select('id, data, descricao, banco_desc, tipo, valor, reconciliacao_status, subcategoria_id, conta_id')
-    .eq('contato_id', contatoId)
-    .order('data', { ascending: false })
-    .limit(50);
+    .select('id, data, descricao, banco_desc, tipo, valor, reconciliacao_status, subcategoria_id, conta_id');
+
+  if (dividaIds.length > 0) {
+    query = query.or(`contato_id.eq.${contatoId},divida_id.in.(${dividaIds.join(',')})`);
+  } else {
+    query = query.eq('contato_id', contatoId);
+  }
+
+  const { data, error } = await query.order('data', { ascending: false }).limit(50);
 
   if (error) {
     panel.innerHTML = `<div class="ctp-empty-state">Erro ao carregar transações.</div>`;
