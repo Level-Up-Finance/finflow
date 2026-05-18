@@ -1489,7 +1489,9 @@ async function confirmarAcaoProjeto() {
       }
 
     } else {
-      // Hard delete — aportes_projeto cascadeiam automaticamente
+      // Hard delete — remove subcategorias antes (FK é SET NULL, não CASCADE)
+      await supabase.from('subcategorias').delete().eq('projeto_id', p.id);
+
       const { error } = await supabase
         .from('projetos_investimento')
         .delete()
