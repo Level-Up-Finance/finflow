@@ -15,6 +15,7 @@ import { openModal, closeModal } from '../components/modal.js';
 import { ACCOUNT_TYPES, typeIcon, typeColor, typePill } from '../lib/account-types.js';
 import { findBank, logoUrl, searchBanks } from '../lib/banks.js';
 import { initColVisibility } from '../lib/col-visibility.js';
+import { autoAttachDecimalInputs } from '../lib/number-format.js';
 import { escapeHtml, formatDateBR, todayISO, parseUserNumber } from '../lib/utils.js';
 import { checkAndCloseFaturas } from '../lib/faturas-cartao.js';
 import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.js';
@@ -76,6 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderTipoFilters();
   renderPickers();
   bindEvents();
+  autoAttachDecimalInputs();
 
   colVisEl = initColVisibility({
     storageKey: 'contas',

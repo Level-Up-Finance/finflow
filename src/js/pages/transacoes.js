@@ -34,6 +34,7 @@ import {
   suggestSubcategoriaFromHistory,
 } from '../lib/regras-reconciliacao.js';
 import { escapeHtml, formatDateBR, showConfirm, parseUserNumber, renderContaOptions } from '../lib/utils.js';
+import { autoAttachDecimalInputs } from '../lib/number-format.js';
 import { createContaPicker, contaAvatarHtml } from '../lib/conta-picker.js';
 import { initContatoPicker } from '../components/contato-picker.js';
 import { initColVisibility } from '../lib/col-visibility.js';
@@ -933,6 +934,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initFilters();
   bindEvents();
   populateMoedaSelect();
+  autoAttachDecimalInputs();
   await loadAll();
   render();
 });

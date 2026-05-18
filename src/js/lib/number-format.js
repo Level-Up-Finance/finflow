@@ -88,6 +88,21 @@ export function attachDecimalInput(el, { decimals = 2 } = {}) {
     if (cleaned !== el.value) el.value = cleaned;
   });
 
+  // UX: clicar num campo que está mostrando 0 (ex: "0,00") limpa o valor
+  // pra o usuário poder digitar direto sem precisar selecionar/deletar.
+  // Se o valor for não-zero, faz select-all como fallback (padrão de
+  // formulário em campo numérico).
+  el.addEventListener('focus', () => {
+    const n = parseDecimal(el.value);
+    if (n == null || n === 0) {
+      el.value = '';
+    } else {
+      // Defer pro fim do tick: garante que .select() não compita com
+      // o foco padrão do navegador (Safari especialmente).
+      setTimeout(() => el.select(), 0);
+    }
+  });
+
   el.addEventListener('blur', () => {
     const n = parseDecimal(el.value);
     el.value = n == null ? '' : formatDecimal(n, decimals);

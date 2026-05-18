@@ -38,6 +38,7 @@ import {
 } from '../lib/compromissos-config.js';
 import { initColVisibility } from '../lib/col-visibility.js';
 import { escapeHtml, formatDateBR, todayISO, getInitials } from '../lib/utils.js';
+import { autoAttachDecimalInputs } from '../lib/number-format.js';
 import { findBank, logoUrl } from '../lib/banks.js';
 import { createContaPicker } from '../lib/conta-picker.js';
 import { fetchExchangeRate, toBRL } from '../lib/currency.js';
@@ -172,6 +173,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderCompromissos,
     showConfirm,
   });
+  autoAttachDecimalInputs();
 
   if (!_isEmbedded) {
     colVisEl = initColVisibility({
