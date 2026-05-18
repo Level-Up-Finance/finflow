@@ -668,7 +668,7 @@ function renderBloco(num, title, period, items) {
             <tr>
               <th>Compromisso</th>
               <th class="pag-conta-header">Conta Pgto</th>
-              <th>Destino</th>
+              <th>Tipo</th>
               <th class="text-center">Vto</th>
               <th class="text-center">Dias</th>
               <th class="text-right">Valor</th>
@@ -783,10 +783,9 @@ function renderPagamentoRow(p, catColor) {
     ? cachedContas.find((c) => c.id === sub.conta_destino_id) : null;
   let tipoBadgeHtml;
   if (isCaixinhaTipo) {
-    const subLabel = escapeHtml(sub?.apelido?.trim() || sub?.nome || '');
     tipoBadgeHtml = `<span class="pag-destino-badge destino-caixinha">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.6.5 2.8 1.5 3.8L4 18h3l1-1.7c1 .4 2 .7 3 .7s2-.3 3-.7L15 18h3l-1.5-2.2c.7-.7 1.2-1.5 1.5-2.3 1 0 2-1 2-2v-2c0-1-1-2-2-2 0-1-1-2.5-1-2.5z"/><circle cx="16" cy="10" r="0.5" fill="currentColor"/><path d="M2 11v1c0 1 1 2 2 2"/></svg>
-      ${subLabel}
+      Caixinha
     </span>`;
   } else if (destContaRaw?.tipo === 'Cofrinho') {
     const destLabel = escapeHtml(destContaRaw.apelido?.trim() || destContaRaw.nome);
