@@ -216,7 +216,7 @@ function bindEvents() {
     const sub = cachedSubcategorias.find((s) => s.id === subId);
     if (sub) sub.projeto_id = editingId;
     renderProjCustosVinculados(editingId);
-    renderProjetos();
+    render();
   });
 
   document.getElementById('proj-cor-picker').addEventListener('click', (e) => {
@@ -1081,7 +1081,7 @@ async function renderProjCustosVinculados(projetoId) {
       const sub = cachedSubcategorias.find((s) => s.id === subId);
       if (sub) sub.projeto_id = null;
       renderProjCustosVinculados(projetoId);
-      renderProjetos();
+      render();
     });
   });
 

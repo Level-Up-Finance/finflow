@@ -915,9 +915,6 @@ function bindModalEvents() {
       document.getElementById('sub-renda-principal').checked = false;
       document.getElementById('sub-renda-principal-callout').classList.add('hidden');
     }
-    // Re-renderiza picker de vínculo (mostra/esconde + reset)
-    const sub = editingSubId ? cachedSubcategorias.find((s) => s.id === editingSubId) : null;
-    renderSubVinculoPicker(cat, sub);
   });
 
   // Confirm delete modal

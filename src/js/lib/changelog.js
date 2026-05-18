@@ -7,6 +7,19 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-18-delete-cascade-e-picker',
+    version: '0.7.2',
+    date: '18/05/2026',
+    title: 'Compromissos — correções de exclusão em cascata e picker de investimento',
+    items: [
+      { type: 'fix', text: 'Botão "Editar" voltou a aparecer em compromissos de Custo de Vida, Receitas e demais categorias — ficava escondido indevidamente quando a subcategoria tinha um projeto vinculado como custo.' },
+      { type: 'fix', text: 'Excluir uma subcategoria ou compromisso agora também exclui (ou arquiva) o financiamento/dívida ou projeto de investimento vinculado. Sem histórico → exclusão permanente; com histórico → arquivamento com opção de restauração.' },
+      { type: 'fix', text: 'Picker "Vincular a investimento" mostrava lista vazia porque o campo status não era carregado na query de projetos.' },
+      { type: 'improvement', text: 'Picker "Vincular a investimento" saiu de Configurações e foi para Compromissos (ao editar um compromisso de Custo de Vida) e para Investimentos (modal de edição do projeto).' },
+      { type: 'new', text: 'Modal de edição de projeto em Investimentos: nova seção "Custos vinculados" lista subcategorias do Custo de Vida vinculadas, com opção de desvincular ou adicionar novas.' },
+    ],
+  },
+  {
     id: '2026-05-18-custos-vinculados',
     version: '0.7.1',
     date: '18/05/2026',
