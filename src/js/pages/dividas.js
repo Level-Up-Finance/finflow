@@ -428,7 +428,7 @@ async function loadAll() {
     supabase.from('dividas').select('*').order('created_at', { ascending: false }),
     supabase.from('contas').select('id, nome, apelido, tipo, icone_cor, moeda').neq('status', 'arquivada').order('nome'),
     supabase.from('contatos').select('id, nome, tipo, status, logo_url').neq('status', 'arquivado').order('nome'),
-    supabase.from('pagamentos_divida_historico').select('*').order('data'),
+    supabase.from('pagamentos_divida_historico').select('*').order('n_parcela'),
     supabase.from('divida_taxa_historico').select('*').order('data_vigencia'),
     supabase.from('subcategorias').select('divida_id').not('divida_id', 'is', null),
   ]);
@@ -1822,7 +1822,10 @@ function openHistoricoViewDivida(id) {
 
     const totalAmort = entradas.reduce((s, h) => s + Number(h.valor_amortizacao || 0), 0);
     const totalJuros = entradas.reduce((s, h) => s + Number(h.valor_juros || 0), 0);
-    const totalDesc  = entradas.reduce((s, h) => s + Number(h.desconto_antecipacao || 0), 0);
+    const totalDesc  = entradas.reduce((s, h) => {
+      const corr = Number(h.valor_correcao || 0);
+      return s + Number(h.desconto_antecipacao || 0) + (corr < 0 ? -corr : 0);
+    }, 0);
     const totalPago  = entradas.reduce((s, h) => s + Number(h.valor), 0);
     const hasParcDetail = entradas.some((h) => h.n_parcela && h.valor_amortizacao != null);
     // Saldo devedor atual = valor_total − amortização total paga
@@ -1864,7 +1867,8 @@ function openHistoricoViewDivida(id) {
       const venc   = h.n_parcela ? calcVencimentoParcela(d.data_inicio, h.n_parcela) : '—';
       const amort  = Number(h.valor_amortizacao || 0);
       const juros  = Number(h.valor_juros || 0);
-      const desc   = Number(h.desconto_antecipacao || 0);
+      const corrVal = Number(h.valor_correcao || 0);
+      const desc   = Number(h.desconto_antecipacao || 0) + (corrVal < 0 ? -corrVal : 0);
       const hasDet = h.n_parcela && h.valor_amortizacao != null;
       const taxa   = hasDet && saldoInicial > 0 ? (juros / saldoInicial * 100) : null;
       const saldoFinal = Math.max(0, saldoInicial - amort);
@@ -2206,6 +2210,7 @@ async function saveParcela() {
       user_id: user.id, conta_id: contaIdPgto, tipo: 'Despesa',
       valor: valorRealEfetivo, data, descricao: descTrans,
       divida_id: pagarParcelaId,
+      contato_id: d.contato_id || null,
     });
     if (transErr) throw transErr;
 

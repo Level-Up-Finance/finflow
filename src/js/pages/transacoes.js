@@ -2439,6 +2439,19 @@ async function saveTransacao() {
       }
       if (response.error) throw response.error;
       savedTr = response.data;
+
+      // Sync de data para pagamentos_divida_historico quando a transação está vinculada a uma dívida
+      if (editingId && savedTr.divida_id) {
+        const oldData = cachedTransacoes.find((x) => x.id === editingId)?.data;
+        if (oldData && oldData !== data) {
+          supabase
+            .from('pagamentos_divida_historico')
+            .update({ data })
+            .eq('divida_id', savedTr.divida_id)
+            .eq('data', oldData)
+            .catch((e) => console.warn('[sync historico data]', e));
+        }
+      }
     }
 
     // Sync com fatura de cartão (Fase 4)
