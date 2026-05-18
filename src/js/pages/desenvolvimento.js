@@ -4,7 +4,7 @@
 // Trabalha sobre a tabela `feedback` com campos extras:
 //   impacto, complexidade, modulo, notas, arquivos
 // =============================================================
-import { guardSession, getCurrentUser } from '../lib/auth.js';
+import { guardAdmin, getCurrentUser } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
@@ -107,7 +107,7 @@ let editArquivos = [];
 // ─────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await guardSession();
+  await guardAdmin();
   await initSidebar('admin');
   await loadStrings();
   applyTranslationsToDom();
