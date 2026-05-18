@@ -18,6 +18,7 @@ import { parseDecimal, formatDecimal, autoAttachDecimalInputs } from '../lib/num
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 import { renderGantt } from './dividas/gantt.js';
 import { buildTabelaDisplay, calendarParcelaIdx, corrMensalDecimal } from './dividas/tabela.js';
+import * as dividasService from '../services/dividas.js';
 import { fetchExchangeRate } from '../lib/currency.js';
 
 /** Atalho: lê o valor de um input decimal BR (vírgula) e retorna número ou null. */
@@ -404,14 +405,14 @@ async function refreshIndexedRates(dividas) {
       // Atualiza row local + persiste
       d.juros_percentual = nova;
       const today = todayISO();
-      await supabase.from('dividas').update({ juros_percentual: nova }).eq('id', d.id);
-      await supabase.from('divida_taxa_historico').insert({
-        divida_id:    d.id,
-        user_id:      d.user_id,
+      await dividasService.updateDividaJuros(d.id, nova);
+      await dividasService.insertTaxaHistorico({
+        divida_id:     d.id,
+        user_id:       d.user_id,
         taxa_anterior: atual,
-        taxa_nova:    nova,
+        taxa_nova:     nova,
         data_vigencia: today,
-        motivo:       `Atualização automática do indicador ${d.juros_tipo.toUpperCase().replace('_PLUS', ' + spread')}`,
+        motivo:        `Atualização automática do indicador ${d.juros_tipo.toUpperCase().replace('_PLUS', ' + spread')}`,
       });
     }
   } catch (err) {
@@ -425,11 +426,11 @@ async function refreshIndexedRates(dividas) {
 // -----------------------------
 async function loadAll() {
   const [divRes, contRes, contatosRes, histRes, taxaHistRes] = await Promise.all([
-    supabase.from('dividas').select('*').order('created_at', { ascending: false }),
+    dividasService.listDividas(),
     supabase.from('contas').select('id, nome, apelido, tipo, icone_cor, moeda').neq('status', 'arquivada').order('nome'),
     supabase.from('contatos').select('id, nome, tipo, status, logo_url').neq('status', 'arquivado').order('nome'),
-    supabase.from('pagamentos_divida_historico').select('*').order('n_parcela'),
-    supabase.from('divida_taxa_historico').select('*').order('data_vigencia'),
+    dividasService.listPagamentosDividaHistorico(),
+    dividasService.listTaxaHistorico(),
     // Aquece cache de indicadores (SELIC/CDI/IPCA) p/ corrMensalDecimal usar valores reais
     fetchIndicadores().catch(() => null),
   ]);
@@ -1540,9 +1541,9 @@ async function saveDivida(e) {
   let error;
   let savedId = editingId;
   if (editingId) {
-    ({ error } = await supabase.from('dividas').update(payload).eq('id', editingId));
+    ({ error } = await dividasService.updateDivida(editingId, payload));
   } else {
-    const ins = await supabase.from('dividas').insert({ ...payload, valor_pago: 0 }).select('id').single();
+    const ins = await dividasService.createDivida(payload);
     error = ins.error;
     savedId = ins.data?.id;
   }
@@ -1940,9 +1941,7 @@ async function confirmarExcluir() {
 
   // ─── RESTAURAR (Arquivada → Ativa + recria compromisso) ──────────
   if (acao === 'restaurar') {
-    const { error: updErr } = await supabase.from('dividas')
-      .update({ status: 'Ativa' })
-      .eq('id', pendingDeleteId);
+    const { error: updErr } = await dividasService.restoreDivida(pendingDeleteId);
     if (updErr) { showToast(`${t('dividas.toast.erro_restaurar', 'Erro ao restaurar')}: ${updErr.message}`, 'error', 8000); return; }
 
     // Recria a subcategoria (ensureSubcategoriaForDivida pula se já existir)
@@ -1967,9 +1966,7 @@ async function confirmarExcluir() {
 
   if (nPagamentos > 0) {
     // SOFT DELETE — arquiva, remove compromisso, mantém transações com vínculo
-    const { error: updErr } = await supabase.from('dividas')
-      .update({ status: 'Arquivada' })
-      .eq('id', pendingDeleteId);
+    const { error: updErr } = await dividasService.archiveDivida(pendingDeleteId);
     if (updErr) { showToast(`${t('dividas.toast.erro_arquivar', 'Erro ao arquivar')}: ${updErr.message}`, 'error', 8000); return; }
 
     const { error: subErr } = await supabase.from('subcategorias')
@@ -1980,7 +1977,7 @@ async function confirmarExcluir() {
     showToast(t('dividas.toast.arquivada', 'Dívida arquivada (movida para Terminado)'), 'success');
   } else {
     // HARD DELETE — remove tudo (CASCADE)
-    const { error } = await supabase.from('dividas').delete().eq('id', pendingDeleteId);
+    const { error } = await dividasService.deleteDivida(pendingDeleteId);
     if (error) { showToast(`${t('dividas.toast.erro_excluir', 'Erro ao excluir')}: ${error.message}`, 'error', 8000); return; }
     showToast(t('dividas.toast.excluida', 'Dívida excluída'), 'success');
   }
@@ -2182,16 +2179,18 @@ async function saveParcela() {
       };
     });
 
-    const { error: insErr } = await supabase.from('pagamentos_divida_historico').insert(inserts);
+    const { error: insErr } = await dividasService.insertPagamentosDividaHistorico(inserts);
     if (insErr) throw insErr;
 
     const novasParcelasPagas = pagas + pagarParcelaN;
     const novoValorPago      = Number(d.valor_pago) + rows.reduce((s, r) => s + r.amortizacao, 0);
     const novoStatus         = novasParcelasPagas >= n ? 'Quitada' : (d.status === 'Quitada' ? 'Ativa' : d.status);
 
-    const { error: updErr } = await supabase.from('dividas')
-      .update({ parcelas_pagas: novasParcelasPagas, valor_pago: novoValorPago, status: novoStatus })
-      .eq('id', pagarParcelaId);
+    const { error: updErr } = await dividasService.updateDividaPagamento(pagarParcelaId, {
+      parcelasPagas: novasParcelasPagas,
+      valorPago:     novoValorPago,
+      status:        novoStatus,
+    });
     if (updErr) throw updErr;
 
     // Registrar em Transações (sempre — campo obrigatório). Vincula à dívida
@@ -2455,16 +2454,17 @@ async function saveAtualizarTaxa() {
   try {
     const user = await getCurrentUser();
 
-    const { error: histErr } = await supabase.from('divida_taxa_historico').insert({
-      divida_id: atualizarTaxaId, user_id: user.id,
-      taxa_anterior: d.juros_percentual, taxa_nova: novaTaxa,
-      data_vigencia: vigencia, motivo,
+    const { error: histErr } = await dividasService.insertTaxaHistorico({
+      divida_id:     atualizarTaxaId,
+      user_id:       user.id,
+      taxa_anterior: d.juros_percentual,
+      taxa_nova:     novaTaxa,
+      data_vigencia: vigencia,
+      motivo,
     });
     if (histErr) throw histErr;
 
-    const { error: updErr } = await supabase.from('dividas')
-      .update({ juros_percentual: novaTaxa })
-      .eq('id', atualizarTaxaId);
+    const { error: updErr } = await dividasService.updateDividaJuros(atualizarTaxaId, novaTaxa);
     if (updErr) throw updErr;
 
     showToast(t('dividas.toast.taxa_atualizada', 'Taxa atualizada'), 'success');
