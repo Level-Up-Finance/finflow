@@ -738,12 +738,12 @@ function bindRowClicks() {
     el.addEventListener('click', () => openModalDivida(el.dataset.id));
   });
 
-  // Cards: clique abre popup de detalhes; botões de ação bloqueiam propagação
+  // Cards: clique abre popup de detalhes; ignora cliques nos botões de ação
   document.querySelectorAll('.div-card').forEach((card) => {
-    card.addEventListener('click', () => openDividaDetails(card.dataset.id));
-  });
-  document.querySelectorAll('.div-btn-pagar, .div-btn-historico, .div-btn-taxa, .div-btn-tabela, .div-btn-editar').forEach((btn) => {
-    btn.addEventListener('click', (e) => e.stopPropagation());
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.div-btn-pagar, .div-btn-historico, .div-btn-taxa, .div-btn-tabela, .div-btn-editar')) return;
+      openDividaDetails(card.dataset.id);
+    });
   });
 }
 
