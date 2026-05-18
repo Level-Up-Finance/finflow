@@ -313,7 +313,6 @@ const BLOCOS = [
 // State
 // -----------------------------
 let cachedDividas              = [];
-let cachedDividaCompromissoIds = new Set(); // divida_ids que já têm compromisso vinculado
 let cachedContas               = [];
 let divContaPicker         = null;
 let pagarContaPicker       = null;
@@ -424,18 +423,15 @@ async function refreshIndexedRates(dividas) {
 // Load
 // -----------------------------
 async function loadAll() {
-  const [divRes, contRes, contatosRes, histRes, taxaHistRes, subsRes] = await Promise.all([
+  const [divRes, contRes, contatosRes, histRes, taxaHistRes] = await Promise.all([
     supabase.from('dividas').select('*').order('created_at', { ascending: false }),
     supabase.from('contas').select('id, nome, apelido, tipo, icone_cor, moeda').neq('status', 'arquivada').order('nome'),
     supabase.from('contatos').select('id, nome, tipo, status, logo_url').neq('status', 'arquivado').order('nome'),
     supabase.from('pagamentos_divida_historico').select('*').order('n_parcela'),
     supabase.from('divida_taxa_historico').select('*').order('data_vigencia'),
-    supabase.from('subcategorias').select('divida_id').not('divida_id', 'is', null),
     // Aquece cache de indicadores (SELIC/CDI/IPCA) p/ corrMensalDecimal usar valores reais
     fetchIndicadores().catch(() => null),
   ]);
-  // Set de divida_ids que já têm compromisso vinculado (pra badge "Criar compromisso")
-  cachedDividaCompromissoIds = new Set((subsRes?.data || []).map((s) => s.divida_id));
 
   // Auto-refresh de taxas indexadas (SELIC/CDI/IPCA) — feito antes do render
   if (divRes.data) await refreshIndexedRates(divRes.data);
@@ -846,9 +842,6 @@ function renderCard(d) {
   const restante = Math.max(0, total - pago);
   const pct     = total > 0 ? Math.min(100, (pago / total) * 100) : 0;
   const quitada = d.status === 'Quitada';
-
-  const conta   = cachedContas.find((c) => c.id === d.conta_id);
-  const contaNome = conta ? (conta.apelido || conta.nome) : null;
 
   const proximaParcela = (() => {
     if (!d.regime || !d.n_parcelas || d.status === 'Quitada') return null;
@@ -1810,9 +1803,6 @@ function openHistoricoViewDivida(id) {
   document.getElementById('hist-view-divida-title').textContent = `Histórico — ${d.nome}`;
 
   const entradas  = cachedDividaHistorico.filter((h) => h.divida_id === id).sort((a, b) => (a.n_parcela || 9999) - (b.n_parcela || 9999) || a.data.localeCompare(b.data));
-  const taxaHist  = cachedTaxaHistorico.filter((h) => h.divida_id === id).sort((a, b) => b.data_vigencia.localeCompare(a.data_vigencia));
-  const hasVariavel = d.juros_tipo === 'manual_variavel' ||
-                      (d.juros_tipo && d.juros_tipo !== 'manual_fixo' && d.juros_tipo !== 'manual');
   const fmtDate = (iso) => { const [y, m, day] = iso.split('-'); return `${day}/${m}/${y}`; };
   const content = document.getElementById('hist-view-divida-content');
 
@@ -2309,9 +2299,6 @@ function openTabelaAmort(id) {
   const totalJuros = tabela.reduce((s, r) => s + r.juros, 0);
   const totalPmt   = tabela.reduce((s, r) => s + r.parcela, 0);
   const regimeBadge = `<span class="div-regime-badge div-regime-badge--${d.regime.toLowerCase()}">${d.regime}</span>`;
-  const parcelaInfo = d.regime === 'Price'
-    ? fmt(tabela[0]?.parcela || 0)
-    : `${fmt(tabela[0]?.parcela || 0)} → ${fmt(tabela[n - 1]?.parcela || 0)}`;
 
   // Mapas por número de parcela a partir do histórico real
   const descontoMap = {};

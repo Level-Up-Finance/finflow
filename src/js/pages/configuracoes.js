@@ -551,21 +551,8 @@ async function saveCat() {
     ? t('configuracoes.toast.cat_atualizada', 'Categoria atualizada')
     : t('configuracoes.toast.cat_criada', 'Categoria criada'),
     'success');
-  const savedNome = nome;
 
   if (!editingCatId) {
-    // Fetch the ID of the category we just created
-    const { data: freshCats } = await supabase
-      .from('categorias')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('nome', nome)
-      .eq('grupo', grupo)
-      .eq('is_default', false)
-      .order('created_at', { ascending: false })
-      .limit(1);
-    const newCatId = freshCats?.[0]?.id || null;
-
     // v0.5.x: criação de compromisso vive nas páginas de Dívidas/Projetos
     // e na aba Configurações de Orçamento — não mais aqui.
     closeCatModal();
@@ -963,30 +950,6 @@ function bindModalEvents() {
 // -----------------------------
 // Post-save helpers & quick compromisso
 // -----------------------------
-function showSubPostSave(subId, catId, nome, isReceita) {
-  compRapidoSubId     = subId;
-  compRapidoCatId     = catId;
-  compRapidoNome      = nome;
-  compRapidoIsReceita = isReceita;
-
-  document.getElementById('sub-form-wrap').classList.add('hidden');
-  document.getElementById('sub-postsave').classList.remove('hidden');
-  document.getElementById('sub-main-footer').classList.add('hidden');
-  document.getElementById('sub-postsave-footer').classList.remove('hidden');
-}
-
-function showCatPostSave(catId, grupo, nome) {
-  compRapidoSubId     = null;
-  compRapidoCatId     = catId;
-  compRapidoNome      = nome;
-  compRapidoIsReceita = grupo === 'receitas';
-
-  document.getElementById('cat-form-wrap').classList.add('hidden');
-  document.getElementById('cat-postsave').classList.remove('hidden');
-  document.getElementById('cat-main-footer').classList.add('hidden');
-  document.getElementById('cat-postsave-footer').classList.remove('hidden');
-}
-
 function goToNewCompromisso(subId, catId, nome, isReceita) {
   if (subId) {
     openEmbeddedCompromisso(`compromissos.html?embedded=1&cfg_sub=${encodeURIComponent(subId)}`);
@@ -1083,21 +1046,6 @@ function bindTabEvents() {
 
       updateStickyThTop();
     });
-  });
-}
-
-// -----------------------------
-// Helpers
-// -----------------------------
-function scrollToTreeItem(selector, nome) {
-  requestAnimationFrame(() => {
-    const cells = document.querySelectorAll(selector);
-    for (const cell of cells) {
-      if (cell.textContent.trim() === nome) {
-        cell.closest('tr')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        break;
-      }
-    }
   });
 }
 

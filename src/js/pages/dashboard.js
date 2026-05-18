@@ -6,7 +6,7 @@ import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { fetchExchangeRate } from '../lib/currency.js';
-import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.js';
+import { formatCurrencyHTML } from '../lib/compromissos-config.js';
 import { isPaidStatus } from '../lib/transacao-pagamento-sync.js';
 import { escapeHtml, isoMonth } from '../lib/utils.js';
 import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';

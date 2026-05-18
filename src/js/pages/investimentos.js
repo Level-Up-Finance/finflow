@@ -389,7 +389,7 @@ async function renderWidgets(counts) {
 
   let metaTotalBRL    = 0;
   let metaRealizadoBRL = 0;
-  for (const [code, { meta, realizado, comMeta }] of Object.entries(byCurrency)) {
+  for (const [code, { meta, comMeta }] of Object.entries(byCurrency)) {
     if (comMeta === 0) continue;
     metaTotalBRL    += toBRL(meta, code);
     metaRealizadoBRL += toBRL(
@@ -1560,12 +1560,6 @@ function restaurarProjeto() {
 // -----------------------------
 // Utils
 // -----------------------------
-function parseNum(raw) {
-  if (raw === '' || raw === null || raw === undefined) return null;
-  const n = Number(raw);
-  return isNaN(n) ? null : n;
-}
-
 function fmtPct(pct) {
   return pct.toFixed(1) === '100.0' ? '100%' : `${pct.toFixed(1)}%`;
 }

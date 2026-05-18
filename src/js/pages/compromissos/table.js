@@ -13,7 +13,6 @@ import {
   tipoIcon,
   tipoColor,
   tipoPill,
-  formatCurrency,
   formatCurrencyHTML,
   diaSemanaLabel,
 } from '../../lib/compromissos-config.js';
@@ -53,30 +52,13 @@ function tableHeadHtml() {
 }
 
 /**
- * Render plano (todas as rows em uma tabela). Usado em filtragens
- * que cruzam blocos ou em modos que não fazem sentido agrupar.
- */
-export function renderFlatTable(rows, deps) {
-  if (rows.length === 0) {
-    return '<div class="empty-state"><p class="empty-state-message">Nenhum item com os filtros selecionados.</p></div>';
-  }
-  return `
-    <div class="contas-table-wrapper">
-      <table class="contas-table compromissos-grouped-table">
-        ${tableHeadHtml()}
-        <tbody>${rows.map((row) => renderUnifiedRow(row, deps)).join('')}</tbody>
-      </table>
-    </div>
-  `;
-}
-
 /**
  * Render agrupado por super-bloco: uma seção por bloco com banner
  * colorido + tabela só com as linhas daquele bloco. Espelha o
  * layout da página de Configurações de Categorias.
  *
  * @param {Array} rows  pré-filtradas
- * @param {Object} deps mesmas deps de renderFlatTable
+ * @param {Object} deps deps com renderers helper functions
  * @param {Array} blocos [{ id, label, accent, grupos }]
  * @param {Array} categorias categorias do usuário (para mapear cat → bloco)
  */

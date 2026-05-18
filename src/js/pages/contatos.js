@@ -8,7 +8,7 @@ import { supabase }                     from '../lib/supabase.js';
 import { showToast }                    from '../components/toast.js';
 import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.js';
 import { escapeHtml, formatDateBR } from '../lib/utils.js';
-import { isValidCnpj, digitsOnly } from '../lib/cnpj-lookup.js';
+import { digitsOnly } from '../lib/cnpj-lookup.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 import { PhonePicker } from '../components/phone-picker.js';
 import { AddressPicker, renderAddressFieldsHtml } from '../components/address-picker.js';

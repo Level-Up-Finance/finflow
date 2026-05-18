@@ -30,7 +30,6 @@ import {
   DIAS_SEMANA,
   diaSemanaLabel,
   TIPOS_PAGAMENTO,
-  MOEDAS,
   formatCurrency,
   formatCurrencyHTML,
   CATEGORIAS_DEFAULT,
@@ -53,7 +52,6 @@ import {
 import { renderDre } from './compromissos/dre.js';
 import { populateValoresMensaisGrid } from './compromissos/valores-mensais.js';
 import {
-  renderFlatTable,
   renderGroupedBySuperBloco,
   bindRowClicks,
   monthLabelFromIso,
@@ -1064,7 +1062,6 @@ async function openDetailsModal(c) {
   `;
 
   const conta = getConta(c.conta_id);
-  const contaDisplay = conta ? (conta.apelido?.trim() || conta.nome) : '— (não vinculado)';
   // Banco/cartão com avatar (mesmo padrão de renderContaInline em table.js)
   const contaHtmlValue = conta ? renderContaAvatarInline(conta) : '<span class="details-field-empty">— (não vinculado)</span>';
 

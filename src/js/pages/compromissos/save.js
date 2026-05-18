@@ -338,7 +338,6 @@ export async function saveCompromisso(event, deps) {
 
       const isCaixinha = tipo === 'Caixinha';
       const entidade   = isCaixinha ? 'caixinha' : 'subcategoria';
-      const Entidade   = isCaixinha ? 'Caixinha' : 'Subcategoria';
       if (existing) {
         const isFull = Number(existing.valor_base) > 0 || existing.valor_variavel === true;
         if (!isFull) {

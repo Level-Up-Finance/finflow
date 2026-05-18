@@ -215,33 +215,6 @@ function renderTagFilters() {
 // Splits — divisão de transação em múltiplas partes
 // =============================================================
 
-function buildSplitCatOptions(selectedCatId = '') {
-  const byCat = new Map();
-  for (const sub of cachedSubcategorias) {
-    const arr = byCat.get(sub.categoria_id) || [];
-    arr.push(sub);
-    byCat.set(sub.categoria_id, arr);
-  }
-  let html = '<option value="">— Categoria —</option>';
-  for (const cat of cachedCategorias) {
-    if (!byCat.has(cat.id)) continue;
-    const sel = cat.id === selectedCatId ? ' selected' : '';
-    html += `<option value="${cat.id}"${sel}>${escapeHtml(cat.nome)}</option>`;
-  }
-  return html;
-}
-
-function buildSplitSubOptions(catId = '', selectedSubId = '') {
-  let html = '<option value="">— Subcategoria —</option>';
-  if (!catId) return html;
-  const subs = cachedSubcategorias.filter((s) => s.categoria_id === catId);
-  for (const s of subs) {
-    const sel = s.id === selectedSubId ? ' selected' : '';
-    html += `<option value="${s.id}"${sel}>${escapeHtml(s.apelido || s.nome)}</option>`;
-  }
-  return html;
-}
-
 function buildSplitRowHtml(idx, split) {
   const catId    = split.categoria_id    || '';
   const subId    = split.subcategoria_id || '';
@@ -1469,7 +1442,6 @@ function renderDataRows(items) {
     const isTransferEntrada = t.tipo === 'Transferência' && !!t.transferencia_par_id && !t.conta_destino_id;
     const isTransfer        = t.tipo === 'Transferência';
     const tipoCls = t.tipo === 'Receita' ? 'trans-tipo-receita' : t.tipo === 'Despesa' ? 'trans-tipo-despesa' : 'trans-tipo-transferencia';
-    const sinal   = (t.tipo === 'Receita' || isTransferEntrada) ? '+' : '−';
 
     // Detecta se a transferência é de uma Caixinha (saída ou entrada, via pagamento_id direto ou via par)
     let caixinhaSub = null;
@@ -2088,7 +2060,7 @@ function bindEvents() {
     _renderSubPickerDropdown('');
   });
 
-  document.getElementById('trans-categoria').addEventListener('change', (e) => {
+  document.getElementById('trans-categoria').addEventListener('change', () => {
     _selectSub('');
     const searchEl = document.getElementById('trans-subcategoria-search');
     if (searchEl) searchEl.value = '';

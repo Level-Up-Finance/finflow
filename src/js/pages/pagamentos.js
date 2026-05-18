@@ -16,14 +16,13 @@ import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
-import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML, MOEDAS } from '../lib/compromissos-config.js';
 import { fetchExchangeRate } from '../lib/currency.js';
 import { initCurrencyWidget } from '../components/currency-widget.js';
 import { findBank, logoUrl } from '../lib/banks.js';
 import { syncPagamentoToTransacao, isPaidStatus, findTransacaoLinkedToPagamento } from '../lib/transacao-pagamento-sync.js';
-import { escapeHtml, formatDateBR, isoMonth, showConfirm, parseUserNumber } from '../lib/utils.js';
+import { escapeHtml, formatDateBR, isoMonth, parseUserNumber } from '../lib/utils.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
-import { MOEDAS } from '../lib/compromissos-config.js';
 
 // -----------------------------
 // State

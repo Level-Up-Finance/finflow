@@ -7,7 +7,7 @@
 // `deps` deve fornecer: { displayName, getDisplayValor, compareByVencimento, diaSemanaLabel }
 // =============================================================
 import { escapeHtml } from '../../lib/utils.js';
-import { formatCurrency, formatCurrencyHTML } from '../../lib/compromissos-config.js';
+import { formatCurrencyHTML } from '../../lib/compromissos-config.js';
 
 export function renderDre(filteredCompromissos, ctx, deps) {
   const { cachedCategorias, filterCategorias } = ctx;

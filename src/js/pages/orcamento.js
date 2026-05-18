@@ -17,7 +17,6 @@ import { showToast } from '../components/toast.js';
 import { formatCurrency, formatCurrencyHTML, MOEDAS } from '../lib/compromissos-config.js';
 import { fetchExchangeRate, startCurrencyAutoRefresh, toBRL } from '../lib/currency.js';
 import {
-  occursOn,
   countOccurrencesInMonth,
   getOccurrenceDatesInMonth,
 } from '../lib/recurrence.js';
@@ -1393,8 +1392,6 @@ function render12MonthsView() {
     for (const sub of subs) {
       const cells = months.map((m) => {
         const entry = entryIndex.get(`${sub.id}|${m.mesAno}`);
-        const occurrences = countOccurrencesInMonth(sub, m.year, m.month);
-        const editable = isActiveInMonth(sub, m.year, m.month) && occurrences > 0;
         const currentClass = m.isCurrent ? 'current-month' : '';
 
         if (entry) {
