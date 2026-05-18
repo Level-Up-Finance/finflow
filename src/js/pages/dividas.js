@@ -1733,17 +1733,16 @@ async function regenerateOrcamentoGeralForDivida(subId, dvd, tabela) {
   }
 
   // Sincroniza valor_previsto/valor_real em pagamentos pendentes para refletir os novos valores.
-  // Necessário porque o upsert de pagamentos usa ignoreDuplicates:true — entradas já existentes
-  // ficam com valor antigo mesmo após o orcamento ser regenerado.
-  const PENDENTE = ['Agendado', 'Atrasado', 'A Transferir'];
-  for (const row of rows) {
-    await supabase
+  // Roda em paralelo para evitar N chamadas sequenciais (seria ~80ms × N parcelas).
+  const PENDENTE = ['Agendado', 'A Transferir'];
+  await Promise.all(rows.map((row) =>
+    supabase
       .from('pagamentos')
       .update({ valor_previsto: row.valor_previsto, valor_real: row.valor_previsto })
       .eq('subcategoria_id', subId)
       .eq('mes_ano', row.mes_ano)
-      .in('status', PENDENTE);
-  }
+      .in('status', PENDENTE),
+  ));
 }
 
 /**
