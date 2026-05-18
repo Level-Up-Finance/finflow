@@ -207,6 +207,18 @@ function bindEvents() {
     document.getElementById('proj-compromisso-fields').classList.toggle('hidden', !e.target.checked);
   });
 
+  // Vincular sub de custo_vida ao projeto em edição
+  document.getElementById('proj-vincular-sub-select').addEventListener('change', async (e) => {
+    const subId = e.target.value;
+    if (!subId || !editingId) { e.target.value = ''; return; }
+    const { error } = await supabase.from('subcategorias').update({ projeto_id: editingId }).eq('id', subId);
+    if (error) { showToast('Erro ao vincular: ' + error.message, 'error'); e.target.value = ''; return; }
+    const sub = cachedSubcategorias.find((s) => s.id === subId);
+    if (sub) sub.projeto_id = editingId;
+    renderProjCustosVinculados(editingId);
+    renderProjetos();
+  });
+
   document.getElementById('proj-cor-picker').addEventListener('click', (e) => {
     const btn = e.target.closest('.color-swatch');
     if (!btn) return;
@@ -1036,7 +1048,54 @@ function openProjetoModal(p = null, prefill = null) {
     }
   }
 
+  // Seção "Custos vinculados" — só em modo edição
+  const custosWrap = document.getElementById('proj-custos-vinculados-wrap');
+  if (custosWrap) {
+    custosWrap.classList.toggle('hidden', !editingId);
+    if (editingId) renderProjCustosVinculados(editingId);
+  }
+
   openModal('modal-projeto');
+}
+
+async function renderProjCustosVinculados(projetoId) {
+  const list = document.getElementById('proj-custos-vinculados-list');
+  const sel  = document.getElementById('proj-vincular-sub-select');
+  if (!list || !sel) return;
+
+  // Subs já vinculadas (custo_vida → este projeto)
+  const linked = cachedSubcategorias.filter((s) => s.projeto_id === projetoId && s.categorias?.grupo === 'custo_vida');
+  list.innerHTML = linked.length
+    ? linked.map((s) => `<li class="projeto-card-custos-item">
+        <span>${escapeHtml(s.nome)}</span>
+        <button type="button" class="btn-desvincular-sub" data-sub-id="${s.id}" title="Desvincular" style="background:none;border:none;cursor:pointer;color:var(--color-danger);font-size:1rem;">×</button>
+      </li>`).join('')
+    : '<li style="color:var(--color-muted);font-size:0.85rem;">Nenhum compromisso vinculado.</li>';
+
+  // Listener para desvincular
+  list.querySelectorAll('.btn-desvincular-sub').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const subId = btn.dataset.subId;
+      const { error } = await supabase.from('subcategorias').update({ projeto_id: null }).eq('id', subId);
+      if (error) { showToast('Erro ao desvincular: ' + error.message, 'error'); return; }
+      const sub = cachedSubcategorias.find((s) => s.id === subId);
+      if (sub) sub.projeto_id = null;
+      renderProjCustosVinculados(projetoId);
+      renderProjetos();
+    });
+  });
+
+  // Popula picker com subs custo_vida sem vínculo (busca ao vivo)
+  const { data: availSubs } = await supabase
+    .from('subcategorias')
+    .select('id, nome, categorias(grupo)')
+    .is('projeto_id', null)
+    .eq('status', 'ativa')
+    .order('nome');
+  const custoVidaSubs = (availSubs || []).filter((s) => s.categorias?.grupo === 'custo_vida');
+  sel.innerHTML = ['<option value="">+ Vincular compromisso de Custo de Vida…</option>',
+    ...custoVidaSubs.map((s) => `<option value="${s.id}">${escapeHtml(s.nome)}</option>`)
+  ].join('');
 }
 
 function todayISODate() {

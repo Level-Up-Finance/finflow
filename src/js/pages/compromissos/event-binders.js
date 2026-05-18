@@ -110,6 +110,7 @@ export function bindAllEvents(deps) {
     d.toggleDividaField();
     d.toggleProjetoField();
     d.toggleVinculoBanner();
+    d.toggleVinculoInvestimentoField();
   });
 
   // Tipo selector
@@ -140,6 +141,7 @@ export function bindAllEvents(deps) {
     d.toggleProjetoField();
     d.toggleDividaField();
     d.toggleVinculoBanner();
+    d.toggleVinculoInvestimentoField();
   });
 
   // Select de projeto: "__new__" abre prompt pra criar inline

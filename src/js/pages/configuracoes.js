@@ -605,40 +605,8 @@ function openSubModal(subId = null, catId = null, blocoGrupos = null) {
       .classList.toggle('hidden', !rpCb.checked);
   }
 
-  // Vínculo a projeto/dívida — só p/ subs do bloco "custo_vida"
-  renderSubVinculoPicker(subCat, sub);
-
   document.getElementById('modal-subcategoria').classList.remove('hidden');
   document.getElementById('sub-nome').focus();
-}
-
-/**
- * Renderiza/atualiza o picker "Vincular a projeto ou dívida".
- * Só visível quando a categoria pai tem grupo='custo_vida'.
- * Pre-seleciona valor existente (projeto_id ou divida_id) em modo edição.
- */
-function renderSubVinculoPicker(cat, sub) {
-  const row = document.getElementById('sub-vinculo-row');
-  const sel = document.getElementById('sub-vinculo-select');
-  if (!row || !sel) return;
-
-  const isCustoVida = cat?.grupo === 'custo_vida'
-    || (!cat && modalSubBlocoGrupos?.length === 1 && modalSubBlocoGrupos[0] === 'custo_vida');
-  row.classList.toggle('hidden', !isCustoVida);
-  if (!isCustoVida) return;
-
-  // Monta opções: apenas projetos de investimento ativos.
-  const projetos = (cachedProjetos || [])
-    .filter((p) => p.status === 'ativo')
-    .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
-
-  const opts = ['<option value="">— Não vincular —</option>'];
-  for (const p of projetos) opts.push(`<option value="projeto:${p.id}">${escapeHtml(p.nome)}</option>`);
-  sel.innerHTML = opts.join('');
-
-  // Pré-seleciona valor existente
-  const preset = sub?.projeto_id ? `projeto:${sub.projeto_id}` : '';
-  sel.value = preset;
 }
 
 function renderSubCatSelect(selectedCatId) {
@@ -714,17 +682,6 @@ async function saveSub() {
     ? document.getElementById('sub-renda-principal').checked
     : false;
 
-  // Vínculo a projeto/dívida — só p/ subs do bloco custo_vida.
-  // Picker value format: "projeto:UUID" | "divida:UUID" | "".
-  const isCustoVida = currentCatForSave?.grupo === 'custo_vida';
-  let vinculoProjetoId = null;
-  let vinculoDividaId  = null;
-  if (isCustoVida) {
-    const raw = document.getElementById('sub-vinculo-select')?.value || '';
-    if (raw.startsWith('projeto:')) vinculoProjetoId = raw.slice('projeto:'.length);
-    else if (raw.startsWith('divida:')) vinculoDividaId = raw.slice('divida:'.length);
-  }
-
   let error;
   if (editingSubId) {
     const updates = { nome, descricao };
@@ -736,12 +693,6 @@ async function saveSub() {
         const cat = cachedCategorias.find((c) => c.id === resolvedCatId);
         updates.tipo = cat?.grupo === 'receitas' ? 'Receita' : 'Despesa';
       }
-    }
-    // Persistir vínculo: SOMENTE sobrescreve quando a sub é (ou virou) custo_vida.
-    // Pra grupos dividas/investimentos, mantém os FKs existentes (auto-link 1:1).
-    if (isCustoVida) {
-      updates.projeto_id = vinculoProjetoId;
-      updates.divida_id  = vinculoDividaId;
     }
     ({ error } = await supabase.from('subcategorias').update(updates).eq('id', editingSubId));
   } else {
@@ -764,9 +715,6 @@ async function saveSub() {
       iniciado_em:        today,
       status:             statusInicial,
       eh_renda_principal: ehRendaPrincipal,
-      // Vínculo opcional (só preenchido se custo_vida + usuário escolheu no picker)
-      projeto_id:         vinculoProjetoId,
-      divida_id:          vinculoDividaId,
     }).select('id').single();
     error = ins.error;
     const insertedId = ins.data?.id || null;

@@ -200,6 +200,15 @@
             </div>
           </div>
         </div>
+          <!-- Custos vinculados — só em modo edição -->
+          <div class="field hidden" id="proj-custos-vinculados-wrap">
+            <label class="field-label">Custos vinculados</label>
+            <ul id="proj-custos-vinculados-list" class="projeto-card-custos-list" style="margin-bottom:var(--space-2)"></ul>
+            <select id="proj-vincular-sub-select" class="select">
+              <option value="">+ Vincular compromisso de Custo de Vida…</option>
+            </select>
+          </div>
+        </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-ghost" data-close-modal="modal-projeto" data-i18n-key="global.btn.cancelar">Cancelar</button>
           <button type="submit" class="btn btn-primary" id="btn-salvar-projeto" data-i18n-key="global.btn.salvar">Salvar</button>

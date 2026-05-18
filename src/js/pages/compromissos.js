@@ -157,6 +157,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     toggleDividaField,
     toggleProjetoField,
     toggleVinculoBanner,
+    toggleVinculoInvestimentoField,
     toggleVencimentoFields,
     toggleValorVariavelFields,
     toggleRendaPrincipalRow,
@@ -363,6 +364,24 @@ function toggleDividaField() {
     const sel = document.getElementById('comp-divida');
     if (sel) sel.value = '';
   }
+}
+
+function toggleVinculoInvestimentoField(preselectedId = null) {
+  const catId = document.getElementById('comp-categoria').value;
+  const cat = cachedCategorias.find((c) => c.id === catId);
+  const isCustoVida = cat?.grupo === 'custo_vida';
+  const field = document.getElementById('vinculo-investimento-field');
+  if (!field) return;
+  field.classList.toggle('hidden', !isCustoVida);
+  const sel = document.getElementById('comp-vinculo-investimento');
+  if (!sel) return;
+  if (!isCustoVida) { sel.value = ''; return; }
+  const opts = ['<option value="">— Não vincular —</option>'];
+  for (const p of cachedProjetos) {
+    opts.push(`<option value="${p.id}">${escapeHtml(p.nome)}</option>`);
+  }
+  sel.innerHTML = opts.join('');
+  sel.value = preselectedId || '';
 }
 
 // -----------------------------
@@ -934,6 +953,8 @@ function openCompromissoModal(c = null) {
   toggleProjetoField();
   toggleDividaField();
   toggleVinculoBanner();
+  const custoVidaPresel = (cachedCategorias.find((cc) => cc.id === c?.categoria_id)?.grupo === 'custo_vida') ? c?.projeto_id : null;
+  toggleVinculoInvestimentoField(custoVidaPresel);
   toggleTransferFields();
   updateLimiteInfo(c?.conta_id || '');
   if (c?.valor_variavel) {
@@ -1158,7 +1179,7 @@ async function openDetailsModal(c) {
   const cat            = cachedCategorias.find((cc) => cc.id === c.categoria_id);
   const ehDividasCat   = cat?.grupo === 'dividas';
   const ehInvestCat    = cat?.grupo === 'investimentos';
-  const ehVinculado    = !!(c.divida_id || c.projeto_id) || ehDividasCat || ehInvestCat;
+  const ehVinculado    = ehDividasCat || ehInvestCat;
   const ehDivida       = !!c.divida_id || ehDividasCat;
   const btnIrVinculo   = document.getElementById('btn-ir-vinculo');
   const btnEditar      = document.getElementById('btn-editar');
@@ -1686,6 +1707,7 @@ function renderCompromissos() {
           if (cat?.nome) document.getElementById('comp-nome').value = cat.nome;
           toggleDividaField();
           toggleProjetoField();
+          toggleVinculoInvestimentoField();
         }
       },
     });

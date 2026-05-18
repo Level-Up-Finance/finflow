@@ -219,7 +219,9 @@ export async function saveCompromisso(event, deps) {
   const cachedCategorias = deps.getCachedCategorias();
   const cat            = cachedCategorias.find((c) => c.id === categoria_id);
   const projetoRaw     = document.getElementById('comp-projeto')?.value || '';
-  const projeto_id     = (cat?.grupo === 'investimentos' && projetoRaw && projetoRaw !== '__new__') ? projetoRaw : null;
+  const vinculoRaw     = document.getElementById('comp-vinculo-investimento')?.value || '';
+  const projeto_id     = (cat?.grupo === 'investimentos' && projetoRaw && projetoRaw !== '__new__') ? projetoRaw
+    : (cat?.grupo === 'custo_vida' ? (vinculoRaw || null) : null);
   const isDividasCat   = cat?.grupo === 'dividas' || /dívida|divida/i.test(cat?.nome || '');
   const dividaRaw      = isDividasCat ? (document.getElementById('comp-divida')?.value || '') : '';
   const contato_id     = deps.getContatoPickerValue();
