@@ -6,6 +6,7 @@
 // distintos da mesma subcategoria no mesmo mês é raro.
 // =============================================================
 import { supabase } from './supabase.js';
+import { todayISO } from './utils.js';
 
 const PAID_STATUSES = ['Pago', 'Cartão', 'Transferido'];
 
@@ -174,10 +175,3 @@ export async function mergeTransacaoIntoExisting(newTransacaoId, existingTransac
   return delErr ? { ok: false, error: delErr.message } : { ok: true };
 }
 
-// -----------------------------
-// Util
-// -----------------------------
-function todayISO() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}

@@ -8,7 +8,7 @@ import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { getTheme, setTheme } from '../lib/theme.js';
 import { CURRENCIES } from '../lib/currencies.js';
-import { escapeHtml, formatDateBR } from '../lib/utils.js';
+import { escapeHtml, formatDateBR, todayISO } from '../lib/utils.js';
 import { DEFAULT_COLOR, renderColorPicker, setActiveColor } from '../lib/color-palette.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 import { formatCurrency, renderMoedaOptions } from '../lib/compromissos-config.js';
@@ -734,7 +734,7 @@ async function saveSub() {
   } else {
     const cat    = cachedCategorias.find((c) => c.id === resolvedCatId);
     const tipo   = cat?.grupo === 'receitas' ? 'Receita' : 'Despesa';
-    const today  = new Date().toISOString().slice(0, 10);
+    const today  = todayISO();
     const isDividasCat   = cat?.grupo === 'dividas';
     const isInvestCat    = cat?.grupo === 'investimentos';
     // Para dividas/investimentos: subcategoria nasce inativa — ativa quando o usuário configurar
@@ -1108,7 +1108,7 @@ async function seedDefaultCategories() {
   const user = await getCurrentUser();
   if (!user) return;
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   // is_default=true → Receita, Dívidas, Investimentos (protegidas, não editáveis/deletáveis)
   // is_default=false → demais categorias de exemplo (usuário pode editar/deletar)
   const defaults = [

@@ -71,7 +71,7 @@ export class AddressPicker {
     const postalEl  = this._$('cep');
     const btnEl     = this._$('btn-buscar-cep');
     const labelEl   = this._$('postal-label');
-    const rowEl     = this._$('postal-row');
+    const _rowEl    = this._$('postal-row');
 
     if (labelEl && config) labelEl.textContent = config.label;
     if (postalEl && config) postalEl.placeholder = config.placeholder;

@@ -38,25 +38,6 @@ export function extractDomain(emailOrUrl) {
   }
 }
 
-export function inferLogoUrl(emailOrWebsite) {
-  const domain = extractDomain(emailOrWebsite);
-  if (!domain) return null;
-  return `https://logo.clearbit.com/${domain}`;
-}
-
-// Verifica se uma URL de imagem carrega (pra evitar avatar quebrado).
-// Resolve com a URL se ok, ou null se 404.
-export function checkImageExists(url) {
-  return new Promise((resolve) => {
-    if (!url) return resolve(null);
-    const img = new Image();
-    img.onload = () => resolve(url);
-    img.onerror = () => resolve(null);
-    img.src = url;
-    setTimeout(() => resolve(null), 4000); // timeout
-  });
-}
-
 // Busca CNPJ na Brasil API. Retorna objeto normalizado pra preencher o form,
 // ou lança Error com mensagem amigável.
 export async function fetchCnpjData(cnpj) {
@@ -119,8 +100,3 @@ function formatCep(cep) {
   return d.length === 8 ? `${d.slice(0, 5)}-${d.slice(5)}` : cep;
 }
 
-// URL de busca no Google pra ajudar o usuário a achar o CNPJ.
-export function googleCnpjSearchUrl(nome) {
-  const q = encodeURIComponent(`cnpj ${(nome || '').trim()}`);
-  return `https://www.google.com/search?q=${q}`;
-}

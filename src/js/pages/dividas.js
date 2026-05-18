@@ -9,11 +9,11 @@ import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.js';
 import { initColVisibility } from '../lib/col-visibility.js';
-import { escapeHtml, parseUserNumber } from '../lib/utils.js';
+import { escapeHtml, parseUserNumber, todayISO } from '../lib/utils.js';
 import { createContaPicker } from '../lib/conta-picker.js';
 import { initContatoPicker } from '../components/contato-picker.js';
 import { gerarTabela, aplicarCorrecao, validarFases } from '../lib/amortizacao.js';
-import { fetchIndicadores, resolveTaxaMensal, anualToMensal } from '../lib/indicadores.js';
+import { fetchIndicadores, resolveTaxaMensal, anualToMensal, getCachedIndicadores } from '../lib/indicadores.js';
 import { parseDecimal, formatDecimal, autoAttachDecimalInputs } from '../lib/number-format.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 import { renderGantt } from './dividas/gantt.js';
@@ -403,7 +403,7 @@ async function refreshIndexedRates(dividas) {
 
       // Atualiza row local + persiste
       d.juros_percentual = nova;
-      const today = new Date().toISOString().slice(0, 10);
+      const today = todayISO();
       await supabase.from('dividas').update({ juros_percentual: nova }).eq('id', d.id);
       await supabase.from('divida_taxa_historico').insert({
         divida_id:    d.id,
@@ -431,6 +431,8 @@ async function loadAll() {
     supabase.from('pagamentos_divida_historico').select('*').order('n_parcela'),
     supabase.from('divida_taxa_historico').select('*').order('data_vigencia'),
     supabase.from('subcategorias').select('divida_id').not('divida_id', 'is', null),
+    // Aquece cache de indicadores (SELIC/CDI/IPCA) p/ corrMensalDecimal usar valores reais
+    fetchIndicadores().catch(() => null),
   ]);
   // Set de divida_ids que já têm compromisso vinculado (pra badge "Criar compromisso")
   cachedDividaCompromissoIds = new Set((subsRes?.data || []).map((s) => s.divida_id));
@@ -1388,7 +1390,7 @@ async function openModalDivida(id) {
   // Migra valor legado 'manual' caso ainda exista localmente em algum cache
   const jurosT = d?.juros_tipo === 'manual' ? 'manual_fixo' : (d?.juros_tipo ?? 'manual_fixo');
   setJurosTipo(jurosT);
-  document.getElementById('div-data-inicio').value     = d?.data_inicio      ?? new Date().toISOString().slice(0, 10);
+  document.getElementById('div-data-inicio').value     = d?.data_inicio      ?? todayISO();
   const vencEl = document.getElementById('div-data-vencimento');
   vencEl.value = d?.data_vencimento ?? '';
   // Marca como "editado pelo usuário" se já tinha valor salvo (não sobrescreve)
@@ -1774,7 +1776,7 @@ async function ensureBareLinkForDivida(dividaId, dvd, user) {
     return;
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   const compTipo = dvd.tipo === 'a_receber' ? 'Receita' : 'Despesa';
 
   const { error } = await supabase.from('subcategorias').insert({
@@ -2016,7 +2018,7 @@ function openPagarParcelaModal(id) {
   document.getElementById('pagar-parcela-title').textContent = `${isReceber ? 'Recebimento' : 'Pagamento'} — ${d.nome}`;
   const btnConfirmar = document.getElementById('btn-confirmar-pagar-parcela');
   if (btnConfirmar) btnConfirmar.textContent = isReceber ? 'Registrar recebimento' : 'Registrar pagamento';
-  document.getElementById('pagar-parcela-data').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('pagar-parcela-data').value = todayISO();
   document.getElementById('pagar-desc-input').value   = '';
   document.getElementById('pagar-valor-real').value   = '';
   document.getElementById('pagar-valor-real-delta').textContent = '';
@@ -2515,17 +2517,32 @@ function calendarParcelaIdx(d) {
 }
 
 /**
- * Converte indice_correcao + correcao_taxa em taxa mensal decimal estimada.
- * TR ≈ 0.05% a.m. (estimativa); IPCA/IGPM ≈ últimas 12 meses ÷ 12; fixo = correcao_taxa%.
+ * Converte indice_correcao + correcao_taxa em taxa mensal decimal.
+ *
+ * - 'nenhum': 0
+ * - 'fixo':   correcao_taxa% / 100
+ * - 'IPCA':   usa IPCA real do BrasilAPI (anual) convertido p/ mensal composto.
+ *             Fallback de 0.4% a.m. se cache não estiver aquecido ou indicador indisponível.
+ * - 'IGPM':   BrasilAPI não expõe IGPM. Usa fallback estimado.
+ * - 'TR':     BrasilAPI não expõe TR. Usa fallback estimado (~0.05% a.m.).
+ *
+ * O cache é aquecido em loadAll() via `await fetchIndicadores()`.
  */
 function corrMensalDecimal(d) {
   const idx = d.indice_correcao || 'nenhum';
   if (idx === 'nenhum') return 0;
   if (idx === 'fixo')   return Number(d.correcao_taxa || 0) / 100;
-  if (idx === 'TR')     return 0.0005; // ~0.05% a.m. (TR baixa, estimativa conservadora)
-  // IPCA / IGPM: usa indicador atual em base anual e converte a mensal aproximado
-  // (chamada async não cabe aqui; deixa fallback razoável)
-  if (idx === 'IPCA' || idx === 'IGPM') return 0.004; // ~0.4% a.m. (aprox. IPCA recente)
+  if (idx === 'TR')     return 0.0005; // BrasilAPI não tem TR — fallback conservador
+
+  if (idx === 'IPCA') {
+    const ind = getCachedIndicadores();
+    if (ind?.ipca != null) {
+      // anualToMensal retorna % a.m. → divide por 100 pra decimal
+      return anualToMensal(ind.ipca) / 100;
+    }
+    return 0.004; // fallback se cache ainda não aquecido
+  }
+  if (idx === 'IGPM') return 0.004; // BrasilAPI não tem IGPM — fallback
   return 0;
 }
 
@@ -2536,7 +2553,7 @@ function openAtualizarTaxaModal(id) {
   document.getElementById('atualizar-taxa-title').textContent = `Atualizar taxa — ${d.nome}`;
   document.getElementById('atualizar-taxa-atual').textContent = `${Number(d.juros_percentual || 0).toFixed(4)}% a.m.`;
   document.getElementById('nova-taxa-input').value    = '';
-  document.getElementById('nova-taxa-vigencia').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('nova-taxa-vigencia').value = todayISO();
   document.getElementById('nova-taxa-motivo').value   = '';
   openModal('modal-atualizar-taxa');
 }

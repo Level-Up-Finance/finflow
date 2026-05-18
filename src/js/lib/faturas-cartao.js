@@ -20,6 +20,7 @@
 //   - a página Pagamentos vai gerar um pagamento automático
 // =============================================================
 import { supabase } from './supabase.js';
+import { todayISO } from './utils.js';
 
 const TIPO_CARTAO = 'Cartão de Crédito';
 const NOME_CATEGORIA_CARTOES = 'Cartões';
@@ -33,11 +34,6 @@ export function isContaCartao(conta) {
 // -----------------------------
 
 function pad2(n) { return String(n).padStart(2, '0'); }
-
-function todayISO() {
-  const d = new Date();
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-}
 
 /**
  * Computa o mes_referencia ('YYYY-MM') da fatura para uma data

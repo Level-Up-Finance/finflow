@@ -8,6 +8,15 @@ let inflight = null;
 const ENDPOINT = 'https://brasilapi.com.br/api/taxas/v1';
 
 /**
+ * Acesso síncrono ao cache. Retorna null se ainda não houver fetch.
+ * Útil pra fluxos sync que não podem aguardar — caller deve fazer
+ * `await fetchIndicadores()` no warm-up da página antes.
+ */
+export function getCachedIndicadores() {
+  return cache;
+}
+
+/**
  * Retorna { selic, cdi, ipca } anuais (% a.a.).
  * Faz uma única chamada por sessão de página.
  */

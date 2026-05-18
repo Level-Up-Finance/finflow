@@ -2,19 +2,22 @@
 // FinFlow — Configuração do Supabase
 // =============================================================
 //
-// PREENCHA estes valores depois de criar seu projeto no Supabase.
-// Onde encontrar:
-//   1. Acesse https://supabase.com → seu projeto
-//   2. Project Settings → API
-//   3. Copie "Project URL" e "anon public" key
+// Valores vêm de .env.local (frontend) — variáveis prefixadas com
+// VITE_ são expostas via import.meta.env pelo Vite no build.
 //
-// IMPORTANTE: Esses valores são PÚBLICOS (frontend). Nunca coloque
-// aqui a "service_role" key — ela só pode ser usada em servidores
-// (Edge Functions). A segurança real vem do RLS no Supabase.
+// Configurar em produção (Vercel):
+//   Settings → Environment Variables → adicione:
+//     VITE_SUPABASE_URL
+//     VITE_SUPABASE_ANON_KEY
+//     VITE_GOOGLE_PLACES_KEY (opcional, busca CNPJ)
+//
+// IMPORTANTE: A anon key É pública (frontend). A segurança vem
+// do RLS no Supabase. Nunca exponha a service_role key aqui —
+// ela só roda em scripts Node ou Edge Functions.
 // =============================================================
 
-export const SUPABASE_URL = 'https://meapbdsthewyuugbavzl.supabase.co';
-export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lYXBiZHN0aGV3eXV1Z2JhdnpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1ODc2NjgsImV4cCI6MjA5MzE2MzY2OH0.7CnTn1Zxd9W1d6fLeKLJEGbriPlzKO6dnKwBYSiUpS8';
+export const SUPABASE_URL      = import.meta.env?.VITE_SUPABASE_URL || '';
+export const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
 
 // Refresh de cotações (Frankfurter) — 5 min
 export const CURRENCY_REFRESH_MS = 5 * 60 * 1000;
