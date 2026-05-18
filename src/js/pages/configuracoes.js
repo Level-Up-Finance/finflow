@@ -732,10 +732,15 @@ async function saveSub() {
     }
     ({ error } = await supabase.from('subcategorias').update(updates).eq('id', editingSubId));
   } else {
-    const cat   = cachedCategorias.find((c) => c.id === resolvedCatId);
-    const tipo  = cat?.grupo === 'receitas' ? 'Receita' : 'Despesa';
-    const today = new Date().toISOString().slice(0, 10);
-    ({ error } = await supabase.from('subcategorias').insert({
+    const cat    = cachedCategorias.find((c) => c.id === resolvedCatId);
+    const tipo   = cat?.grupo === 'receitas' ? 'Receita' : 'Despesa';
+    const today  = new Date().toISOString().slice(0, 10);
+    const isDividasCat   = cat?.grupo === 'dividas';
+    const isInvestCat    = cat?.grupo === 'investimentos';
+    // Para dividas/investimentos: subcategoria nasce inativa — ativa quando o usuário configurar
+    const statusInicial  = (isDividasCat || isInvestCat) ? 'inativa' : 'ativa';
+
+    const ins = await supabase.from('subcategorias').insert({
       user_id:            user.id,
       nome,
       descricao,
@@ -744,16 +749,43 @@ async function saveSub() {
       periodo:            'Mensal',
       valor_base:         0,
       iniciado_em:        today,
-      status:             'ativa',
+      status:             statusInicial,
       eh_renda_principal: ehRendaPrincipal,
-    }));
+    }).select('id').single();
+    error = ins.error;
+    const insertedId = ins.data?.id || null;
+
+    // Auto-criar dívida bare e linkar à subcategoria
+    if (!error && insertedId && isDividasCat) {
+      const { data: novaDivida, error: divErr } = await supabase
+        .from('dividas')
+        .insert({ user_id: user.id, nome, valor_total: 0, valor_pago: 0, status: 'Ativa' })
+        .select('id').single();
+      if (divErr) {
+        showToast('Subcategoria criada, mas erro ao criar dívida: ' + divErr.message, 'warning', 8000);
+      } else {
+        await supabase.from('subcategorias').update({ divida_id: novaDivida.id }).eq('id', insertedId);
+      }
+    }
+
+    // Auto-criar projeto bare e linkar à subcategoria
+    if (!error && insertedId && isInvestCat) {
+      const { data: novoProjeto, error: projErr } = await supabase
+        .from('projetos_investimento')
+        .insert({ user_id: user.id, nome, status: 'ativo', cor: '#6D5EF5' })
+        .select('id').single();
+      if (projErr) {
+        showToast('Subcategoria criada, mas erro ao criar projeto: ' + projErr.message, 'warning', 8000);
+      } else {
+        await supabase.from('subcategorias').update({ projeto_id: novoProjeto.id }).eq('id', insertedId);
+      }
+    }
   }
 
   btn.disabled = false;
   btn.textContent = 'Salvar';
 
   if (error) {
-    // Friendly message for the unique-renda-principal constraint
     if (error.code === '23505' && error.message?.includes('renda_principal')) {
       showToast('Já existe uma renda principal. Remova a marcação da outra subcategoria primeiro.', 'error', 8000);
     } else {
@@ -763,29 +795,9 @@ async function saveSub() {
   }
 
   showToast(editingSubId ? t('configuracoes.toast.sub_atualizada', 'Subcategoria atualizada') : t('configuracoes.toast.sub_criada', 'Subcategoria criada'), 'success');
-  const savedNome = nome;
 
-  if (!editingSubId) {
-    // Fetch the ID of the sub we just created (used by comp-rapido to update it)
-    const { data: freshSubs } = await supabase
-      .from('subcategorias')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('categoria_id', resolvedCatId)
-      .eq('nome', nome)
-      .eq('status', 'ativa')
-      .order('created_at', { ascending: false })
-      .limit(1);
-    const newSubId = freshSubs?.[0]?.id || null;
-
-    // v0.5.x: criação de compromisso vive nas páginas de Dívidas/Projetos
-    // e na aba Configurações de Orçamento — não mais aqui.
-    closeSubModal();
-    await reloadAll();
-  } else {
-    closeSubModal();
-    await reloadAll();
-  }
+  closeSubModal();
+  await reloadAll();
 }
 
 // -----------------------------
