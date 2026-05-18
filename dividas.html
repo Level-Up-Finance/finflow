@@ -597,6 +597,30 @@
     </div>
   </div>
 
+  <!-- ============================================================
+       MODAL: Detalhes da dívida (popup de leitura)
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-divida-details" role="dialog" aria-modal="true">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h2 class="modal-title" id="div-details-title">—</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-divida-details" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="div-details-body"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost hidden" id="btn-details-historico">Histórico</button>
+        <button type="button" class="btn btn-ghost hidden" id="btn-details-taxa">Taxa</button>
+        <button type="button" class="btn btn-ghost hidden" id="btn-details-tabela">Tabela</button>
+        <div style="flex:1;"></div>
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-divida-details">Fechar</button>
+        <button type="button" class="btn btn-ghost hidden" id="btn-details-pagar">+ Pagamento</button>
+        <button type="button" class="btn btn-primary" id="btn-details-editar">Editar</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast-container" class="toast-container"></div>
   <script type="module" src="src/js/pages/dividas.js"></script>
 </body>

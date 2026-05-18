@@ -730,12 +730,89 @@ function bindBlocoToggles(storageKey, containerId) {
 
 // Bind click nos rows de tabela/gantt para abrir modal de edição
 function bindRowClicks() {
+  // Tabela e Gantt: clique abre edição direta (comportamento existente)
   document.querySelectorAll('.divida-tabela-row').forEach((el) => {
     el.addEventListener('click', () => openModalDivida(el.dataset.id));
   });
   document.querySelectorAll('.gantt-row[data-id]').forEach((el) => {
     el.addEventListener('click', () => openModalDivida(el.dataset.id));
   });
+
+  // Cards: clique abre popup de detalhes; botões de ação bloqueiam propagação
+  document.querySelectorAll('.div-card').forEach((card) => {
+    card.addEventListener('click', () => openDividaDetails(card.dataset.id));
+  });
+  document.querySelectorAll('.div-btn-pagar, .div-btn-historico, .div-btn-taxa, .div-btn-tabela, .div-btn-editar').forEach((btn) => {
+    btn.addEventListener('click', (e) => e.stopPropagation());
+  });
+}
+
+let detailsDividaId = null;
+
+function openDividaDetails(id) {
+  const d = cachedDividas.find((x) => x.id === id);
+  if (!d) return;
+  detailsDividaId = id;
+
+  const moeda   = d.moeda || 'BRL';
+  const fmt     = (v) => formatCurrencyHTML(v, moeda);
+  const total   = Number(d.valor_total);
+  const pago    = Number(d.valor_pago);
+  const restante = Math.max(0, total - pago);
+  const pct     = total > 0 ? Math.min(100, (pago / total) * 100) : 0;
+  const st      = STATUS_CONFIG[d.status] || STATUS_CONFIG['Ativa'];
+  const conta   = cachedContas.find((c) => c.id === d.conta_id);
+  const fmtDate = (iso) => { if (!iso) return null; const [y, m, day] = iso.split('-'); return `${day}/${m}/${y}`; };
+
+  document.getElementById('div-details-title').innerHTML =
+    `${escapeHtml(d.nome)} <span class="div-card-badge" style="color:${st.color};background:${st.bg};font-size:var(--fs-xs);vertical-align:middle;">${st.label}</span>`
+    + (d.tipo === 'a_receber' ? ' <span class="div-card-tipo-badge div-card-tipo-badge--receber" style="font-size:var(--fs-xs);vertical-align:middle;">↙ A receber</span>' : '');
+
+  document.getElementById('div-details-body').innerHTML = `
+    ${d.credor ? `<p style="color:var(--color-text-secondary);margin-bottom:var(--space-4);">${d.tipo === 'a_receber' ? 'Devedor' : 'Credor'}: <strong>${escapeHtml(d.credor)}</strong></p>` : ''}
+
+    <div class="proj-details-resumo-grid">
+      <div class="proj-details-stat">
+        <span class="proj-details-stat-label">Total</span>
+        <span class="proj-details-stat-value">${fmt(total)}</span>
+      </div>
+      <div class="proj-details-stat">
+        <span class="proj-details-stat-label">Pago</span>
+        <span class="proj-details-stat-value" style="color:var(--color-success);">${fmt(pago)}</span>
+      </div>
+      <div class="proj-details-stat">
+        <span class="proj-details-stat-label">Restante</span>
+        <span class="proj-details-stat-value" style="color:${d.status === 'Quitada' ? 'var(--color-success)' : 'var(--color-danger)'};">${fmt(restante)}</span>
+      </div>
+    </div>
+
+    <div style="margin:var(--space-4) 0;">
+      <div class="div-prog-bar-track" style="height:8px;border-radius:4px;background:var(--color-border);overflow:hidden;">
+        <div style="height:100%;width:${pct.toFixed(1)}%;background:var(--color-success);border-radius:4px;transition:width .3s;"></div>
+      </div>
+      <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--space-1);">${pct.toFixed(1)}% pago</p>
+    </div>
+
+    <dl class="div-details-dl">
+      ${d.regime ? `<div class="div-details-dl-row"><dt>Regime</dt><dd><span class="div-regime-badge div-regime-badge--${d.regime.toLowerCase()}">${d.regime}</span></dd></div>` : ''}
+      ${d.n_parcelas ? `<div class="div-details-dl-row"><dt>Parcelas</dt><dd>${d.parcelas_pagas || 0} / ${d.n_parcelas}x</dd></div>` : ''}
+      ${d.juros_percentual ? `<div class="div-details-dl-row"><dt>Juros</dt><dd>${Number(d.juros_percentual).toFixed(4)}% a.m.</dd></div>` : ''}
+      ${d.data_inicio ? `<div class="div-details-dl-row"><dt>Início</dt><dd>${fmtDate(d.data_inicio)}</dd></div>` : ''}
+      ${d.data_vencimento ? `<div class="div-details-dl-row"><dt>Vencimento</dt><dd>${fmtDate(d.data_vencimento)}</dd></div>` : ''}
+      ${conta ? `<div class="div-details-dl-row"><dt>Conta</dt><dd>${escapeHtml(conta.apelido || conta.nome)}</dd></div>` : ''}
+    </dl>
+
+    ${d.observacao ? `<p style="margin-top:var(--space-4);color:var(--color-text-secondary);font-size:var(--fs-sm);">${escapeHtml(d.observacao)}</p>` : ''}
+  `;
+
+  // Footer buttons
+  const quitada = d.status === 'Quitada';
+  document.getElementById('btn-details-pagar').classList.toggle('hidden', quitada);
+  document.getElementById('btn-details-taxa').classList.toggle('hidden', d.juros_tipo !== 'manual_variavel' || quitada);
+  document.getElementById('btn-details-tabela').classList.toggle('hidden', !(d.regime && d.n_parcelas));
+  document.getElementById('btn-details-historico').classList.remove('hidden');
+
+  openModal('modal-divida-details');
 }
 
 function renderCard(d) {
@@ -842,8 +919,6 @@ function renderCard(d) {
         </div>` : ''}
       </div>
 
-      ${d.observacao ? `<p class="div-card-obs">${d.observacao}</p>` : ''}
-
       <div class="div-card-actions">
         <button class="btn btn-sm btn-ghost div-btn-pagar" data-id="${d.id}" type="button" title="Registrar pagamento">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
@@ -867,6 +942,28 @@ function renderCard(d) {
 // Bind events
 // -----------------------------
 function bindEvents() {
+  // Botões do modal de detalhes da dívida
+  document.getElementById('btn-details-editar').addEventListener('click', () => {
+    closeModal('modal-divida-details');
+    if (detailsDividaId) openModalDivida(detailsDividaId);
+  });
+  document.getElementById('btn-details-pagar').addEventListener('click', () => {
+    closeModal('modal-divida-details');
+    if (detailsDividaId) openPagarParcelaModal(detailsDividaId);
+  });
+  document.getElementById('btn-details-historico').addEventListener('click', () => {
+    closeModal('modal-divida-details');
+    if (detailsDividaId) openHistoricoViewDivida(detailsDividaId);
+  });
+  document.getElementById('btn-details-taxa').addEventListener('click', () => {
+    closeModal('modal-divida-details');
+    if (detailsDividaId) openAtualizarTaxaModal(detailsDividaId);
+  });
+  document.getElementById('btn-details-tabela').addEventListener('click', () => {
+    closeModal('modal-divida-details');
+    if (detailsDividaId) openTabelaAmort(detailsDividaId);
+  });
+
   // Tipo (a_pagar / a_receber) — toggle no topo do modal
   document.getElementById('div-tipo-toggle')?.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-tipo]');
