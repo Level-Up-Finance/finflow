@@ -39,14 +39,13 @@ async function activateTab(tab) {
   if (initialized[tab]) return;
   initialized[tab] = true;
 
-  // Cache-bust dos dynamic imports — força browser a baixar nova versão
-  // quando o arquivo muda (em dev). Em produção, hash do build resolveria.
-  const v = `?v=${Date.now()}`;
+  // Static path: permite o Vite gerar chunks hash-versionados em produção.
+  // Em dev, HMR cuida de invalidar cache de módulos.
   if (tab === 'usuarios') {
-    const { init } = await import('./admin-usuarios.js' + v);
+    const { init } = await import('./admin-usuarios.js');
     await init();
   } else if (tab === 'idiomas') {
-    const { init } = await import('./admin-i18n.js' + v);
+    const { init } = await import('./admin-i18n.js');
     await init();
   }
 }
