@@ -34,7 +34,7 @@ const MODULOS = {
   contas:       'Contas',
   compromissos: 'Compromissos',
   orcamento:    'Orçamento',
-  dividas:      'Dívidas',
+  dividas:      'Financiamentos e Dívidas',
   investimentos:'Investimentos',
   relatorios:   'Relatórios',
   contatos:     'Contatos',

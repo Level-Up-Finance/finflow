@@ -77,7 +77,7 @@ function buildVinculoPopoverContent(type, id, lookups) {
         ${d          ? `<div class="vp-row"><span>Pago</span><strong style="color:var(--color-success)">${formatCurrencyHTML(pago)} (${pct.toFixed(0)}%)</strong></div>` : ''}
         ${d          ? `<div class="vp-row"><span>Restante</span><strong style="color:var(--color-danger)">${formatCurrencyHTML(restante)}</strong></div>` : ''}
       </div>
-      <a class="vp-link" href="/dividas.html">Ver dívidas →</a>`;
+      <a class="vp-link" href="/dividas.html">Ver financiamentos e dívidas →</a>`;
   }
 
   return null;

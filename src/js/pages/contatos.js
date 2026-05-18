@@ -484,7 +484,7 @@ function renderVinculosTab(contatoId) {
       ${compHtml}
     </section>
     <section class="ctp-vinc-section">
-      <h3 class="ctp-vinc-section-title">Dívidas <span class="ctp-vinc-count">${dividas.length}</span></h3>
+      <h3 class="ctp-vinc-section-title">Financiamentos e Dívidas <span class="ctp-vinc-count">${dividas.length}</span></h3>
       ${divHtml}
     </section>
     <section class="ctp-vinc-section">

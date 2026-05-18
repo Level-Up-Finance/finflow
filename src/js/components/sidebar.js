@@ -46,7 +46,7 @@ const NAV_ITEMS = [
   { id: 'transacoes',    label: 'Transações',       href: '/transacoes.html' },
   { id: 'contas',        label: 'Contas',           href: '/contas.html' },
   { id: 'orcamento',     label: 'Orçamento',        href: '/compromissos.html' },
-  { id: 'dividas',       label: 'Dívidas',          href: '/dividas.html' },
+  { id: 'dividas',       label: 'Financiamentos e Dívidas', href: '/dividas.html' },
   { id: 'investimentos', label: 'Investimentos',    href: '/investimentos.html' },
   { divider: true },
   // ── Ferramentas ───────────────────────────────────────────────

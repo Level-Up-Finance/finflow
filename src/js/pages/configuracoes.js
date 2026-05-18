@@ -1061,7 +1061,7 @@ async function seedDefaultCategories() {
   // is_default=false → demais categorias de exemplo (usuário pode editar/deletar)
   const defaults = [
     { nome: 'Receita',            grupo: 'receitas',      cor: '#22c55e', isDefault: true,  subs: ['Renda principal', '13º Salário', 'Ganhos de investimento', 'Extras'] },
-    { nome: 'Dívidas',            grupo: 'dividas',        cor: '#ef4444', isDefault: true,  subs: [] },
+    { nome: 'Financiamentos e Dívidas', grupo: 'dividas',  cor: '#ef4444', isDefault: true,  subs: [] },
     { nome: 'Investimentos',      grupo: 'investimentos',  cor: '#6D5EF5', isDefault: true,  subs: ['Renda fixa', 'Renda variável'] },
     { nome: 'Casa',               grupo: 'custo_vida',     cor: '#f97316', isDefault: false, subs: [] },
     { nome: 'Doações e Presentes', grupo: 'custo_vida',    cor: '#ec4899', isDefault: false, subs: [] },
@@ -1289,7 +1289,7 @@ function buildVinculoPopoverContent(type, id) {
         ${d         ? `<div class="vp-row"><span>Pago</span><strong style="color:var(--color-success)">${fmtCurrency(pago)} (${pct.toFixed(0)}%)</strong></div>` : ''}
         ${d         ? `<div class="vp-row"><span>Restante</span><strong style="color:var(--color-danger)">${fmtCurrency(restante)}</strong></div>` : ''}
       </div>
-      <a class="vp-link" href="/dividas.html">Ver dívidas →</a>`;
+      <a class="vp-link" href="/dividas.html">Ver financiamentos e dívidas →</a>`;
   }
   return null;
 }

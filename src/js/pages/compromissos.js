@@ -683,8 +683,8 @@ function toggleVinculoBanner() {
     const title = document.getElementById('comp-vinculo-banner-title');
     if (isDivida) {
       btn.dataset.destino = 'dividas';
-      label.textContent = 'Ir para Dívidas';
-      title.textContent = 'Compromissos de Dívidas são criados pela página de Dívidas.';
+      label.textContent = 'Ir para Financiamentos e Dívidas';
+      title.textContent = 'Compromissos de Financiamentos e Dívidas são criados pela página de Financiamentos e Dívidas.';
     } else {
       btn.dataset.destino = 'investimentos';
       label.textContent = 'Ir para Investimentos';

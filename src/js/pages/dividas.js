@@ -1613,7 +1613,7 @@ async function ensureSubcategoriaForDivida(dividaId, dvd) {
     return;
   }
   const catDividas = (cats || []).find((c) =>
-    c.nome && (c.nome.toLowerCase() === 'dívidas' || c.nome.toLowerCase() === 'dividas')
+    c.nome && ['dívidas', 'dividas', 'financiamentos e dívidas', 'financiamentos e dividas'].includes(c.nome.toLowerCase())
   );
   if (!catDividas) {
     showToast(t('dividas.toast.categoria_nao_encontrada', 'Categoria "Dívidas" não encontrada — vá em Configurações para criá-la antes.'), 'error', 8000);
