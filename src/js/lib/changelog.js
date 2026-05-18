@@ -7,6 +7,19 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-18-custos-vinculados',
+    version: '0.7.1',
+    date: '18/05/2026',
+    title: 'Custos vinculados — várias subs do Custo de Vida no mesmo projeto/dívida',
+    items: [
+      { type: 'new', text: 'Subcategorias do bloco "Custo de Vida" agora podem ser vinculadas a um projeto de investimento ou financiamento existente. Ex: assinaturas GitHub, conta celular e anúncios vinculados ao mesmo projeto "Side Project SaaS".' },
+      { type: 'new', text: 'Modal de subcategoria (em Configurações): novo select "Vincular a projeto ou dívida" — só visível quando a categoria-pai é do bloco Custo de Vida. Dropdown agrupado com Projetos de Investimento e Financiamentos ativos.' },
+      { type: 'new', text: 'Card do projeto em Investimentos: nova seção "Custos vinculados" listando as subs + total mensal previsto.' },
+      { type: 'new', text: 'Card do financiamento em Financiamentos e Dívidas: mesma seção "Custos vinculados" (ex: IPVA e seguro do carro vinculados ao financiamento do veículo).' },
+      { type: 'fix', text: 'Removida categoria órfã "Obejtivos" (typo de "Objetivos") da conta de admin que sobrou da limpeza anterior. Não estava nos seeds — não afetava novos usuários.' },
+    ],
+  },
+  {
     id: '2026-05-18-patrimonio-fipe',
     version: '0.7.0',
     date: '18/05/2026',

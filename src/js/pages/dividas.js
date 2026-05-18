@@ -317,6 +317,7 @@ const BLOCOS = [
 // State
 // -----------------------------
 let cachedDividas              = [];
+let cachedSubcategorias        = []; // subs com divida_id (próprias 1:1 + custos vinculados N:1)
 let cachedContas               = [];
 let divContaPicker         = null;
 let pagarContaPicker       = null;
@@ -428,7 +429,7 @@ async function refreshIndexedRates(dividas) {
 // Load
 // -----------------------------
 async function loadAll() {
-  const [divRes, contRes, contatosRes, histRes, taxaHistRes] = await Promise.all([
+  const [divRes, contRes, contatosRes, histRes, taxaHistRes, subsRes] = await Promise.all([
     dividasService.listDividas(),
     supabase.from('contas').select('id, nome, apelido, tipo, icone_cor, moeda').neq('status', 'arquivada').order('nome'),
     supabase.from('contatos').select('id, nome, tipo, status, logo_url').neq('status', 'arquivado').order('nome'),
@@ -436,7 +437,10 @@ async function loadAll() {
     dividasService.listTaxaHistorico(),
     // Aquece cache de indicadores (SELIC/CDI/IPCA) p/ corrMensalDecimal usar valores reais
     fetchIndicadores().catch(() => null),
+    // Subs vinculadas a dividas (próprias ou via custo_vida) — pra "Custos vinculados"
+    supabase.from('subcategorias').select('id, nome, divida_id, valor_base, status, categorias(grupo)').not('divida_id', 'is', null),
   ]);
+  cachedSubcategorias = subsRes?.data || [];
 
   // Auto-refresh de taxas indexadas (SELIC/CDI/IPCA) — feito antes do render
   if (divRes.data) await refreshIndexedRates(divRes.data);
@@ -940,6 +944,7 @@ function renderCard(d) {
           <span class="div-card-meta-label">Parcelas</span>
           <span class="div-card-meta-item">${d.parcelas_pagas || 0}/${d.n_parcelas}x${proximaParcela != null ? ` &nbsp;<span class="div-card-proxima-parcela">Próx. ${fmt(proximaParcela)}</span>` : ''}</span>
         </div>` : ''}
+        ${renderCustosVinculados(d.id, fmt)}
       </div>
 
       <div class="div-card-actions">
@@ -957,6 +962,35 @@ function renderCard(d) {
           Editar
         </button>
       </div>
+    </div>
+  `;
+}
+
+/**
+ * Renderiza seção "Custos vinculados" no card da dívida.
+ * Exibe subs do bloco custo_vida que apontam pra essa dívida via subcategorias.divida_id.
+ * Exclui a sub auto-criada (1:1) — a vinculada via grupo='dividas' tem o mesmo nome.
+ *
+ * @param {string} dividaId
+ * @param {(v: number) => string} fmtCurrency
+ * @returns {string} HTML (vazio se sem custos)
+ */
+function renderCustosVinculados(dividaId, fmtCurrency) {
+  // Inclui apenas subs do bloco custo_vida (excluindo a sub auto-criada 1:1 de grupo='dividas')
+  const subs = (cachedSubcategorias || []).filter((s) =>
+    s.divida_id === dividaId
+    && s.status === 'ativa'
+    && s.categorias?.grupo === 'custo_vida'
+  );
+  if (subs.length === 0) return '';
+  const totalPrev = subs.reduce((sum, s) => sum + (Number(s.valor_base) || 0), 0);
+  return `
+    <div class="div-card-meta-row" style="flex-direction:column;align-items:flex-start;gap:var(--space-1);">
+      <span class="div-card-meta-label">Custos vinculados (${subs.length})</span>
+      <ul style="margin:0;padding-left:var(--space-3);font-size:var(--fs-sm);color:var(--color-text-secondary);">
+        ${subs.map((s) => `<li><span>${escapeHtml(s.nome)}</span> <span class="tabular" style="color:var(--color-text-main);">— ${fmtCurrency(Number(s.valor_base) || 0)}</span></li>`).join('')}
+      </ul>
+      <span class="div-card-meta-item" style="font-weight:600;">Total mensal previsto: ${fmtCurrency(totalPrev)}</span>
     </div>
   `;
 }
