@@ -328,6 +328,69 @@
             <label class="field-label" for="div-observacao">Observação</label>
             <textarea class="textarea" id="div-observacao" rows="2" placeholder="Anotações sobre a dívida…"></textarea>
           </div>
+
+          <!-- ── Patrimônio: ativo subjacente ────────────────────────── -->
+          <div class="field">
+            <label class="checkbox-row" style="display:flex; align-items:center; gap:var(--space-2); cursor:pointer;">
+              <input type="checkbox" id="div-inclui-patrimonio">
+              <span><strong>Incluir no cálculo de patrimônio</strong></span>
+            </label>
+            <p class="field-hint">Marque para vincular um ativo (veículo ou imóvel) e somar (valor de mercado − saldo devedor) ao seu patrimônio total.</p>
+          </div>
+
+          <div id="div-ativo-section" class="hidden" style="padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-alt);">
+            <div class="field">
+              <label class="field-label">Tipo de ativo</label>
+              <div class="view-toggle view-toggle--text" id="div-ativo-tipo-toggle">
+                <button type="button" class="view-toggle-btn active" data-ativo-tipo="veiculo">Veículo (FIPE)</button>
+                <button type="button" class="view-toggle-btn" data-ativo-tipo="imovel">Imóvel</button>
+              </div>
+            </div>
+
+            <!-- ── Veículo (FIPE) ────────────────────────────────────── -->
+            <div id="div-ativo-veiculo">
+              <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+                <div class="field">
+                  <label class="field-label" for="div-fipe-marca">Marca</label>
+                  <select id="div-fipe-marca" class="select"><option value="">Carregando…</option></select>
+                </div>
+                <div class="field">
+                  <label class="field-label" for="div-fipe-modelo">Modelo</label>
+                  <select id="div-fipe-modelo" class="select" disabled><option value="">Selecione a marca</option></select>
+                </div>
+              </div>
+              <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+                <div class="field">
+                  <label class="field-label" for="div-fipe-ano">Ano / Combustível</label>
+                  <select id="div-fipe-ano" class="select" disabled><option value="">Selecione o modelo</option></select>
+                </div>
+                <div class="field">
+                  <label class="field-label" for="div-ativo-placa">Placa <span class="field-label-hint">(opcional)</span></label>
+                  <input type="text" id="div-ativo-placa" class="input" maxlength="8" placeholder="ABC-1234">
+                </div>
+              </div>
+              <p class="field-hint" id="div-fipe-valor-info" style="margin-top:var(--space-2);">Valor FIPE será exibido aqui após selecionar o ano.</p>
+            </div>
+
+            <!-- ── Imóvel (valor manual) ─────────────────────────────── -->
+            <div id="div-ativo-imovel" class="hidden">
+              <div class="field">
+                <label class="field-label" for="div-ativo-endereco">Endereço / Descrição <span class="field-label-hint">(opcional)</span></label>
+                <input type="text" id="div-ativo-endereco" class="input" placeholder="Ex: Apt 101, Av. Paulista 1000">
+              </div>
+              <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+                <div class="field">
+                  <label class="field-label" for="div-ativo-area">Área (m²) <span class="field-label-hint">(opcional)</span></label>
+                  <input type="text" inputmode="decimal" id="div-ativo-area" class="input input-decimal" placeholder="0,00">
+                </div>
+                <div class="field">
+                  <label class="field-label" for="div-ativo-valor-imovel">Valor de mercado atual *</label>
+                  <input type="text" inputmode="decimal" id="div-ativo-valor-imovel" class="input input-decimal" placeholder="R$ 0,00">
+                </div>
+              </div>
+              <p class="field-hint">Atualize manualmente quando o valor de mercado mudar.</p>
+            </div>
+          </div>
         </div>
 
         <div class="modal-footer" style="justify-content: space-between;">

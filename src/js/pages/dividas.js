@@ -18,7 +18,9 @@ import { parseDecimal, formatDecimal, autoAttachDecimalInputs } from '../lib/num
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 import { renderGantt } from './dividas/gantt.js';
 import { buildTabelaDisplay, calendarParcelaIdx, corrMensalDecimal } from './dividas/tabela.js';
+import * as ativoUI from './dividas/ativo.js';
 import * as dividasService from '../services/dividas.js';
+import * as ativosService from '../services/ativos.js';
 import { fetchExchangeRate } from '../lib/currency.js';
 
 /** Atalho: lê o valor de um input decimal BR (vírgula) e retorna número ou null. */
@@ -349,6 +351,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await initSidebar('dividas');
   initTutorial('dividas');
   bindEvents();
+  ativoUI.bindAtivoEvents();
 
   colVisEl = initColVisibility({
     storageKey: 'dividas',
@@ -1412,6 +1415,14 @@ async function openModalDivida(id) {
     autoUltimaEl.checked = lastFase?.auto === true;
   }
 
+  // Patrimônio: ativo subjacente
+  if (d) {
+    const { data: ativo } = await ativosService.getAtivoByDivida(d.id);
+    await ativoUI.populateAtivo(d, ativo);
+  } else {
+    ativoUI.reset();
+  }
+
   // Apply form mode (persists across open/close)
   setDivFormMode(divFormMode);
 
@@ -1527,6 +1538,17 @@ async function saveDivida(e) {
 
   const user = await getCurrentUser();
 
+  // Patrimônio: lê ativo do form antes do payload (pode lançar erro de validação)
+  let ativoData;
+  try {
+    ativoData = ativoUI.readAtivoFromForm(); // null se "Incluir" desmarcado
+  } catch (err) {
+    btn.disabled = false; btn.textContent = 'Salvar';
+    showToast(err.message, 'error', 6000);
+    return;
+  }
+  const incluiNoPatrimonio = ativoData !== null;
+
   const payload = {
     nome, credor, valor_total, moeda,
     juros_tipo, juros_percentual, juros_spread,
@@ -1535,6 +1557,7 @@ async function saveDivida(e) {
     indice_correcao, correcao_taxa,
     data_inicio, data_vencimento, status, conta_id, contato_id, observacao,
     tipo: editingTipo, // 'a_pagar' | 'a_receber'
+    inclui_no_patrimonio: incluiNoPatrimonio,
     user_id: user.id,
   };
 
@@ -1551,6 +1574,22 @@ async function saveDivida(e) {
   if (error) {
     btn.disabled = false; btn.textContent = 'Salvar';
     showToast(`${t('dividas.toast.erro_salvar', 'Erro ao salvar')}: ${error.message}`, 'error', 8000); return;
+  }
+
+  // Patrimônio: upsert do ativo subjacente (ou delete se desmarcado)
+  if (savedId) {
+    try {
+      if (ativoData) {
+        await ativosService.upsertAtivo({ ...ativoData, divida_id: savedId, user_id: user.id });
+      } else {
+        // Desmarcou "Incluir" — se existia ativo, remove
+        const { data: existing } = await ativosService.getAtivoByDivida(savedId);
+        if (existing) await ativosService.deleteAtivo(existing.id);
+      }
+    } catch (err) {
+      console.warn('[saveDivida] falha ao persistir ativo:', err);
+      showToast('Dívida salva, mas houve erro no ativo: ' + (err.message || err), 'warning', 8000);
+    }
   }
 
   // Auto-criar subcategoria vinculada

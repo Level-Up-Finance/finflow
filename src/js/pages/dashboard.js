@@ -31,6 +31,7 @@ let cachedOrcamento  = [];
 let cachedPagamentos = [];
 let cachedTransacoes = [];
 let cachedSelic      = null; // { selic: 14.5, cdi: 14.4, ipca: 4.14 }
+let cachedPatrimonio = null; // { dividas: [{ nome, valor_ativo, saldo_devedor }], investimentos: [{ nome, valor }] }
 
 
 // ── Widget Registry ───────────────────────────────────────────
@@ -94,11 +95,27 @@ const WIDGET_REGISTRY = [
     render: renderCambio,
   },
   {
+    id: 'patrimonio',
+    label: 'Patrimônio (ativos)',
+    defaultSize: 'half',
+    defaultVisible: true,
+    defaultOrder: 4,
+    sizes: ['half', 'wide'],
+    bodyHTML: () => `<div class="dash-card">
+      <header class="dash-card-header">
+        <h2 class="dash-card-title">Patrimônio (ativos)</h2>
+        <p class="dash-card-hint">Ativos selecionados em Financiamentos e Investimentos.</p>
+      </header>
+      <div class="dash-card-body" id="dash-patrimonio"><div class="dash-empty">Carregando…</div></div>
+    </div>`,
+    render: renderPatrimonio,
+  },
+  {
     id: 'distribuicao',
     label: 'Distribuição do mês',
     defaultSize: 'half',
     defaultVisible: true,
-    defaultOrder: 4,
+    defaultOrder: 5,
     sizes: ['half', 'wide'],
     bodyHTML: () => `<div class="dash-card">
       <header class="dash-card-header">
@@ -114,7 +131,7 @@ const WIDGET_REGISTRY = [
     label: 'Próximos 7 dias',
     defaultSize: 'half',
     defaultVisible: true,
-    defaultOrder: 5,
+    defaultOrder: 6,
     sizes: ['half', 'wide'],
     bodyHTML: () => `<div class="dash-card">
       <header class="dash-card-header">
@@ -130,7 +147,7 @@ const WIDGET_REGISTRY = [
     label: 'Top gastos do mês',
     defaultSize: 'half',
     defaultVisible: false,
-    defaultOrder: 6,
+    defaultOrder: 7,
     sizes: ['half', 'wide'],
     bodyHTML: () => `<div class="dash-card">
       <header class="dash-card-header">
@@ -146,7 +163,7 @@ const WIDGET_REGISTRY = [
     label: 'Transações recentes',
     defaultSize: 'wide',
     defaultVisible: false,
-    defaultOrder: 7,
+    defaultOrder: 8,
     sizes: ['half', 'wide'],
     bodyHTML: () => `<div class="dash-card">
       <header class="dash-card-header">
@@ -162,7 +179,7 @@ const WIDGET_REGISTRY = [
     label: 'Atalhos rápidos',
     defaultSize: 'wide',
     defaultVisible: true,
-    defaultOrder: 8,
+    defaultOrder: 9,
     sizes: ['half', 'wide'],
     bodyHTML: () => `<section class="dash-shortcuts">
       <a href="/pagamentos.html" class="dash-shortcut">
@@ -488,7 +505,7 @@ async function loadAll() {
 
   const mesAno = isoMonth(viewYear, viewMonth);
 
-  const [profile, orcamento, pagamentos, transacoes] = await Promise.all([
+  const [profile, orcamento, pagamentos, transacoes, dividasPatr, projetosPatr, ativos] = await Promise.all([
     supabase.from('profiles').select('nome, apelido').eq('id', user.id).maybeSingle(),
     supabase.from('orcamento_geral').select('*, subcategorias(*, categorias(*))').eq('mes_ano', mesAno),
     supabase.from('pagamentos')
@@ -500,12 +517,35 @@ async function loadAll() {
       .order('data', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(10),
+    // Patrimônio: dívidas e investimentos selecionados + ativos
+    supabase.from('dividas').select('id, nome, valor_pago, valor_total, status').eq('inclui_no_patrimonio', true),
+    supabase.from('projetos_investimento').select('id, nome, saldo_inicial').eq('inclui_no_patrimonio', true),
+    supabase.from('ativos_subjacentes').select('divida_id, valor_atual, tipo'),
   ]);
 
   cachedProfile    = profile.data || {};
   cachedOrcamento  = (orcamento.data  || []).filter((e) => e.subcategorias?.status === 'ativa');
   cachedPagamentos = (pagamentos.data || []).filter((p) => p.subcategorias?.status === 'ativa');
   cachedTransacoes = transacoes.data || [];
+
+  // Compõe estrutura de patrimônio
+  const ativoByDivida = new Map((ativos.data || []).map((a) => [a.divida_id, a]));
+  cachedPatrimonio = {
+    dividas: (dividasPatr.data || []).map((d) => {
+      const ativo = ativoByDivida.get(d.id);
+      const saldo = Math.max(0, Number(d.valor_total || 0) - Number(d.valor_pago || 0));
+      return {
+        nome: d.nome,
+        valor_ativo: Number(ativo?.valor_atual || 0),
+        saldo_devedor: saldo,
+        tem_ativo: !!ativo,
+      };
+    }),
+    investimentos: (projetosPatr.data || []).map((p) => ({
+      nome: p.nome,
+      valor: Number(p.saldo_inicial || 0),
+    })),
+  };
 
   await Promise.all([refreshRates(), fetchSelic()]);
 }
@@ -651,6 +691,64 @@ function renderKPIs() {
       <div class="dash-kpi-value">${subsAtivas.size}</div>
       <div class="dash-kpi-sub">com pagamento neste mês</div>
     </div>
+  `;
+}
+
+// ── Patrimônio ────────────────────────────────────────────────
+
+function renderPatrimonio() {
+  const host = document.getElementById('dash-patrimonio');
+  if (!host) return;
+  const data = cachedPatrimonio;
+
+  const dividasComAtivo = (data?.dividas || []).filter((d) => d.tem_ativo);
+  const investimentos   = data?.investimentos || [];
+
+  if (dividasComAtivo.length === 0 && investimentos.length === 0) {
+    host.innerHTML = `
+      <div class="dash-empty">
+        Nenhum ativo selecionado.<br>
+        Marque "Incluir no patrimônio" ao editar uma <a href="/dividas.html">dívida</a> ou um <a href="/investimentos.html">projeto de investimento</a>.
+      </div>`;
+    return;
+  }
+
+  const totalDividas = dividasComAtivo.reduce((s, d) => s + (d.valor_ativo - d.saldo_devedor), 0);
+  const totalInvest  = investimentos.reduce((s, i) => s + i.valor, 0);
+  const patrimonioFixo = totalDividas + totalInvest;
+  const fmt = (n) => formatCurrencyHTML(n, 'BRL');
+
+  host.innerHTML = `
+    <div class="dash-patrimonio-total">
+      <span class="dash-patrimonio-label">Patrimônio fixo</span>
+      <strong class="dash-patrimonio-value" style="font-size:var(--fs-2xl);">${fmt(patrimonioFixo)}</strong>
+      <span class="dash-patrimonio-hint" style="display:block;color:var(--color-text-muted);font-size:var(--fs-sm);margin-top:var(--space-1);">
+        ${dividasComAtivo.length} ${dividasComAtivo.length === 1 ? 'ativo' : 'ativos'} via financiamentos · ${investimentos.length} ${investimentos.length === 1 ? 'investimento' : 'investimentos'}
+      </span>
+    </div>
+    ${dividasComAtivo.length > 0 ? `
+      <div style="margin-top:var(--space-3);">
+        <p style="font-weight:600;font-size:var(--fs-sm);margin-bottom:var(--space-2);color:var(--color-text-secondary);">Ativos físicos (Financiamentos)</p>
+        ${dividasComAtivo.map((d) => `
+          <div style="display:flex;justify-content:space-between;padding:var(--space-1) 0;font-size:var(--fs-sm);">
+            <span>${escapeHtml(d.nome)}</span>
+            <span class="tabular">${fmt(d.valor_ativo - d.saldo_devedor)}</span>
+          </div>
+        `).join('')}
+      </div>` : ''}
+    ${investimentos.length > 0 ? `
+      <div style="margin-top:var(--space-3);">
+        <p style="font-weight:600;font-size:var(--fs-sm);margin-bottom:var(--space-2);color:var(--color-text-secondary);">Investimentos</p>
+        ${investimentos.map((i) => `
+          <div style="display:flex;justify-content:space-between;padding:var(--space-1) 0;font-size:var(--fs-sm);">
+            <span>${escapeHtml(i.nome)}</span>
+            <span class="tabular">${fmt(i.valor)}</span>
+          </div>
+        `).join('')}
+      </div>` : ''}
+    <p style="margin-top:var(--space-3);font-size:var(--fs-xs);color:var(--color-text-muted);">
+      Patrimônio corrente (com saldos de contas) em breve.
+    </p>
   `;
 }
 

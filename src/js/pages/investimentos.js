@@ -954,6 +954,7 @@ function openProjetoModal(p = null, prefill = null) {
   document.getElementById('proj-meta-valor').value    = p?.meta_valor ?? (prefill?.meta_valor ?? '');
   document.getElementById('proj-data-alvo').value     = p?.data_alvo || (prefill?.data_alvo || '');
   document.getElementById('proj-saldo-inicial').value = p?.saldo_inicial ?? (prefill?.saldo_inicial ?? '');
+  document.getElementById('proj-inclui-patrimonio').checked = Boolean(p?.inclui_no_patrimonio);
 
   initContatoPickerOnce();
   contatoPicker?.setValue(p?.contato_id || '');
@@ -1038,6 +1039,7 @@ async function saveProjeto(event) {
     data_alvo:   document.getElementById('proj-data-alvo').value || null,
     saldo_inicial: parseUserNumber(document.getElementById('proj-saldo-inicial').value) || 0,
     contato_id:  contatoPicker?.getValue() || null,
+    inclui_no_patrimonio: document.getElementById('proj-inclui-patrimonio').checked,
   };
 
   // Compromisso vinculado: em modo criação OU em modo "Configurar compromisso"
