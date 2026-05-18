@@ -106,7 +106,7 @@ async function loadAll() {
   const [cats, subs, projs, divs] = await Promise.all([
     supabase.from('categorias').select('*').order('ordem'),
     supabase.from('subcategorias').select('*').neq('status', 'arquivada'),
-    supabase.from('projetos_investimento').select('id, nome, cor, meta_valor, saldo_inicial').order('nome'),
+    supabase.from('projetos_investimento').select('id, nome, cor, meta_valor, saldo_inicial, status').order('nome'),
     supabase.from('dividas').select('id, nome, valor_total, valor_pago, credor, status').order('nome'),
   ]);
 
@@ -627,31 +627,17 @@ function renderSubVinculoPicker(cat, sub) {
   row.classList.toggle('hidden', !isCustoVida);
   if (!isCustoVida) return;
 
-  // Monta opções agrupadas: Projetos primeiro, depois Dívidas.
+  // Monta opções: apenas projetos de investimento ativos.
   const projetos = (cachedProjetos || [])
     .filter((p) => p.status === 'ativo')
     .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
-  const dividas = (cachedDividas || [])
-    .filter((d) => d.status !== 'Arquivada')
-    .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
 
   const opts = ['<option value="">— Não vincular —</option>'];
-  if (projetos.length > 0) {
-    opts.push('<optgroup label="Projetos de Investimento">');
-    for (const p of projetos) opts.push(`<option value="projeto:${p.id}">${escapeHtml(p.nome)}</option>`);
-    opts.push('</optgroup>');
-  }
-  if (dividas.length > 0) {
-    opts.push('<optgroup label="Financiamentos e Dívidas">');
-    for (const d of dividas) opts.push(`<option value="divida:${d.id}">${escapeHtml(d.nome)}</option>`);
-    opts.push('</optgroup>');
-  }
+  for (const p of projetos) opts.push(`<option value="projeto:${p.id}">${escapeHtml(p.nome)}</option>`);
   sel.innerHTML = opts.join('');
 
   // Pré-seleciona valor existente
-  let preset = '';
-  if (sub?.projeto_id) preset = `projeto:${sub.projeto_id}`;
-  else if (sub?.divida_id) preset = `divida:${sub.divida_id}`;
+  const preset = sub?.projeto_id ? `projeto:${sub.projeto_id}` : '';
   sel.value = preset;
 }
 
