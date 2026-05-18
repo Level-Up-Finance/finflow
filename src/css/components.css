@@ -8644,6 +8644,28 @@ td .currency-split {
   padding: var(--space-4) 0;
 }
 
+.bloco-section-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.bloco-chevron {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-secondary);
+  transition: transform 0.2s ease;
+}
+
+.bloco-section.bloco-collapsed .bloco-chevron {
+  transform: rotate(-90deg);
+}
+
+.bloco-section.bloco-collapsed .bloco-body {
+  display: none;
+}
+
 /* ============================================================
    TRANSAÇÕES — KPIs compactos, toolbar, tabela, create row inline
    ============================================================ */

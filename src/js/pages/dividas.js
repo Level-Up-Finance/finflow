@@ -280,6 +280,7 @@ const STATUS_CONFIG = {
 };
 
 const TERMINADO_STATUS = new Set(['Quitada', 'Arquivada']);
+const DIVIDA_COLLAPSED_KEY = 'finflow_div_bloco_collapsed';
 
 const BLOCOS = [
   {
@@ -641,6 +642,9 @@ function render() {
   }
   emptyState.classList.add('hidden');
 
+  let collapsedSet;
+  try { collapsedSet = new Set(JSON.parse(localStorage.getItem(DIVIDA_COLLAPSED_KEY) || '[]')); } catch { collapsedSet = new Set(); }
+
   let html = '';
   for (const bloco of BLOCOS) {
     const items = cachedDividas.filter(bloco.filter);
@@ -654,18 +658,38 @@ function render() {
     } else {
       content = `<div class="div-cards">${items.map(renderCard).join('')}</div>`;
     }
+    const collapsed = collapsedSet.has(bloco.id) ? ' bloco-collapsed' : '';
     html += `
-      <div class="bloco-section">
+      <div class="bloco-section${collapsed}" data-bloco="${bloco.id}">
         <div class="bloco-section-header">
           <span class="bloco-section-label">${bloco.label}</span>
           <span class="bloco-section-count">${items.length}</span>
+          <svg class="bloco-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
-        ${content}
+        <div class="bloco-body">
+          ${content}
+        </div>
       </div>`;
   }
 
   container.innerHTML = html;
   bindRowClicks();
+  bindBlocoToggles(DIVIDA_COLLAPSED_KEY, 'div-container');
+}
+
+function bindBlocoToggles(storageKey, containerId) {
+  document.querySelectorAll(`#${containerId} .bloco-section-header`).forEach((header) => {
+    header.addEventListener('click', () => {
+      const section = header.closest('.bloco-section');
+      const blocoId = section.dataset.bloco;
+      section.classList.toggle('bloco-collapsed');
+      let collapsed;
+      try { collapsed = new Set(JSON.parse(localStorage.getItem(storageKey) || '[]')); } catch { collapsed = new Set(); }
+      if (section.classList.contains('bloco-collapsed')) collapsed.add(blocoId);
+      else collapsed.delete(blocoId);
+      localStorage.setItem(storageKey, JSON.stringify([...collapsed]));
+    });
+  });
 }
 
 // Bind click nos rows de tabela/gantt para abrir modal de edição

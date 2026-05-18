@@ -46,6 +46,7 @@ const STATUS_LABELS = {
   pausado: 'Pausado',
   arquivado: 'Arquivado',
 };
+const INV_COLLAPSED_KEY = 'finflow_inv_bloco_collapsed';
 
 const BLOCOS = [
   {
@@ -287,6 +288,9 @@ async function render() {
 
   if (colVisEl) colVisEl.classList.toggle('hidden', viewMode !== 'table');
 
+  let collapsedSet;
+  try { collapsedSet = new Set(JSON.parse(localStorage.getItem(INV_COLLAPSED_KEY) || '[]')); } catch { collapsedSet = new Set(); }
+
   let html = '';
   for (const bloco of BLOCOS) {
     const items = cachedProjetos.filter(bloco.filter);
@@ -300,18 +304,23 @@ async function render() {
     } else {
       content = `<div class="projetos-grid">${items.map(renderCard).join('')}</div>`;
     }
+    const collapsed = collapsedSet.has(bloco.id) ? ' bloco-collapsed' : '';
     html += `
-      <div class="bloco-section">
+      <div class="bloco-section${collapsed}" data-bloco="${bloco.id}">
         <div class="bloco-section-header">
           <span class="bloco-section-label">${bloco.label}</span>
           <span class="bloco-section-count">${items.length}</span>
+          <svg class="bloco-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
-        ${content}
+        <div class="bloco-body">
+          ${content}
+        </div>
       </div>`;
   }
 
   container.innerHTML = html;
   bindCardClicks();
+  bindBlocoToggles(INV_COLLAPSED_KEY, 'projetos-container');
 }
 
 // -----------------------------
@@ -856,6 +865,21 @@ document.addEventListener('click', (e) => {
   timelineZoom = btn.dataset.timelineZoom;
   if (viewMode === 'timeline') render();
 });
+
+function bindBlocoToggles(storageKey, containerId) {
+  document.querySelectorAll(`#${containerId} .bloco-section-header`).forEach((header) => {
+    header.addEventListener('click', () => {
+      const section = header.closest('.bloco-section');
+      const blocoId = section.dataset.bloco;
+      section.classList.toggle('bloco-collapsed');
+      let collapsed;
+      try { collapsed = new Set(JSON.parse(localStorage.getItem(storageKey) || '[]')); } catch { collapsed = new Set(); }
+      if (section.classList.contains('bloco-collapsed')) collapsed.add(blocoId);
+      else collapsed.delete(blocoId);
+      localStorage.setItem(storageKey, JSON.stringify([...collapsed]));
+    });
+  });
+}
 
 function bindCardClicks() {
   document.querySelectorAll('.projeto-card, .projeto-tabela-row, .timeline-row').forEach((el) => {

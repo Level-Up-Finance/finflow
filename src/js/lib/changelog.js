@@ -7,6 +7,16 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-17-grupos-minimizaveis',
+    version: '0.6.4',
+    date: '17/05/2026',
+    title: 'Dívidas e Investimentos — grupos minimizáveis + reset de dados',
+    items: [
+      { type: 'new', text: 'Grupos de Dívidas e Investimentos agora podem ser minimizados: clique no cabeçalho do grupo para recolher ou expandir. Estado salvo no localStorage.' },
+      { type: 'fix', text: 'Reset completo de dívidas e projetos de investimento corrigido: a migration anterior falhava silenciosamente por FK em transacoes.divida_id. Agora desvincula transações antes de deletar.' },
+    ],
+  },
+  {
     id: '2026-05-17-dividas-investimentos-autolink',
     version: '0.6.3',
     date: '17/05/2026',
