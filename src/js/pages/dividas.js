@@ -886,6 +886,7 @@ function renderCard(d) {
           <span class="div-card-nome">${d.nome}</span>
           <span class="div-card-badge" style="color:${st.color}; background:${st.bg};">${st.label}</span>
           ${d.tipo === 'a_receber' ? `<span class="div-card-tipo-badge div-card-tipo-badge--receber" title="Empréstimo a receber">↙ A receber</span>` : ''}
+          ${d.inclui_no_patrimonio ? `<span class="tag-patrimonio" title="Incluído no cálculo de patrimônio">💎 Patrimônio</span>` : ''}
           ${quitada && pago < total ? `<span class="tag-parcial" title="Encerrada antes de quitar o valor total">Parcial</span>` : ''}
         </div>
         <span class="div-card-credor">${d.tipo === 'a_receber' ? `Devedor: ${d.credor || '—'}` : (d.credor || '')}</span>

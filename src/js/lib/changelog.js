@@ -7,6 +7,22 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-18-patrimonio-fipe',
+    version: '0.7.0',
+    date: '18/05/2026',
+    title: 'Patrimônio — cálculo com ativos físicos e investimentos',
+    items: [
+      { type: 'new', text: 'Novo conceito: marque "Incluir no cálculo de patrimônio" no modal de qualquer financiamento ou projeto de investimento para somá-lo ao seu patrimônio total.' },
+      { type: 'new', text: 'Ativo subjacente em financiamentos: vincule um veículo (busca FIPE em tempo real) ou um imóvel (valor manual) ao financiamento. Patrimônio do ativo = valor atual − saldo devedor.' },
+      { type: 'new', text: 'Wizard FIPE: 3 selects encadeados (marca → modelo → ano) que buscam direto da API parallelum.com.br. Valor FIPE oficial exibido após seleção do ano, com mês de referência.' },
+      { type: 'new', text: 'Cache de 24h da API FIPE no localStorage — segunda consulta é instantânea.' },
+      { type: 'new', text: 'Novo widget no Dashboard: "Patrimônio (ativos)" com total + breakdown por item (ativos físicos e investimentos).' },
+      { type: 'new', text: 'Tag visual "💎 Patrimônio" nos cards de financiamentos e projetos selecionados.' },
+      { type: 'improvement', text: 'Migration 0102 cria tabela ativos_subjacentes (1:1 com dívida via FK unique) + colunas inclui_no_patrimonio em dividas e projetos_investimento.' },
+      { type: 'fix', text: 'Patrimônio corrente (incluindo saldos de contas) virá em iteração futura — exibido como hint no widget.' },
+    ],
+  },
+  {
     id: '2026-05-17-fix-autocriacao-divida',
     version: '0.6.5',
     date: '17/05/2026',

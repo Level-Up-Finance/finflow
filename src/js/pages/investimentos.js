@@ -479,6 +479,7 @@ function renderCard(p) {
         <div class="projeto-card-titles">
           <h3 class="projeto-card-name">${escapeHtml(p.nome)}</h3>
           <span class="projeto-card-status status-${p.status}">${STATUS_LABELS[p.status] || p.status}</span>
+          ${p.inclui_no_patrimonio ? `<span class="tag-patrimonio" title="Incluído no cálculo de patrimônio">💎 Patrimônio</span>` : ''}
           ${isParcial ? `<span class="tag-parcial" title="Encerrado antes de atingir a meta">Parcial</span>` : ''}
         </div>
       </header>
