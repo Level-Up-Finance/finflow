@@ -4,6 +4,7 @@
 import { initTheme } from '../lib/theme.js';
 import { mountHeaderUserMenu } from './header-user-menu.js';
 import { CHANGELOG } from '../lib/changelog.js';
+import { isCurrentUserAdmin } from '../lib/auth.js';
 
 function getUnseenCount() {
   if (CHANGELOG.length === 0) return 0;
@@ -67,6 +68,7 @@ export async function initSidebar(activePage) {
   if (!container) return;
 
   const unseenCount = getUnseenCount();
+  const isAdmin = await isCurrentUserAdmin();
 
   container.innerHTML = `
     <aside class="sidebar">
@@ -92,10 +94,11 @@ export async function initSidebar(activePage) {
         }).join('')}
       </nav>
       <div class="sidebar-footer">
+        ${isAdmin ? `
         <a href="/admin.html" class="sidebar-config ${activePage === 'admin' || activePage === 'desenvolvimento' ? 'active' : ''}" aria-label="Admin">
           <span class="sidebar-link-icon">${ICONS.admin}</span>
           <span class="sidebar-link-label">Admin</span>
-        </a>
+        </a>` : ''}
         <a href="/configuracoes.html" class="sidebar-config ${activePage === 'configuracoes' ? 'active' : ''}" aria-label="Configurações">
           <span class="sidebar-link-icon">${ICONS.configuracoes}</span>
           <span class="sidebar-link-label">Configurações</span>

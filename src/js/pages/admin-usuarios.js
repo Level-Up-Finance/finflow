@@ -1,7 +1,7 @@
 // =============================================================
 // FinFlow — Admin: Usuários
 // =============================================================
-import { guardSession }            from '../lib/auth.js';
+import { guardAdmin }              from '../lib/auth.js';
 import { initSidebar }             from '../components/sidebar.js';
 import { supabase }                from '../lib/supabase.js';
 import { showToast }               from '../components/toast.js';
@@ -27,7 +27,7 @@ export async function init() {
 
 // Standalone (admin-usuarios.html acessado diretamente)
 document.addEventListener('DOMContentLoaded', async () => {
-  await guardSession();
+  await guardAdmin();
   await initSidebar('admin');
   await loadStrings();
   applyTranslationsToDom();

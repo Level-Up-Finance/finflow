@@ -70,3 +70,44 @@ export async function logout() {
   await supabase.auth.signOut();
   window.location.href = LOGIN_PATH;
 }
+
+/**
+ * Checa se o usuário atual é admin (profiles.is_admin = true).
+ * Cache em memória por sessão de página — evita roundtrip a cada call.
+ */
+let _isAdminCache = null;
+export async function isCurrentUserAdmin() {
+  if (_isAdminCache !== null) return _isAdminCache;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      _isAdminCache = false;
+      return false;
+    }
+    const { data } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .maybeSingle();
+    _isAdminCache = Boolean(data?.is_admin);
+    return _isAdminCache;
+  } catch {
+    _isAdminCache = false;
+    return false;
+  }
+}
+
+/**
+ * Guard pra páginas admin. Roda guardSession e, se OK, checa is_admin.
+ * Não-admin é redirecionado pro dashboard.
+ */
+export async function guardAdmin() {
+  const session = await guardSession();
+  if (!session) return null;
+  const isAdmin = await isCurrentUserAdmin();
+  if (!isAdmin) {
+    window.location.href = HOME_PATH;
+    return null;
+  }
+  return session;
+}

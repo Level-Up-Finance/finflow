@@ -1,7 +1,7 @@
 // =============================================================
 // FinFlow — Admin: página combinada (Feedback + Usuários + Idiomas)
 // =============================================================
-import { guardSession } from '../lib/auth.js';
+import { guardAdmin } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
 import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
@@ -9,7 +9,7 @@ const initialized = { usuarios: false, idiomas: false };
 const VALID_TABS   = new Set(['usuarios', 'idiomas']);
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await guardSession();
+  await guardAdmin();
   await initSidebar('admin');
   await loadStrings();
   applyTranslationsToDom();

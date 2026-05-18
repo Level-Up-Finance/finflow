@@ -1,7 +1,7 @@
 // =============================================================
 // FinFlow — Admin: Idiomas / i18n
 // =============================================================
-import { guardSession }                   from '../lib/auth.js';
+import { guardAdmin }                     from '../lib/auth.js';
 import { initSidebar }                    from '../components/sidebar.js';
 import { supabase }                       from '../lib/supabase.js';
 import { showToast }                      from '../components/toast.js';
@@ -32,7 +32,7 @@ export async function init() {
 
 // Standalone (admin-i18n.html acessado diretamente)
 document.addEventListener('DOMContentLoaded', async () => {
-  await guardSession();
+  await guardAdmin();
   await initSidebar('admin');
   await loadTextos();
   applyTranslationsToDom();
