@@ -635,7 +635,8 @@ async function renderAReceberSummary(dividasAReceber) {
   }
 
   // Breakdown por moeda (BRL primeiro, demais em ordem)
-  const hasMultiple = allCodes.length > 1;
+  // Mostra sempre que houver moeda não-BRL (conversão implica exibir o original)
+  const hasMultiple = nonBRL.length > 0;
   const breakdownHTML = hasMultiple
     ? ['BRL', ...nonBRL.sort()]
         .filter(code => byCurrency[code])
