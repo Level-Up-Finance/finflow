@@ -105,5 +105,8 @@ export function attachDecimalInput(el, { decimals = 2 } = {}) {
  * dentro do escopo dado (default: document).
  */
 export function autoAttachDecimalInputs(scope = document) {
-  scope.querySelectorAll('input.input-decimal').forEach((el) => attachDecimalInput(el));
+  scope.querySelectorAll('input.input-decimal').forEach((el) => {
+    const decimals = parseInt(el.dataset.decimals || '2', 10);
+    attachDecimalInput(el, { decimals });
+  });
 }
