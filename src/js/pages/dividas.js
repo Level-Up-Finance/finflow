@@ -1577,11 +1577,11 @@ async function regenerateOrcamentoGeralForDivida(subId, dvd, tabela) {
 }
 
 /**
- * Cria um compromisso placeholder (inativo) para uma dívida básica (sem regime).
- * Idempotente: não duplica se já existir um compromisso vinculado.
+ * Vincula ou cria um compromisso placeholder para uma dívida básica (sem regime).
+ * Idempotente. Se já existe sub sem divida_id com o mesmo nome, linka ela em vez de criar nova.
  */
 async function ensureBareLinkForDivida(dividaId, dvd, user) {
-  // Já existe sub vinculada?
+  // Já existe sub vinculada a esta dívida?
   const { data: existing } = await supabase.from('subcategorias')
     .select('id').eq('divida_id', dividaId).limit(1);
   if (existing && existing.length > 0) return;
@@ -1591,6 +1591,19 @@ async function ensureBareLinkForDivida(dividaId, dvd, user) {
     .select('id, grupo').eq('user_id', dvd.user_id).eq('grupo', 'dividas').limit(1);
   const catDividas = (cats || [])[0];
   if (!catDividas) return;
+
+  // Se já existe sub com mesmo nome sem vínculo, apenas linka — não duplica
+  const { data: unlinked } = await supabase.from('subcategorias')
+    .select('id')
+    .eq('user_id', dvd.user_id)
+    .eq('categoria_id', catDividas.id)
+    .eq('nome', dvd.nome)
+    .is('divida_id', null)
+    .limit(1);
+  if (unlinked && unlinked.length > 0) {
+    await supabase.from('subcategorias').update({ divida_id: dividaId }).eq('id', unlinked[0].id);
+    return;
+  }
 
   const today = new Date().toISOString().slice(0, 10);
   const compTipo = dvd.tipo === 'a_receber' ? 'Receita' : 'Despesa';
@@ -1610,7 +1623,7 @@ async function ensureBareLinkForDivida(dividaId, dvd, user) {
     moeda:          dvd.moeda || 'BRL',
     valor_base:     0,
     valor_variavel: false,
-    status:         'inativa',
+    status:         'ativa',
   });
   if (error) console.warn('[ensureBareLinkForDivida]', error);
 }

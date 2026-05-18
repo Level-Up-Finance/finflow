@@ -1143,10 +1143,11 @@ async function ensureSubcategoriaForProjeto(projetoId, userId, nomeProjeto, comp
 }
 
 /**
- * Cria um compromisso placeholder (inativo) para um projeto sem configuração de aporte.
- * Idempotente: não duplica se já existir um compromisso vinculado.
+ * Vincula ou cria um compromisso placeholder para um projeto sem configuração de aporte.
+ * Idempotente. Se já existe sub sem projeto_id com o mesmo nome, linka ela em vez de criar nova.
  */
 async function ensureBareLinkForProjeto(projetoId, userId, proj) {
+  // Já existe sub vinculada a este projeto?
   const { data: existing } = await supabase.from('subcategorias')
     .select('id').eq('projeto_id', projetoId).limit(1);
   if (existing && existing.length > 0) return;
@@ -1155,6 +1156,19 @@ async function ensureBareLinkForProjeto(projetoId, userId, proj) {
   const catInvest = cachedCategoriasInvest.find((c) => /^investimentos?$/i.test(c.nome))
     || cachedCategoriasInvest[0];
   if (!catInvest) return;
+
+  // Se já existe sub com mesmo nome sem vínculo, apenas linka — não duplica
+  const { data: unlinked } = await supabase.from('subcategorias')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('categoria_id', catInvest.id)
+    .eq('nome', proj.nome)
+    .is('projeto_id', null)
+    .limit(1);
+  if (unlinked && unlinked.length > 0) {
+    await supabase.from('subcategorias').update({ projeto_id: projetoId }).eq('id', unlinked[0].id);
+    return;
+  }
 
   const today = new Date().toISOString().slice(0, 10);
   const { error } = await supabase.from('subcategorias').insert({
@@ -1170,7 +1184,7 @@ async function ensureBareLinkForProjeto(projetoId, userId, proj) {
     moeda:          'BRL',
     valor_base:     0,
     valor_variavel: false,
-    status:         'inativa',
+    status:         'ativa',
   });
   if (error) console.warn('[ensureBareLinkForProjeto]', error);
 }
