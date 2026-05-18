@@ -311,13 +311,30 @@ async function ensurePagamentosForMonth(year, month) {
     }
   }
 
-  if (rows.length === 0) return;
+  if (rows.length > 0) {
+    const { error: insertError } = await supabase.from('pagamentos').upsert(rows, {
+      onConflict: 'user_id,subcategoria_id,mes_ano,data_vencimento',
+      ignoreDuplicates: true,
+    });
+    if (insertError) console.error('[ensurePagamentosForMonth]', insertError);
+  }
 
-  const { error: insertError } = await supabase.from('pagamentos').upsert(rows, {
-    onConflict: 'user_id,subcategoria_id,mes_ano,data_vencimento',
-    ignoreDuplicates: true,
-  });
-  if (insertError) console.error('[ensurePagamentosForMonth]', insertError);
+  // Para compromissos de dívida: sincroniza valor_previsto/valor_real de entradas pendentes
+  // com o orcamento_geral atual. Necessário porque o upsert acima usa ignoreDuplicates:true
+  // e não atualiza linhas já existentes quando a dívida foi editada após a criação.
+  const PENDENTE = ['Agendado', 'Atrasado', 'A Transferir'];
+  for (const orc of orcamentos) {
+    const sub = cachedSubcategorias.find((s) => s.id === orc.subcategoria_id);
+    if (!sub?.divida_id || Number(orc.valor_previsto) <= 0) continue;
+    const occThisMonth = countOccurrencesInMonth(sub, year, month) || 1;
+    const valorSinc = Number((Number(orc.valor_previsto) / occThisMonth).toFixed(2));
+    await supabase
+      .from('pagamentos')
+      .update({ valor_previsto: valorSinc, valor_real: valorSinc })
+      .eq('subcategoria_id', orc.subcategoria_id)
+      .eq('mes_ano', mesAno)
+      .in('status', PENDENTE);
+  }
 }
 
 /**

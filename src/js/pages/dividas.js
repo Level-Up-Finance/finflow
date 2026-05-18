@@ -1727,6 +1727,20 @@ async function regenerateOrcamentoGeralForDivida(subId, dvd, tabela) {
   if (insErr) {
     console.error('[regenerateOrcamento insert]', insErr);
     showToast('Compromisso criado, mas falha ao gerar valores mensais: ' + insErr.message, 'warning', 8000);
+    return;
+  }
+
+  // Sincroniza valor_previsto/valor_real em pagamentos pendentes para refletir os novos valores.
+  // Necessário porque o upsert de pagamentos usa ignoreDuplicates:true — entradas já existentes
+  // ficam com valor antigo mesmo após o orcamento ser regenerado.
+  const PENDENTE = ['Agendado', 'Atrasado', 'A Transferir'];
+  for (const row of rows) {
+    await supabase
+      .from('pagamentos')
+      .update({ valor_previsto: row.valor_previsto, valor_real: row.valor_previsto })
+      .eq('subcategoria_id', subId)
+      .eq('mes_ano', row.mes_ano)
+      .in('status', PENDENTE);
   }
 }
 
