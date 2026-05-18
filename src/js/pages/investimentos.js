@@ -480,7 +480,6 @@ function renderCard(p) {
           <h3 class="projeto-card-name">${escapeHtml(p.nome)}</h3>
           <span class="projeto-card-status status-${p.status}">${STATUS_LABELS[p.status] || p.status}</span>
           ${isParcial ? `<span class="tag-parcial" title="Encerrado antes de atingir a meta">Parcial</span>` : ''}
-          ${p.status !== 'arquivado' && subsCount === 0 ? `<button class="div-card-pendente-badge proj-btn-editar" data-id="${p.id}" type="button" title="Configurar compromisso deste projeto">⚠ Configurar compromisso</button>` : ''}
         </div>
       </header>
       ${p.descricao ? `<p class="projeto-card-desc">${escapeHtml(p.descricao)}</p>` : ''}

@@ -752,7 +752,6 @@ function renderCard(d) {
           <span class="div-card-badge" style="color:${st.color}; background:${st.bg};">${st.label}</span>
           ${d.tipo === 'a_receber' ? `<span class="div-card-tipo-badge div-card-tipo-badge--receber" title="Empréstimo a receber">↙ A receber</span>` : ''}
           ${quitada && pago < total ? `<span class="tag-parcial" title="Encerrada antes de quitar o valor total">Parcial</span>` : ''}
-          ${d.status !== 'Arquivada' && !cachedDividaCompromissoIds.has(d.id) ? `<button class="div-card-pendente-badge div-btn-editar" data-id="${d.id}" type="button" title="Configurar compromisso desta dívida">⚠ Configurar compromisso</button>` : ''}
         </div>
         <span class="div-card-credor">${d.tipo === 'a_receber' ? `Devedor: ${d.credor || '—'}` : (d.credor || '')}</span>
       </div>
