@@ -852,7 +852,7 @@ function renderCard(d) {
     if (!d.regime || !d.n_parcelas || d.status === 'Quitada') return null;
     const pagas = d.parcelas_pagas || 0;
     if (pagas >= d.n_parcelas) return null;
-    return buildTabelaDisplay(d)[pagas]?.parcela ?? null;
+    return buildTabelaDisplay(d)[calendarParcelaIdx(d)]?.parcela ?? null;
   })();
 
   const moeda = d.moeda || 'BRL';
@@ -2323,7 +2323,7 @@ function openTabelaAmort(id) {
   const saldoDevedor = pagas > 0
     ? (tabela[pagas - 1]?.saldo_final ?? Number(d.valor_total))
     : Number(d.valor_total);
-  const proxParcelaVal = pagas < n ? tabela[pagas]?.parcela : null;
+  const proxParcelaVal = pagas < n ? tabela[calendarParcelaIdx(d)]?.parcela : null;
 
   document.getElementById('tabela-amort-summary').innerHTML = `
     <div class="tabela-amort-summary-item">
@@ -2476,6 +2476,21 @@ function buildTabelaDisplay(d) {
   futureRows = futureRows.map((r) => ({ ...r, n: pagas + r.n }));
 
   return [...paidRows, ...futureRows];
+}
+
+/**
+ * Retorna o índice da próxima parcela baseado no calendário (mês atual desde data_inicio),
+ * nunca menor que parcelas_pagas (caso pago adiantado) nem maior que n_parcelas-1.
+ * Isso garante que o valor mostrado no card coincida com o que pagamentos mostra para o mês atual.
+ */
+function calendarParcelaIdx(d) {
+  const pagas = d.parcelas_pagas || 0;
+  const n = d.n_parcelas || 1;
+  if (!d.data_inicio) return Math.min(pagas, n - 1);
+  const hoje = new Date();
+  const inicio = new Date(d.data_inicio + 'T12:00:00');
+  const monthsElapsed = (hoje.getFullYear() - inicio.getFullYear()) * 12 + (hoje.getMonth() - inicio.getMonth());
+  return Math.min(Math.max(pagas, monthsElapsed), n - 1);
 }
 
 /**
