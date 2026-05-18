@@ -1625,10 +1625,12 @@ async function ensureSubcategoriaForDivida(dividaId, dvd) {
     return;
   }
 
-  // Gera tabela de parcelas
+  // Gera tabela de parcelas — aplica correção monetária igual ao buildTabelaDisplay
   const taxa = Number(dvd.juros_percentual || 0) / 100;
-  const tabela = gerarTabela(dvd.regime, dvd.valor_total, taxa, dvd.n_parcelas, dvd.fases);
-  if (!tabela || tabela.length === 0) return;
+  const tabelaBase = gerarTabela(dvd.regime, dvd.valor_total, taxa, dvd.n_parcelas, dvd.fases);
+  if (!tabelaBase || tabelaBase.length === 0) return;
+  const corrMensal = corrMensalDecimal(dvd);
+  const tabela = corrMensal ? aplicarCorrecao(tabelaBase, corrMensal) : tabelaBase;
 
   const valores = tabela.map((p) => Number(Number(p.parcela).toFixed(2)));
   const todasIguais   = valores.every((v) => Math.abs(v - valores[0]) < 0.005);
