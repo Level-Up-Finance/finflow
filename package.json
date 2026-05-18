@@ -1,6 +1,6 @@
 {
   "name": "finflow",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "//": "Versão sincronizada com src/js/lib/changelog.js — atualize ambos juntos.",
   "private": true,
   "type": "module",

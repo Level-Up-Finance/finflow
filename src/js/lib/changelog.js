@@ -7,6 +7,16 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-17-fix-autocriacao-divida',
+    version: '0.6.5',
+    date: '17/05/2026',
+    title: 'Dívidas — correção de auto-criação + limpeza de duplicatas',
+    items: [
+      { type: 'fix', text: 'Correção: ao criar uma nova dívida, o compromisso placeholder não era gerado quando a categoria "Dívidas" tinha um nome ligeiramente diferente. Agora busca por grupo em vez de nome.' },
+      { type: 'fix', text: 'Migration 0098: zera "31.344 - DAS" (sem configuração) e remove dívidas duplicadas por nome, mantendo a versão com maior valor configurado.' },
+    ],
+  },
+  {
     id: '2026-05-17-grupos-minimizaveis',
     version: '0.6.4',
     date: '17/05/2026',

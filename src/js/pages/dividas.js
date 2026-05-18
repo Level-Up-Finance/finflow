@@ -1586,12 +1586,10 @@ async function ensureBareLinkForDivida(dividaId, dvd, user) {
     .select('id').eq('divida_id', dividaId).limit(1);
   if (existing && existing.length > 0) return;
 
-  // Busca categoria "Dívidas"
+  // Busca categoria do grupo "dividas" (usa grupo, não nome, para ser robusto)
   const { data: cats } = await supabase.from('categorias')
-    .select('id, nome').eq('user_id', dvd.user_id);
-  const catDividas = (cats || []).find((c) =>
-    c.nome && (c.nome.toLowerCase() === 'dívidas' || c.nome.toLowerCase() === 'dividas')
-  );
+    .select('id, grupo').eq('user_id', dvd.user_id).eq('grupo', 'dividas').limit(1);
+  const catDividas = (cats || [])[0];
   if (!catDividas) return;
 
   const today = new Date().toISOString().slice(0, 10);
