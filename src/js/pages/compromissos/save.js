@@ -374,7 +374,7 @@ export async function saveCompromisso(event, deps) {
       const { data: novaDivida, error: divErr } = await supabase.from('dividas').insert({
         user_id:      user.id,
         nome:         payload.apelido || payload.nome,
-        valor_total:  payload.valor_base || 0,
+        valor_total:  0,  // sem configuração — usuário define em Dívidas
         valor_pago:   0,
         data_inicio:  payload.iniciado_em,
         data_vencimento: payload.terminado_em || null,
@@ -391,6 +391,29 @@ export async function saveCompromisso(event, deps) {
 
     if (resolvedDividaId && response.data?.id) {
       await supabase.from('subcategorias').update({ divida_id: resolvedDividaId }).eq('id', response.data.id);
+    }
+
+    // Auto-criar projeto de investimento quando selecionado "__new__"
+    const isInvestCat = cat?.grupo === 'investimentos';
+    let resolvedProjetoId = (!isInvestCat || !projetoRaw || projetoRaw === '__new__') ? null : projetoRaw;
+    if (isInvestCat && projetoRaw === '__new__') {
+      const user = await getCurrentUser();
+      const { data: novoProjeto, error: projErr } = await supabase.from('projetos_investimento').insert({
+        user_id:   user.id,
+        nome:      payload.apelido || payload.nome,
+        meta_valor: null,  // sem configuração — usuário define em Investimentos
+        status:    'ativo',
+        cor:       '#6D5EF5',
+      }).select('id').single();
+      if (projErr) {
+        showToast('Compromisso salvo, mas erro ao criar projeto: ' + projErr.message, 'warning', 8000);
+      } else {
+        resolvedProjetoId = novoProjeto.id;
+      }
+    }
+
+    if (resolvedProjetoId && response.data?.id) {
+      await supabase.from('subcategorias').update({ projeto_id: resolvedProjetoId }).eq('id', response.data.id);
     }
 
     showToast(editingId ? t('compromissos.toast.atualizado', 'Compromisso atualizado') : t('compromissos.toast.criado', 'Compromisso criado'), 'success');

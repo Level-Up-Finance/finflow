@@ -220,6 +220,15 @@ export function bindAllEvents(deps) {
       location.href = `dividas.html?divida_id=${encodeURIComponent(c.divida_id)}`;
     } else if (c.projeto_id) {
       location.href = `investimentos.html?projeto_id=${encodeURIComponent(c.projeto_id)}`;
+    } else {
+      // Compromisso em categoria dividas/investimentos sem vínculo direto
+      const cats = d.getCachedCategorias ? d.getCachedCategorias() : [];
+      const cat = cats.find((cc) => cc.id === c.categoria_id);
+      if (cat?.grupo === 'dividas') {
+        location.href = 'dividas.html';
+      } else {
+        location.href = 'investimentos.html';
+      }
     }
   });
 

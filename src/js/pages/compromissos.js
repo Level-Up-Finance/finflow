@@ -1156,8 +1156,11 @@ async function openDetailsModal(c) {
 
   // ── Compromisso vinculado a Dívida/Projeto → modo read-only ──
   // Esconde botões de edição/duplicação/arquivamento, mostra "Ir para Dívida/Projeto"
-  const ehVinculado    = !!(c.divida_id || c.projeto_id);
-  const ehDivida       = !!c.divida_id;
+  const cat            = cachedCategorias.find((cc) => cc.id === c.categoria_id);
+  const ehDividasCat   = cat?.grupo === 'dividas';
+  const ehInvestCat    = cat?.grupo === 'investimentos';
+  const ehVinculado    = !!(c.divida_id || c.projeto_id) || ehDividasCat || ehInvestCat;
+  const ehDivida       = !!c.divida_id || ehDividasCat;
   const btnIrVinculo   = document.getElementById('btn-ir-vinculo');
   const btnEditar      = document.getElementById('btn-editar');
   const btnAtualizar   = document.getElementById('btn-atualizar-valor');

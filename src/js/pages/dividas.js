@@ -283,15 +283,21 @@ const TERMINADO_STATUS = new Set(['Quitada', 'Arquivada']);
 
 const BLOCOS = [
   {
+    id: 'sem_configuracao',
+    label: 'Sem Configuração',
+    filter: (d) => !TERMINADO_STATUS.has(d.status) && !Number(d.valor_total),
+    emptyMsg: 'Nenhuma dívida aguardando configuração.',
+  },
+  {
     id: 'em_progresso',
     label: 'Em progresso',
-    filter: (d) => !TERMINADO_STATUS.has(d.status) && Number(d.valor_pago) > 0,
+    filter: (d) => !TERMINADO_STATUS.has(d.status) && Number(d.valor_total) > 0 && Number(d.valor_pago) > 0,
     emptyMsg: 'Nenhuma dívida em andamento.',
   },
   {
     id: 'por_comecar',
     label: 'Por começar',
-    filter: (d) => !TERMINADO_STATUS.has(d.status) && Number(d.valor_pago) === 0,
+    filter: (d) => !TERMINADO_STATUS.has(d.status) && Number(d.valor_total) > 0 && Number(d.valor_pago) === 0,
     emptyMsg: 'Nenhuma dívida aguardando início.',
   },
   {
@@ -1285,6 +1291,16 @@ async function saveDivida(e) {
   if (!valor_total || isNaN(valor_total) || valor_total <= 0) {
     showToast(t('dividas.validacao.valor_total', 'Informe um valor total válido'), 'error'); return;
   }
+
+  // Duplicate name check (only on create)
+  if (!editingId) {
+    const nomeNorm = nome.toLowerCase().trim();
+    const dup = cachedDividas.find((d) => (d.nome || '').toLowerCase().trim() === nomeNorm);
+    if (dup) {
+      showToast(`Já existe uma dívida com o nome "${nome}". Escolha um nome diferente.`, 'error', 6000);
+      return;
+    }
+  }
   if (!data_inicio)       { showToast(t('dividas.validacao.data_inicio', 'Informe a data de início'), 'error'); return; }
 
   // Regime é exigido sempre que houver sinais de dívida estruturada:
@@ -1362,10 +1378,17 @@ async function saveDivida(e) {
     showToast(`${t('dividas.toast.erro_salvar', 'Erro ao salvar')}: ${error.message}`, 'error', 8000); return;
   }
 
-  // Auto-criar subcategoria se há regime + n_parcelas e ainda não existe vínculo
-  if (savedId && regime && n_parcelas) {
-    try { await ensureSubcategoriaForDivida(savedId, payload); }
-    catch (err) { console.warn('[ensureSubcategoria]', err); }
+  // Auto-criar subcategoria vinculada
+  if (savedId) {
+    try {
+      if (regime && n_parcelas) {
+        // Dívida estruturada (SAC/Price/Customizado): cria compromisso com tabela completa
+        await ensureSubcategoriaForDivida(savedId, payload);
+      } else if (!editingId) {
+        // Dívida básica nova (sem regime): cria compromisso placeholder inativo
+        await ensureBareLinkForDivida(savedId, payload, user);
+      }
+    } catch (err) { console.warn('[ensureSubcategoria]', err); }
   }
 
   btn.disabled = false;
@@ -1527,6 +1550,47 @@ async function regenerateOrcamentoGeralForDivida(subId, dvd, tabela) {
     console.error('[regenerateOrcamento insert]', insErr);
     showToast('Compromisso criado, mas falha ao gerar valores mensais: ' + insErr.message, 'warning', 8000);
   }
+}
+
+/**
+ * Cria um compromisso placeholder (inativo) para uma dívida básica (sem regime).
+ * Idempotente: não duplica se já existir um compromisso vinculado.
+ */
+async function ensureBareLinkForDivida(dividaId, dvd, user) {
+  // Já existe sub vinculada?
+  const { data: existing } = await supabase.from('subcategorias')
+    .select('id').eq('divida_id', dividaId).limit(1);
+  if (existing && existing.length > 0) return;
+
+  // Busca categoria "Dívidas"
+  const { data: cats } = await supabase.from('categorias')
+    .select('id, nome').eq('user_id', dvd.user_id);
+  const catDividas = (cats || []).find((c) =>
+    c.nome && (c.nome.toLowerCase() === 'dívidas' || c.nome.toLowerCase() === 'dividas')
+  );
+  if (!catDividas) return;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const compTipo = dvd.tipo === 'a_receber' ? 'Receita' : 'Despesa';
+
+  const { error } = await supabase.from('subcategorias').insert({
+    user_id:        user.id,
+    nome:           dvd.nome,
+    tipo:           compTipo,
+    categoria_id:   catDividas.id,
+    conta_id:       dvd.conta_id || null,
+    contato_id:     dvd.contato_id || null,
+    divida_id:      dividaId,
+    tipo_pagamento: 'Boleto',
+    vencimento_dia: 1,
+    periodo:        'Mensal',
+    iniciado_em:    dvd.data_inicio || today,
+    moeda:          dvd.moeda || 'BRL',
+    valor_base:     0,
+    valor_variavel: false,
+    status:         'inativa',
+  });
+  if (error) console.warn('[ensureBareLinkForDivida]', error);
 }
 
 // -----------------------------

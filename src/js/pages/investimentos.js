@@ -49,6 +49,12 @@ const STATUS_LABELS = {
 
 const BLOCOS = [
   {
+    id: 'sem_configuracao',
+    label: 'Sem Configuração',
+    filter: (p) => (p.status === 'ativo' || p.status === 'pausado') && calcRealizado(p.id) === 0 && !Number(p.meta_valor),
+    emptyMsg: 'Nenhum projeto aguardando configuração.',
+  },
+  {
     id: 'em_progresso',
     label: 'Em progresso',
     filter: (p) => p.status === 'ativo' && calcRealizado(p.id) > 0,
@@ -57,7 +63,7 @@ const BLOCOS = [
   {
     id: 'por_comecar',
     label: 'Por começar',
-    filter: (p) => (p.status === 'ativo' || p.status === 'pausado') && calcRealizado(p.id) === 0,
+    filter: (p) => (p.status === 'ativo' || p.status === 'pausado') && calcRealizado(p.id) === 0 && Number(p.meta_valor) > 0,
     emptyMsg: 'Nenhum projeto sem início ainda.',
   },
   {
@@ -990,6 +996,16 @@ async function saveProjeto(event) {
   const nome = document.getElementById('proj-nome').value.trim();
   if (!nome) { showToast(t('investimentos.validacao.nome_obrigatorio', 'Informe o nome do projeto'), 'error'); return; }
 
+  // Duplicate name check (only on create)
+  if (!editingId) {
+    const nomeNorm = nome.toLowerCase().trim();
+    const dup = cachedProjetos.find((p) => (p.nome || '').toLowerCase().trim() === nomeNorm);
+    if (dup) {
+      showToast(`Já existe um projeto com o nome "${nome}". Escolha um nome diferente.`, 'error', 6000);
+      return;
+    }
+  }
+
   const payload = {
     nome,
     descricao:   document.getElementById('proj-descricao').value.trim() || null,
@@ -1035,11 +1051,16 @@ async function saveProjeto(event) {
     }
     if (response.error) throw response.error;
 
-    // Cria compromisso vinculado se solicitado
-    if (compromissoData && response.data?.id && user) {
+    // Cria compromisso vinculado (com dados do formulário ou placeholder automático)
+    if (response.data?.id && user && !editingId) {
       try {
-        await ensureSubcategoriaForProjeto(response.data.id, user.id, payload.nome, compromissoData);
-        showToast(t('investimentos.toast.criado_com_compromisso', 'Projeto salvo e compromisso vinculado'), 'success');
+        if (compromissoData) {
+          await ensureSubcategoriaForProjeto(response.data.id, user.id, payload.nome, compromissoData);
+          showToast(t('investimentos.toast.criado_com_compromisso', 'Projeto salvo e compromisso vinculado'), 'success');
+        } else {
+          await ensureBareLinkForProjeto(response.data.id, user.id, payload);
+          showToast(t('investimentos.toast.criado', 'Projeto criado'), 'success');
+        }
       } catch (err) {
         console.warn('[ensureSubcategoriaForProjeto]', err);
         showToast('Projeto salvo, mas falhou ao criar compromisso: ' + (err?.message || String(err)), 'error', 10000);
@@ -1095,6 +1116,39 @@ async function ensureSubcategoriaForProjeto(projetoId, userId, nomeProjeto, comp
     descricao:      `Auto-criado para o projeto de investimento "${nomeProjeto}"`,
   });
   if (insErr) throw insErr;
+}
+
+/**
+ * Cria um compromisso placeholder (inativo) para um projeto sem configuração de aporte.
+ * Idempotente: não duplica se já existir um compromisso vinculado.
+ */
+async function ensureBareLinkForProjeto(projetoId, userId, proj) {
+  const { data: existing } = await supabase.from('subcategorias')
+    .select('id').eq('projeto_id', projetoId).limit(1);
+  if (existing && existing.length > 0) return;
+
+  // Usa a categoria padrão de Investimentos
+  const catInvest = cachedCategoriasInvest.find((c) => /^investimentos?$/i.test(c.nome))
+    || cachedCategoriasInvest[0];
+  if (!catInvest) return;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const { error } = await supabase.from('subcategorias').insert({
+    user_id:        userId,
+    nome:           proj.nome,
+    tipo:           'Despesa',
+    categoria_id:   catInvest.id,
+    projeto_id:     projetoId,
+    tipo_pagamento: 'Boleto',
+    vencimento_dia: 1,
+    periodo:        'Mensal',
+    iniciado_em:    today,
+    moeda:          'BRL',
+    valor_base:     0,
+    valor_variavel: false,
+    status:         'inativa',
+  });
+  if (error) console.warn('[ensureBareLinkForProjeto]', error);
 }
 
 // -----------------------------

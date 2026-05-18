@@ -7,6 +7,19 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-17-dividas-investimentos-autolink',
+    version: '0.6.3',
+    date: '17/05/2026',
+    title: 'Dívidas e Investimentos — auto-vinculação bidirecional',
+    items: [
+      { type: 'new', text: 'Grupo "Sem Configuração" em Dívidas e Investimentos: dívidas sem valor total e projetos sem meta ficam neste grupo até o usuário configurar.' },
+      { type: 'new', text: 'Auto-vinculação bidirecional: criar uma dívida ou projeto de investimento gera automaticamente um compromisso placeholder vinculado; criar um compromisso em categoria Dívidas/Investimentos com opção "Nova" gera automaticamente a dívida ou projeto correspondente.' },
+      { type: 'improvement', text: 'Botão "Ir para Dívida" / "Ir para Projeto" sempre visível em compromissos de categorias Dívidas e Investimentos — substitui os botões Editar, Arquivar e Encerrar.' },
+      { type: 'improvement', text: '"Por Começar" agora requer valor configurado (valor_total > 0 em Dívidas, meta_valor > 0 em Investimentos).' },
+      { type: 'fix', text: 'Prevenção de nomes duplicados ao criar dívidas e projetos de investimento — exibe aviso ao usuário.' },
+    ],
+  },
+  {
     id: '2026-05-17-remove-objetivos',
     version: '0.6.2',
     date: '17/05/2026',
