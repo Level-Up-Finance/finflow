@@ -319,20 +319,35 @@ async function ensurePagamentosForMonth(year, month) {
     if (insertError) console.error('[ensurePagamentosForMonth]', insertError);
   }
 
-  // Para compromissos de dívida: sincroniza valor_previsto/valor_real de entradas pendentes
-  // com o orcamento_geral atual. Necessário porque o upsert acima usa ignoreDuplicates:true
-  // e não atualiza linhas já existentes quando a dívida foi editada após a criação.
-  const PENDENTE = ['Agendado', 'Atrasado', 'A Transferir'];
-  for (const orc of orcamentos) {
-    const sub = cachedSubcategorias.find((s) => s.id === orc.subcategoria_id);
-    if (!sub?.divida_id || Number(orc.valor_previsto) <= 0) continue;
-    const occThisMonth = countOccurrencesInMonth(sub, year, month) || 1;
-    const valorSinc = Number((Number(orc.valor_previsto) / occThisMonth).toFixed(2));
+  // Para compromissos de dívida: sincroniza valor_previsto/valor_real de entradas pendentes.
+  // Usa sub.valor_base quando disponível (mais confiável que orcamento_geral para empréstimos
+  // com parcelas iguais) e orcamento_geral para taxa variável.
+  // Necessário porque o upsert acima usa ignoreDuplicates:true e não atualiza linhas existentes.
+  const PENDENTE = ['Agendado', 'A Transferir'];
+  const user2 = user; // user já obtido acima
+  for (const sub of cachedSubcategorias) {
+    if (!sub.divida_id) continue;
+
+    let valorSinc;
+    if (!sub.valor_variavel && Number(sub.valor_base) > 0) {
+      // Parcelas iguais: usa valor_base direto da subcategoria (sempre atualizado ao salvar a dívida)
+      const occThisMonth = countOccurrencesInMonth(sub, year, month) || 1;
+      valorSinc = Number((Number(sub.valor_base) / occThisMonth).toFixed(2));
+    } else {
+      // Taxa variável: usa orcamento_geral que é regenerado por parcela ao salvar a dívida
+      const orc = orcamentos.find((o) => o.subcategoria_id === sub.id);
+      if (!orc || Number(orc.valor_previsto) <= 0) continue;
+      const occThisMonth = countOccurrencesInMonth(sub, year, month) || 1;
+      valorSinc = Number((Number(orc.valor_previsto) / occThisMonth).toFixed(2));
+    }
+
+    if (!valorSinc || valorSinc <= 0) continue;
     await supabase
       .from('pagamentos')
       .update({ valor_previsto: valorSinc, valor_real: valorSinc })
-      .eq('subcategoria_id', orc.subcategoria_id)
+      .eq('subcategoria_id', sub.id)
       .eq('mes_ano', mesAno)
+      .eq('user_id', user2.id)
       .in('status', PENDENTE);
   }
 }
