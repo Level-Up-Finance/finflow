@@ -588,14 +588,14 @@ async function renderWidgets() {
   document.getElementById('kpi-pago-chart').innerHTML  = renderDonutSVG(pctPago, 'var(--color-success)', 'lg');
 
   // Widget 3 — Empréstimos a receber (a_receber)
-  renderAReceberSummary(dividasAReceber);
+  await renderAReceberSummary(dividasAReceber);
 }
 
 /**
  * Renderiza linha de resumo de empréstimos a receber abaixo dos KPIs.
- * Aparece apenas quando há pelo menos 1 dívida a_receber.
+ * Converte moedas estrangeiras p/ BRL e exibe breakdown por moeda (igual widget "Total em aberto").
  */
-function renderAReceberSummary(dividasAReceber) {
+async function renderAReceberSummary(dividasAReceber) {
   const el = document.getElementById('kpi-a-receber');
   if (!el) return;
   if (dividasAReceber.length === 0) {
@@ -603,22 +603,57 @@ function renderAReceberSummary(dividasAReceber) {
     el.innerHTML = '';
     return;
   }
-  let totalReceber = 0;
-  let totalJaRecebido = 0;
+
+  // Agrupa por moeda
+  const byCurrency = {};
   for (const d of dividasAReceber) {
-    if ((d.moeda || 'BRL') !== 'BRL') continue; // simplificação MVP: só BRL aqui
-    totalReceber    += Number(d.valor_total);
-    totalJaRecebido += Number(d.valor_pago);
+    const moeda = d.moeda || 'BRL';
+    if (!byCurrency[moeda]) byCurrency[moeda] = { total: 0, pago: 0 };
+    byCurrency[moeda].total += Number(d.valor_total);
+    byCurrency[moeda].pago  += Number(d.valor_pago);
   }
-  const restante = Math.max(0, totalReceber - totalJaRecebido);
+
+  const allCodes = Object.keys(byCurrency);
+  const nonBRL   = allCodes.filter(c => c !== 'BRL');
+
+  // Busca câmbio para moedas estrangeiras
+  const ratesMap = {};
+  if (nonBRL.length > 0) {
+    await Promise.all(nonBRL.map(async code => {
+      try { ratesMap[code] = await fetchExchangeRate(code, 'BRL'); }
+      catch { ratesMap[code] = 0; }
+    }));
+  }
+
+  const toBRL = (val, code) => code === 'BRL' ? val : val * (ratesMap[code] || 0);
+
+  // Total a receber convertido p/ BRL
+  let totalRestanteBRL = 0;
+  for (const code of allCodes) {
+    const { total, pago } = byCurrency[code];
+    totalRestanteBRL += toBRL(Math.max(0, total - pago), code);
+  }
+
+  // Breakdown por moeda (BRL primeiro, demais em ordem)
+  const hasMultiple = allCodes.length > 1;
+  const breakdownHTML = hasMultiple
+    ? ['BRL', ...nonBRL.sort()]
+        .filter(code => byCurrency[code])
+        .map(code => {
+          const { total, pago } = byCurrency[code];
+          const val = Math.max(0, total - pago);
+          return `<span class="kpi-extra-moeda">${formatCurrencyHTML(val, code)}</span>`;
+        }).join('')
+    : '';
+
   el.classList.remove('hidden');
   el.innerHTML = `
     <div class="kpi-a-receber-card">
       <div class="kpi-a-receber-icon">↙</div>
       <div class="kpi-a-receber-content">
         <span class="kpi-a-receber-label">Empréstimos a receber (${dividasAReceber.length})</span>
-        <span class="kpi-a-receber-value">${formatCurrencyHTML(restante, 'BRL')}</span>
-        <span class="kpi-a-receber-sub">${formatCurrencyHTML(totalJaRecebido, 'BRL')} já recebido de ${formatCurrencyHTML(totalReceber, 'BRL')}</span>
+        <span class="kpi-a-receber-value">${formatCurrencyHTML(totalRestanteBRL, 'BRL')}${breakdownHTML}</span>
+        <span class="kpi-a-receber-sub">${dividasAReceber.length} empréstimo${dividasAReceber.length === 1 ? '' : 's'} em aberto</span>
       </div>
     </div>
   `;
