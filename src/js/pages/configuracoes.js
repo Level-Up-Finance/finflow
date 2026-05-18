@@ -44,12 +44,6 @@ let detailSubId = null;  // which sub is being shown in modal-sub-detail
 // Pré-aquecimento do iframe embedded de compromissos
 let embedPreloaded = false;
 
-// Quick-compromisso post-save state
-let compRapidoSubId     = null;  // subcategoria ID to update (or null → insert new)
-let compRapidoCatId     = null;  // categoria_id context
-let compRapidoIsReceita = false; // whether to show eh_renda_principal
-let compRapidoNome      = '';    // pre-fill name
-
 const SUPER_BLOCOS = [
   { id: 'contribuicao', label: 'Contribuição', grupos: ['receitas', 'dividas'],  accent: 'var(--color-success)' },
   { id: 'sonhos',       label: 'Sonhos',       grupos: ['investimentos'],        accent: 'var(--color-primary)' },
@@ -497,15 +491,7 @@ function refreshCatGrupoLock() {
 
 function closeCatModal() {
   document.getElementById('modal-categoria').classList.add('hidden');
-  // Reset post-save state
-  document.getElementById('cat-form-wrap').classList.remove('hidden');
-  document.getElementById('cat-postsave').classList.add('hidden');
-  document.getElementById('cat-main-footer').classList.remove('hidden');
-  document.getElementById('cat-postsave-footer').classList.add('hidden');
-  editingCatId        = null;
-  compRapidoCatId     = null;
-  compRapidoNome      = '';
-  compRapidoIsReceita = false;
+  editingCatId = null;
 }
 
 async function saveCat() {
@@ -649,17 +635,8 @@ function renderSubCatSelect(selectedCatId) {
 
 function closeSubModal() {
   document.getElementById('modal-subcategoria').classList.add('hidden');
-  // Reset post-save state
-  document.getElementById('sub-form-wrap').classList.remove('hidden');
-  document.getElementById('sub-postsave').classList.add('hidden');
-  document.getElementById('sub-main-footer').classList.remove('hidden');
-  document.getElementById('sub-postsave-footer').classList.add('hidden');
-  editingSubId        = null;
-  newSubCatId         = null;
-  compRapidoSubId     = null;
-  compRapidoCatId     = null;
-  compRapidoNome      = '';
-  compRapidoIsReceita = false;
+  editingSubId = null;
+  newSubCatId  = null;
 }
 
 async function saveSub() {
@@ -893,27 +870,6 @@ function bindModalEvents() {
     }
   });
 
-  // Post-save: subcategoria
-  document.getElementById('btn-sub-postsave-no').addEventListener('click', closeSubModal);
-  document.getElementById('btn-sub-postsave-yes').addEventListener('click', () => {
-    const subId     = compRapidoSubId;
-    const catId     = compRapidoCatId;
-    const nome      = compRapidoNome;
-    const isReceita = compRapidoIsReceita;
-    closeSubModal();
-    goToNewCompromisso(subId, catId, nome, isReceita);
-  });
-
-  // Post-save: categoria
-  document.getElementById('btn-cat-postsave-no').addEventListener('click', closeCatModal);
-  document.getElementById('btn-cat-postsave-yes').addEventListener('click', () => {
-    const catId     = compRapidoCatId;
-    const nome      = compRapidoNome;
-    const isReceita = compRapidoIsReceita;
-    closeCatModal();
-    goToNewCompromisso(null, catId, nome, isReceita);
-  });
-
   // Confirm delete modal
   document.getElementById('btn-close-cfg-confirmar').addEventListener('click', closeConfirmModal);
   document.getElementById('btn-cfg-confirmar-cancel').addEventListener('click', closeConfirmModal);
@@ -945,20 +901,6 @@ function bindModalEvents() {
       setTimeout(() => preWarmEmbedded(), 800);
     }
   });
-}
-
-// -----------------------------
-// Post-save helpers & quick compromisso
-// -----------------------------
-function goToNewCompromisso(subId, catId, nome, isReceita) {
-  if (subId) {
-    openEmbeddedCompromisso(`compromissos.html?embedded=1&cfg_sub=${encodeURIComponent(subId)}`);
-  } else if (catId) {
-    const tipo   = isReceita ? 'Receita' : 'Despesa';
-    const params = new URLSearchParams({ embedded: '1', cfg_cat: catId, cfg_tipo: tipo });
-    if (nome) params.set('cfg_nome', encodeURIComponent(nome));
-    openEmbeddedCompromisso(`compromissos.html?${params.toString()}`);
-  }
 }
 
 function preWarmEmbedded() {

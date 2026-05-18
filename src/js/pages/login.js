@@ -13,7 +13,10 @@ const HOME_PATH = '/dashboard.html';
 // Helpers
 // -----------------------------
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-const isValidPassword = (password) => password.length >= 6;
+// Login aceita senha de 6+ chars (não trava usuários antigos com senha curta).
+// Signup exige 8+ chars (política nova, alinhada com NIST).
+const isValidLoginPassword  = (password) => password.length >= 6;
+const isValidSignupPassword = (password) => password.length >= 8;
 
 function setError(form, fieldName, message) {
   const errorEl = form.querySelector(`[data-error="${fieldName}"]`);
@@ -66,7 +69,7 @@ async function handleLogin(event) {
     setError(form, 'email', t('login.validacao.email_invalido', 'Informe um email válido'));
     hasError = true;
   }
-  if (!isValidPassword(password)) {
+  if (!isValidLoginPassword(password)) {
     setError(form, 'password', t('login.validacao.senha_minimo', 'Senha deve ter no mínimo 6 caracteres'));
     hasError = true;
   }
@@ -108,8 +111,8 @@ async function handleSignup(event) {
     showToast(t('login.validacao.email_invalido', 'Informe um email válido'), 'error');
     return;
   }
-  if (!isValidPassword(password)) {
-    showToast(t('login.validacao.senha_obrigatoria', 'A senha precisa de no mínimo 6 caracteres'), 'error');
+  if (!isValidSignupPassword(password)) {
+    showToast(t('login.validacao.senha_obrigatoria', 'A senha precisa de no mínimo 8 caracteres'), 'error');
     return;
   }
 
