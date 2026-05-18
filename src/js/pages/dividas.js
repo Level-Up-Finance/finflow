@@ -749,6 +749,28 @@ function bindRowClicks() {
 
 let detailsDividaId = null;
 
+function simpleMarkdown(text) {
+  if (!text) return '';
+  return text
+    .split('\n')
+    .map(line => {
+      // Escapa HTML primeiro
+      let s = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      // Headings ### ## #
+      if (/^###\s+/.test(s)) return `<h4 style="margin:var(--space-3) 0 var(--space-1);font-size:var(--fs-sm);font-weight:var(--fw-semibold);">${s.replace(/^###\s+/, '')}</h4>`;
+      if (/^##\s+/.test(s))  return `<h3 style="margin:var(--space-4) 0 var(--space-1);font-size:var(--fs-base);font-weight:var(--fw-semibold);">${s.replace(/^##\s+/, '')}</h3>`;
+      if (/^#\s+/.test(s))   return `<h2 style="margin:var(--space-4) 0 var(--space-2);font-size:var(--fs-lg);font-weight:var(--fw-bold);">${s.replace(/^#\s+/, '')}</h2>`;
+      // Separador ---
+      if (/^---+$/.test(s.trim())) return '<hr style="border:none;border-top:1px solid var(--color-border);margin:var(--space-3) 0;">';
+      // Bold **texto**
+      s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      // Linha em branco → parágrafo
+      if (s.trim() === '') return '<br>';
+      return `<span>${s}</span><br>`;
+    })
+    .join('');
+}
+
 function openDividaDetails(id) {
   const d = cachedDividas.find((x) => x.id === id);
   if (!d) return;
@@ -802,7 +824,7 @@ function openDividaDetails(id) {
       ${conta ? `<div class="div-details-dl-row"><dt>Conta</dt><dd>${escapeHtml(conta.apelido || conta.nome)}</dd></div>` : ''}
     </dl>
 
-    ${d.observacao ? `<p style="margin-top:var(--space-4);color:var(--color-text-secondary);font-size:var(--fs-sm);">${escapeHtml(d.observacao)}</p>` : ''}
+    ${d.observacao ? `<div style="margin-top:var(--space-4);color:var(--color-text-secondary);font-size:var(--fs-sm);line-height:1.6;">${simpleMarkdown(d.observacao)}</div>` : ''}
   `;
 
   // Footer buttons
