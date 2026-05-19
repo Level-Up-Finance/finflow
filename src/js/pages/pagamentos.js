@@ -262,50 +262,58 @@ async function ensurePagamentosForMonth(year, month) {
   if (!user) return;
 
   const mesAno = isoMonth(year, month);
+  const blocos = getBlocosForMonth(year, month);
 
-  // Busca orcamento entries pra esse mês
+  // Coleta todos os mes_ano cobertos pelos blocos do mês (alguns blocos atravessam
+  // do mês anterior ou pra o próximo). Buscar orcamento_geral pra todos esses meses
+  // garante que ocorrências como 01/06 — que cai no "Bloco 3 de Maio" (29 mai – 11 jun) —
+  // achem o orcamento da sub em junho mesmo quando processando os blocos de maio.
+  const mesesCobertos = new Set([mesAno]);
+  for (const b of blocos) {
+    mesesCobertos.add(isoMonth(b.startDate.getFullYear(), b.startDate.getMonth()));
+    mesesCobertos.add(isoMonth(b.endDate.getFullYear(), b.endDate.getMonth()));
+  }
+
   const { data: orcamentos, error } = await supabase
     .from('orcamento_geral')
-    .select('id, subcategoria_id, valor_previsto, moeda')
-    .eq('mes_ano', mesAno);
+    .select('id, subcategoria_id, valor_previsto, moeda, mes_ano')
+    .in('mes_ano', Array.from(mesesCobertos));
   if (error || !orcamentos) return;
 
-  const blocos = getBlocosForMonth(year, month);
-  // Conta ocorrências do compromisso DENTRO do mês visível pra usar como
-  // base de divisão de valor (pra blocos que atravessam pra próximo mês,
-  // a aproximação usa o mesmo valor por ocorrência do mês visível).
+  // Mapa: `${subId}__${mesAno}` → orcamento (lookup por sub + mês civil da data de vencimento)
+  const orcMap = new Map();
+  for (const o of orcamentos) orcMap.set(`${o.subcategoria_id}__${o.mes_ano}`, o);
+
+  // Pra cada sub ativa, itera pelos blocos do mês e gera pagamento pra cada ocorrência.
+  // O orcamento usado é o do mês civil da data de vencimento (que pode ser diferente do mês visível).
   const rows = [];
-  for (const orc of orcamentos) {
-    const sub = cachedSubcategorias.find((s) => s.id === orc.subcategoria_id);
-    if (!sub) continue;
-    if (Number(orc.valor_previsto) <= 0) continue;
-
-    const dist = distributeToBlocosDinamico(sub, blocos);
-    let totalOcc = 0;
-    dist.forEach((cell) => { totalOcc += cell.count; });
-    if (totalOcc === 0) continue;
-
-    // Total de ocorrências dentro do mês visível só (pra denominador do valor mensal)
-    const occThisMonth = countOccurrencesInMonth(sub, year, month) || 1;
-    const valorTotal = Number(orc.valor_previsto);
-    const valorPorOcorrencia = valorTotal / occThisMonth;
+  for (const sub of cachedSubcategorias) {
+    if (sub.status !== 'ativa') continue;
 
     for (const bloco of blocos) {
-      const cell = dist.get(bloco.indice);
-      if (!cell || cell.count === 0) continue;
-      for (const dataVenc of cell.dates) {
-        rows.push({
-          user_id: user.id,
-          orcamento_id: orc.id,
-          subcategoria_id: sub.id,
-          mes_ano: mesAno,
-          bloco_quinzenal: bloco.indice,
-          valor_previsto: valorPorOcorrencia,
-          valor_real: valorPorOcorrencia, // começa preenchido com o previsto; user pode alterar
-          moeda: orc.moeda,
-          status: (sub.tipo === 'Transferência' || sub.tipo === 'Caixinha') ? 'A Transferir' : 'Agendado',
-          data_vencimento: dataVenc,
-        });
+      let cur = new Date(bloco.startDate);
+      while (cur <= bloco.endDate) {
+        if (occursOn(sub, cur)) {
+          const venMesAno = isoMonth(cur.getFullYear(), cur.getMonth());
+          const orc = orcMap.get(`${sub.id}__${venMesAno}`);
+          if (orc && Number(orc.valor_previsto) > 0) {
+            const occInVenMes = countOccurrencesInMonth(sub, cur.getFullYear(), cur.getMonth()) || 1;
+            const valorPorOcorrencia = Number(orc.valor_previsto) / occInVenMes;
+            rows.push({
+              user_id: user.id,
+              orcamento_id: orc.id,
+              subcategoria_id: sub.id,
+              mes_ano: mesAno,
+              bloco_quinzenal: bloco.indice,
+              valor_previsto: valorPorOcorrencia,
+              valor_real: valorPorOcorrencia,
+              moeda: orc.moeda,
+              status: (sub.tipo === 'Transferência' || sub.tipo === 'Caixinha') ? 'A Transferir' : 'Agendado',
+              data_vencimento: isoDate(cur.getFullYear(), cur.getMonth(), cur.getDate()),
+            });
+          }
+        }
+        cur = addDays(cur, 1);
       }
     }
   }
@@ -334,7 +342,8 @@ async function ensurePagamentosForMonth(year, month) {
       valorSinc = Number((Number(sub.valor_base) / occThisMonth).toFixed(2));
     } else {
       // Taxa variável: usa orcamento_geral que é regenerado por parcela ao salvar a dívida
-      const orc = orcamentos.find((o) => o.subcategoria_id === sub.id);
+      // (Filtra pelo mês visível porque agora 'orcamentos' inclui meses adjacentes pra cobrir blocos atravessados.)
+      const orc = orcamentos.find((o) => o.subcategoria_id === sub.id && o.mes_ano === mesAno);
       if (!orc || Number(orc.valor_previsto) <= 0) continue;
       const occThisMonth = countOccurrencesInMonth(sub, year, month) || 1;
       valorSinc = Number((Number(orc.valor_previsto) / occThisMonth).toFixed(2));
@@ -440,29 +449,6 @@ function formatPeriod(start, end) {
   }
   const eLow = MONTH_LABELS[end.getMonth()].toLowerCase();
   return `${start.getDate()} de ${sLow} – ${end.getDate()} de ${eLow}`;
-}
-
-/**
- * Distribui ocorrências de uma subcategoria nos blocos do mês.
- * Itera dia a dia dentro de cada bloco (inclusive dias do mês seguinte
- * quando o bloco atravessa). Retorna Map<indice, {count, dates: string[]}>.
- */
-function distributeToBlocosDinamico(sub, blocos) {
-  const result = new Map();
-  blocos.forEach((b) => result.set(b.indice, { count: 0, dates: [] }));
-
-  for (const b of blocos) {
-    const cell = result.get(b.indice);
-    let cur = new Date(b.startDate);
-    while (cur <= b.endDate) {
-      if (occursOn(sub, cur)) {
-        cell.count++;
-        cell.dates.push(isoDate(cur.getFullYear(), cur.getMonth(), cur.getDate()));
-      }
-      cur = addDays(cur, 1);
-    }
-  }
-  return result;
 }
 
 // -----------------------------

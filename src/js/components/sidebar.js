@@ -45,7 +45,7 @@ const NAV_ITEMS = [
   { id: 'pagamentos',    label: 'Pagamentos',       href: '/pagamentos.html' },
   { id: 'transacoes',    label: 'Transações',       href: '/transacoes.html' },
   { id: 'contas',        label: 'Contas',           href: '/contas.html' },
-  { id: 'orcamento',     label: 'Orçamento',        href: '/compromissos.html' },
+  { id: 'orcamento',     label: 'Compromissos e Orçamentos', href: '/compromissos.html' },
   { id: 'dividas',       label: 'Financiamentos e Dívidas', href: '/dividas.html' },
   { id: 'investimentos', label: 'Projetos e Investimentos', href: '/investimentos.html' },
   { divider: true },

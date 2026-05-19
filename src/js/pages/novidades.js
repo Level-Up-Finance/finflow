@@ -33,7 +33,7 @@ const MODULOS = {
   pagamentos:   'Pagamentos',
   contas:       'Contas',
   compromissos: 'Compromissos',
-  orcamento:    'Orçamento',
+  orcamento:    'Compromissos e Orçamentos',
   dividas:      'Financiamentos e Dívidas',
   investimentos:'Projetos e Investimentos',
   relatorios:   'Relatórios',

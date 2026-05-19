@@ -7,6 +7,16 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-19-pagamentos-em-blocos-atravessados',
+    version: '0.7.8',
+    date: '19/05/2026',
+    title: 'Pagamentos — gera ocorrências em blocos que atravessam meses + página renomeada',
+    items: [
+      { type: 'fix', text: 'Compromissos com vencimento que cai em um bloco quinzenal "herdado" do mês anterior (ex: dia 01/06 caindo no Bloco 3 de Maio que vai de 29/05 a 11/06) agora geram o pagamento corretamente. Antes a ocorrência ficava órfã porque o sistema buscava orçamento só do mês visível.' },
+      { type: 'improvement', text: 'Página "Orçamento" renomeada para "Compromissos e Orçamentos" — reflete melhor o conteúdo da página, que cobre tanto a configuração de compromissos quanto a visão de orçamento mensal/anual.' },
+    ],
+  },
+  {
     id: '2026-05-19-projetos-reativa-sub-no-update',
     version: '0.7.7',
     date: '19/05/2026',
