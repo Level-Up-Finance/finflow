@@ -7,6 +7,19 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-18-criar-compromisso-todos-projetos',
+    version: '0.7.4',
+    date: '18/05/2026',
+    title: 'Projetos — compromisso recorrente disponível para todos os projetos',
+    items: [
+      { type: 'new', text: 'Modal de projeto: opção "Criar compromisso recorrente vinculado" disponível para todos os projetos, inclusive os que já possuem compromisso — para adicionar um novo aporte vinculado.' },
+      { type: 'improvement', text: 'Formulário de criação de compromisso agora inclui todos os campos de recorrência: frequência (Mensal, Quinzenal, Semanal, Anual, Único), dia do mês ou dia da semana (conforme período), tipo de pagamento e moeda.' },
+      { type: 'improvement', text: 'Checkbox "Valor varia por mês" disponível ao criar compromisso vinculado — esconde o campo de valor base quando marcado.' },
+      { type: 'fix', text: 'Compromisos criados via modal de projeto agora salvam corretamente tipo de pagamento, moeda e dia de vencimento (antes ficavam com valores padrão "Boleto/BRL").' },
+      { type: 'fix', text: 'Campo "Meta de valor" corrigido — não exibia mais coluna vazia à direita no modal do projeto.' },
+    ],
+  },
+  {
     id: '2026-05-18-projetos-e-investimentos',
     version: '0.7.3',
     date: '18/05/2026',

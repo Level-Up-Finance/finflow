@@ -19,7 +19,7 @@
 
     <header class="app-header header">
       <div class="header-left">
-        <h2 class="header-title">Projetos e Investimentos</h2>
+        <span class="header-title">Projetos e Investimentos</span>
       </div>
     </header>
 
@@ -94,7 +94,7 @@
   <!-- ============================================================
        MODAL: Criar / Editar projeto
        ============================================================ -->
-  <div class="modal-backdrop hidden" id="modal-projeto" role="dialog" aria-modal="true">
+  <div class="modal-backdrop hidden" id="modal-projeto" role="dialog" aria-modal="true" aria-labelledby="modal-projeto-title">
     <div class="modal modal-md">
       <div class="modal-header">
         <h2 class="modal-title" id="modal-projeto-title">Novo projeto</h2>
@@ -141,12 +141,10 @@
             </div>
           </div>
 
-          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
-            <div class="field">
-              <label class="field-label" for="proj-meta-valor">Meta de valor</label>
-              <input type="text" inputmode="decimal" id="proj-meta-valor" class="input input-decimal" placeholder="R$ 0,00 (opcional)">
-              <p class="field-hint">Valor que você quer alcançar.</p>
-            </div>
+          <div class="field">
+            <label class="field-label" for="proj-meta-valor">Meta de valor</label>
+            <input type="text" inputmode="decimal" id="proj-meta-valor" class="input input-decimal" placeholder="R$ 0,00 (opcional)">
+            <p class="field-hint">Valor que você quer alcançar.</p>
           </div>
 
           <div class="field">
@@ -174,28 +172,48 @@
           <div id="proj-compromisso-fields" class="hidden">
             <div class="field-group" style="grid-template-columns: 1fr 1fr;">
               <div class="field">
-                <label class="field-label" for="proj-comp-valor">Valor do aporte <span class="required">*</span></label>
-                <input type="text" id="proj-comp-valor" class="input input-decimal" inputmode="decimal" placeholder="0,00">
-              </div>
-              <div class="field">
                 <label class="field-label" for="proj-comp-periodo">Frequência <span class="required">*</span></label>
-                <select id="proj-comp-periodo" class="select">
-                  <option value="Mensal" selected>Mensal</option>
-                  <option value="Quinzenal">Quinzenal</option>
-                  <option value="Semanal">Semanal</option>
-                </select>
+                <select id="proj-comp-periodo" class="select" required></select>
+              </div>
+              <div class="field" id="proj-comp-dia-mes-field">
+                <label class="field-label" for="proj-comp-dia-mes">Dia do mês (1–31)</label>
+                <input type="number" min="1" max="31" id="proj-comp-dia-mes" class="input" placeholder="Ex: 5">
+              </div>
+              <div class="field hidden" id="proj-comp-dia-semana-field">
+                <label class="field-label" for="proj-comp-dia-semana">Dia da semana</label>
+                <select id="proj-comp-dia-semana" class="select"></select>
               </div>
             </div>
-            <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div id="proj-comp-valor-row">
+              <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+                <div class="field">
+                  <label class="field-label" for="proj-comp-valor">Valor do aporte <span class="required">*</span></label>
+                  <input type="text" id="proj-comp-valor" class="input input-decimal" inputmode="decimal" placeholder="0,00" required>
+                </div>
+                <div class="field">
+                  <label class="field-label" for="proj-comp-moeda">Moeda</label>
+                  <select id="proj-comp-moeda" class="select"></select>
+                </div>
+              </div>
+            </div>
+            <label class="checkbox-item">
+              <input type="checkbox" id="proj-comp-valor-variavel">
+              <span>Valor varia por mês</span>
+            </label>
+            <div class="field-group" style="grid-template-columns: 1fr 1fr; margin-top: var(--space-3);">
               <div class="field">
                 <label class="field-label" for="proj-comp-data">Data do primeiro aporte <span class="required">*</span></label>
-                <input type="date" id="proj-comp-data" class="input">
+                <input type="date" id="proj-comp-data" class="input" required>
               </div>
               <div class="field">
-                <label class="field-label" for="proj-comp-categoria">Categoria</label>
-                <select id="proj-comp-categoria" class="select"></select>
-                <p class="field-hint">Categoria do grupo Investimentos onde a subcategoria será criada.</p>
+                <label class="field-label" for="proj-comp-tipo-pag">Tipo de pagamento</label>
+                <select id="proj-comp-tipo-pag" class="select"></select>
               </div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="proj-comp-categoria">Categoria</label>
+              <select id="proj-comp-categoria" class="select"></select>
+              <p class="field-hint">Categoria do grupo Investimentos onde a subcategoria será criada.</p>
             </div>
           </div>
 
@@ -267,7 +285,7 @@
   <!-- ============================================================
        MODAL: Detalhes do projeto (histórico)
        ============================================================ -->
-  <div class="modal-backdrop hidden" id="modal-projeto-details" role="dialog" aria-modal="true">
+  <div class="modal-backdrop hidden" id="modal-projeto-details" role="dialog" aria-modal="true" aria-labelledby="proj-details-title">
     <div class="modal modal-lg">
       <div class="modal-header">
         <h2 class="modal-title" id="proj-details-title">—</h2>
@@ -292,7 +310,7 @@
   <!-- ============================================================
        MODAL: Confirmar excluir / arquivar projeto
        ============================================================ -->
-  <div class="modal-backdrop hidden" id="modal-confirmar-projeto" role="dialog" aria-modal="true">
+  <div class="modal-backdrop hidden" id="modal-confirmar-projeto" role="dialog" aria-modal="true" aria-labelledby="proj-confirmar-title">
     <div class="modal modal-md">
       <div class="modal-header">
         <h2 class="modal-title" id="proj-confirmar-title">Excluir projeto</h2>
@@ -313,7 +331,7 @@
   <!-- ============================================================
        MODAL: Registrar histórico passado (investimento)
        ============================================================ -->
-  <div class="modal-backdrop hidden" id="modal-historico-invest" role="dialog" aria-modal="true">
+  <div class="modal-backdrop hidden" id="modal-historico-invest" role="dialog" aria-modal="true" aria-labelledby="hist-invest-modal-title">
     <div class="modal modal-md">
       <div class="modal-header">
         <h2 class="modal-title" id="hist-invest-modal-title">Histórico passado</h2>

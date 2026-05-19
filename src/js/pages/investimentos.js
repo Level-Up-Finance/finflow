@@ -954,6 +954,49 @@ function calcPrevistoMes(projetoId) {
 }
 
 // -----------------------------
+// Seção "Criar compromisso" dentro do modal do projeto
+// -----------------------------
+function updateCreateDayFields(periodo) {
+  const diaMesField    = document.getElementById('proj-comp-dia-mes-field');
+  const diaSemanaField = document.getElementById('proj-comp-dia-semana-field');
+  if (!diaMesField || !diaSemanaField) return;
+  const showDiaMes    = ['Mensal', 'Anual'].includes(periodo);
+  const showDiaSemana = ['Semanal', 'Quinzenal'].includes(periodo);
+  diaMesField.classList.toggle('hidden', !showDiaMes);
+  diaSemanaField.classList.toggle('hidden', !showDiaSemana);
+}
+
+function populateCreateCompSection() {
+  const selPeriodo = document.getElementById('proj-comp-periodo');
+  if (!selPeriodo) return;
+  selPeriodo.innerHTML = PERIODOS.map((p) => `<option value="${p.value}">${p.label}</option>`).join('');
+  selPeriodo.value = 'Mensal';
+  selPeriodo.onchange = () => updateCreateDayFields(selPeriodo.value);
+  updateCreateDayFields('Mensal');
+
+  const selDiaSemana = document.getElementById('proj-comp-dia-semana');
+  if (selDiaSemana) {
+    selDiaSemana.innerHTML = DIAS_SEMANA.map((d) => `<option value="${d.value}">${d.label}</option>`).join('');
+  }
+
+  const selTipoPag = document.getElementById('proj-comp-tipo-pag');
+  if (selTipoPag) {
+    selTipoPag.innerHTML = TIPOS_PAGAMENTO.map((tp) => `<option value="${tp}">${tp}</option>`).join('');
+  }
+
+  const selMoeda = document.getElementById('proj-comp-moeda');
+  if (selMoeda) selMoeda.innerHTML = renderMoedaOptions('BRL');
+
+  const chkVarVal = document.getElementById('proj-comp-valor-variavel');
+  const valorRow  = document.getElementById('proj-comp-valor-row');
+  if (chkVarVal && valorRow) {
+    chkVarVal.checked = false;
+    valorRow.classList.remove('hidden');
+    chkVarVal.onchange = () => valorRow.classList.toggle('hidden', chkVarVal.checked);
+  }
+}
+
+// -----------------------------
 // Seção "Editar compromisso de investimento" dentro do modal do projeto
 // -----------------------------
 function updateCompEditDayFields(periodo) {
@@ -1026,12 +1069,11 @@ function openProjetoModal(p = null, prefill = null) {
   initContatoPickerOnce();
   contatoPicker?.setValue(p?.contato_id || '');
 
-  // Seção "Criar compromisso vinculado": só em modo CRIAÇÃO
+  // Seção "Criar compromisso vinculado"
   const toggleWrap   = document.getElementById('proj-compromisso-toggle-wrap');
   const compFields   = document.getElementById('proj-compromisso-fields');
   const compCheckbox = document.getElementById('proj-criar-compromisso');
   const compValor    = document.getElementById('proj-comp-valor');
-  const compPeriodo  = document.getElementById('proj-comp-periodo');
   const compData     = document.getElementById('proj-comp-data');
   const compCategSel = document.getElementById('proj-comp-categoria');
 
@@ -1048,34 +1090,32 @@ function openProjetoModal(p = null, prefill = null) {
     if (temCompromisso) populateCompEditSection(investSub);
   }
 
-  // Seção "Criar compromisso" — só quando ainda não existe compromisso
-  if (editingId && temCompromisso) {
-    toggleWrap.classList.add('hidden');
-    compFields.classList.add('hidden');
-    compCheckbox.checked = false;
-  } else {
-    toggleWrap.classList.remove('hidden');
-    // Em modo "configurar compromisso" (edição sem compromisso), já vem marcado
-    compCheckbox.checked = editingId ? true : !!prefill?.aporte_mensal;
-    compFields.classList.toggle('hidden', !compCheckbox.checked);
-    compValor.value   = prefill?.aporte_mensal != null ? formatDecimal(prefill.aporte_mensal, 2) : '';
-    compPeriodo.value = 'Mensal';
-    compData.value    = (editingId ? p?.data_alvo : null) || todayISODate();
+  // Seção "Criar compromisso" — disponível para todos os projetos
+  toggleWrap.classList.remove('hidden');
+  // Edição com compromisso já existente: desmarcado por padrão (opt-in para criar outro)
+  // Edição sem compromisso: marcado por padrão
+  // Criação: marcado se houver prefill de aporte
+  compCheckbox.checked = editingId ? !temCompromisso : !!prefill?.aporte_mensal;
+  compFields.classList.toggle('hidden', !compCheckbox.checked);
 
-    // Popula categorias do grupo investimentos (default = "Projetos e Investimentos")
-    compCategSel.innerHTML = '';
-    if (cachedCategoriasInvest.length === 0) {
-      compCategSel.innerHTML = '<option value="">Nenhuma categoria do grupo Investimentos encontrada</option>';
-    } else {
-      cachedCategoriasInvest.forEach((c) => {
-        const opt = document.createElement('option');
-        opt.value = c.id;
-        opt.textContent = c.nome;
-        compCategSel.appendChild(opt);
-      });
-      const padrao = cachedCategoriasInvest.find((c) => /^investimentos?$/i.test(c.nome));
-      if (padrao) compCategSel.value = padrao.id;
-    }
+  populateCreateCompSection();
+
+  compValor.value = prefill?.aporte_mensal != null ? formatDecimal(prefill.aporte_mensal, 2) : '';
+  compData.value  = todayISODate();
+
+  // Popula categorias do grupo investimentos
+  compCategSel.innerHTML = '';
+  if (cachedCategoriasInvest.length === 0) {
+    compCategSel.innerHTML = '<option value="">Nenhuma categoria do grupo Investimentos encontrada</option>';
+  } else {
+    cachedCategoriasInvest.forEach((c) => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.nome;
+      compCategSel.appendChild(opt);
+    });
+    const padrao = cachedCategoriasInvest.find((c) => /^investimentos?$/i.test(c.nome));
+    if (padrao) compCategSel.value = padrao.id;
   }
 
   // Seção "Custos vinculados" — só em modo edição
@@ -1171,20 +1211,28 @@ async function saveProjeto(event) {
     inclui_no_patrimonio: document.getElementById('proj-inclui-patrimonio').checked,
   };
 
-  // Compromisso vinculado: em modo criação OU em modo "Configurar compromisso"
-  // (edição quando o projeto ainda não tem compromisso vinculado).
-  const editingProjetoSemCompromisso = editingId && !cachedSubcategorias.some((s) => s.projeto_id === editingId);
-  const wantCompromisso = (!editingId || editingProjetoSemCompromisso) && document.getElementById('proj-criar-compromisso').checked;
+  // Compromisso vinculado: disponível em criação E edição
+  const wantCompromisso = document.getElementById('proj-criar-compromisso').checked;
   let compromissoData = null;
   if (wantCompromisso) {
-    const valor      = parseDecimal(document.getElementById('proj-comp-valor').value);
-    const periodo    = document.getElementById('proj-comp-periodo').value;
-    const dataInicio = document.getElementById('proj-comp-data').value;
-    const categoria  = document.getElementById('proj-comp-categoria').value;
-    if (!valor || valor <= 0)   { showToast(t('investimentos.validacao.aporte_obrigatorio', 'Informe o valor do aporte do compromisso'), 'error'); return; }
-    if (!dataInicio)            { showToast(t('investimentos.validacao.data_aporte_obrigatoria', 'Informe a data do primeiro aporte'), 'error'); return; }
-    if (!categoria)             { showToast(t('investimentos.validacao.categoria_obrigatoria', t('investimentos.validacao.categoria_obrigatoria', 'Selecione uma categoria para o compromisso')), 'error'); return; }
-    compromissoData = { valor, periodo, dataInicio, categoria_id: categoria };
+    const valorVariavel = document.getElementById('proj-comp-valor-variavel').checked;
+    const valor         = valorVariavel ? 0 : (parseDecimal(document.getElementById('proj-comp-valor').value) || 0);
+    const periodo       = document.getElementById('proj-comp-periodo').value;
+    const dataInicio    = document.getElementById('proj-comp-data').value;
+    const categoria     = document.getElementById('proj-comp-categoria').value;
+    const tipoPagamento = document.getElementById('proj-comp-tipo-pag').value || 'Boleto';
+    const moeda         = document.getElementById('proj-comp-moeda').value || 'BRL';
+    const diaMes        = parseInt(document.getElementById('proj-comp-dia-mes').value) || null;
+    const diaSemana     = parseInt(document.getElementById('proj-comp-dia-semana').value);
+    const vencDia       = ['Mensal', 'Anual'].includes(periodo)
+      ? (diaMes || (dataInicio ? parseInt(dataInicio.split('-')[2]) : 1))
+      : null;
+
+    if (!valorVariavel && (!valor || valor <= 0)) { showToast(t('investimentos.validacao.aporte_obrigatorio', 'Informe o valor do aporte do compromisso'), 'error'); return; }
+    if (!dataInicio)  { showToast(t('investimentos.validacao.data_aporte_obrigatoria', 'Informe a data do primeiro aporte'), 'error'); return; }
+    if (!categoria)   { showToast(t('investimentos.validacao.categoria_obrigatoria', 'Selecione uma categoria para o compromisso'), 'error'); return; }
+
+    compromissoData = { valor, periodo, dataInicio, categoria_id: categoria, tipoPagamento, moeda, diaMes, diaSemana, vencDia, valorVariavel };
   }
 
   const labelOriginal = btn.textContent;
@@ -1232,8 +1280,9 @@ async function saveProjeto(event) {
       }
     }
 
-    // Cria compromisso vinculado (com dados do formulário ou placeholder automático)
-    if (response.data?.id && user && !editingId) {
+    // Cria compromisso vinculado
+    if (!editingId && response.data?.id && user) {
+      // Modo criação — sempre cria sub (com dados ou placeholder)
       try {
         if (compromissoData) {
           await ensureSubcategoriaForProjeto(response.data.id, user.id, payload.nome, compromissoData);
@@ -1244,6 +1293,15 @@ async function saveProjeto(event) {
         }
       } catch (err) {
         console.warn('[ensureSubcategoriaForProjeto]', err);
+        showToast('Projeto salvo, mas falhou ao criar compromisso: ' + (err?.message || String(err)), 'error', 10000);
+      }
+    } else if (editingId && wantCompromisso && compromissoData && user) {
+      // Modo edição — usuário optou por criar novo compromisso vinculado
+      try {
+        await ensureSubcategoriaForProjeto(editingId, user.id, payload.nome, compromissoData, true);
+        showToast('Projeto atualizado — compromisso criado e vinculado', 'success');
+      } catch (err) {
+        console.warn('[ensureSubcategoriaForProjeto edit]', err);
         showToast('Projeto salvo, mas falhou ao criar compromisso: ' + (err?.message || String(err)), 'error', 10000);
       }
     } else {
@@ -1269,17 +1327,24 @@ async function saveProjeto(event) {
 // Auto-criar subcategoria vinculada ao projeto de investimento
 // (espelha ensureSubcategoriaForDivida em dividas.js)
 // -----------------------------
-async function ensureSubcategoriaForProjeto(projetoId, userId, nomeProjeto, comp) {
-  // Já existe sub vinculada a esse projeto com mesmo nome? evita duplicata acidental
-  const { data: existing, error: existErr } = await supabase.from('subcategorias')
-    .select('id')
-    .eq('projeto_id', projetoId)
-    .limit(1);
-  if (existErr) throw existErr;
-  if (existing && existing.length > 0) return; // já existe pelo menos uma sub vinculada
+async function ensureSubcategoriaForProjeto(projetoId, userId, nomeProjeto, comp, force = false) {
+  if (!force) {
+    // Fluxo automático (restauração): evita duplicata se já existe sub vinculada
+    const { data: existing, error: existErr } = await supabase.from('subcategorias')
+      .select('id').eq('projeto_id', projetoId).limit(1);
+    if (existErr) throw existErr;
+    if (existing && existing.length > 0) return;
+  }
 
-  const [, , diaStr] = comp.dataInicio.split('-');
-  const vencDia = parseInt(diaStr) || 1;
+  const periodo  = comp.periodo || 'Mensal';
+  const [, , diaStr] = (comp.dataInicio || '').split('-');
+  const defaultDia = parseInt(diaStr) || 1;
+  const vencDia  = comp.vencDia != null
+    ? comp.vencDia
+    : (['Mensal', 'Anual'].includes(periodo) ? defaultDia : null);
+  const diaSemana = ['Semanal', 'Quinzenal'].includes(periodo)
+    ? (comp.diaSemana ?? null)
+    : null;
 
   const { error: insErr } = await supabase.from('subcategorias').insert({
     user_id:        userId,
@@ -1287,12 +1352,14 @@ async function ensureSubcategoriaForProjeto(projetoId, userId, nomeProjeto, comp
     tipo:           'Despesa',
     categoria_id:   comp.categoria_id,
     projeto_id:     projetoId,
-    tipo_pagamento: 'Boleto',
+    tipo_pagamento: comp.tipoPagamento || 'Boleto',
     vencimento_dia: vencDia,
-    periodo:        comp.periodo,
+    dia_semana:     diaSemana,
+    periodo:        periodo,
     iniciado_em:    comp.dataInicio,
-    moeda:          'BRL',
-    valor_base:     comp.valor,
+    moeda:          comp.moeda || 'BRL',
+    valor_base:     comp.valorVariavel ? 0 : (comp.valor || 0),
+    valor_variavel: Boolean(comp.valorVariavel),
     status:         'ativa',
     descricao:      `Auto-criado para o projeto de investimento "${nomeProjeto}"`,
   });
