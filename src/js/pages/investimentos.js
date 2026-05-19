@@ -1301,6 +1301,18 @@ async function saveProjeto(event) {
           .in('status', ['Agendado', 'A Transferir']);
         if (delErr) console.warn('[regen pagamentos]', delErr);
 
+        // Limpa orcamento_geral de meses antes da nova data de início.
+        // Sem isso, a aba de orçamento continua mostrando entradas do mês antigo
+        // até o usuário visitar aquele mês (o lazy-cleanup só roda ao abrir o mês).
+        const newMesAno = compromissoData.dataInicio.slice(0, 7); // 'YYYY-MM'
+        const { error: delOrcErr } = await supabase
+          .from('orcamento_geral')
+          .delete()
+          .eq('subcategoria_id', investSubDb.id)
+          .lt('mes_ano', newMesAno)
+          .is('cambio_travado', null);
+        if (delOrcErr) console.warn('[regen orcamento_geral]', delOrcErr);
+
         showToast(t('investimentos.toast.atualizado', 'Projeto atualizado'), 'success');
       } else if (user) {
         // Nenhuma sub vinculada — cria

@@ -12,6 +12,20 @@
   <link rel="stylesheet" href="src/css/global.css">
   <link rel="stylesheet" href="src/css/components.css">
   <link rel="stylesheet" href="src/css/layout.css">
+  <style>
+    .pag-flat-date-header td {
+      padding: var(--space-2) var(--space-3);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      background: var(--color-bg-subtle, #f8f9fa);
+      border-top: 1px solid var(--color-border);
+    }
+    .pag-flat-date-header:first-child td { border-top: none; }
+    #pag-flat-bar.hidden { display: none !important; }
+  </style>
 </head>
 <body>
   <div class="app-shell">
@@ -35,8 +49,16 @@
         </div>
       </div>
 
-      <!-- Navegação de mês -->
-      <div class="orcamento-monthnav">
+      <!-- View toggle: Blocos / Próximos -->
+      <div style="display:flex;justify-content:center;margin-bottom:var(--space-3);">
+        <div class="view-toggle" id="pag-view-seg">
+          <button class="view-toggle-btn active" data-pag-view="blocos" type="button">Blocos</button>
+          <button class="view-toggle-btn" data-pag-view="proximos" type="button">Próximos</button>
+        </div>
+      </div>
+
+      <!-- Navegação de mês (oculta no modo Próximos) -->
+      <div class="orcamento-monthnav" id="pag-monthnav">
         <button type="button" class="calendar-nav" id="pag-prev" aria-label="Mês anterior">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
@@ -44,6 +66,19 @@
         <button type="button" class="calendar-nav" id="pag-next" aria-label="Próximo mês">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
+      </div>
+
+      <!-- Barra de período — visível só no modo Próximos -->
+      <div id="pag-flat-bar" class="hidden" style="display:flex;align-items:flex-end;gap:var(--space-3);margin-bottom:var(--space-4);flex-wrap:wrap;justify-content:center;">
+        <div class="field" style="margin:0;min-width:150px;">
+          <label class="field-label" for="pag-flat-from">De</label>
+          <input class="input" type="date" id="pag-flat-from">
+        </div>
+        <div class="field" style="margin:0;min-width:150px;">
+          <label class="field-label" for="pag-flat-to">Até</label>
+          <input class="input" type="date" id="pag-flat-to">
+        </div>
+        <button class="btn btn-primary" id="btn-pag-flat-buscar" type="button">Buscar</button>
       </div>
 
       <!-- Filtros -->

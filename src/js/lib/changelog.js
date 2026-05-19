@@ -7,6 +7,16 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-19-pagamentos-tabela-proximos',
+    version: '0.8.0',
+    date: '19/05/2026',
+    title: 'Pagamentos — tabela "Próximos" + correção de orçamento ao trocar data de início',
+    items: [
+      { type: 'new', text: 'Página Pagamentos — novo modo "Próximos": tabela flat (sem divisão por blocos) com filtro de período livre (De / Até). Padrão: hoje + 90 dias. Permite ver todos os pagamentos dos próximos meses de uma só vez, sem navegar mês a mês.' },
+      { type: 'fix', text: 'Ao editar a data de início de um projeto de investimento, as entradas antigas de orçamento_geral (meses antes da nova data) eram limpas apenas na próxima visita ao orçamento daquele mês. Agora a limpeza acontece imediatamente ao salvar, evitando que a aba de orçamento continue mostrando valores de meses anteriores.' },
+    ],
+  },
+  {
     id: '2026-05-19-simulador-data-alvo-saldo',
     version: '0.7.9',
     date: '19/05/2026',

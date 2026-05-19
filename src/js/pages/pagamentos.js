@@ -34,9 +34,12 @@ let viewMonth = today.getMonth();
 let cachedSubcategorias = []; // pra computar bloco_quinzenal e ocorrências
 let cachedCategorias = [];    // pra ordenação dos blocos
 let cachedContas = [];        // pra display de banco
-let cachedPagamentos = [];    // entries do mês visível com subcategoria + categoria aninhadas
+let cachedPagamentos = [];    // entries do mês/período visível com subcategoria + categoria aninhadas
 let detailsPagamento = null;  // pagamento exibido no modal de detalhes
 let filterStatus = 'todos';   // 'todos' | 'pendentes' | 'atrasados' | 'pagos' | 'cancelados'
+let viewMode = 'blocos';      // 'blocos' | 'proximos'
+let flatFrom = '';            // YYYY-MM-DD
+let flatTo   = '';            // YYYY-MM-DD
 
 
 const ratesMap = new Map();          // 'USD' → 5.15
@@ -126,8 +129,46 @@ function bindEvents() {
     document.querySelectorAll('#status-filters .cf-status-tab').forEach((p) => p.classList.remove('active'));
     btn.classList.add('active');
     filterStatus = btn.dataset.filter;
-    renderPagamentos();
+    if (viewMode === 'proximos') renderFlat();
+    else renderPagamentos();
   });
+
+  // Toggle Blocos / Próximos
+  document.getElementById('pag-view-seg').addEventListener('click', (e) => {
+    const btn = e.target.closest('.view-toggle-btn');
+    if (!btn || btn.dataset.pagView === viewMode) return;
+    viewMode = btn.dataset.pagView;
+    document.querySelectorAll('#pag-view-seg .view-toggle-btn').forEach((b) => b.classList.toggle('active', b.dataset.pagView === viewMode));
+    const isProximos = viewMode === 'proximos';
+    document.getElementById('pag-monthnav').classList.toggle('hidden', isProximos);
+    document.getElementById('pag-flat-bar').classList.toggle('hidden', !isProximos);
+    if (isProximos) {
+      if (!flatFrom) initFlatDates();
+      loadFlat();
+    } else {
+      loadMonth();
+    }
+  });
+
+  // Buscar no modo Próximos
+  document.getElementById('btn-pag-flat-buscar').addEventListener('click', () => {
+    flatFrom = document.getElementById('pag-flat-from').value;
+    flatTo   = document.getElementById('pag-flat-to').value;
+    if (!flatFrom || !flatTo) { showToast('Informe as duas datas', 'error'); return; }
+    if (flatFrom > flatTo)    { showToast('A data inicial deve ser anterior à final', 'error'); return; }
+    loadFlat();
+  });
+}
+
+function initFlatDates() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  flatFrom = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const d2 = new Date(d);
+  d2.setDate(d2.getDate() + 90);
+  flatTo = `${d2.getFullYear()}-${pad(d2.getMonth() + 1)}-${pad(d2.getDate())}`;
+  document.getElementById('pag-flat-from').value = flatFrom;
+  document.getElementById('pag-flat-to').value   = flatTo;
 }
 
 // -----------------------------
@@ -222,6 +263,116 @@ async function loadMonth() {
   await refreshRates();
 
   renderPagamentos();
+}
+
+// -----------------------------
+// Modo Próximos — tabela flat por intervalo de datas
+// -----------------------------
+async function loadFlat() {
+  const container = document.getElementById('pagamentos-container');
+  container.innerHTML = '<div class="loading-overlay"><span class="spinner"></span>Carregando…</div>';
+  document.getElementById('empty-state').classList.add('hidden');
+
+  const dFrom = new Date(flatFrom + 'T00:00:00');
+  const dTo   = new Date(flatTo   + 'T00:00:00');
+  if (isNaN(dFrom) || isNaN(dTo) || dFrom > dTo) {
+    container.innerHTML = '';
+    showToast('Período inválido', 'error');
+    return;
+  }
+
+  // Garante que orcamento_geral e pagamentos existam para cada mês no intervalo (máx 6)
+  const cur = new Date(dFrom.getFullYear(), dFrom.getMonth(), 1);
+  const end = new Date(dTo.getFullYear(),   dTo.getMonth(),   1);
+  let count = 0;
+  while (cur <= end && count < 6) {
+    await ensureOrcamentoForMonth(cur.getFullYear(), cur.getMonth());
+    await ensurePagamentosForMonth(cur.getFullYear(), cur.getMonth());
+    cur.setMonth(cur.getMonth() + 1);
+    count++;
+  }
+
+  const { data, error } = await supabase
+    .from('pagamentos')
+    .select('*, subcategorias(*, categorias(*))')
+    .gte('data_vencimento', flatFrom)
+    .lte('data_vencimento', flatTo)
+    .order('data_vencimento');
+
+  if (error) {
+    console.error('[loadFlat]', error);
+    container.innerHTML = '';
+    showToast('Erro: ' + error.message, 'error', 8000);
+    return;
+  }
+
+  cachedPagamentos = (data || []).filter((p) => p.subcategorias?.status === 'ativa');
+  await refreshRates();
+  renderFlat();
+}
+
+function renderFlat() {
+  const container = document.getElementById('pagamentos-container');
+  const emptyState = document.getElementById('empty-state');
+
+  const counts = { todos: 0, pendentes: 0, atrasados: 0, pagos: 0, cancelados: 0 };
+  cachedPagamentos.forEach((p) => { counts.todos++; counts[getStatusGroup(p)]++; });
+  Object.entries(counts).forEach(([k, v]) => {
+    const el = document.querySelector(`[data-count="${k}"]`);
+    if (el) el.textContent = v;
+  });
+
+  const filtered = cachedPagamentos.filter(passesFilter);
+
+  if (filtered.length === 0) {
+    container.innerHTML = '';
+    emptyState.classList.remove('hidden');
+    return;
+  }
+  emptyState.classList.add('hidden');
+
+  // Agrupa por data de vencimento
+  const byDate = new Map();
+  for (const p of filtered) {
+    const d = p.data_vencimento || '';
+    if (!byDate.has(d)) byDate.set(d, []);
+    byDate.get(d).push(p);
+  }
+
+  const COL_SPAN = 7;
+  const rowsHtml = [];
+  for (const [date, items] of byDate) {
+    const dateLabel = date ? formatDateBR(date) : 'Sem data';
+    rowsHtml.push(`<tr class="pag-flat-date-header"><td colspan="${COL_SPAN}">${dateLabel}</td></tr>`);
+    for (const p of items) {
+      const cat = p.subcategorias?.categorias;
+      rowsHtml.push(renderPagamentoRow(p, cat?.cor || '#9CA3AF'));
+    }
+  }
+
+  container.innerHTML = `
+    <div class="pagamento-bloco-scroll">
+      <table class="pagamento-bloco-table">
+        <colgroup>
+          <col><col style="width:150px;"><col style="width:100px;">
+          <col style="width:45px;"><col style="width:72px;">
+          <col style="width:130px;"><col style="width:120px;">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Compromisso</th>
+            <th class="pag-conta-header">Conta Pgto</th>
+            <th>Tipo</th>
+            <th class="text-center">Vto</th>
+            <th class="text-center">Dias</th>
+            <th class="text-right">Valor</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml.join('')}</tbody>
+      </table>
+    </div>`;
+  bindEdits();
 }
 
 // -----------------------------
