@@ -515,8 +515,6 @@ function renderCard(p) {
 
       ${grafico}
 
-      ${renderCustosVinculados(p.id)}
-
       <footer class="projeto-card-footer">
         <span class="projeto-card-subs">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
@@ -529,32 +527,6 @@ function renderCard(p) {
         </button>
       </footer>
     </article>
-  `;
-}
-
-/**
- * Renderiza seção "Custos vinculados" no card do projeto.
- * Exibe subs do bloco custo_vida que apontam pra esse projeto via subcategorias.projeto_id.
- *
- * @param {string} projetoId
- * @returns {string} HTML (vazio se sem custos)
- */
-function renderCustosVinculados(projetoId) {
-  const subs = (cachedSubcategorias || []).filter((s) =>
-    s.projeto_id === projetoId
-    && s.status === 'ativa'
-    && s.categorias?.grupo === 'custo_vida'
-  );
-  if (subs.length === 0) return '';
-  const totalPrev = subs.reduce((sum, s) => sum + (Number(s.valor_base) || 0), 0);
-  return `
-    <div class="projeto-card-custos">
-      <p class="projeto-card-custos-label">Custos vinculados (${subs.length})</p>
-      <ul class="projeto-card-custos-list">
-        ${subs.map((s) => `<li><span>${escapeHtml(s.nome)}</span> <span class="tabular">${formatCurrencyHTML(Number(s.valor_base) || 0, 'BRL')}</span></li>`).join('')}
-      </ul>
-      <p class="projeto-card-custos-total">Total mensal previsto: <strong>${formatCurrencyHTML(totalPrev, 'BRL')}</strong></p>
-    </div>
   `;
 }
 
