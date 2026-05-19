@@ -7,6 +7,19 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-18-projetos-e-investimentos',
+    version: '0.7.3',
+    date: '18/05/2026',
+    title: 'Projetos e Investimentos — edição de compromisso, data de início e melhorias',
+    items: [
+      { type: 'new', text: 'Página "Investimentos" renomeada para "Projetos e Investimentos" em todo o sistema (título, sidebar, notificações).' },
+      { type: 'new', text: 'Modal de edição de projeto: nova seção "Compromisso de investimento" permite ajustar tipo de pagamento, período de recorrência (com dia do mês ou dia da semana conforme o período), valor base e moeda — sem precisar ir à página de Compromissos.' },
+      { type: 'new', text: 'Campo "Data de início" adicionado ao modal do projeto, ao lado de "Término do projeto". A linha do projeto na visão de Timeline passa a usar esse campo como ponto de partida.' },
+      { type: 'new', text: 'Modal de detalhes do projeto: lista "Compromissos atrelados" agora exibe linha de total no rodapé.' },
+      { type: 'improvement', text: 'Cards de projeto sem custos vinculados não exibem mais espaço em branco — grid usa align-items: start.' },
+    ],
+  },
+  {
     id: '2026-05-18-delete-cascade-e-picker',
     version: '0.7.2',
     date: '18/05/2026',
