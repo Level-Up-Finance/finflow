@@ -7,6 +7,17 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-19-compromisso-unificado-projetos',
+    version: '0.7.5',
+    date: '19/05/2026',
+    title: 'Projetos — compromisso recorrente disponível para todos os projetos',
+    items: [
+      { type: 'improvement', text: 'Modal de projeto: seção "Compromisso recorrente vinculado" unificada — funciona tanto para criar quanto para editar o compromisso vinculado, sem duplicar campos.' },
+      { type: 'improvement', text: 'Ao editar um projeto com compromisso já existente, os campos são pré-preenchidos com os dados atuais (período, valor, moeda, tipo de pagamento, dia de vencimento).' },
+      { type: 'fix', text: 'Cards de projeto agora têm altura consistente independente de exibir ou não o badge "💎 Patrimônio".' },
+    ],
+  },
+  {
     id: '2026-05-18-criar-compromisso-todos-projetos',
     version: '0.7.4',
     date: '18/05/2026',

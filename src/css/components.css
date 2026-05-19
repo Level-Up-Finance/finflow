@@ -5681,6 +5681,13 @@ td .currency-split {
   min-width: 0;
 }
 
+.projeto-card-tags {
+  min-height: 20px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
 .projeto-card-name {
   font-family: var(--font-display);
   font-size: var(--fs-md);

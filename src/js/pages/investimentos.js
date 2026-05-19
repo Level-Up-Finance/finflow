@@ -496,8 +496,10 @@ function renderCard(p) {
         <div class="projeto-card-titles">
           <h3 class="projeto-card-name">${escapeHtml(p.nome)}</h3>
           <span class="projeto-card-status status-${p.status}">${STATUS_LABELS[p.status] || p.status}</span>
-          ${p.inclui_no_patrimonio ? `<span class="tag-patrimonio" title="Incluído no cálculo de patrimônio">💎 Patrimônio</span>` : ''}
-          ${isParcial ? `<span class="tag-parcial" title="Encerrado antes de atingir a meta">Parcial</span>` : ''}
+          <div class="projeto-card-tags">
+            ${p.inclui_no_patrimonio ? `<span class="tag-patrimonio" title="Incluído no cálculo de patrimônio">💎 Patrimônio</span>` : ''}
+            ${isParcial ? `<span class="tag-parcial" title="Encerrado antes de atingir a meta">Parcial</span>` : ''}
+          </div>
         </div>
       </header>
       ${p.descricao ? `<p class="projeto-card-desc">${escapeHtml(p.descricao)}</p>` : ''}
@@ -966,82 +968,45 @@ function updateCreateDayFields(periodo) {
   diaSemanaField.classList.toggle('hidden', !showDiaSemana);
 }
 
-function populateCreateCompSection() {
+function populateCreateCompSection(sub = null) {
   const selPeriodo = document.getElementById('proj-comp-periodo');
   if (!selPeriodo) return;
+  const periodo = sub?.periodo || 'Mensal';
   selPeriodo.innerHTML = PERIODOS.map((p) => `<option value="${p.value}">${p.label}</option>`).join('');
-  selPeriodo.value = 'Mensal';
+  selPeriodo.value = periodo;
   selPeriodo.onchange = () => updateCreateDayFields(selPeriodo.value);
-  updateCreateDayFields('Mensal');
+  updateCreateDayFields(periodo);
 
   const selDiaSemana = document.getElementById('proj-comp-dia-semana');
   if (selDiaSemana) {
     selDiaSemana.innerHTML = DIAS_SEMANA.map((d) => `<option value="${d.value}">${d.label}</option>`).join('');
+    if (sub?.dia_semana != null) selDiaSemana.value = String(sub.dia_semana);
   }
+
+  const inputDiaMes = document.getElementById('proj-comp-dia-mes');
+  if (inputDiaMes) inputDiaMes.value = sub?.vencimento_dia || '';
 
   const selTipoPag = document.getElementById('proj-comp-tipo-pag');
   if (selTipoPag) {
     selTipoPag.innerHTML = TIPOS_PAGAMENTO.map((tp) => `<option value="${tp}">${tp}</option>`).join('');
+    if (sub?.tipo_pagamento) selTipoPag.value = sub.tipo_pagamento;
   }
 
   const selMoeda = document.getElementById('proj-comp-moeda');
-  if (selMoeda) selMoeda.innerHTML = renderMoedaOptions('BRL');
+  if (selMoeda) selMoeda.innerHTML = renderMoedaOptions(sub?.moeda || 'BRL');
 
   const chkVarVal = document.getElementById('proj-comp-valor-variavel');
   const valorRow  = document.getElementById('proj-comp-valor-row');
   if (chkVarVal && valorRow) {
-    chkVarVal.checked = false;
-    valorRow.classList.remove('hidden');
+    chkVarVal.checked = Boolean(sub?.valor_variavel);
+    valorRow.classList.toggle('hidden', chkVarVal.checked);
     chkVarVal.onchange = () => valorRow.classList.toggle('hidden', chkVarVal.checked);
   }
-}
 
-// -----------------------------
-// Seção "Editar compromisso de investimento" dentro do modal do projeto
-// -----------------------------
-function updateCompEditDayFields(periodo) {
-  const diaMesField    = document.getElementById('proj-comp-edit-dia-mes-field');
-  const diaSemanaField = document.getElementById('proj-comp-edit-dia-semana-field');
-  if (!diaMesField || !diaSemanaField) return;
-
-  const showDiaMes    = ['Mensal', 'Anual'].includes(periodo);
-  const showDiaSemana = ['Semanal', 'Quinzenal'].includes(periodo);
-  diaMesField.classList.toggle('hidden', !showDiaMes);
-  diaSemanaField.classList.toggle('hidden', !showDiaSemana);
-}
-
-function populateCompEditSection(sub) {
-  // Período
-  const selPeriodo = document.getElementById('proj-comp-edit-periodo');
-  selPeriodo.innerHTML = PERIODOS.map((p) => `<option value="${p.value}"${sub.periodo === p.value ? ' selected' : ''}>${p.label}</option>`).join('');
-  selPeriodo.onchange = () => updateCompEditDayFields(selPeriodo.value);
-  updateCompEditDayFields(sub.periodo || 'Mensal');
-
-  // Dia do mês
-  const inputDiaMes = document.getElementById('proj-comp-edit-dia-mes');
-  inputDiaMes.value = sub.vencimento_dia || '';
-
-  // Dia da semana
-  const selDiaSemana = document.getElementById('proj-comp-edit-dia-semana');
-  selDiaSemana.innerHTML = DIAS_SEMANA.map((d) => `<option value="${d.value}"${sub.dia_semana === d.value ? ' selected' : ''}>${d.label}</option>`).join('');
-
-  // Tipo de pagamento
-  const selTipoPag = document.getElementById('proj-comp-edit-tipo-pag');
-  selTipoPag.innerHTML = TIPOS_PAGAMENTO.map((t) => `<option value="${t}"${sub.tipo_pagamento === t ? ' selected' : ''}>${t}</option>`).join('');
-
-  // Valor variável
-  const chkVarVal = document.getElementById('proj-comp-edit-valor-variavel');
-  chkVarVal.checked = Boolean(sub.valor_variavel);
-  const valorField = document.getElementById('proj-comp-edit-valor-field');
-  valorField.classList.toggle('hidden', chkVarVal.checked);
-  chkVarVal.onchange = () => valorField.classList.toggle('hidden', chkVarVal.checked);
-
-  // Valor base
-  document.getElementById('proj-comp-edit-valor').value = sub.valor_base != null ? formatDecimal(Number(sub.valor_base), 2) : '';
-
-  // Moeda
-  const selMoeda = document.getElementById('proj-comp-edit-moeda');
-  selMoeda.innerHTML = renderMoedaOptions(sub.moeda || 'BRL');
+  const inputValor = document.getElementById('proj-comp-valor');
+  if (inputValor && sub?.valor_base != null) {
+    inputValor.value = formatDecimal(Number(sub.valor_base), 2);
+  }
 }
 
 // -----------------------------
@@ -1083,27 +1048,37 @@ function openProjetoModal(p = null, prefill = null) {
     : null;
   const temCompromisso = Boolean(investSub);
 
-  // Seção "Editar compromisso" — só em edição com compromisso existente
-  const compEditWrap = document.getElementById('proj-comp-edit-wrap');
-  if (compEditWrap) {
-    compEditWrap.classList.toggle('hidden', !temCompromisso);
-    if (temCompromisso) populateCompEditSection(investSub);
-  }
-
-  // Seção "Criar compromisso" — disponível para todos os projetos
+  // Seção unificada de compromisso — criar ou editar
   toggleWrap.classList.remove('hidden');
-  // Edição com compromisso já existente: desmarcado por padrão (opt-in para criar outro)
-  // Edição sem compromisso: marcado por padrão
+  // Edição com compromisso existente: marcado (mostra os campos para editar)
+  // Edição sem compromisso: desmarcado (opt-in para criar)
   // Criação: marcado se houver prefill de aporte
-  compCheckbox.checked = editingId ? !temCompromisso : !!prefill?.aporte_mensal;
+  compCheckbox.checked = temCompromisso || !!prefill?.aporte_mensal;
   compFields.classList.toggle('hidden', !compCheckbox.checked);
 
-  populateCreateCompSection();
+  populateCreateCompSection(investSub || null);
 
-  compValor.value = prefill?.aporte_mensal != null ? formatDecimal(prefill.aporte_mensal, 2) : '';
-  compData.value  = todayISODate();
+  // Data de início: usa data do sub existente se disponível, senão hoje
+  if (!investSub) {
+    compValor.value = prefill?.aporte_mensal != null ? formatDecimal(prefill.aporte_mensal, 2) : '';
+  }
+  compData.value = investSub?.iniciado_em?.split('T')[0] || todayISODate();
 
-  // Popula categorias do grupo investimentos
+  // Label e hint dinâmicos
+  const compLabel = document.getElementById('proj-comp-label');
+  const compHint  = document.getElementById('proj-comp-hint');
+  if (compLabel) compLabel.innerHTML = '<strong>Compromisso recorrente vinculado</strong>';
+  if (compHint) {
+    compHint.textContent = temCompromisso
+      ? 'Editando compromisso existente. Salve para aplicar as alterações.'
+      : 'Criar novo compromisso recorrente vinculado a este projeto.';
+  }
+
+  // Categoria: oculta quando há sub existente (categoria não muda na edição)
+  const compCategWrap = document.getElementById('proj-comp-categoria-wrap');
+  if (compCategWrap) compCategWrap.classList.toggle('hidden', temCompromisso);
+
+  // Popula categorias do grupo investimentos (para criação)
   compCategSel.innerHTML = '';
   if (cachedCategoriasInvest.length === 0) {
     compCategSel.innerHTML = '<option value="">Nenhuma categoria do grupo Investimentos encontrada</option>';
@@ -1213,13 +1188,18 @@ async function saveProjeto(event) {
 
   // Compromisso vinculado: disponível em criação E edição
   const wantCompromisso = document.getElementById('proj-criar-compromisso').checked;
+  // Sub existente do grupo investimentos (null em criação)
+  const investSubCurrent = editingId
+    ? cachedSubcategorias.find((s) => s.projeto_id === editingId && s.categorias?.grupo === 'investimentos')
+    : null;
   let compromissoData = null;
   if (wantCompromisso) {
     const valorVariavel = document.getElementById('proj-comp-valor-variavel').checked;
     const valor         = valorVariavel ? 0 : (parseDecimal(document.getElementById('proj-comp-valor').value) || 0);
     const periodo       = document.getElementById('proj-comp-periodo').value;
     const dataInicio    = document.getElementById('proj-comp-data').value;
-    const categoria     = document.getElementById('proj-comp-categoria').value;
+    // Quando editando sub existente, categoria não muda — usa a da sub
+    const categoria     = investSubCurrent?.categoria_id || document.getElementById('proj-comp-categoria').value;
     const tipoPagamento = document.getElementById('proj-comp-tipo-pag').value || 'Boleto';
     const moeda         = document.getElementById('proj-comp-moeda').value || 'BRL';
     const diaMes        = parseInt(document.getElementById('proj-comp-dia-mes').value) || null;
@@ -1230,7 +1210,7 @@ async function saveProjeto(event) {
 
     if (!valorVariavel && (!valor || valor <= 0)) { showToast(t('investimentos.validacao.aporte_obrigatorio', 'Informe o valor do aporte do compromisso'), 'error'); return; }
     if (!dataInicio)  { showToast(t('investimentos.validacao.data_aporte_obrigatoria', 'Informe a data do primeiro aporte'), 'error'); return; }
-    if (!categoria)   { showToast(t('investimentos.validacao.categoria_obrigatoria', 'Selecione uma categoria para o compromisso'), 'error'); return; }
+    if (!investSubCurrent && !categoria) { showToast(t('investimentos.validacao.categoria_obrigatoria', 'Selecione uma categoria para o compromisso'), 'error'); return; }
 
     compromissoData = { valor, periodo, dataInicio, categoria_id: categoria, tipoPagamento, moeda, diaMes, diaSemana, vencDia, valorVariavel };
   }
@@ -1253,62 +1233,50 @@ async function saveProjeto(event) {
     }
     if (response.error) throw response.error;
 
-    // Atualiza compromisso de investimento existente (edição com seção de edição visível)
-    const compEditWrap = document.getElementById('proj-comp-edit-wrap');
-    if (editingId && compEditWrap && !compEditWrap.classList.contains('hidden')) {
-      const subToEdit = cachedSubcategorias.find((s) => s.projeto_id === editingId && s.categorias?.grupo === 'investimentos');
-      if (subToEdit) {
-        const periodo        = document.getElementById('proj-comp-edit-periodo').value;
-        const tipoPagamento  = document.getElementById('proj-comp-edit-tipo-pag').value;
-        const valorVariavel  = document.getElementById('proj-comp-edit-valor-variavel').checked;
-        const valorBase      = parseDecimal(document.getElementById('proj-comp-edit-valor').value) || 0;
-        const moeda          = document.getElementById('proj-comp-edit-moeda').value;
-        const diaMes         = parseInt(document.getElementById('proj-comp-edit-dia-mes').value) || null;
-        const diaSemana      = parseInt(document.getElementById('proj-comp-edit-dia-semana').value);
-
+    // Compromisso vinculado — criar ou atualizar
+    if (wantCompromisso && compromissoData) {
+      if (investSubCurrent) {
+        // Edição: atualiza sub existente
         const subPayload = {
-          periodo,
-          tipo_pagamento: tipoPagamento,
-          valor_variavel: valorVariavel,
-          valor_base:     valorVariavel ? subToEdit.valor_base : valorBase,
-          moeda,
-          vencimento_dia: ['Mensal', 'Anual'].includes(periodo) ? diaMes : null,
-          dia_semana:     ['Semanal', 'Quinzenal'].includes(periodo) ? diaSemana : null,
+          periodo:        compromissoData.periodo,
+          tipo_pagamento: compromissoData.tipoPagamento,
+          valor_variavel: compromissoData.valorVariavel,
+          valor_base:     compromissoData.valorVariavel ? investSubCurrent.valor_base : compromissoData.valor,
+          moeda:          compromissoData.moeda,
+          vencimento_dia: ['Mensal', 'Anual'].includes(compromissoData.periodo) ? compromissoData.diaMes : null,
+          dia_semana:     ['Semanal', 'Quinzenal'].includes(compromissoData.periodo) ? compromissoData.diaSemana : null,
+          iniciado_em:    compromissoData.dataInicio,
         };
-        const { error: subErr } = await supabase.from('subcategorias').update(subPayload).eq('id', subToEdit.id);
+        const { error: subErr } = await supabase.from('subcategorias').update(subPayload).eq('id', investSubCurrent.id);
         if (subErr) console.warn('[update compromisso investimento]', subErr);
-      }
-    }
-
-    // Cria compromisso vinculado
-    if (!editingId && response.data?.id && user) {
-      // Modo criação — sempre cria sub (com dados ou placeholder)
-      try {
-        if (compromissoData) {
-          await ensureSubcategoriaForProjeto(response.data.id, user.id, payload.nome, compromissoData);
-          showToast(t('investimentos.toast.criado_com_compromisso', 'Projeto salvo e compromisso vinculado'), 'success');
-        } else {
-          await ensureBareLinkForProjeto(response.data.id, user.id, payload);
-          showToast(t('investimentos.toast.criado', 'Projeto criado'), 'success');
+        showToast(t('investimentos.toast.atualizado', 'Projeto atualizado'), 'success');
+      } else if (user) {
+        // Criação ou edição sem sub existente: cria nova sub
+        const projetoId = editingId || response.data?.id;
+        try {
+          await ensureSubcategoriaForProjeto(projetoId, user.id, payload.nome, compromissoData, Boolean(editingId));
+          showToast(
+            editingId
+              ? 'Projeto atualizado — compromisso criado e vinculado'
+              : t('investimentos.toast.criado_com_compromisso', 'Projeto salvo e compromisso vinculado'),
+            'success'
+          );
+        } catch (err) {
+          console.warn('[ensureSubcategoriaForProjeto]', err);
+          showToast('Projeto salvo, mas falhou ao criar compromisso: ' + (err?.message || String(err)), 'error', 10000);
         }
-      } catch (err) {
-        console.warn('[ensureSubcategoriaForProjeto]', err);
-        showToast('Projeto salvo, mas falhou ao criar compromisso: ' + (err?.message || String(err)), 'error', 10000);
       }
-    } else if (editingId && wantCompromisso && compromissoData && user) {
-      // Modo edição — usuário optou por criar novo compromisso vinculado
-      try {
-        await ensureSubcategoriaForProjeto(editingId, user.id, payload.nome, compromissoData, true);
-        showToast('Projeto atualizado — compromisso criado e vinculado', 'success');
-      } catch (err) {
-        console.warn('[ensureSubcategoriaForProjeto edit]', err);
-        showToast('Projeto salvo, mas falhou ao criar compromisso: ' + (err?.message || String(err)), 'error', 10000);
-      }
+    } else if (!editingId && response.data?.id && user) {
+      // Criação sem compromisso — cria link vazio
+      await ensureBareLinkForProjeto(response.data.id, user.id, payload);
+      showToast(t('investimentos.toast.criado', 'Projeto criado'), 'success');
     } else {
-      showToast(editingId
-        ? t('investimentos.toast.atualizado', 'Projeto atualizado')
-        : t('investimentos.toast.criado', 'Projeto criado'),
-        'success');
+      showToast(
+        editingId
+          ? t('investimentos.toast.atualizado', 'Projeto atualizado')
+          : t('investimentos.toast.criado', 'Projeto criado'),
+        'success'
+      );
     }
 
     closeModal('modal-projeto');
