@@ -6432,6 +6432,12 @@ td .currency-split {
   border-top: 1px solid var(--color-border);
 }
 
+.proj-details-sub-total {
+  border-top: 2px solid var(--color-border-strong) !important;
+  background: var(--color-surface-alt);
+  font-weight: var(--fw-semibold);
+}
+
 .proj-hist-row-saldo {
   background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface));
   font-style: italic;

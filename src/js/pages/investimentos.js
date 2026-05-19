@@ -1308,6 +1308,7 @@ function openDetailsModal(id) {
 
   // Subs atreladas
   const subs = cachedSubcategorias.filter((s) => s.projeto_id === id);
+  const totalSubs = subs.reduce((acc, s) => acc + (Number(s.valor_base) || 0), 0);
   document.getElementById('proj-details-subs').innerHTML = `
     <h3 class="proj-details-section-title">Compromissos atrelados (${subs.length})</h3>
     ${subs.length === 0
@@ -1317,7 +1318,12 @@ function openDetailsModal(id) {
             <span class="proj-details-sub-name">${escapeHtml(s.apelido?.trim() || s.nome)}</span>
             <span class="proj-details-sub-valor">${formatCurrencyHTML(Number(s.valor_base) || 0, s.moeda || 'BRL')}</span>
           </div>
-        `).join('')}</div>`
+        `).join('')}
+        <div class="proj-details-sub-row proj-details-sub-total">
+          <span class="proj-details-sub-name">Total</span>
+          <span class="proj-details-sub-valor">${formatCurrencyHTML(totalSubs, 'BRL')}</span>
+        </div>
+      </div>`
     }
   `;
 
