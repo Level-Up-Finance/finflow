@@ -210,6 +210,18 @@
                 <select id="proj-comp-tipo-pag" class="select"></select>
               </div>
             </div>
+            <div class="field" id="proj-comp-conta-field">
+              <label class="field-label" for="proj-comp-conta">Banco / Cartão (opcional)</label>
+              <div class="conta-picker" id="proj-comp-conta-picker">
+                <button type="button" class="conta-picker-btn" id="proj-comp-conta-btn">
+                  <div id="proj-comp-conta-avatar-wrap"><div class="bank-avatar size-sm"><div class="bank-avatar-fallback" style="background:#9CA3AF;">?</div></div></div>
+                  <span class="conta-picker-name" id="proj-comp-conta-name">Banco / Cartão (opcional)…</span>
+                  <svg class="conta-picker-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <input type="hidden" id="proj-comp-conta" name="conta_id" value="">
+              </div>
+              <p class="field-hint">Conta de onde o aporte será debitado.</p>
+            </div>
             <div class="field" id="proj-comp-categoria-wrap">
               <label class="field-label" for="proj-comp-categoria">Categoria</label>
               <select id="proj-comp-categoria" class="select"></select>

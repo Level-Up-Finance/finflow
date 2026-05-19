@@ -7,6 +7,17 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-19-projetos-fix-duplicacao-conta',
+    version: '0.7.6',
+    date: '19/05/2026',
+    title: 'Projetos — fix duplicação de compromisso, campo Conta e regen de pagamentos',
+    items: [
+      { type: 'fix', text: 'Corrige duplicação de compromisso ao salvar projeto que já tinha sub vinculada (criada via Compromissos). Agora a busca da sub existente é feita direto no banco, não no cache.' },
+      { type: 'new', text: 'Modal do projeto: novo campo "Banco / Cartão" para escolher a conta de onde o aporte será debitado.' },
+      { type: 'fix', text: 'Ao editar dia/valor/período do compromisso, pagamentos pendentes (não pagos) são automaticamente removidos e regenerados com a nova config — antes ficavam pagamentos órfãos com a data antiga.' },
+    ],
+  },
+  {
     id: '2026-05-19-compromisso-unificado-projetos',
     version: '0.7.5',
     date: '19/05/2026',

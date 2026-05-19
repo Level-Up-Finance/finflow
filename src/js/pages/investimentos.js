@@ -17,6 +17,7 @@ import { initColVisibility } from '../lib/col-visibility.js';
 import { escapeHtml, formatDateBR, isoMonth, parseUserNumber } from '../lib/utils.js';
 import { DEFAULT_COLOR, renderColorPicker, setActiveColor } from '../lib/color-palette.js';
 import { initContatoPicker } from '../components/contato-picker.js';
+import { createContaPicker } from '../lib/conta-picker.js';
 import { parseDecimal, formatDecimal, autoAttachDecimalInputs } from '../lib/number-format.js';
 import { bindSimulador } from './investimentos/simulator.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
@@ -29,6 +30,7 @@ let cachedOrcamento = [];     // mês corrente — pra "previsto neste mês"
 let cachedContatos = [];      // clientes/fornecedores do usuário
 let cachedAportes = [];       // aportes_projeto (histórico manual)
 let cachedCategoriasInvest = []; // categorias do grupo investimentos (pra picker do compromisso vinculado)
+let cachedContas = [];        // contas ativas (pra picker de conta do compromisso)
 let editingId = null;
 let detailsId = null;
 let historicoInvestId = null;
@@ -113,7 +115,7 @@ async function loadAll() {
 
   const mesAno = isoMonth(viewYear, viewMonth);
 
-  const [projetos, subcats, pagamentos, orcamento, contatos, aportes, categorias] = await Promise.all([
+  const [projetos, subcats, pagamentos, orcamento, contatos, aportes, categorias, contas] = await Promise.all([
     supabase.from('projetos_investimento').select('*').order('nome'),
     // Subs com categoria pra cruzar com grupo='investimentos'
     supabase.from('subcategorias').select('*, categorias(grupo, cor, nome)').eq('status', 'ativa'),
@@ -128,7 +130,10 @@ async function loadAll() {
     supabase.from('contatos').select('id, nome, tipo, status, logo_url').neq('status', 'arquivado').order('nome'),
     supabase.from('aportes_projeto').select('*').order('data'),
     supabase.from('categorias').select('id, nome, grupo, ordem').eq('grupo', 'investimentos').order('ordem'),
+    supabase.from('contas').select('id, nome, apelido, tipo, icone_cor, moeda, status').neq('status', 'arquivada').order('nome'),
   ]);
+
+  cachedContas = contas?.data || [];
 
   if (projetos.error) {
     if (/relation.*projetos_investimento/i.test(projetos.error.message)) {
@@ -176,6 +181,7 @@ async function loadAll() {
 }
 
 let contatoPicker = null;
+let compContaPicker = null;
 
 function initContatoPickerOnce() {
   if (contatoPicker) return;
@@ -186,6 +192,22 @@ function initContatoPickerOnce() {
     contatos: () => cachedContatos,
     defaultTipo: 'fornecedor',
   });
+}
+
+function initCompContaPickerOnce() {
+  if (compContaPicker) return;
+  if (!document.getElementById('proj-comp-conta-btn')) return;
+  compContaPicker = createContaPicker({
+    triggerBtnId: 'proj-comp-conta-btn',
+    hiddenInputId: 'proj-comp-conta',
+    avatarWrapId:  'proj-comp-conta-avatar-wrap',
+    nameElId:      'proj-comp-conta-name',
+    getContas:     () => cachedContas,
+    placeholder:   'Banco / Cartão (opcional)…',
+    allowBlank:    true,
+    blankLabel:    '— Sem banco (preencher depois) —',
+  });
+  compContaPicker.init();
 }
 
 
@@ -1034,6 +1056,8 @@ function openProjetoModal(p = null, prefill = null) {
   initContatoPickerOnce();
   contatoPicker?.setValue(p?.contato_id || '');
 
+  initCompContaPickerOnce();
+
   // Seção "Criar compromisso vinculado"
   const toggleWrap   = document.getElementById('proj-compromisso-toggle-wrap');
   const compFields   = document.getElementById('proj-compromisso-fields');
@@ -1063,6 +1087,9 @@ function openProjetoModal(p = null, prefill = null) {
     compValor.value = prefill?.aporte_mensal != null ? formatDecimal(prefill.aporte_mensal, 2) : '';
   }
   compData.value = investSub?.iniciado_em?.split('T')[0] || todayISODate();
+
+  // Conta de pagamento — pré-preenche se houver sub existente
+  compContaPicker?.setValue(investSub?.conta_id || '');
 
   // Label e hint dinâmicos
   const compLabel = document.getElementById('proj-comp-label');
@@ -1188,8 +1215,9 @@ async function saveProjeto(event) {
 
   // Compromisso vinculado: disponível em criação E edição
   const wantCompromisso = document.getElementById('proj-criar-compromisso').checked;
-  // Sub existente do grupo investimentos (null em criação)
-  const investSubCurrent = editingId
+  // Sub existente do grupo investimentos no cache — usado só para validação de categoria.
+  // A busca definitiva (UPDATE vs CREATE) é feita via DB no save para evitar duplicatas por cache stale.
+  const investSubCached = editingId
     ? cachedSubcategorias.find((s) => s.projeto_id === editingId && s.categorias?.grupo === 'investimentos')
     : null;
   let compromissoData = null;
@@ -1199,9 +1227,10 @@ async function saveProjeto(event) {
     const periodo       = document.getElementById('proj-comp-periodo').value;
     const dataInicio    = document.getElementById('proj-comp-data').value;
     // Quando editando sub existente, categoria não muda — usa a da sub
-    const categoria     = investSubCurrent?.categoria_id || document.getElementById('proj-comp-categoria').value;
+    const categoria     = investSubCached?.categoria_id || document.getElementById('proj-comp-categoria').value;
     const tipoPagamento = document.getElementById('proj-comp-tipo-pag').value || 'Boleto';
     const moeda         = document.getElementById('proj-comp-moeda').value || 'BRL';
+    const contaId       = compContaPicker?.getValue() || null;
     const diaMes        = parseInt(document.getElementById('proj-comp-dia-mes').value) || null;
     const diaSemana     = parseInt(document.getElementById('proj-comp-dia-semana').value);
     const vencDia       = ['Mensal', 'Anual'].includes(periodo)
@@ -1210,9 +1239,9 @@ async function saveProjeto(event) {
 
     if (!valorVariavel && (!valor || valor <= 0)) { showToast(t('investimentos.validacao.aporte_obrigatorio', 'Informe o valor do aporte do compromisso'), 'error'); return; }
     if (!dataInicio)  { showToast(t('investimentos.validacao.data_aporte_obrigatoria', 'Informe a data do primeiro aporte'), 'error'); return; }
-    if (!investSubCurrent && !categoria) { showToast(t('investimentos.validacao.categoria_obrigatoria', 'Selecione uma categoria para o compromisso'), 'error'); return; }
+    if (!investSubCached && !categoria) { showToast(t('investimentos.validacao.categoria_obrigatoria', 'Selecione uma categoria para o compromisso'), 'error'); return; }
 
-    compromissoData = { valor, periodo, dataInicio, categoria_id: categoria, tipoPagamento, moeda, diaMes, diaSemana, vencDia, valorVariavel };
+    compromissoData = { valor, periodo, dataInicio, categoria_id: categoria, tipoPagamento, moeda, contaId, diaMes, diaSemana, vencDia, valorVariavel };
   }
 
   const labelOriginal = btn.textContent;
@@ -1235,26 +1264,45 @@ async function saveProjeto(event) {
 
     // Compromisso vinculado — criar ou atualizar
     if (wantCompromisso && compromissoData) {
-      if (investSubCurrent) {
-        // Edição: atualiza sub existente
+      const projetoId = editingId || response.data?.id;
+      // Busca sub vinculada DIRETO no DB (não confia em cache que pode estar stale após criação via Compromissos)
+      const { data: subsLinkadas } = await supabase
+        .from('subcategorias')
+        .select('id, valor_base, categoria_id, categorias(grupo)')
+        .eq('projeto_id', projetoId)
+        .order('created_at', { ascending: true });
+      const investSubDb = (subsLinkadas || []).find((s) => s.categorias?.grupo === 'investimentos');
+
+      if (investSubDb) {
+        // Atualiza sub existente
         const subPayload = {
           periodo:        compromissoData.periodo,
           tipo_pagamento: compromissoData.tipoPagamento,
+          conta_id:       compromissoData.contaId,
           valor_variavel: compromissoData.valorVariavel,
-          valor_base:     compromissoData.valorVariavel ? investSubCurrent.valor_base : compromissoData.valor,
+          valor_base:     compromissoData.valorVariavel ? investSubDb.valor_base : compromissoData.valor,
           moeda:          compromissoData.moeda,
-          vencimento_dia: ['Mensal', 'Anual'].includes(compromissoData.periodo) ? compromissoData.diaMes : null,
+          vencimento_dia: ['Mensal', 'Anual'].includes(compromissoData.periodo) ? compromissoData.vencDia : null,
           dia_semana:     ['Semanal', 'Quinzenal'].includes(compromissoData.periodo) ? compromissoData.diaSemana : null,
           iniciado_em:    compromissoData.dataInicio,
         };
-        const { error: subErr } = await supabase.from('subcategorias').update(subPayload).eq('id', investSubCurrent.id);
+        const { error: subErr } = await supabase.from('subcategorias').update(subPayload).eq('id', investSubDb.id);
         if (subErr) console.warn('[update compromisso investimento]', subErr);
+
+        // Apaga pagamentos pendentes (não pagos) — serão regenerados pelo ensurePagamentosForMonth
+        // na próxima visita à página Pagamentos, com a nova config (data de vencimento, valor, etc.)
+        const { error: delErr } = await supabase
+          .from('pagamentos')
+          .delete()
+          .eq('subcategoria_id', investSubDb.id)
+          .in('status', ['Agendado', 'A Transferir']);
+        if (delErr) console.warn('[regen pagamentos]', delErr);
+
         showToast(t('investimentos.toast.atualizado', 'Projeto atualizado'), 'success');
       } else if (user) {
-        // Criação ou edição sem sub existente: cria nova sub
-        const projetoId = editingId || response.data?.id;
+        // Nenhuma sub vinculada — cria
         try {
-          await ensureSubcategoriaForProjeto(projetoId, user.id, payload.nome, compromissoData, Boolean(editingId));
+          await ensureSubcategoriaForProjeto(projetoId, user.id, payload.nome, compromissoData, true);
           showToast(
             editingId
               ? 'Projeto atualizado — compromisso criado e vinculado'
@@ -1295,14 +1343,16 @@ async function saveProjeto(event) {
 // Auto-criar subcategoria vinculada ao projeto de investimento
 // (espelha ensureSubcategoriaForDivida em dividas.js)
 // -----------------------------
-async function ensureSubcategoriaForProjeto(projetoId, userId, nomeProjeto, comp, force = false) {
-  if (!force) {
-    // Fluxo automático (restauração): evita duplicata se já existe sub vinculada
-    const { data: existing, error: existErr } = await supabase.from('subcategorias')
-      .select('id').eq('projeto_id', projetoId).limit(1);
-    if (existErr) throw existErr;
-    if (existing && existing.length > 0) return;
-  }
+async function ensureSubcategoriaForProjeto(projetoId, userId, nomeProjeto, comp, _force = false) {
+  // SEMPRE checa duplicata no DB antes de inserir — previne criação dupla mesmo com force=true,
+  // pois a única razão pra criar é quando não existe sub vinculada
+  const { data: existing, error: existErr } = await supabase
+    .from('subcategorias')
+    .select('id, categorias(grupo)')
+    .eq('projeto_id', projetoId);
+  if (existErr) throw existErr;
+  const existingInvest = (existing || []).find((s) => s.categorias?.grupo === 'investimentos');
+  if (existingInvest) return; // já existe — não duplica
 
   const periodo  = comp.periodo || 'Mensal';
   const [, , diaStr] = (comp.dataInicio || '').split('-');
@@ -1321,6 +1371,7 @@ async function ensureSubcategoriaForProjeto(projetoId, userId, nomeProjeto, comp
     categoria_id:   comp.categoria_id,
     projeto_id:     projetoId,
     tipo_pagamento: comp.tipoPagamento || 'Boleto',
+    conta_id:       comp.contaId || null,
     vencimento_dia: vencDia,
     dia_semana:     diaSemana,
     periodo:        periodo,
