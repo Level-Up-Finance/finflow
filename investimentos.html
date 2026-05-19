@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <title>Investimentos · FinFlow</title>
+  <title>Projetos e Investimentos · FinFlow</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -19,7 +19,7 @@
 
     <header class="app-header header">
       <div class="header-left">
-        <h2 class="header-title">Investimentos</h2>
+        <h2 class="header-title">Projetos e Investimentos</h2>
       </div>
     </header>
 
@@ -27,7 +27,7 @@
       <div class="page-header">
         <div class="page-header-content">
           <p class="page-eyebrow">Sonhos</p>
-          <h1 class="page-title" data-i18n-key="investimentos.titulo">Investimentos</h1>
+          <h1 class="page-title" data-i18n-key="investimentos.titulo">Projetos e Investimentos</h1>
           <p class="page-description" data-i18n-key="investimentos.descricao">Cada projeto é uma meta. Compromissos do grupo Investimentos podem ser atrelados a um projeto.</p>
         </div>
         <div style="display:flex; gap: var(--space-2);">
@@ -195,6 +195,53 @@
                 <label class="field-label" for="proj-comp-categoria">Categoria</label>
                 <select id="proj-comp-categoria" class="select"></select>
                 <p class="field-hint">Categoria do grupo Investimentos onde a subcategoria será criada.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Compromisso de investimento — editar em modo edição -->
+          <div class="custos-edit-wrap hidden" id="proj-comp-edit-wrap">
+            <label class="field-label">Compromisso de investimento</label>
+
+            <div class="field">
+              <label class="field-label" for="proj-comp-edit-tipo-pag">Tipo de pagamento</label>
+              <select id="proj-comp-edit-tipo-pag" class="select"></select>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Recorrência</label>
+              <div class="field-group">
+                <div class="field">
+                  <label class="field-label" for="proj-comp-edit-periodo">Período</label>
+                  <select id="proj-comp-edit-periodo" class="select"></select>
+                </div>
+                <div class="field" id="proj-comp-edit-dia-mes-field">
+                  <label class="field-label" for="proj-comp-edit-dia-mes">Dia do mês (1–31)</label>
+                  <input type="number" min="1" max="31" id="proj-comp-edit-dia-mes" class="input" placeholder="Ex: 5">
+                </div>
+                <div class="field hidden" id="proj-comp-edit-dia-semana-field">
+                  <label class="field-label" for="proj-comp-edit-dia-semana">Dia da semana</label>
+                  <select id="proj-comp-edit-dia-semana" class="select"></select>
+                </div>
+              </div>
+            </div>
+
+            <label class="checkbox-item">
+              <input type="checkbox" id="proj-comp-edit-valor-variavel">
+              <span>Valor varia por mês</span>
+            </label>
+
+            <div class="field" id="proj-comp-edit-valor-field">
+              <label class="field-label">Valor base</label>
+              <div class="field-group">
+                <div class="field">
+                  <label class="field-label" for="proj-comp-edit-valor">Valor <span class="required">*</span></label>
+                  <input type="text" inputmode="decimal" id="proj-comp-edit-valor" class="input input-decimal" placeholder="0,00">
+                </div>
+                <div class="field">
+                  <label class="field-label" for="proj-comp-edit-moeda">Moeda</label>
+                  <select id="proj-comp-edit-moeda" class="select"></select>
+                </div>
               </div>
             </div>
           </div>

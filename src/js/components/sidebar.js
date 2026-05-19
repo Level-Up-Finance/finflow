@@ -47,7 +47,7 @@ const NAV_ITEMS = [
   { id: 'contas',        label: 'Contas',           href: '/contas.html' },
   { id: 'orcamento',     label: 'Orçamento',        href: '/compromissos.html' },
   { id: 'dividas',       label: 'Financiamentos e Dívidas', href: '/dividas.html' },
-  { id: 'investimentos', label: 'Investimentos',    href: '/investimentos.html' },
+  { id: 'investimentos', label: 'Projetos e Investimentos', href: '/investimentos.html' },
   { divider: true },
   // ── Ferramentas ───────────────────────────────────────────────
   { id: 'relatorios',    label: 'Relatórios',       href: '/relatorios.html' },

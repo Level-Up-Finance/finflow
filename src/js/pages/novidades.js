@@ -35,7 +35,7 @@ const MODULOS = {
   compromissos: 'Compromissos',
   orcamento:    'Orçamento',
   dividas:      'Financiamentos e Dívidas',
-  investimentos:'Investimentos',
+  investimentos:'Projetos e Investimentos',
   relatorios:   'Relatórios',
   contatos:     'Contatos',
   importar:     'Importar extrato',

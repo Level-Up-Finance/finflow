@@ -1299,7 +1299,7 @@
   },
   {
     "chave": "investimentos.titulo",
-    "pt_br": "Investimentos",
+    "pt_br": "Projetos e Investimentos",
     "pagina": "investimentos",
     "fontes": [
       "investimentos.html"

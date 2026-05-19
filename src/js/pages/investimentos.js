@@ -12,7 +12,7 @@ import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
-import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML, PERIODOS, DIAS_SEMANA, TIPOS_PAGAMENTO, renderMoedaOptions } from '../lib/compromissos-config.js';
 import { initColVisibility } from '../lib/col-visibility.js';
 import { escapeHtml, formatDateBR, isoMonth, parseUserNumber } from '../lib/utils.js';
 import { DEFAULT_COLOR, renderColorPicker, setActiveColor } from '../lib/color-palette.js';
@@ -954,6 +954,54 @@ function calcPrevistoMes(projetoId) {
 }
 
 // -----------------------------
+// Seção "Editar compromisso de investimento" dentro do modal do projeto
+// -----------------------------
+function updateCompEditDayFields(periodo) {
+  const diaMesField    = document.getElementById('proj-comp-edit-dia-mes-field');
+  const diaSemanaField = document.getElementById('proj-comp-edit-dia-semana-field');
+  if (!diaMesField || !diaSemanaField) return;
+
+  const showDiaMes    = ['Mensal', 'Anual'].includes(periodo);
+  const showDiaSemana = ['Semanal', 'Quinzenal'].includes(periodo);
+  diaMesField.classList.toggle('hidden', !showDiaMes);
+  diaSemanaField.classList.toggle('hidden', !showDiaSemana);
+}
+
+function populateCompEditSection(sub) {
+  // Período
+  const selPeriodo = document.getElementById('proj-comp-edit-periodo');
+  selPeriodo.innerHTML = PERIODOS.map((p) => `<option value="${p.value}"${sub.periodo === p.value ? ' selected' : ''}>${p.label}</option>`).join('');
+  selPeriodo.onchange = () => updateCompEditDayFields(selPeriodo.value);
+  updateCompEditDayFields(sub.periodo || 'Mensal');
+
+  // Dia do mês
+  const inputDiaMes = document.getElementById('proj-comp-edit-dia-mes');
+  inputDiaMes.value = sub.vencimento_dia || '';
+
+  // Dia da semana
+  const selDiaSemana = document.getElementById('proj-comp-edit-dia-semana');
+  selDiaSemana.innerHTML = DIAS_SEMANA.map((d) => `<option value="${d.value}"${sub.dia_semana === d.value ? ' selected' : ''}>${d.label}</option>`).join('');
+
+  // Tipo de pagamento
+  const selTipoPag = document.getElementById('proj-comp-edit-tipo-pag');
+  selTipoPag.innerHTML = TIPOS_PAGAMENTO.map((t) => `<option value="${t}"${sub.tipo_pagamento === t ? ' selected' : ''}>${t}</option>`).join('');
+
+  // Valor variável
+  const chkVarVal = document.getElementById('proj-comp-edit-valor-variavel');
+  chkVarVal.checked = Boolean(sub.valor_variavel);
+  const valorField = document.getElementById('proj-comp-edit-valor-field');
+  valorField.classList.toggle('hidden', chkVarVal.checked);
+  chkVarVal.onchange = () => valorField.classList.toggle('hidden', chkVarVal.checked);
+
+  // Valor base
+  document.getElementById('proj-comp-edit-valor').value = sub.valor_base != null ? formatDecimal(Number(sub.valor_base), 2) : '';
+
+  // Moeda
+  const selMoeda = document.getElementById('proj-comp-edit-moeda');
+  selMoeda.innerHTML = renderMoedaOptions(sub.moeda || 'BRL');
+}
+
+// -----------------------------
 // Modal: criar / editar
 // -----------------------------
 function openProjetoModal(p = null, prefill = null) {
@@ -987,11 +1035,20 @@ function openProjetoModal(p = null, prefill = null) {
   const compData     = document.getElementById('proj-comp-data');
   const compCategSel = document.getElementById('proj-comp-categoria');
 
-  // Em edição, só mostra a seção de criar compromisso se o projeto AINDA não tem
-  // compromisso vinculado (fluxo "Configurar compromisso" via badge no card).
-  const temCompromisso = editingId
-    ? cachedSubcategorias.some((s) => s.projeto_id === editingId)
-    : false;
+  // Compromisso do grupo investimentos vinculado a este projeto (auto-criado)
+  const investSub = editingId
+    ? cachedSubcategorias.find((s) => s.projeto_id === editingId && s.categorias?.grupo === 'investimentos')
+    : null;
+  const temCompromisso = Boolean(investSub);
+
+  // Seção "Editar compromisso" — só em edição com compromisso existente
+  const compEditWrap = document.getElementById('proj-comp-edit-wrap');
+  if (compEditWrap) {
+    compEditWrap.classList.toggle('hidden', !temCompromisso);
+    if (temCompromisso) populateCompEditSection(investSub);
+  }
+
+  // Seção "Criar compromisso" — só quando ainda não existe compromisso
   if (editingId && temCompromisso) {
     toggleWrap.classList.add('hidden');
     compFields.classList.add('hidden');
@@ -1005,7 +1062,7 @@ function openProjetoModal(p = null, prefill = null) {
     compPeriodo.value = 'Mensal';
     compData.value    = (editingId ? p?.data_alvo : null) || todayISODate();
 
-    // Popula categorias do grupo investimentos (default = "Investimentos")
+    // Popula categorias do grupo investimentos (default = "Projetos e Investimentos")
     compCategSel.innerHTML = '';
     if (cachedCategoriasInvest.length === 0) {
       compCategSel.innerHTML = '<option value="">Nenhuma categoria do grupo Investimentos encontrada</option>';
@@ -1147,6 +1204,33 @@ async function saveProjeto(event) {
       response = await supabase.from('projetos_investimento').insert({ ...payload, user_id: user.id }).select().single();
     }
     if (response.error) throw response.error;
+
+    // Atualiza compromisso de investimento existente (edição com seção de edição visível)
+    const compEditWrap = document.getElementById('proj-comp-edit-wrap');
+    if (editingId && compEditWrap && !compEditWrap.classList.contains('hidden')) {
+      const subToEdit = cachedSubcategorias.find((s) => s.projeto_id === editingId && s.categorias?.grupo === 'investimentos');
+      if (subToEdit) {
+        const periodo        = document.getElementById('proj-comp-edit-periodo').value;
+        const tipoPagamento  = document.getElementById('proj-comp-edit-tipo-pag').value;
+        const valorVariavel  = document.getElementById('proj-comp-edit-valor-variavel').checked;
+        const valorBase      = parseDecimal(document.getElementById('proj-comp-edit-valor').value) || 0;
+        const moeda          = document.getElementById('proj-comp-edit-moeda').value;
+        const diaMes         = parseInt(document.getElementById('proj-comp-edit-dia-mes').value) || null;
+        const diaSemana      = parseInt(document.getElementById('proj-comp-edit-dia-semana').value);
+
+        const subPayload = {
+          periodo,
+          tipo_pagamento: tipoPagamento,
+          valor_variavel: valorVariavel,
+          valor_base:     valorVariavel ? subToEdit.valor_base : valorBase,
+          moeda,
+          vencimento_dia: ['Mensal', 'Anual'].includes(periodo) ? diaMes : null,
+          dia_semana:     ['Semanal', 'Quinzenal'].includes(periodo) ? diaSemana : null,
+        };
+        const { error: subErr } = await supabase.from('subcategorias').update(subPayload).eq('id', subToEdit.id);
+        if (subErr) console.warn('[update compromisso investimento]', subErr);
+      }
+    }
 
     // Cria compromisso vinculado (com dados do formulário ou placeholder automático)
     if (response.data?.id && user && !editingId) {

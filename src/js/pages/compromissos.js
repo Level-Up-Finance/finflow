@@ -708,7 +708,7 @@ function toggleVinculoBanner() {
       title.textContent = 'Compromissos de Financiamentos e Dívidas são criados pela página de Financiamentos e Dívidas.';
     } else {
       btn.dataset.destino = 'investimentos';
-      label.textContent = 'Ir para Investimentos';
+      label.textContent = 'Ir para Projetos e Investimentos';
       title.textContent = 'Compromissos de Investimentos são criados pela página de Projetos.';
     }
   }
