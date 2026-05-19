@@ -1274,7 +1274,9 @@ async function saveProjeto(event) {
       const investSubDb = (subsLinkadas || []).find((s) => s.categorias?.grupo === 'investimentos');
 
       if (investSubDb) {
-        // Atualiza sub existente
+        // Atualiza sub existente. Força status='ativa' — se a sub estava arquivada/inativa
+        // (cenário: user arquivou o compromisso depois e agora está editando o projeto pra
+        // reativá-lo), o UPDATE deve reativar pra que o ensurePagamentosForMonth gere pagamentos.
         const subPayload = {
           periodo:        compromissoData.periodo,
           tipo_pagamento: compromissoData.tipoPagamento,
@@ -1285,6 +1287,7 @@ async function saveProjeto(event) {
           vencimento_dia: ['Mensal', 'Anual'].includes(compromissoData.periodo) ? compromissoData.vencDia : null,
           dia_semana:     ['Semanal', 'Quinzenal'].includes(compromissoData.periodo) ? compromissoData.diaSemana : null,
           iniciado_em:    compromissoData.dataInicio,
+          status:         'ativa',
         };
         const { error: subErr } = await supabase.from('subcategorias').update(subPayload).eq('id', investSubDb.id);
         if (subErr) console.warn('[update compromisso investimento]', subErr);

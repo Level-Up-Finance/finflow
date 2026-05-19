@@ -7,6 +7,15 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-19-projetos-reativa-sub-no-update',
+    version: '0.7.7',
+    date: '19/05/2026',
+    title: 'Projetos — reativa compromisso arquivado ao editar pelo modal do projeto',
+    items: [
+      { type: 'fix', text: 'Editar um projeto e salvar o compromisso vinculado agora reativa a subcategoria caso ela esteja arquivada/inativa. Antes o UPDATE atualizava os campos mas mantinha o status — e como pagamentos só são gerados para subs ativas, o compromisso continuava sem aparecer na página Pagamentos e no orçamento.' },
+    ],
+  },
+  {
     id: '2026-05-19-projetos-fix-duplicacao-conta',
     version: '0.7.6',
     date: '19/05/2026',
