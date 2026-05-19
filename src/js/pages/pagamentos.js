@@ -281,17 +281,9 @@ async function loadFlat() {
     return;
   }
 
-  // Garante que orcamento_geral e pagamentos existam para cada mês no intervalo (máx 6)
-  const cur = new Date(dFrom.getFullYear(), dFrom.getMonth(), 1);
-  const end = new Date(dTo.getFullYear(),   dTo.getMonth(),   1);
-  let count = 0;
-  while (cur <= end && count < 6) {
-    await ensureOrcamentoForMonth(cur.getFullYear(), cur.getMonth());
-    await ensurePagamentosForMonth(cur.getFullYear(), cur.getMonth());
-    cur.setMonth(cur.getMonth() + 1);
-    count++;
-  }
-
+  // Não chama ensure* aqui — são lentas (até 12 queries sequenciais).
+  // Pagamentos já existem para meses visitados. Meses futuros não visitados
+  // ficam vazios; o usuário pode acessá-los no modo Blocos pra gerá-los.
   const { data, error } = await supabase
     .from('pagamentos')
     .select('*, subcategorias(*, categorias(*))')
