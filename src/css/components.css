@@ -5630,6 +5630,7 @@ td .currency-split {
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: var(--space-4);
   margin-top: var(--space-4);
+  align-items: start;
 }
 
 .projeto-card {
@@ -5816,6 +5817,96 @@ td .currency-split {
 .projeto-card-custos-total strong {
   color: var(--color-text-main);
   font-variant-numeric: tabular-nums;
+}
+
+/* Seção "Custos vinculados" no modal de edição (contexto interativo) */
+.custos-edit-wrap {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  background: var(--color-surface-alt);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.custos-edit-wrap .field-label {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.custos-edit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.custos-edit-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+}
+
+.custos-edit-item-nome {
+  flex: 1;
+  font-size: var(--fs-sm);
+  color: var(--color-text-main);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.custos-edit-item-valor {
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.btn-desvincular-sub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.btn-desvincular-sub:hover {
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+}
+
+.btn-desvincular-sub:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.custos-edit-empty {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: var(--space-2) 0;
+  list-style: none;
 }
 
 .projeto-card-progress {

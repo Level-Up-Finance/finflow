@@ -1066,11 +1066,16 @@ async function renderProjCustosVinculados(projetoId) {
   // Subs já vinculadas (custo_vida → este projeto)
   const linked = cachedSubcategorias.filter((s) => s.projeto_id === projetoId && s.categorias?.grupo === 'custo_vida');
   list.innerHTML = linked.length
-    ? linked.map((s) => `<li class="projeto-card-custos-item">
-        <span>${escapeHtml(s.nome)}</span>
-        <button type="button" class="btn-desvincular-sub" data-sub-id="${s.id}" title="Desvincular" style="background:none;border:none;cursor:pointer;color:var(--color-danger);font-size:1rem;">×</button>
+    ? linked.map((s) => `<li class="custos-edit-item">
+        <span class="custos-edit-item-nome">${escapeHtml(s.nome)}</span>
+        <span class="custos-edit-item-valor">${formatCurrencyHTML(Number(s.valor_base) || 0, 'BRL')}</span>
+        <button type="button" class="btn-desvincular-sub" data-sub-id="${s.id}" aria-label="Desvincular ${escapeHtml(s.nome)}">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
       </li>`).join('')
-    : '<li style="color:var(--color-muted);font-size:0.85rem;">Nenhum compromisso vinculado.</li>';
+    : '<li class="custos-edit-empty">Use o seletor abaixo para vincular um compromisso de Custo de Vida a este projeto.</li>';
 
   // Listener para desvincular
   list.querySelectorAll('.btn-desvincular-sub').forEach((btn) => {
