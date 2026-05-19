@@ -7,6 +7,15 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-19-simulador-data-alvo-saldo',
+    version: '0.7.9',
+    date: '19/05/2026',
+    title: 'Simulador — campo "Ou data alvo" nos modos Saldo final e Aporte',
+    items: [
+      { type: 'new', text: 'Simulador de investimentos — modos "Saldo final" e "Aporte mensal" agora aceitam uma data alvo (ex: 24/10/2030). Ao preencher, o período em anos é calculado automaticamente. Editar os anos manualmente limpa a data alvo para evitar ambiguidade.' },
+    ],
+  },
+  {
     id: '2026-05-19-pagamentos-em-blocos-atravessados',
     version: '0.7.8',
     date: '19/05/2026',

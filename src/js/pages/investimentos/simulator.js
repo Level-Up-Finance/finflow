@@ -42,6 +42,46 @@ export function bindSimulador({ onCreateProject } = {}) {
   document.getElementById('sim-juros-tipo').addEventListener('change', (e) => setSimJurosTipo(e.target.value));
   document.getElementById('btn-simular-calcular').addEventListener('click', calcularSimulacao);
 
+  // No modo "Aporte": permitir o user informar uma data alvo em vez de período em anos.
+  // Quando a data alvo muda, calcula anos = (dataAlvo - hoje) / 365.25 e preenche o campo de anos.
+  // Quando o user edita anos manualmente, limpa a data alvo (pra evitar ambiguidade).
+  const dataAlvoSaldoInput = document.getElementById('sim-data-alvo-saldo');
+  const anosSaldoInput = document.getElementById('sim-anos');
+  if (dataAlvoSaldoInput && anosSaldoInput) {
+    dataAlvoSaldoInput.addEventListener('change', () => {
+      const v = dataAlvoSaldoInput.value;
+      if (!v) return;
+      const alvo = new Date(v + 'T00:00:00');
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const diffDays = (alvo - hoje) / (1000 * 60 * 60 * 24);
+      if (diffDays <= 0) { showToast('Data alvo precisa ser no futuro', 'error'); return; }
+      anosSaldoInput.value = formatDecimal(diffDays / 365.25, 2);
+    });
+    anosSaldoInput.addEventListener('input', () => {
+      if (document.activeElement === anosSaldoInput) dataAlvoSaldoInput.value = '';
+    });
+  }
+
+  const dataAlvoInput = document.getElementById('sim-data-alvo-aporte');
+  const anosAporteInput = document.getElementById('sim-anos-aporte');
+  if (dataAlvoInput && anosAporteInput) {
+    dataAlvoInput.addEventListener('change', () => {
+      const v = dataAlvoInput.value;
+      if (!v) return;
+      const alvo = new Date(v + 'T00:00:00');
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const diffDays = (alvo - hoje) / (1000 * 60 * 60 * 24);
+      if (diffDays <= 0) { showToast('Data alvo precisa ser no futuro', 'error'); return; }
+      const anos = diffDays / 365.25;
+      anosAporteInput.value = formatDecimal(anos, 2);
+    });
+    anosAporteInput.addEventListener('input', () => {
+      if (document.activeElement === anosAporteInput) dataAlvoInput.value = '';
+    });
+  }
+
   document.getElementById('btn-sim-criar-projeto').addEventListener('click', () => {
     if (!lastSimulacao) {
       showToast('Calcule a simulação antes de criar o projeto', 'error');

@@ -404,6 +404,11 @@
               <input class="input input-decimal" id="sim-anos" type="text" inputmode="decimal" placeholder="Ex: 5" data-decimals="2">
             </div>
           </div>
+          <div class="field" style="margin-top: var(--space-3);">
+            <label class="field-label" for="sim-data-alvo-saldo">Ou data alvo</label>
+            <input class="input" id="sim-data-alvo-saldo" type="date">
+            <p class="field-hint">Preencher a data calcula o período automaticamente.</p>
+          </div>
         </div>
 
         <!-- Modo: TEMPO — pede aporte + meta -->
@@ -420,7 +425,7 @@
           </div>
         </div>
 
-        <!-- Modo: APORTE — pede meta + período -->
+        <!-- Modo: APORTE — pede meta + período (ou data alvo) -->
         <div id="sim-fields-aporte" class="hidden">
           <div class="field-group" style="grid-template-columns: 1fr 1fr;">
             <div class="field">
@@ -431,6 +436,11 @@
               <label class="field-label" for="sim-anos-aporte">Período (anos) *</label>
               <input class="input input-decimal" id="sim-anos-aporte" type="text" inputmode="decimal" placeholder="Ex: 10" data-decimals="2">
             </div>
+          </div>
+          <div class="field" style="margin-top: var(--space-3);">
+            <label class="field-label" for="sim-data-alvo-aporte">Ou data alvo</label>
+            <input class="input" id="sim-data-alvo-aporte" type="date">
+            <p class="field-hint">Preencher a data calcula o período automaticamente.</p>
           </div>
         </div>
 
