@@ -806,7 +806,7 @@ function renderTimeline(projetos) {
 
   // Barras dos projetos
   const bars = projetos.map((p) => {
-    const created = p.created_at ? new Date(p.created_at) : rangeStart;
+    const created = p.data_inicio ? new Date(p.data_inicio) : (p.created_at ? new Date(p.created_at) : rangeStart);
     const projStart = created < rangeStart ? rangeStart : created;
     const projEnd = p.data_alvo ? new Date(p.data_alvo + 'T23:59:59') : rangeEnd;
     const clampedEnd = projEnd > rangeEnd ? rangeEnd : projEnd;
@@ -969,6 +969,7 @@ function openProjetoModal(p = null, prefill = null) {
   const activeCor = renderColorPicker(corPickerEl, initialCor);
   document.getElementById('proj-cor').value = activeCor;
   document.getElementById('proj-status').value        = p?.status || 'ativo';
+  document.getElementById('proj-data-inicio').value   = p?.data_inicio || '';
   document.getElementById('proj-meta-valor').value    = p?.meta_valor ?? (prefill?.meta_valor ?? '');
   document.getElementById('proj-data-alvo').value     = p?.data_alvo || (prefill?.data_alvo || '');
   document.getElementById('proj-saldo-inicial').value = p?.saldo_inicial ?? (prefill?.saldo_inicial ?? '');
@@ -1106,6 +1107,7 @@ async function saveProjeto(event) {
     cor:         document.getElementById('proj-cor').value,
     status:      document.getElementById('proj-status').value,
     meta_valor:  parseUserNumber(document.getElementById('proj-meta-valor').value) || null,
+    data_inicio: document.getElementById('proj-data-inicio').value || null,
     data_alvo:   document.getElementById('proj-data-alvo').value || null,
     saldo_inicial: parseUserNumber(document.getElementById('proj-saldo-inicial').value) || 0,
     contato_id:  contatoPicker?.getValue() || null,
