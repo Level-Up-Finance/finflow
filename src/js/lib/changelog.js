@@ -7,6 +7,19 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-19-situacao-3-adiantamento',
+    version: '1.0.0',
+    date: '19/05/2026',
+    title: 'Adiantamento de Receita',
+    items: [
+      { type: 'new', text: 'Adiantamento de receita — no modal de detalhes de qualquer compromisso do tipo Receita ativo, aparece o botão "Registrar adiantamento". Preencha o valor solicitado, a taxa cobrada, a conta destino e em quantas parcelas o desconto será distribuído.' },
+      { type: 'new', text: 'O registro cria automaticamente uma transação de entrada (valor líquido = valor solicitado − taxa) na conta escolhida, na data informada.' },
+      { type: 'new', text: 'O orçamento dos N meses seguintes é ajustado automaticamente: o valor base da receita é reduzido pela parcela mensal (valor_solicitado ÷ N) em cada mês do período de desconto.' },
+      { type: 'new', text: 'Badge "Adiantado k/N" aparece na linha da receita em Pagamentos sempre que aquele mês estiver dentro do período de desconto, indicando qual parcela é aquela.' },
+      { type: 'new', text: 'Resumo dinâmico no modal: antes de confirmar, você vê exatamente quanto entra hoje e qual será o valor previsto de cada mês afetado.' },
+    ],
+  },
+  {
     id: '2026-05-19-situacoes-1-e-2',
     version: '0.9.0',
     date: '19/05/2026',
