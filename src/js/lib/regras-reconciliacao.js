@@ -44,16 +44,40 @@ export function findRule(rules, contatoId) {
 
 /**
  * Cria ou atualiza a regra (uma por contato).
+ * @param {string} contatoId
+ * @param {string} subcategoriaId
+ * @param {boolean} [autoConfirmar=false] - se true, transações importadas que
+ *   casarem com esse contato são reconciliadas automaticamente.
  */
-export async function upsertRule(contatoId, subcategoriaId) {
+export async function upsertRule(contatoId, subcategoriaId, autoConfirmar = false) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: 'no_user' };
   const { error } = await supabase
     .from('regras_reconciliacao')
     .upsert(
-      { user_id: user.id, contato_id: contatoId, subcategoria_id: subcategoriaId },
+      {
+        user_id: user.id,
+        contato_id: contatoId,
+        subcategoria_id: subcategoriaId,
+        auto_confirmar: !!autoConfirmar,
+      },
       { onConflict: 'user_id,contato_id' }
     );
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+/**
+ * Atualiza apenas a flag auto_confirmar de uma regra existente.
+ * Usado quando o usuário muda preferência depois de confirmar uma transação.
+ */
+export async function setAutoConfirmar(contatoId, autoConfirmar) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: 'no_user' };
+  const { error } = await supabase
+    .from('regras_reconciliacao')
+    .update({ auto_confirmar: !!autoConfirmar })
+    .eq('user_id', user.id)
+    .eq('contato_id', contatoId);
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 

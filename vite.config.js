@@ -15,6 +15,7 @@ const htmlPages = [
   'investimentos',
   'relatorios',
   'contatos',
+  'tarefas',
   'importar',
   'academia',
   'novidades',

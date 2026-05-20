@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <title>Tarefas · FinFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/variables.css">
+  <link rel="stylesheet" href="src/css/global.css">
+  <link rel="stylesheet" href="src/css/components.css">
+  <link rel="stylesheet" href="src/css/layout.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-sidebar" id="sidebar-container"></div>
+
+    <header class="app-header header">
+      <div class="header-left">
+        <h2 class="header-title">Tarefas</h2>
+      </div>
+    </header>
+
+    <main class="app-main main">
+      <div class="page-header">
+        <div class="page-header-content">
+          <p class="page-eyebrow">Organização</p>
+          <h1 class="page-title">Tarefas</h1>
+          <p class="page-description">Lembretes automáticos do sistema (importações, reconciliações) e suas próprias tarefas manuais. Tarefas auto-geradas se completam sozinhas quando você executa a ação.</p>
+        </div>
+        <button class="btn btn-primary" id="btn-nova-tarefa" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+          Nova tarefa
+        </button>
+      </div>
+
+      <!-- Abas: Pendentes | Concluídas (estilo orc-tab) -->
+      <nav class="orc-tab-strip" id="tarefas-tabs" aria-label="Abas de tarefas">
+        <button class="orc-tab active" type="button" data-tab="pendentes">
+          Pendentes
+          <span class="trans-tab-count hidden" id="tarefas-pendentes-count">0</span>
+        </button>
+        <button class="orc-tab" type="button" data-tab="concluidas">
+          Concluídas
+        </button>
+      </nav>
+
+      <!-- Lista -->
+      <div id="tarefas-page-list"></div>
+
+      <!-- Empty -->
+      <div id="tarefas-page-empty" class="empty-state hidden">
+        <div class="empty-state-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <h2 class="empty-state-title" id="empty-title">Tudo em dia!</h2>
+        <p class="empty-state-message" id="empty-message">Nenhuma tarefa pendente. Use o botão "Nova tarefa" pra criar lembretes seus.</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Nova / editar tarefa manual
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-tarefa" role="dialog" aria-modal="true">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-tarefa-title">Nova tarefa</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-tarefa" aria-label="Fechar">×</button>
+      </div>
+
+      <form id="form-tarefa">
+        <div class="modal-body">
+          <div class="field">
+            <label class="field-label" for="tarefa-titulo">Título <span class="required">*</span></label>
+            <input class="input" id="tarefa-titulo" type="text" maxlength="120" placeholder="Ex: revisar fatura do Nubank" required>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="tarefa-descricao">Descrição (opcional)</label>
+            <textarea class="textarea" id="tarefa-descricao" rows="2" maxlength="300" placeholder="Detalhes adicionais"></textarea>
+          </div>
+
+          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field">
+              <label class="field-label" for="tarefa-prioridade">Prioridade</label>
+              <select class="select" id="tarefa-prioridade">
+                <option value="normal" selected>Normal</option>
+                <option value="alta">Alta</option>
+                <option value="baixa">Baixa</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label" for="tarefa-prazo">Prazo (opcional)</label>
+              <input class="input" id="tarefa-prazo" type="date">
+            </div>
+          </div>
+
+          <input type="hidden" id="tarefa-id">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" data-close-modal="modal-tarefa">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-salvar-tarefa">Salvar tarefa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script type="module" src="src/js/pages/tarefas.js"></script>
+</body>
+</html>

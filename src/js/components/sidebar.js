@@ -37,6 +37,7 @@ const ICONS = {
   sun: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`,
   moon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
   monitor: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>`,
+  tarefas: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`,
 };
 
 const NAV_ITEMS = [
@@ -51,8 +52,8 @@ const NAV_ITEMS = [
   { divider: true },
   // ── Ferramentas ───────────────────────────────────────────────
   { id: 'relatorios',    label: 'Relatórios',       href: '/relatorios.html' },
+  { id: 'tarefas',       label: 'Tarefas',          href: '/tarefas.html' },
   { id: 'contatos',      label: 'Contatos',         href: '/contatos.html' },
-  { id: 'importar',      label: 'Importar extrato', href: '/importar.html' },
   { divider: true },
   // ── Comunidade ────────────────────────────────────────────────
   { id: 'academia',      label: 'Academia',         href: '/academia.html' },
@@ -106,6 +107,17 @@ export async function initSidebar(activePage) {
       </div>
     </aside>
   `;
+
+  // ── Tarefas drawer (ícone no header) ─────────────────────────
+  // Garante que existe um .header-right pro drawer ancorar o ícone
+  const appHeader = document.querySelector('.app-header');
+  if (appHeader && !appHeader.querySelector('.header-right')) {
+    const headerRight = document.createElement('div');
+    headerRight.className = 'header-right';
+    headerRight.style.cssText = 'display:flex;align-items:center;gap:var(--space-2);margin-left:auto;';
+    appHeader.appendChild(headerRight);
+  }
+  import('./tarefas-drawer.js').then((m) => m.initTarefasDrawer()).catch(() => {});
 
   // ── Mobile: hambúrguer + overlay ─────────────────────────────
   const headerLeft = document.querySelector('.header-left');

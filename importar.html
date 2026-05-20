@@ -28,7 +28,7 @@
         <div class="page-header-content">
           <p class="page-eyebrow">Extrato</p>
           <h1 class="page-title" data-i18n-key="importar.titulo">Importar transações</h1>
-          <p class="page-description" data-i18n-key="importar.descricao">Importe CSV ou Excel do seu banco. As transações entram como <strong>não reconciliadas</strong> e precisam ser confirmadas em Transações.</p>
+          <p class="page-description" data-i18n-key="importar.descricao">Importe CSV, Excel ou OFX do seu banco. As transações entram como <strong>não reconciliadas</strong> e precisam ser confirmadas em Transações.</p>
         </div>
       </div>
 
@@ -55,12 +55,12 @@
         <div class="import-panel-body">
 
           <div class="import-dropzone" id="import-dropzone" tabindex="0" role="button" aria-label="Arraste ou clique para selecionar arquivo">
-            <input type="file" id="import-file" accept=".csv,.txt,.xlsx,.xls,.ods" class="import-file-input">
+            <input type="file" id="import-file" accept=".csv,.txt,.xlsx,.xls,.ods,.ofx,.qfx" class="import-file-input">
             <div class="import-dropzone-icon">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
             </div>
             <p class="import-dropzone-title">Arraste o arquivo aqui ou clique para selecionar</p>
-            <p class="import-dropzone-hint">CSV · Excel (.xlsx, .xls) · Tamanho máximo recomendado: 5 MB</p>
+            <p class="import-dropzone-hint">CSV · Excel (.xlsx, .xls) · OFX (.ofx, .qfx) · Tamanho máximo recomendado: 5 MB</p>
           </div>
 
           <div id="import-file-status" class="import-file-status hidden">

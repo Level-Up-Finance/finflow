@@ -87,7 +87,9 @@ let filterEnd           = '';     // YYYY-MM-DD
 let filterConta         = '';
 let filterTipo          = '';
 let filterBusca         = '';
-let filterReconciliacao = '';     // '' | 'importado'
+let filterReconciliacao = '';     // '' | 'importado' (legado, mantido pra compatibilidade)
+let viewTab             = 'transacoes';  // 'transacoes' | 'importacoes'
+let importSubFilter     = 'pendentes';   // 'pendentes' | 'confirmadas' — só usado quando viewTab='importacoes'
 let activeTagFilters    = new Set(); // tags ativas como filtro
 
 // Splits — cache global e estado do modal
@@ -1232,14 +1234,35 @@ function updateSelectionBar() {
 async function execBulkDelete() {
   const ids = [...selectedIds];
   if (!ids.length) return;
-  const n = ids.length;
+
+  // Proteção: identifica transações que vieram do banco e estão vinculadas a pagamentos
+  const lockedIds = ids.filter((id) => {
+    const tr = cachedTransacoes.find((x) => x.id === id);
+    return tr && tr.pagamento_id && tr.reconciliacao_status && tr.reconciliacao_status !== 'manual';
+  });
+  if (lockedIds.length === ids.length) {
+    showToast(
+      `Nenhuma das ${ids.length} transações selecionadas pode ser excluída — todas vieram do banco e estão vinculadas a pagamentos.`,
+      'error', 10000
+    );
+    return;
+  }
+  if (lockedIds.length > 0) {
+    showToast(
+      `${lockedIds.length} transação(ões) ignorada(s) por estarem vinculadas a pagamentos do banco. Excluindo o restante.`,
+      'warning', 8000
+    );
+  }
+  const deletableIds = ids.filter((id) => !lockedIds.includes(id));
+  const n = deletableIds.length;
+  if (n === 0) return;
   if (!await showConfirm(`Excluir ${n} transaç${n > 1 ? 'ões' : 'ão'}?\n\nEsta ação não pode ser desfeita.`)) return;
 
-  const parIds = ids.flatMap((id) => {
+  const parIds = deletableIds.flatMap((id) => {
     const par = cachedTransacoes.find((t) => t.id === id)?.transferencia_par_id;
     return par ? [par] : [];
   });
-  const allIds = [...new Set([...ids, ...parIds])];
+  const allIds = [...new Set([...deletableIds, ...parIds])];
 
   const { error } = await supabase.from('transacoes').delete().in('id', allIds);
   if (error) { showToast(`${t('transacoes.toast.erro_excluir', 'Erro ao excluir')}: ${error.message}`, 'error', 8000); return; }
@@ -1291,13 +1314,26 @@ function applyFilters(items) {
   const buscaNorm = filterBusca.trim().toLowerCase();
 
   return items.filter((t) => {
-    // Filtro de pendentes ignora a restrição de período — mostra tudo não reconciliado
-    if (filterReconciliacao) {
-      const status = t.reconciliacao_status || 'manual';
-      if (status !== filterReconciliacao) return false;
-    } else {
+    const status = t.reconciliacao_status || 'manual';
+
+    // Aba Importações: só mostra transações de extrato bancário (importado ou reconciliado)
+    if (viewTab === 'importacoes') {
+      if (status !== 'importado' && status !== 'reconciliado') return false;
+      if (importSubFilter === 'pendentes'  && status !== 'importado')    return false;
+      if (importSubFilter === 'confirmadas' && status !== 'reconciliado') return false;
+      // Período aplica normalmente no modo Importações
       if (filterStart && t.data < filterStart) return false;
       if (filterEnd   && t.data > filterEnd)   return false;
+    } else {
+      // Aba Transações: EXCLUI 'importado' (essas só aparecem na aba Importações)
+      if (status === 'importado') return false;
+      // Filtro legado de pendentes (caso ainda esteja em uso)
+      if (filterReconciliacao) {
+        if (status !== filterReconciliacao) return false;
+      } else {
+        if (filterStart && t.data < filterStart) return false;
+        if (filterEnd   && t.data > filterEnd)   return false;
+      }
     }
     if (filterConta) {
       if (filterConta.startsWith('cx:')) {
@@ -1386,6 +1422,12 @@ function renderWidgets(items) {
   if (countEl) {
     countEl.textContent = pendentes.length;
     countEl.classList.toggle('hidden', pendentes.length === 0);
+  }
+  // Atualiza badge da aba Importações
+  const tabCountEl = document.getElementById('trans-tab-import-count');
+  if (tabCountEl) {
+    tabCountEl.textContent = pendentes.length;
+    tabCountEl.classList.toggle('hidden', pendentes.length === 0);
   }
   if (filterBtn) {
     filterBtn.classList.toggle('has-pending', pendentes.length > 0);
@@ -1551,11 +1593,29 @@ function renderDataRows(items) {
     const reconStatus = t.reconciliacao_status || 'manual';
     const isImportado  = reconStatus === 'importado';
     const isReconciliado = reconStatus === 'reconciliado';
-    const reconBadge = isImportado
-      ? `<span class="trans-recon-badge">Importado</span>`
-      : isReconciliado
-        ? `<span class="trans-recon-badge trans-recon-badge--ok">Reconciliado</span>`
-        : '';
+    const confirmadoAuto = !!t.confirmado_automaticamente;
+    // Badge unificado de status de confirmação:
+    //   • Pendente (laranja) — importado, esperando confirmação
+    //   • Auto (roxo)        — reconciliado pelo sistema via regra
+    //   • Manual (verde)     — reconciliado pelo usuário
+    //   • nada               — manual (criada pelo usuário, fluxo normal)
+    let reconBadge = '';
+    if (isImportado) {
+      reconBadge = `<span class="trans-conf-badge trans-conf-badge--pendente" title="Importada do extrato — precisa ser confirmada">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Pendente
+      </span>`;
+    } else if (isReconciliado && confirmadoAuto) {
+      reconBadge = `<span class="trans-conf-badge trans-conf-badge--auto" title="Reconciliada automaticamente pelo sistema via regra">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Auto
+      </span>`;
+    } else if (isReconciliado) {
+      reconBadge = `<span class="trans-conf-badge trans-conf-badge--manual" title="Confirmada manualmente pelo usuário">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Manual
+      </span>`;
+    }
     const reconBtn = isImportado
       ? `<button class="btn-icon trans-recon-confirm" data-confirm-recon="${t.id}" title="Confirmar reconciliação">
            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1850,6 +1910,26 @@ function diasEntreISO(planejadaIso, realIso) {
 function bindEvents() {
   document.getElementById('btn-nova-transacao').addEventListener('click', () => openTransacaoModal());
   document.querySelector('[data-trigger-nova]')?.addEventListener('click', () => openTransacaoModal());
+
+  // Botão "Importar extrato" no header → vai para /importar.html
+  document.getElementById('btn-nova-importacao')?.addEventListener('click', () => {
+    window.location.href = '/importar.html';
+  });
+
+  // Abas Transações / Importações
+  document.getElementById('trans-tabs')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-trans-tab]');
+    if (!btn) return;
+    const newTab = btn.dataset.transTab;
+    if (newTab === viewTab) return;
+    viewTab = newTab;
+    document.querySelectorAll('#trans-tabs [data-trans-tab]').forEach((b) =>
+      b.classList.toggle('active', b.dataset.transTab === viewTab)
+    );
+    // No modo Importações, reseta o filtro legado de pendentes pra evitar duplicação
+    if (viewTab === 'importacoes') filterReconciliacao = '';
+    render();
+  });
 
   // Filtros — modo de período
   document.getElementById('trans-mode-pills').addEventListener('click', (e) => {
@@ -2171,17 +2251,82 @@ async function execConfirmRecon(id) {
     return;
   }
 
-  const t = cachedTransacoes.find((x) => x.id === id);
-  if (t) {
-    t.reconciliacao_status = 'reconciliado';
+  const tr = cachedTransacoes.find((x) => x.id === id);
+  if (tr) {
+    tr.reconciliacao_status = 'reconciliado';
     // Aprende a associação banco_desc→contato para futuras importações
-    if (t.banco_desc && t.contato_id) {
-      upsertContatoBancoDesc(t.contato_id, t.banco_desc, t.subcategoria_id).catch(() => {});
+    if (tr.banco_desc && tr.contato_id) {
+      upsertContatoBancoDesc(tr.contato_id, tr.banco_desc, tr.subcategoria_id).catch(() => {});
     }
   }
 
   showToast(t('transacoes.toast.reconciliada', 'Transação reconciliada'), 'success');
   render();
+
+  // Auto-conclui tarefa de reconciliação pendente se a conta zerou
+  if (tr?.conta_id) {
+    const restantes = cachedTransacoes.filter(
+      (x) => x.conta_id === tr.conta_id && (x.reconciliacao_status || 'manual') === 'importado'
+    ).length;
+    if (restantes === 0) {
+      try {
+        const { autoConcluirTarefas } = await import('../lib/tarefas.js');
+        await autoConcluirTarefas({ tipo: 'reconciliacao_pendente', conta_id: tr.conta_id });
+      } catch (err) { console.warn('[autoConcluirTarefas]', err); }
+    }
+  }
+
+  // Self-learning: oferece auto-confirmação para próximas transações desse contato
+  if (tr) {
+    await offerAutoConfirmRule(tr);
+  }
+}
+
+/**
+ * Oferece ao usuário criar/ativar regra de auto-confirmação para o contato
+ * da transação que ele acabou de confirmar manualmente. Roda em background —
+ * se o usuário ignorar, não há prejuízo.
+ */
+async function offerAutoConfirmRule(transacao) {
+  if (!transacao.contato_id || !transacao.subcategoria_id) return;
+  const rule = cachedRules.find((r) => r.contato_id === transacao.contato_id);
+  // Se já existe regra com auto_confirmar=true, nada a fazer
+  if (rule && rule.auto_confirmar) return;
+
+  const contato = cachedContatos.find((c) => c.id === transacao.contato_id);
+  const sub     = cachedSubcategorias.find((s) => s.id === transacao.subcategoria_id);
+  if (!contato || !sub) return;
+
+  const subLabel    = sub.apelido?.trim() || sub.nome;
+  const contatoNome = contato.nome;
+
+  const confirmed = await showConfirm(
+    `Quer que o sistema confirme automaticamente próximas transações de "${contatoNome}" como "${subLabel}"?\n\n` +
+    `Elas vão direto para a aba Transações e afetam o saldo do banco, sem precisar de confirmação manual.`,
+    { okLabel: 'Sim, ativar', cancelLabel: 'Não, obrigado', danger: false },
+  );
+  if (!confirmed) return;
+
+  // Cria ou atualiza a regra com auto_confirmar=true
+  const { upsertRule } = await import('../lib/regras-reconciliacao.js');
+  const result = await upsertRule(transacao.contato_id, transacao.subcategoria_id, true);
+  if (result.ok) {
+    // Atualiza cache local
+    const idx = cachedRules.findIndex((r) => r.contato_id === transacao.contato_id);
+    if (idx >= 0) {
+      cachedRules[idx].subcategoria_id = transacao.subcategoria_id;
+      cachedRules[idx].auto_confirmar = true;
+    } else {
+      cachedRules.push({
+        contato_id: transacao.contato_id,
+        subcategoria_id: transacao.subcategoria_id,
+        auto_confirmar: true,
+      });
+    }
+    showToast(`Auto-confirmação ativada para "${contatoNome}"`, 'success', 5000);
+  } else {
+    showToast('Erro ao salvar regra: ' + (result.error || 'desconhecido'), 'error', 6000);
+  }
 }
 
 // Salva/atualiza o mapeamento banco_desc → contato no histórico de reconhecimento.
@@ -2530,6 +2675,18 @@ async function execDelete(id) {
   pendingDeleteId = null;
 
   const tr = cachedTransacoes.find((x) => x.id === id);
+
+  // Proteção: transações vindas do banco e vinculadas a pagamento não podem
+  // ser excluídas — o registro bancário é fonte de verdade.
+  if (tr && tr.pagamento_id && tr.reconciliacao_status && tr.reconciliacao_status !== 'manual') {
+    showToast(
+      'Essa transação não pode ser excluída por estar vinculada a um pagamento e ter vindo do banco. ' +
+      'Desvincule do pagamento primeiro pela tela de Pagamentos.',
+      'error', 10000
+    );
+    return;
+  }
+
   const faturaIdAfetada = tr?.fatura_cartao_id || null;
   const parId = tr?.transferencia_par_id || null;
 

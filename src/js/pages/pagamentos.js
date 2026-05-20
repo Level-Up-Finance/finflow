@@ -21,7 +21,8 @@ import { fetchExchangeRate } from '../lib/currency.js';
 import { initCurrencyWidget } from '../components/currency-widget.js';
 import { findBank, logoUrl } from '../lib/banks.js';
 import { syncPagamentoToTransacao, isPaidStatus, findTransacaoLinkedToPagamento } from '../lib/transacao-pagamento-sync.js';
-import { escapeHtml, formatDateBR, isoMonth, parseUserNumber } from '../lib/utils.js';
+import { showDateConfirmPopover } from '../components/date-confirm-popover.js';
+import { escapeHtml, formatDateBR, isoMonth, parseUserNumber, showConfirm } from '../lib/utils.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 // -----------------------------
@@ -35,6 +36,7 @@ let cachedSubcategorias = []; // pra computar bloco_quinzenal e ocorrências
 let cachedCategorias = [];    // pra ordenação dos blocos
 let cachedContas = [];        // pra display de banco
 let cachedPagamentos = [];    // entries do mês/período visível com subcategoria + categoria aninhadas
+let cachedAlocacoes = [];     // alocações do Caixa Livre do mês visível
 let detailsPagamento = null;  // pagamento exibido no modal de detalhes
 let filterStatus = 'todos';   // 'todos' | 'pendentes' | 'atrasados' | 'pagos' | 'cancelados'
 let viewMode = 'blocos';      // 'blocos' | 'proximos'
@@ -79,10 +81,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyTranslationsToDom();
   initCurrencyWidget('currency-widget');
   bindEvents();
+  bindAlocacaoEvents();
   await loadCategorias();
   await loadSubcategorias();
   await loadContas();
   await loadMonth();
+  renderConciliacaoKpi(); // fire-and-forget
 });
 
 async function loadCategorias() {
@@ -97,6 +101,80 @@ async function loadCategorias() {
     return;
   }
   cachedCategorias = data || [];
+}
+
+/**
+ * KPI compacto de conciliação bancária no header de /pagamentos.
+ * Calcula saldo total das contas (calculado FinFlow vs banco) e mostra a diferença.
+ * Estilo similar ao Xero.
+ */
+async function renderConciliacaoKpi() {
+  const container = document.getElementById('pag-conciliacao-kpi');
+  if (!container || cachedContas.length === 0) return;
+
+  const activeContaIds = cachedContas.map((c) => c.id);
+  if (!activeContaIds.length) return;
+
+  // Carrega snapshots de saldo (do OFX) em paralelo com transações pra calcular saldo do FinFlow
+  const { loadLatestSnapshots } = await import('../lib/saldos-bancarios.js');
+  const [snapshots, { data: trData }] = await Promise.all([
+    loadLatestSnapshots(activeContaIds),
+    supabase
+      .from('transacoes')
+      .select('conta_id, tipo, valor, conta_destino_id, transferencia_par_id, reconciliacao_status')
+      .in('conta_id', activeContaIds)
+      .neq('reconciliacao_status', 'importado'),
+  ]);
+
+  // Saldo calculado por conta (mesma lógica de /contas)
+  const saldosCalculados = new Map(activeContaIds.map((id) => [id, 0]));
+  for (const tr of (trData || [])) {
+    const cur = saldosCalculados.get(tr.conta_id) ?? 0;
+    const isEntrada = tr.tipo === 'Receita'
+      || (tr.tipo === 'Transferência' && tr.transferencia_par_id && !tr.conta_destino_id);
+    const isSaida = tr.tipo === 'Despesa'
+      || (tr.tipo === 'Transferência' && !!tr.conta_destino_id);
+    if (isEntrada) saldosCalculados.set(tr.conta_id, cur + Number(tr.valor || 0));
+    else if (isSaida) saldosCalculados.set(tr.conta_id, cur - Number(tr.valor || 0));
+  }
+
+  let totalCalculado = 0;
+  let totalBanco = 0;
+  let contasComSnapshot = 0;
+  let maxData = null;
+  for (const c of cachedContas) {
+    totalCalculado += saldosCalculados.get(c.id) ?? 0;
+    const snap = snapshots.get(c.id);
+    if (snap) {
+      totalBanco += Number(snap.saldo);
+      contasComSnapshot++;
+      if (!maxData || snap.data > maxData) maxData = snap.data;
+    }
+  }
+  const diff = totalCalculado - totalBanco;
+  const bate = Math.abs(diff) < 0.005;
+  const semSnapshots = contasComSnapshot === 0;
+
+  let diffHtml;
+  if (semSnapshots) {
+    diffHtml = `<span class="conciliacao-kpi-sub">Nenhuma conciliação ainda — importe um extrato pra começar</span>`;
+  } else {
+    const diffSign = diff < 0 ? '-' : (diff > 0 ? '+' : '');
+    const dataLabel = maxData ? (() => { const [yy, mm, dd] = maxData.split('-'); return `${dd}/${mm}/${yy.slice(2)}`; })() : '—';
+    diffHtml = `
+      <span class="conciliacao-kpi-sub">${contasComSnapshot} de ${cachedContas.length} contas · última: ${dataLabel}</span>
+      <span class="conciliacao-kpi-diff ${bate ? 'is-ok' : 'is-diff'}">${bate ? '✓ Tudo bate' : `Diferença: ${diffSign}${formatCurrency(Math.abs(diff), 'BRL')}`}</span>
+    `;
+  }
+  container.innerHTML = `
+    <div class="conciliacao-kpi">
+      <span class="conciliacao-kpi-icon">🏦</span>
+      <div class="conciliacao-kpi-body">
+        <div class="conciliacao-kpi-title">Saldo total nas contas: ${formatCurrency(totalCalculado, 'BRL')}</div>
+        ${diffHtml}
+      </div>
+    </div>
+  `;
 }
 
 async function loadContas() {
@@ -259,10 +337,241 @@ async function loadMonth() {
   // Filtra subcategorias arquivadas/inativas
   cachedPagamentos = (data || []).filter((p) => p.subcategorias?.status === 'ativa');
 
-  // 4. Busca cotações pra moedas em uso
+  // 4. Busca transações vinculadas pra detectar pagamentos travados (vinculados ao banco)
+  await attachLinkedTransacoes(cachedPagamentos);
+
+  // 5. Busca cotações pra moedas em uso
   await refreshRates();
 
+  // 6. Carrega alocações do Caixa Livre do mês + auto-carry-forward entre blocos
+  const { loadAlocacoesMes } = await import('../lib/caixa-livre.js');
+  cachedAlocacoes = await loadAlocacoesMes(mesAno);
+  await ensureCarryForward(mesAno);
+
   renderPagamentos();
+}
+
+/**
+ * Garante que existe um registro de carry-forward (rollover) no bloco N+1
+ * para cada bloco N que tem sobra positiva. Idempotente — não duplica.
+ * Roda apenas pra blocos JÁ ENCERRADOS (com data final < hoje).
+ */
+async function ensureCarryForward(mesAno) {
+  const blocos = getBlocosForMonth(viewYear, viewMonth);
+  if (blocos.length <= 1) return;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const { criarAlocacao, loadAlocacoesMes } = await import('../lib/caixa-livre.js');
+  let touched = false;
+
+  for (let i = 0; i < blocos.length - 1; i++) {
+    const bloco = blocos[i];
+    if (bloco.endDate >= hoje) continue; // bloco ainda não fechou
+
+    const proximoBloco = blocos[i + 1];
+    const proxIndice = proximoBloco.indice;
+    // Já existe rollover no próximo bloco vindo desse?
+    const jaExiste = cachedAlocacoes.some(
+      (a) => a.bloco_indice === proxIndice && a.destino_tipo === 'rollover' && a.status !== 'cancelada'
+    );
+    if (jaExiste) continue;
+
+    const sobra = calcularDisponivelDoBloco(bloco.indice);
+    if (sobra <= 0.005) continue;
+
+    await criarAlocacao({
+      mes_ano: mesAno,
+      bloco_indice: proxIndice,
+      destino_tipo: 'rollover',
+      valor: sobra,
+      descricao: `Saldo trazido do Bloco ${bloco.indice}`,
+    });
+    touched = true;
+  }
+
+  if (touched) cachedAlocacoes = await loadAlocacoesMes(mesAno);
+}
+
+/**
+ * Anexa em cada pagamento o atributo `_linkedTr` com info da transação vinculada
+ * (se houver). Usado pra renderizar o badge "Vinculado" e bloquear mudanças
+ * de status quando a transação veio de extrato bancário.
+ */
+async function attachLinkedTransacoes(pagamentos) {
+  if (!pagamentos || pagamentos.length === 0) return;
+  const pagIds = pagamentos.map((p) => p.id);
+  const { data, error } = await supabase
+    .from('transacoes')
+    .select('id, pagamento_id, reconciliacao_status, confirmado_automaticamente')
+    .in('pagamento_id', pagIds);
+  if (error || !data) {
+    for (const p of pagamentos) p._linkedTr = null;
+    return;
+  }
+  const byPag = new Map();
+  for (const t of data) byPag.set(t.pagamento_id, t);
+  for (const p of pagamentos) p._linkedTr = byPag.get(p.id) || null;
+}
+
+/** true quando o pagamento está travado por estar vinculado a transação de extrato */
+function isPagamentoLocked(p) {
+  const tr = p._linkedTr;
+  if (!tr) return false;
+  return tr.reconciliacao_status === 'importado' || tr.reconciliacao_status === 'reconciliado';
+}
+
+// -----------------------------
+// Caixa Livre — ícones SVG dos destinos
+// -----------------------------
+function destinoIconSvg(tipo) {
+  const SVG_ATTRS = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"';
+  const icons = {
+    investimento: `<svg ${SVG_ATTRS}><path d="M12 22V11"/><path d="M7 11s-2-5 2-7 5 1 5 3-5 5-5 5"/><path d="M17 11s2-5-2-7-5 1-5 3 5 5 5 5"/></svg>`,
+    divida: `<svg ${SVG_ATTRS}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 11 11 13 15 9"/></svg>`,
+    caixinha: `<svg ${SVG_ATTRS}><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.5.5 2.7 1.4 3.7L5 18h3l1-1.5c.9.3 1.9.5 3 .5s2.1-.2 3-.5L16 18h3l-1.4-2.3c.7-.6 1.2-1.4 1.4-2.2 1 0 2-1 2-2v-2c0-1-1-2-2-2 0-1-1-2.5-1-2.5z"/><circle cx="16" cy="10" r="0.6" fill="currentColor"/><path d="M2 11v1c0 1 1 2 2 2"/></svg>`,
+    rollover: `<svg ${SVG_ATTRS}><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>`,
+    avulsa: `<svg ${SVG_ATTRS}><rect width="14" height="9" x="5" y="8" rx="1"/><circle cx="12" cy="12.5" r="1.5"/><path d="M5 11c-2-1-3-3-3-4"/><path d="M19 11c2-1 3-3 3-4"/></svg>`,
+  };
+  return icons[tipo] || '';
+}
+
+// -----------------------------
+// Caixa Livre — modal de alocação + ações
+// -----------------------------
+let alocBlocoIndice = null;
+let alocDisponivel = 0;
+
+function calcularDisponivelDoBloco(blocoIndice) {
+  // Reproduz a fórmula do renderBloco: saldoBloco + carry - alocações != rollover
+  const items = cachedPagamentos.filter((p) => p.bloco_quinzenal === blocoIndice && p.status !== 'Cancelado');
+  let saldoBRL = 0;
+  for (const p of items) {
+    const tipo = p.subcategorias?.tipo;
+    const v = Number(p.valor_real ?? p.valor_previsto) || 0;
+    const vBRL = convertToBRL(v, p.moeda);
+    if (vBRL === null) continue;
+    saldoBRL += (tipo === 'Receita' ? vBRL : -vBRL);
+  }
+  const blocoAlocacoes = cachedAlocacoes.filter((a) => a.bloco_indice === blocoIndice && a.status !== 'cancelada');
+  const carry = blocoAlocacoes.filter((a) => a.destino_tipo === 'rollover').reduce((s, a) => s + Number(a.valor || 0), 0);
+  const alocado = blocoAlocacoes.filter((a) => a.destino_tipo !== 'rollover').reduce((s, a) => s + Number(a.valor || 0), 0);
+  return saldoBRL + carry - alocado;
+}
+
+function buildAlocDestinoOptions(destinoTipo) {
+  const sel = document.getElementById('aloc-destino-id');
+  const wrap = document.getElementById('aloc-sub-wrap');
+  if (!sel || !wrap) return;
+  if (destinoTipo === 'rollover' || destinoTipo === 'avulsa') {
+    wrap.style.display = 'none';
+    return;
+  }
+  wrap.style.display = '';
+  let subs = cachedSubcategorias.filter((s) => s.status === 'ativa');
+  if (destinoTipo === 'investimento') {
+    subs = subs.filter((s) => s.tipo === 'Despesa' && s.eh_investimento === true);
+    if (subs.length === 0) subs = cachedSubcategorias.filter((s) => s.status === 'ativa' && s.tipo === 'Despesa');
+  } else if (destinoTipo === 'divida') {
+    subs = subs.filter((s) => s.divida_id);
+  } else if (destinoTipo === 'caixinha') {
+    subs = subs.filter((s) => s.tipo === 'Caixinha');
+  }
+  sel.innerHTML = subs.length === 0
+    ? '<option value="">— Nenhuma subcategoria disponível —</option>'
+    : subs.map((s) => `<option value="${s.id}">${escapeHtml(s.apelido || s.nome)}</option>`).join('');
+}
+
+function openAlocacaoModal(blocoIndice) {
+  alocBlocoIndice = blocoIndice;
+  alocDisponivel = calcularDisponivelDoBloco(blocoIndice);
+  document.getElementById('aloc-bloco-indice').value = String(blocoIndice);
+  document.getElementById('aloc-valor').value = '';
+  document.getElementById('aloc-descricao').value = '';
+  document.getElementById('aloc-disponivel').textContent = formatCurrency(alocDisponivel, 'BRL');
+  // Reset toggle
+  document.querySelectorAll('#aloc-destino-toggle .aloc-destino-card').forEach((b) => {
+    const on = b.dataset.destino === 'investimento';
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-checked', String(on));
+  });
+  document.getElementById('aloc-destino-tipo').value = 'investimento';
+  buildAlocDestinoOptions('investimento');
+  openModal('modal-alocacao');
+}
+
+function bindAlocacaoEvents() {
+  const form = document.getElementById('form-alocacao');
+  if (!form || form._bound) return;
+  form._bound = true;
+
+  document.getElementById('aloc-destino-toggle')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.aloc-destino-card');
+    if (!btn) return;
+    document.querySelectorAll('#aloc-destino-toggle .aloc-destino-card').forEach((b) => {
+      const on = b === btn;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-checked', String(on));
+    });
+    const tipo = btn.dataset.destino;
+    document.getElementById('aloc-destino-tipo').value = tipo;
+    buildAlocDestinoOptions(tipo);
+  });
+
+  document.getElementById('btn-aloc-usar-tudo')?.addEventListener('click', () => {
+    if (alocDisponivel > 0) {
+      document.getElementById('aloc-valor').value = alocDisponivel.toFixed(2).replace('.', ',');
+    }
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const destinoTipo = document.getElementById('aloc-destino-tipo').value;
+    const destinoId   = document.getElementById('aloc-destino-id')?.value || null;
+    const valorRaw    = document.getElementById('aloc-valor').value;
+    const descricao   = document.getElementById('aloc-descricao').value.trim() || null;
+    const valor       = parseUserNumber(valorRaw);
+    if (!valor || valor <= 0) { showToast('Informe um valor válido', 'error'); return; }
+    if ((destinoTipo === 'investimento' || destinoTipo === 'divida' || destinoTipo === 'caixinha') && !destinoId) {
+      showToast('Selecione um destino', 'error'); return;
+    }
+
+    const mesAno = isoMonth(viewYear, viewMonth);
+    const { criarAlocacao } = await import('../lib/caixa-livre.js');
+    const result = await criarAlocacao({
+      mes_ano: mesAno,
+      bloco_indice: alocBlocoIndice,
+      destino_tipo: destinoTipo,
+      destino_id: (destinoTipo === 'rollover' || destinoTipo === 'avulsa') ? null : destinoId,
+      valor,
+      descricao,
+    });
+    if (!result.ok) {
+      showToast('Erro ao criar alocação: ' + result.error, 'error', 8000);
+      return;
+    }
+    closeModal('modal-alocacao');
+    showToast('Alocação criada', 'success');
+    // Recarrega alocações
+    const { loadAlocacoesMes } = await import('../lib/caixa-livre.js');
+    cachedAlocacoes = await loadAlocacoesMes(mesAno);
+    renderPagamentos();
+  });
+}
+
+async function deletarAlocacaoFlow(id) {
+  const ok = await showConfirm('Remover essa alocação?', { okLabel: 'Remover', danger: true });
+  if (!ok) return;
+  const { deletarAlocacao, loadAlocacoesMes } = await import('../lib/caixa-livre.js');
+  const result = await deletarAlocacao(id);
+  if (!result.ok) {
+    showToast('Erro: ' + result.error, 'error', 6000);
+    return;
+  }
+  const mesAno = isoMonth(viewYear, viewMonth);
+  cachedAlocacoes = await loadAlocacoesMes(mesAno);
+  renderPagamentos();
+  showToast('Alocação removida', 'success');
 }
 
 // -----------------------------
@@ -299,6 +608,7 @@ async function loadFlat() {
   }
 
   cachedPagamentos = (data || []).filter((p) => p.subcategorias?.status === 'ativa');
+  await attachLinkedTransacoes(cachedPagamentos);
   await refreshRates();
   renderFlat();
 }
@@ -709,7 +1019,7 @@ function renderBloco(num, title, period, items) {
     }
   }
 
-  const alertCls = saldoBRL <= 0 ? 'alerta-negativo' : '';
+  // (alertCls do saldo bruto não é mais usado — agora usamos caixaLivreAlert calculado abaixo)
 
   // Separa finalizados, cancelados e ativos
   const finalizedItems = items.filter((p) => FINALIZADOS_STATUS.has(p.status));
@@ -809,9 +1119,18 @@ function renderBloco(num, title, period, items) {
     `;
 
   // Header: título + período + 3 stats sempre visíveis no topo
-  // (Saídas realizadas | Oportunidade de investimento | Saídas restantes)
-  const oportunidade = saldoBRL;
-  const oportClass = oportunidade > 0 ? 'dre-positive' : (oportunidade < 0 ? 'dre-negative' : 'dre-zero');
+  // (Saídas realizadas | Caixa Livre | Saídas restantes)
+  // Caixa Livre = saldo bruto + carry-forward - alocações já feitas
+  const blocoAlocacoes = cachedAlocacoes.filter((a) => a.bloco_indice === num);
+  const carry = blocoAlocacoes
+    .filter((a) => a.destino_tipo === 'rollover' && a.status !== 'cancelada')
+    .reduce((s, a) => s + Number(a.valor || 0), 0);
+  const alocado = blocoAlocacoes
+    .filter((a) => a.destino_tipo !== 'rollover' && a.status !== 'cancelada')
+    .reduce((s, a) => s + Number(a.valor || 0), 0);
+  const caixaLivre = saldoBRL + carry - alocado;
+  const oportClass = caixaLivre > 0 ? 'dre-positive' : (caixaLivre < 0 ? 'dre-negative' : 'dre-zero');
+  const caixaLivreAlert = caixaLivre <= 0 ? 'alerta-negativo' : '';
 
   return `
     <div class="pagamento-bloco">
@@ -825,17 +1144,91 @@ function renderBloco(num, title, period, items) {
             <span class="pagamento-bloco-stat-label">Saídas realizadas</span>
             <span class="pagamento-bloco-stat-value dre-negative">${formatCurrencyHTML(despesaRealizadaBRL, 'BRL')}</span>
           </div>
-          <div class="pagamento-bloco-stat-center">
-            <span class="pagamento-bloco-stat-label">Oportunidade de investimento</span>
-            <span class="pagamento-bloco-stat-value-big ${oportClass} ${alertCls}">${formatCurrencyHTML(oportunidade, 'BRL')}</span>
-          </div>
+          <button type="button" class="pagamento-bloco-stat-center pagamento-bloco-stat-center--clickable" data-bloco-caixa="${num}" aria-expanded="false" title="Clique pra ver e alocar o Caixa Livre">
+            <span class="pagamento-bloco-stat-label caixa-livre-label">
+              <span class="caixa-livre-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                  <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-1"/>
+                  <path d="M16 12h4a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-4a2 2 0 0 1 0-4Z"/>
+                  <circle cx="17.5" cy="14" r="0.5" fill="currentColor"/>
+                </svg>
+              </span>
+              Caixa Livre
+              <span class="caixa-chevron-wrap" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg>
+              </span>
+            </span>
+            <span class="pagamento-bloco-stat-value-big ${oportClass} ${caixaLivreAlert}">${formatCurrencyHTML(caixaLivre, 'BRL')}</span>
+          </button>
           <div class="pagamento-bloco-stat pagamento-bloco-stat-right">
             <span class="pagamento-bloco-stat-label">Saídas restantes</span>
             <span class="pagamento-bloco-stat-value">${formatCurrencyHTML(despesaRestanteBRL, 'BRL')}</span>
           </div>
         </div>
+        ${renderCaixaLivrePainel(num, saldoBRL, carry, blocoAlocacoes, caixaLivre)}
       </header>
       ${body}
+    </div>
+  `;
+}
+
+/**
+ * Painel expansível com detalhamento e alocações do Caixa Livre do bloco.
+ * Fica oculto por default; mostra quando usuário clica no stat "Caixa Livre".
+ */
+function renderCaixaLivrePainel(blocoIndice, saldoBruto, carry, alocacoes, livre) {
+  const semAlocacoes = alocacoes.filter((a) => a.destino_tipo !== 'rollover' && a.status !== 'cancelada');
+  const LABELS = { investimento: 'Investimento', divida: 'Dívida', caixinha: 'Caixinha', rollover: 'Rollover', avulsa: 'Avulsa' };
+
+  const alocacoesHtml = semAlocacoes.length === 0
+    ? `<div class="caixa-livre-empty">Nenhuma alocação ainda. Clique em "+ Nova alocação" pra distribuir o caixa livre.</div>`
+    : semAlocacoes.map((a) => {
+        const subOuDivida = a.destino_id
+          ? (cachedSubcategorias.find((s) => s.id === a.destino_id)?.apelido
+            || cachedSubcategorias.find((s) => s.id === a.destino_id)?.nome
+            || a.descricao
+            || '—')
+          : (a.descricao || LABELS[a.destino_tipo]);
+        return `
+          <div class="caixa-livre-alocacao-row" data-destino="${a.destino_tipo}">
+            <span class="caixa-livre-alocacao-info">
+              <span class="caixa-livre-alocacao-icon">${destinoIconSvg(a.destino_tipo)}</span>
+              <span class="caixa-livre-alocacao-label">${escapeHtml(subOuDivida)}</span>
+              <span class="caixa-livre-alocacao-tipo">${LABELS[a.destino_tipo]}</span>
+            </span>
+            <span class="caixa-livre-alocacao-valor">${formatCurrencyHTML(Number(a.valor), a.moeda || 'BRL')}</span>
+            <button type="button" class="caixa-livre-alocacao-del" data-aloc-del="${a.id}" title="Remover alocação" aria-label="Remover">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>`;
+      }).join('');
+
+  const totalAlocado = semAlocacoes.reduce((s, a) => s + Number(a.valor || 0), 0);
+  const carryHtml = carry > 0
+    ? `<div class="caixa-livre-row caixa-livre-row--carry"><span class="caixa-livre-carry-label">${destinoIconSvg('rollover')} Saldo trazido do bloco anterior</span><span>${formatCurrencyHTML(carry, 'BRL')}</span></div>`
+    : '';
+
+  return `
+    <div class="caixa-livre-painel hidden" data-painel-bloco="${blocoIndice}">
+      <div class="caixa-livre-breakdown">
+        ${carryHtml}
+        <div class="caixa-livre-row"><span>Saldo bruto do bloco (Receitas − Despesas)</span><span>${formatCurrencyHTML(saldoBruto, 'BRL')}</span></div>
+        <div class="caixa-livre-row caixa-livre-row--total"><span>Caixa Livre bruto</span><span>${formatCurrencyHTML(saldoBruto + carry, 'BRL')}</span></div>
+      </div>
+      <div class="caixa-livre-alocacoes">
+        <div class="caixa-livre-alocacoes-header">
+          <span>Alocações</span>
+          <button type="button" class="btn btn-primary btn-sm" data-aloc-add="${blocoIndice}">+ Nova alocação</button>
+        </div>
+        ${alocacoesHtml}
+        <div class="caixa-livre-row caixa-livre-row--total">
+          <span>Sobra (vai pro próximo bloco)</span>
+          <span class="${livre >= 0 ? 'dre-positive' : 'dre-negative'}">${formatCurrencyHTML(livre, 'BRL')}</span>
+        </div>
+        ${semAlocacoes.length === 0 ? '' : `
+          <p class="caixa-livre-resumo-line">Total alocado: <strong>${formatCurrencyHTML(totalAlocado, 'BRL')}</strong></p>
+        `}
+      </div>
     </div>
   `;
 }
@@ -867,8 +1260,22 @@ function renderPagamentoRow(p, catColor) {
     }
   }
 
-  // Vencimento dia
+  // Vencimento dia + delta (se houver data_pagamento divergente)
   const vto = p.data_vencimento ? p.data_vencimento.slice(8, 10) : '—';
+  let vtoDeltaHtml = '';
+  if (p.data_pagamento && p.data_vencimento && p.data_pagamento !== p.data_vencimento) {
+    const dV = new Date(p.data_vencimento + 'T00:00:00');
+    const dP = new Date(p.data_pagamento + 'T00:00:00');
+    const delta = Math.round((dP - dV) / 86400000);
+    if (delta > 0) {
+      vtoDeltaHtml = `<span class="pag-vto-delta pag-vto-delta--late" title="Pago ${delta}d após o vencimento">+${delta}d</span>`;
+    } else if (delta < 0) {
+      vtoDeltaHtml = `<span class="pag-vto-delta pag-vto-delta--early" title="Pago ${Math.abs(delta)}d antes do vencimento">${delta}d</span>`;
+    }
+  }
+
+  // Pagamento travado por vínculo com transação do banco?
+  const locked = isPagamentoLocked(p);
 
   // Status select — filtra deprecated (Cartão) exceto se o pagamento já tem esse status
   const statusOptions = STATUS_OPTIONS
@@ -876,6 +1283,16 @@ function renderPagamentoRow(p, catColor) {
     .map((s) => `<option value="${s.value}" ${p.status === s.value ? 'selected' : ''}>${s.label}</option>`)
     .join('');
   const currentStatus = STATUS_OPTIONS.find((s) => s.value === p.status) || STATUS_OPTIONS[0];
+
+  // Quando travado, renderiza badge "Vinculado" no lugar do select
+  const statusCellHtml = locked
+    ? `<span class="pagamento-status-locked" title="Vinculado a uma transação do banco. Desvincule pela página de Transações pra mudar o status.">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Vinculado
+      </span>`
+    : `<select class="pagamento-status-select ${currentStatus.cls}" data-pagamento-id="${p.id}">
+        ${statusOptions}
+      </select>`;
 
   // Indicador de observação
   const obsIcon = hasObs
@@ -958,7 +1375,7 @@ function renderPagamentoRow(p, catColor) {
       </td>
       <td class="pag-conta-cell">${contaLogoHtml}</td>
       <td>${tipoBadgeHtml}</td>
-      <td class="tabular text-center" style="font-size: var(--fs-xs); color: var(--color-text-secondary);">${vto}</td>
+      <td class="tabular text-center" style="font-size: var(--fs-xs); color: var(--color-text-secondary);">${vto}${vtoDeltaHtml}</td>
       <td class="text-center pag-dias-cell">${diasHtml}</td>
       <td class="text-right">
         <span class="orcamento-input-group">
@@ -971,14 +1388,11 @@ function renderPagamentoRow(p, catColor) {
             value="${valorInputValue}"
             placeholder="—"
             aria-label="Valor pago em ${moeda}"
+            ${locked ? 'readonly' : ''}
           />
         </span>
       </td>
-      <td>
-        <select class="pagamento-status-select ${currentStatus.cls}" data-pagamento-id="${p.id}">
-          ${statusOptions}
-        </select>
-      </td>
+      <td>${statusCellHtml}</td>
     </tr>
   `;
 }
@@ -1023,6 +1437,32 @@ function bindEdits() {
     if (canBtn) {
       const num = Number(canBtn.dataset.bloco);
       openFinalizadosModal(num, 'cancelados');
+      return;
+    }
+
+    // Toggle do painel Caixa Livre
+    const caixaBtn = e.target.closest('[data-bloco-caixa]');
+    if (caixaBtn) {
+      const blocoNum = caixaBtn.dataset.blocoCaixa;
+      const painel = container.querySelector(`[data-painel-bloco="${blocoNum}"]`);
+      if (painel) {
+        const isHidden = painel.classList.toggle('hidden');
+        caixaBtn.setAttribute('aria-expanded', String(!isHidden));
+      }
+      return;
+    }
+
+    // Adicionar alocação
+    const addBtn = e.target.closest('[data-aloc-add]');
+    if (addBtn) {
+      openAlocacaoModal(Number(addBtn.dataset.alocAdd));
+      return;
+    }
+
+    // Deletar alocação
+    const delBtn = e.target.closest('[data-aloc-del]');
+    if (delBtn) {
+      deletarAlocacaoFlow(delBtn.dataset.alocDel);
       return;
     }
 
@@ -1233,15 +1673,51 @@ async function saveStatus(select) {
   const pag = cachedPagamentos.find((p) => p.id === id);
   if (!pag || pag.status === newStatus) return;
 
+  // Bloqueia mudanças quando o pagamento está vinculado a transação do banco.
+  // (Em tese o dropdown nem deveria estar visível, mas é defesa em profundidade.)
+  if (isPagamentoLocked(pag)) {
+    select.value = pag.status;
+    showToast('Esse pagamento está vinculado a uma transação do banco. Desvincule pela página de Transações antes de mudar o status.', 'warning', 8000);
+    return;
+  }
+
+  // Status virou pago/transferido → confirma data efetiva com o usuário
+  let dataPagamento = null;
+  if (isPaidStatus(newStatus)) {
+    const title = newStatus === 'Transferido' ? 'Quando foi transferido?' : 'Quando foi pago?';
+    dataPagamento = await showDateConfirmPopover({
+      anchor: select,
+      title,
+      initialDate: pag.data_pagamento || null,
+    });
+    if (!dataPagamento) {
+      // Cancelado pelo usuário — reverte o select
+      select.value = pag.status;
+      return;
+    }
+  }
+
   if (newStatus === 'Transferido') {
     select.value = pag.status; // revert enquanto processa
-    await createTransferPairAndUpdateStatus(pag, select);
+    await createTransferPairAndUpdateStatus(pag, select, dataPagamento);
     return;
+  }
+
+  // Salva status + data_pagamento (se aplicável) + audit timestamp
+  const updatePayload = {
+    status: newStatus,
+    status_atualizado_em: new Date().toISOString(),
+  };
+  if (isPaidStatus(newStatus)) {
+    updatePayload.data_pagamento = dataPagamento;
+  } else {
+    // Reverte: limpa data_pagamento
+    updatePayload.data_pagamento = null;
   }
 
   const { error } = await supabase
     .from('pagamentos')
-    .update({ status: newStatus })
+    .update(updatePayload)
     .eq('id', id);
   if (error) {
     console.error('[saveStatus]', error);
@@ -1251,6 +1727,7 @@ async function saveStatus(select) {
   }
 
   pag.status = newStatus;
+  pag.data_pagamento = updatePayload.data_pagamento;
   STATUS_OPTIONS.forEach((s) => select.classList.remove(s.cls));
   const cur = STATUS_OPTIONS.find((s) => s.value === newStatus);
   if (cur) select.classList.add(cur.cls);
@@ -1265,7 +1742,7 @@ async function saveStatus(select) {
 // -----------------------------
 // Transferência automática — usa contas já definidas no compromisso
 // -----------------------------
-async function createTransferPairAndUpdateStatus(pag, select) {
+async function createTransferPairAndUpdateStatus(pag, select, dataPagamento = null) {
   const contaOrigemId  = pag.subcategorias?.conta_id;
   const contaDestinoId = pag.subcategorias?.conta_destino_id;
 
@@ -1284,7 +1761,7 @@ async function createTransferPairAndUpdateStatus(pag, select) {
 
     const valor    = Number(pag.valor_real ?? pag.valor_previsto ?? 0);
     const moeda    = pag.moeda || 'BRL';
-    const data     = pag.data_vencimento || new Date().toISOString().slice(0, 10);
+    const data     = dataPagamento || pag.data_vencimento || new Date().toISOString().slice(0, 10);
     const descricao = `Transferência — ${displayName(pag)}`;
 
     // Desvincula transação de sync anterior (se houver)
@@ -1318,10 +1795,17 @@ async function createTransferPairAndUpdateStatus(pag, select) {
 
     // Atualiza pagamento
     const { error: pagErr } = await supabase
-      .from('pagamentos').update({ status: 'Transferido' }).eq('id', pag.id);
+      .from('pagamentos')
+      .update({
+        status: 'Transferido',
+        data_pagamento: dataPagamento || null,
+        status_atualizado_em: new Date().toISOString(),
+      })
+      .eq('id', pag.id);
     if (pagErr) throw pagErr;
 
     pag.status = 'Transferido';
+    pag.data_pagamento = dataPagamento || null;
     renderPagamentos();
     const dividaId = pag.subcategorias?.divida_id;
     if (dividaId) propagateDivida(dividaId);

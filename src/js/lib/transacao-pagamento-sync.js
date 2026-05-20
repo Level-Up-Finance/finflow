@@ -60,6 +60,22 @@ export async function findTransacaoLinkedToPagamento(pagamentoId) {
   return data;
 }
 
+/**
+ * Verifica se o pagamento está "travado" por estar vinculado a uma transação
+ * vinda de extrato bancário (importado ou reconciliado). Se sim, o usuário
+ * não pode mudar o status — precisa primeiro desvincular pela página de transações.
+ */
+export async function isPagamentoLocked(pagamentoId) {
+  if (!pagamentoId) return false;
+  const { data, error } = await supabase
+    .from('transacoes')
+    .select('id, reconciliacao_status')
+    .eq('pagamento_id', pagamentoId)
+    .maybeSingle();
+  if (error || !data) return false;
+  return data.reconciliacao_status === 'importado' || data.reconciliacao_status === 'reconciliado';
+}
+
 // -----------------------------
 // SYNC: pagamento → transação (chamado de pagamentos.js)
 // -----------------------------
@@ -69,17 +85,27 @@ export async function findTransacaoLinkedToPagamento(pagamentoId) {
  * uma transação vinculada refletindo a realidade.
  *
  * Regras:
- *  - status virou pago → cria/atualiza transação vinculada
- *  - status virou não-pago (Agendado/Cancelado) → desvincula transação
- *    existente (NÃO deleta — preserva o registro do usuário)
+ *  - status virou pago → cria/atualiza transação vinculada com data = data_pagamento
+ *    (fallback: data_vencimento)
+ *  - status virou não-pago (Agendado/Cancelado):
+ *    • se a transação era 'manual' (auto-criada) → DELETA
+ *    • se a transação veio de extrato (importado/reconciliado) → não deveria
+ *      acontecer (o pagamento está travado) — fallback: desvincula
  *  - valor_real ≤ 0 e sem valor_previsto → não cria nada
  */
 export async function syncPagamentoToTransacao(pagamento, subcategoria) {
   const existing = await findTransacaoLinkedToPagamento(pagamento.id);
 
-  // Status virou não-pago: desvincula a transação existente (se houver)
+  // Status virou não-pago: deleta ou desvincula conforme origem da transação
   if (!isPaidStatus(pagamento.status)) {
     if (existing) {
+      const origem = existing.reconciliacao_status || 'manual';
+      if (origem === 'manual') {
+        // Transação auto-criada — pode deletar com segurança
+        await supabase.from('transacoes').delete().eq('id', existing.id);
+        return { action: 'deleted' };
+      }
+      // Veio do banco (importado/reconciliado): apenas desvincula
       await supabase.from('transacoes').update({ pagamento_id: null }).eq('id', existing.id);
       return { action: 'unlinked' };
     }
@@ -90,7 +116,8 @@ export async function syncPagamentoToTransacao(pagamento, subcategoria) {
   if (valor <= 0) return { action: 'skipped', reason: 'no_value' };
 
   const tipo     = subcategoria?.tipo === 'Receita' ? 'Receita' : 'Despesa';
-  const data     = pagamento.data_vencimento || todayISO();
+  // Usa data_pagamento (data efetiva); fallback pra data_vencimento (planejada)
+  const data     = pagamento.data_pagamento || pagamento.data_vencimento || todayISO();
   const conta_id = subcategoria?.conta_id || null;
   const moeda    = subcategoria?.moeda || pagamento.moeda || 'BRL';
 
@@ -126,11 +153,22 @@ export async function syncPagamentoToTransacao(pagamento, subcategoria) {
 /**
  * Marca um pagamento como pago e vincula uma transação a ele.
  * Usado quando o usuário cria uma transação manual e o sistema
- * detecta um pagamento agendado correspondente.
+ * detecta um pagamento agendado correspondente, OU quando a importação
+ * de extrato faz match com um pagamento pendente.
+ *
+ * @param {string} pagamentoId
+ * @param {string} transacaoId
+ * @param {number|null} valorReal
+ * @param {string|null} dataPagamento - data efetiva do pagamento (YYYY-MM-DD)
+ * @param {string} novoStatus - 'Pago' (default), 'Transferido', etc.
  */
-export async function markPagamentoPagoAndLink(pagamentoId, transacaoId, valorReal) {
-  const updatePag = { status: 'Pago' };
+export async function markPagamentoPagoAndLink(pagamentoId, transacaoId, valorReal, dataPagamento = null, novoStatus = 'Pago') {
+  const updatePag = {
+    status: novoStatus,
+    status_atualizado_em: new Date().toISOString(),
+  };
   if (valorReal != null) updatePag.valor_real = valorReal;
+  if (dataPagamento) updatePag.data_pagamento = dataPagamento;
 
   const { error: pagErr } = await supabase
     .from('pagamentos')

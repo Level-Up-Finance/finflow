@@ -61,6 +61,9 @@ let pendingAction = null;       // { type, id, label }
 let filterStatus = 'todas';
 let filterTipos = new Set(['all']);
 let cachedSaldos = new Map(); // conta_id → saldo number
+let cachedSnapshots = new Map(); // conta_id → { data, saldo, moeda, fonte }
+let cachedReconPendentes = new Map(); // conta_id → count (transações status='importado')
+let cachedUltimasImportacoes = new Map(); // conta_id → ISO date da última importação
 let userManuallyChangedColor = false;
 let viewMode = 'cards';         // 'cards' | 'table'
 let colVisEl = null;
@@ -302,10 +305,15 @@ function syncTipoFilterUI() {
 // -----------------------------
 async function loadSaldos(contaIds) {
   if (!contaIds.length) return;
+  // Em paralelo: snapshots de saldo bancário (vindos do OFX)
+  loadSnapshots(contaIds).catch((e) => console.warn('[loadSnapshots]', e));
+  // Exclui transações 'importado' (ainda não confirmadas pelo usuário) — elas
+  // só passam a afetar o saldo após reconciliação manual ou auto-confirmação.
   const { data, error } = await supabase
     .from('transacoes')
-    .select('conta_id, tipo, valor, conta_destino_id, transferencia_par_id')
-    .in('conta_id', contaIds);
+    .select('conta_id, tipo, valor, conta_destino_id, transferencia_par_id, reconciliacao_status')
+    .in('conta_id', contaIds)
+    .neq('reconciliacao_status', 'importado');
   if (error) { console.error('[loadSaldos]', error); return; }
 
   // Initialize all accounts at 0
@@ -320,6 +328,47 @@ async function loadSaldos(contaIds) {
     if (isEntrada) cachedSaldos.set(tr.conta_id, cur + Number(tr.valor || 0));
     else if (isSaida) cachedSaldos.set(tr.conta_id, cur - Number(tr.valor || 0));
   }
+}
+
+// Snapshots de saldo bancário (vindos do OFX). Atualiza cachedSnapshots em background.
+async function loadSnapshots(contaIds) {
+  if (!contaIds || contaIds.length === 0) return;
+  const { loadLatestSnapshots } = await import('../lib/saldos-bancarios.js');
+  const map = await loadLatestSnapshots(contaIds);
+  cachedSnapshots = map;
+}
+
+/**
+ * Carrega 2 indicadores por conta pra usar nos cards:
+ *  - cachedReconPendentes: contagem de transações importadas pendentes
+ *  - cachedUltimasImportacoes: data da última importação (max importada_em)
+ */
+async function loadIndicadoresImportacao(contaIds) {
+  if (!contaIds || contaIds.length === 0) return;
+  // Pendentes de reconciliação
+  const { data: pendentes } = await supabase
+    .from('transacoes')
+    .select('conta_id')
+    .in('conta_id', contaIds)
+    .eq('reconciliacao_status', 'importado');
+  const countMap = new Map();
+  for (const t of pendentes || []) {
+    countMap.set(t.conta_id, (countMap.get(t.conta_id) || 0) + 1);
+  }
+  cachedReconPendentes = countMap;
+
+  // Última importação por conta
+  const { data: imps } = await supabase
+    .from('transacoes')
+    .select('conta_id, importada_em')
+    .in('conta_id', contaIds)
+    .not('importada_em', 'is', null);
+  const ultMap = new Map();
+  for (const t of imps || []) {
+    const cur = ultMap.get(t.conta_id);
+    if (!cur || t.importada_em > cur) ultMap.set(t.conta_id, t.importada_em);
+  }
+  cachedUltimasImportacoes = ultMap;
 }
 
 // -----------------------------
@@ -1002,13 +1051,70 @@ async function loadContas() {
   const cartaoIds = cachedContas
     .filter((c) => c.tipo === 'Cartão de Crédito')
     .map((c) => c.id);
+  // Carrega saldos + snapshots de TODAS contas ativas (pra KPI consolidado de conciliação)
+  const activeContaIds = cachedContas.filter((c) => c.status === 'ativa').map((c) => c.id);
   await Promise.all([
     loadFaturasAbertas(cartaoIds),
     loadCompromissosContas(cartaoIds),
+    loadSaldos(activeContaIds),  // loadSaldos já dispara loadSnapshots em paralelo
+    loadIndicadoresImportacao(activeContaIds),
   ]);
 
   renderContas();
+  renderConciliacaoKpi();
   renderCaixinhasSection(); // fire-and-forget — carrega dados e preenche #caixinhas-section
+}
+
+/**
+ * Renderiza o KPI consolidado de conciliação bancária no topo da página.
+ * Mostra: total nas contas + última conciliação + diferença total.
+ */
+function renderConciliacaoKpi() {
+  const container = document.getElementById('conciliacao-kpi-container');
+  if (!container) return;
+  // Considera apenas contas ativas com saldo conhecido
+  const contasAtivas = cachedContas.filter((c) => c.status === 'ativa' && cachedSaldos.has(c.id));
+  if (contasAtivas.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  let totalCalculado = 0;
+  let totalBanco = 0;
+  let contasComSnapshot = 0;
+  let maxData = null;
+  for (const c of contasAtivas) {
+    const saldo = cachedSaldos.get(c.id) ?? 0;
+    totalCalculado += Number(saldo);
+    const snap = cachedSnapshots.get(c.id);
+    if (snap) {
+      totalBanco += Number(snap.saldo);
+      contasComSnapshot++;
+      if (!maxData || snap.data > maxData) maxData = snap.data;
+    }
+  }
+  const diff = totalCalculado - totalBanco;
+  const bate = Math.abs(diff) < 0.005;
+  const semSnapshots = contasComSnapshot === 0;
+  let diffHtml;
+  if (semSnapshots) {
+    diffHtml = `<span class="conciliacao-kpi-sub">Nenhuma conciliação ainda — importe um extrato pra começar</span>`;
+  } else {
+    const diffSign = diff < 0 ? '-' : (diff > 0 ? '+' : '');
+    const dataLabel = maxData ? (() => { const [yy, mm, dd] = maxData.split('-'); return `${dd}/${mm}/${yy.slice(2)}`; })() : '—';
+    diffHtml = `
+      <span class="conciliacao-kpi-sub">${contasComSnapshot} de ${contasAtivas.length} contas conciliadas · última: ${dataLabel}</span>
+      <span class="conciliacao-kpi-diff ${bate ? 'is-ok' : 'is-diff'}">${bate ? '✓ Tudo bate' : `Diferença: ${diffSign}${formatCurrencyHTML(Math.abs(diff), 'BRL')}`}</span>
+    `;
+  }
+  container.innerHTML = `
+    <div class="conciliacao-kpi">
+      <span class="conciliacao-kpi-icon">🏦</span>
+      <div class="conciliacao-kpi-body">
+        <div class="conciliacao-kpi-title">Patrimônio nas contas: ${formatCurrencyHTML(totalCalculado, 'BRL')}</div>
+        ${diffHtml}
+      </div>
+    </div>
+  `;
 }
 
 function renderContas() {
@@ -1204,19 +1310,23 @@ function bindRowClicks() {
 
 function renderContaCard(conta) {
   const isInactive = conta.status !== 'ativa';
-  const display = displayName(conta);
-  const officialDifferent = conta.apelido && conta.apelido.trim() && conta.apelido !== conta.nome;
-
+  // Apenas um nome — prefere apelido quando existe (não duplica)
+  const display = (conta.apelido?.trim()) || conta.nome;
   const statusLabel = { ativa: 'Ativa', inativa: 'Inativa', arquivada: 'Arquivada' }[conta.status];
+  const isCartao = conta.tipo === 'Cartão de Crédito';
 
-  const dates = [];
-  if (conta.desde) dates.push(`<span><strong>Desde:</strong> ${formatDateBR(conta.desde)}</span>`);
-  if (conta.fechada_em) dates.push(`<span><strong>Fechada:</strong> ${formatDateBR(conta.fechada_em)}</span>`);
-  if (conta.tipo === 'Cartão de Crédito') {
-    if (conta.fec_fatura) dates.push(`<span><strong>Fec. fatura:</strong> dia ${conta.fec_fatura}</span>`);
-    if (conta.vencimento) dates.push(`<span><strong>Venc.:</strong> dia ${conta.vencimento}</span>`);
-  }
+  // Linha "Desde" + status pill
+  const desdeStr = conta.desde ? formatDateBR(conta.desde) : '—';
 
+  // Linha de datas específicas de cartão
+  const faturaRow = isCartao && (conta.fec_fatura || conta.vencimento) ? `
+    <div class="conta-card-row conta-card-row--datas">
+      ${conta.fec_fatura ? `<span><strong>Fec. fatura:</strong> dia ${conta.fec_fatura}</span>` : ''}
+      ${conta.vencimento ? `<span><strong>Venc.:</strong> dia ${conta.vencimento}</span>` : ''}
+    </div>
+  ` : '';
+
+  // Fatura aberta (badge)
   const faturaAbertaValor = cachedFaturasAbertas.get(conta.id);
   const faturaBadge = faturaAbertaValor
     ? `<div class="conta-fatura-badge">
@@ -1227,13 +1337,43 @@ function renderContaCard(conta) {
 
   const comprometidoBadge = renderComprometidoBadge(conta);
 
+  // Saldo (só conta não-cartão)
   const saldo = cachedSaldos.has(conta.id) ? cachedSaldos.get(conta.id) : null;
-  const saldoHtml = saldo !== null && conta.tipo !== 'Cartão de Crédito'
-    ? `<div class="conta-card-saldo ${saldo < 0 ? 'conta-card-saldo--negativo' : saldo === 0 ? 'conta-card-saldo--zero' : ''}">
-        <span class="conta-card-saldo-label">Saldo atual</span>
+  const saldoHtml = saldo !== null && !isCartao
+    ? `<div class="conta-card-row conta-card-saldo-row ${saldo < 0 ? 'is-negativo' : saldo === 0 ? 'is-zero' : ''}">
+        <span class="conta-card-row-label">Saldo atual</span>
         <span class="conta-card-saldo-valor">${formatCurrencyHTML(saldo, conta.moeda)}</span>
        </div>`
     : '';
+
+  // Conciliação com banco (snapshot OFX — padrão Xero)
+  const snap = cachedSnapshots.get(conta.id);
+  let conciliacaoHtml;
+  const BANK_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="vertical-align:-3px;margin-right:4px;"><path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v3"/><path d="M12 14v3"/><path d="M16 14v3"/></svg>`;
+  if (snap) {
+    const diff = (saldo ?? 0) - Number(snap.saldo);
+    const bate = Math.abs(diff) < 0.005;
+    const diffAbs = Math.abs(diff);
+    const diffSign = diff < 0 ? '-' : (diff > 0 ? '+' : '');
+    const [, m, d] = snap.data.split('-');
+    conciliacaoHtml = `
+      <div class="conta-conciliacao">
+        <div class="conta-conciliacao-row">
+          <span class="conta-conciliacao-label">${BANK_ICON}Banco (${d}/${m})</span>
+          <span class="conta-conciliacao-valor">${formatCurrencyHTML(snap.saldo, snap.moeda || conta.moeda)}</span>
+        </div>
+        <div class="conta-conciliacao-row conta-conciliacao-diff ${bate ? 'is-ok' : 'is-diff'}">
+          <span class="conta-conciliacao-label">Diferença</span>
+          <span class="conta-conciliacao-valor">${bate ? '✓ Bate' : `${diffSign}${formatCurrencyHTML(diffAbs, conta.moeda)}`}</span>
+        </div>
+      </div>`;
+  } else {
+    conciliacaoHtml = `
+      <div class="conta-conciliacao conta-conciliacao--empty">
+        <span class="conta-conciliacao-label">${BANK_ICON}Banco: —</span>
+        <span class="conta-conciliacao-cta">Importe um extrato pra comparar</span>
+      </div>`;
+  }
 
   return `
     <div class="conta-card-v2 ${isInactive ? 'inactive' : ''} ${conta.status === 'arquivada' ? 'arquivada' : ''}" data-id="${conta.id}" tabindex="0" role="button" aria-label="Ver detalhes de ${escapeHtml(display)}">
@@ -1242,28 +1382,102 @@ function renderContaCard(conta) {
         Ver detalhes
       </span>
 
-      ${renderBankAvatar({ banco: conta.nome, tipo: conta.tipo, cor: conta.icone_cor, size: 'lg' })}
-
-      <div class="conta-card-info">
-        <div class="conta-card-header">
+      <!-- TOPO: avatar + nome + tipo -->
+      <div class="conta-card-top">
+        ${renderBankAvatar({ banco: conta.nome, tipo: conta.tipo, cor: conta.icone_cor, size: 'md' })}
+        <div class="conta-card-top-info">
           <h3 class="conta-card-name">${escapeHtml(display)}</h3>
+          <div class="conta-card-tipo-wrap">${typePill(conta.tipo)}</div>
         </div>
-        ${officialDifferent ? `<p style="font-size: var(--fs-xs); color: var(--color-text-muted); margin-top: -2px;">${escapeHtml(conta.nome)}</p>` : ''}
-        <div class="conta-card-meta">
-          ${typePill(conta.tipo)}
+      </div>
+
+      <!-- CORPO -->
+      <div class="conta-card-body">
+        <div class="conta-card-row conta-card-row--meta">
+          <span><strong>Desde:</strong> ${desdeStr}</span>
           <span class="status-pill status-${conta.status}">${statusLabel}</span>
-          ${conta.moeda && conta.moeda !== 'BRL'
-            ? `<span class="conta-moeda-badge conta-moeda-badge--estrangeira">🌐 ${escapeHtml(conta.moeda)}</span>`
-            : `<span class="conta-moeda-badge conta-moeda-badge--nacional">🇧🇷 BRL</span>`}
         </div>
-        ${conta.descricao ? `<p class="conta-card-desc">${escapeHtml(conta.descricao)}</p>` : ''}
-        ${dates.length ? `<div class="conta-card-dates">${dates.join('')}</div>` : ''}
+        ${faturaRow}
         ${saldoHtml}
         ${faturaBadge}
         ${comprometidoBadge}
+        ${conciliacaoHtml}
+        ${renderIndicadoresImportacao(conta)}
       </div>
     </div>
   `;
+}
+
+/**
+ * 2 badges no card de conta:
+ *  - Importação pendente: N transações importadas esperando reconciliação
+ *  - Status temporal: "Última importação: DD/MM" (em dia) ou "Atrasada há Xd" (vermelho)
+ *
+ * Trata frequencia_importacao_dias=null como 30 (mensal) por default.
+ * Pra desativar lembretes de uma conta o user precisa marcar "Não lembrar"
+ * em /configuracoes → Importações (que NÃO grava null mais — gravamos null
+ * só pra contas arquivadas).
+ */
+function renderIndicadoresImportacao(conta) {
+  const pendentes = cachedReconPendentes.get(conta.id) || 0;
+  const ultIso    = cachedUltimasImportacoes.get(conta.id);
+  // Semântica:
+  //   null → default mensal (30)
+  //   0    → usuário desabilitou (não mostra indicador temporal)
+  //   N    → a cada N dias
+  const rawFreq = conta.frequencia_importacao_dias;
+  const freq    = rawFreq == null ? 30 : rawFreq;
+  const lembreteDesativado = rawFreq === 0;
+
+  const parts = [];
+
+  // Indicador 1: pendentes de reconciliação
+  if (pendentes > 0) {
+    parts.push(`
+      <a href="/transacoes.html" class="conta-indicador conta-indicador--pendente" title="Confirme essas transações em Transações">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        ${pendentes} pendente${pendentes > 1 ? 's' : ''} de reconciliação
+      </a>`);
+  }
+
+  // Indicador 2: status temporal de importação
+  let diasDesde = null;
+  if (ultIso) {
+    const d = new Date(ultIso);
+    diasDesde = Math.round((Date.now() - d.getTime()) / 86400000);
+  }
+  if (lembreteDesativado && ultIso) {
+    // Usuário desativou o lembrete mas já importou alguma vez — mostra info neutra
+    const yyyy = ultIso.slice(0, 4), mm = ultIso.slice(5, 7), dd = ultIso.slice(8, 10);
+    parts.push(`
+      <span class="conta-indicador conta-indicador--alerta" title="Lembrete desativado — última importação registrada">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M18.63 13A17.89 17.89 0 0 1 18 8"/><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        Última: ${dd}/${mm}/${yyyy.slice(2)} (lembrete off)
+      </span>`);
+  } else if (!lembreteDesativado && diasDesde == null) {
+    parts.push(`
+      <a href="/importar.html" class="conta-indicador conta-indicador--alerta" title="Nunca importou extrato dessa conta — clique pra importar agora">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+        Nunca importado
+      </a>`);
+  } else if (!lembreteDesativado && diasDesde <= freq) {
+    const yyyy = ultIso.slice(0, 4), mm = ultIso.slice(5, 7), dd = ultIso.slice(8, 10);
+    parts.push(`
+      <span class="conta-indicador conta-indicador--ok" title="Importação em dia (frequência: a cada ${freq} dias)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>
+        Última importação: ${dd}/${mm}/${yyyy.slice(2)}
+      </span>`);
+  } else if (!lembreteDesativado) {
+    const atrasado = diasDesde - freq;
+    parts.push(`
+      <a href="/importar.html" class="conta-indicador conta-indicador--atrasada" title="Importação atrasada — clique pra importar agora">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Importação atrasada há ${atrasado}d
+      </a>`);
+  }
+
+  if (parts.length === 0) return '';
+  return `<div class="conta-indicadores-row">${parts.join('')}</div>`;
 }
 
 function bindCardClicks() {

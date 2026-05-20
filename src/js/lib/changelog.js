@@ -7,6 +7,44 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-19-situacoes-1-e-2',
+    version: '0.9.0',
+    date: '19/05/2026',
+    title: 'Reconciliação bancária, Caixa Livre alocável, Tarefas — release grande',
+    items: [
+      // ─── SITUAÇÃO 1: Sincronização Pagamento ↔ Transação ↔ Extrato ───
+      { type: 'new', text: 'Popover "Quando foi pago?" — toda vez que muda o status de um pagamento pra Pago ou Transferido, abre um mini-popup pra confirmar a data efetiva (default: hoje). Antes a transação criada usava a data de vencimento, mesmo que você pagasse atrasado.' },
+      { type: 'new', text: 'Badge ⚠️/✓ na coluna VTO da página Pagamentos mostrando atraso ou antecipação em dias quando a data de pagamento difere do vencimento.' },
+      { type: 'new', text: 'Badge "Vinculado" substitui o dropdown de status quando o pagamento está ligado a uma transação vinda do extrato bancário. Pra mudar o status, primeiro desvincule pela página de Transações.' },
+      { type: 'fix', text: 'Reverter pagamento de Pago/Transferido para Agendado agora DELETA a transação auto-criada (era apenas desvincular, deixando lixo no histórico). Transações vindas do banco continuam apenas desvinculadas — o registro real é preservado.' },
+      { type: 'new', text: 'Importação de extrato — match automático com pagamentos agendados (mesma conta, valor ±1%, data ±3d). No step 3 da importação, transações aparecem em 3 grupos: ✓ já existe (pulada), 🔗 vincular a pagamento (marca como Pago automaticamente), + nova.' },
+      { type: 'new', text: 'Importação aceita formato OFX (.ofx/.qfx) além de CSV/Excel. Parser inline extrai DTPOSTED, TRNAMT, FITID (id único do banco pra dedup perfeita), MEMO/NAME.' },
+      { type: 'new', text: 'Importação captura LEDGERBAL do OFX (saldo final do extrato) automaticamente e salva como snapshot pra conciliação bancária.' },
+      { type: 'new', text: 'Página /transacoes ganha abas "Transações" e "Importações". Transações importadas só aparecem na aba Importações até serem confirmadas. Saldo bancário também só conta quando confirmado.' },
+      { type: 'new', text: 'Self-learning de auto-confirmação: quando você confirma uma transação importada manualmente, o sistema oferece "confirmar próximas deste contato automaticamente". Próximas importações desse contato vão direto pra aba Transações sem confirmação manual.' },
+      { type: 'new', text: 'Badges em Transações: 🟠 Pendente / 🟣 Auto / ✅ Manual — mostra a origem da confirmação em ambas as abas.' },
+      { type: 'fix', text: 'Proteção de delete: transações vindas do banco vinculadas a pagamentos não podem ser excluídas — sistema bloqueia com toast explicativo.' },
+      { type: 'improvement', text: 'Página de Importar Extrato saiu do menu lateral — agora é acessada por um botão "Importar extrato" no header de Transações.' },
+
+      // ─── SITUAÇÃO 2: Caixa Livre + Conciliação bancária + Tarefas ───
+      { type: 'new', text: 'Caixa Livre alocável: na página de Pagamentos, o stat "Oportunidade de investimento" virou "💡 Caixa Livre" clicável. Abre painel expansível com breakdown completo + lista de alocações + botão "+ Nova alocação".' },
+      { type: 'new', text: 'Modal de alocação do Caixa Livre com 5 destinos visuais (cards com ícones SVG): 🌱 Investir / 💳 Quitar dívida / 🐷 Caixinha / ➡️ Próximo bloco / 💸 Avulsa. "Usar tudo disponível" pré-preenche o valor.' },
+      { type: 'new', text: 'Carry-forward automático entre blocos: a sobra de um bloco fechado vira entrada virtual "Saldo trazido do bloco anterior" no bloco seguinte.' },
+      { type: 'new', text: 'Conciliação bancária estilo Xero: card de cada conta em /contas mostra "Banco (DD/MM)" vs saldo calculado + "Diferença" (sempre visível, qualquer valor).' },
+      { type: 'new', text: 'KPI consolidado de conciliação no topo de /contas e /pagamentos: patrimônio total + N de Y contas conciliadas + diferença agregada + data da última conciliação.' },
+      { type: 'new', text: 'Nova página /tarefas no menu lateral (Ferramentas) com abas Pendentes/Concluídas. Tarefas auto-geradas (importar extrato, reconciliar transações) se completam sozinhas quando você executa a ação. Suporta criação manual com prioridade e prazo.' },
+      { type: 'new', text: 'Drawer lateral de Tarefas acessível por ícone com badge no header (próximo ao avatar). Ações: importar/abrir, lembrar em 3 dias, não lembrar mais.' },
+      { type: 'new', text: 'Indicadores no card de cada conta: (1) "N pendentes de reconciliação" quando há transações importadas esperando; (2) "Última importação: DD/MM" / "Importação atrasada há Xd" / "Nunca importado" baseado na frequência configurada.' },
+      { type: 'new', text: 'Configuração de frequência de importação por conta movida pra /configuracoes → aba "Importações" (era no modal de conta). Salva automaticamente ao trocar o select. Default mensal pra todas as contas.' },
+
+      // ─── UI Polish ───
+      { type: 'improvement', text: 'Abas padronizadas em todas as páginas (Compromissos, Orçamentos, Transações, Tarefas): visual segmented control com aba ativa em roxo + texto branco em negrito.' },
+      { type: 'improvement', text: 'Toggle Blocos/Lista na página Pagamentos: mudou de texto pra ícones (estilo Dívidas) e ficou alinhado à direita.' },
+      { type: 'improvement', text: 'Cards de conta redesenhados: mais compactos, sem duplicar nome/apelido, sem flag do país, sem linha divisória, sem preview de descrição. Botão "Nunca importado" agora é primário (roxo + branco bold).' },
+      { type: 'improvement', text: 'Ícones SVG personalizados do sistema substituem emojis em vários lugares (Caixa Livre, destinos de alocação, banco, etc).' },
+    ],
+  },
+  {
     id: '2026-05-19-pagamentos-tabela-proximos',
     version: '0.8.0',
     date: '19/05/2026',

@@ -1426,14 +1426,13 @@
 }
 .cf-tipo-chip.active svg { opacity: 1; }
 
-/* Saldo no card (só aparece na visão individual) */
+/* Saldo no card (legado — substituído por .conta-card-saldo-row no V3) */
 .conta-card-saldo {
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
   margin-top: var(--space-2);
   padding-top: var(--space-2);
-  border-top: 1px solid var(--color-border);
 }
 .conta-card-saldo-label {
   font-size: var(--fs-xs);
@@ -2064,6 +2063,7 @@
 .view-toggle-btn.active {
   background: var(--color-primary);
   color: #fff;
+  font-weight: var(--fw-bold);
 }
 
 .view-toggle-btn svg {
@@ -4776,10 +4776,10 @@ td .currency-split {
   outline-offset: 2px;
 }
 .orc-tab.active {
-  color: var(--color-text-main);
-  background: var(--color-surface);
-  box-shadow: 0 1px 3px rgba(0,0,0,.06);
-  font-weight: var(--fw-semibold);
+  color: #fff;
+  background: var(--color-primary);
+  box-shadow: 0 1px 3px rgba(109, 94, 245, 0.25);
+  font-weight: var(--fw-bold);
 }
 /* Respeita preferência do usuário por menos movimento */
 @media (prefers-reduced-motion: reduce) {
@@ -16856,3 +16856,904 @@ body.comp-embedded { background: transparent; }
 }
 .dev-file-remove:hover { color: var(--color-danger); }
 
+
+/* =============================================================
+   Popover de confirmação de data (date-confirm-popover.js)
+   ============================================================= */
+.date-confirm-popover {
+  position: absolute;
+  z-index: 9999;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: var(--space-3);
+  min-width: 220px;
+  animation: dateConfirmPopIn 0.12s ease-out;
+}
+
+@keyframes dateConfirmPopIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.date-confirm-popover-arrow {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 10px;
+  height: 10px;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border);
+}
+.date-confirm-popover--above .date-confirm-popover-arrow {
+  top: auto;
+  bottom: -6px;
+  transform: translateX(-50%) rotate(225deg);
+}
+
+.date-confirm-popover-title {
+  margin: 0 0 var(--space-2) 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.date-confirm-popover-input {
+  width: 100%;
+  margin-bottom: var(--space-2);
+}
+
+.date-confirm-popover-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* Badge "Vinculado" — pagamento travado por estar ligado a transação do banco */
+.pagamento-status-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft, #ede9fe);
+  color: var(--color-primary, #6d5ef5);
+  cursor: help;
+  white-space: nowrap;
+}
+.pagamento-status-locked svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Delta de dias entre data_pagamento e data_vencimento (na coluna VTO) */
+.pag-vto-delta {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+.pag-vto-delta--late {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--color-danger, #ef4444);
+}
+.pag-vto-delta--early {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--color-success, #10b981);
+}
+
+/* Badges das linhas do preview de importação */
+.import-row-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+.import-row-badge--existing {
+  background: rgba(107, 114, 128, 0.15);
+  color: var(--color-text-muted);
+}
+.import-row-badge--linkable {
+  background: var(--color-primary-soft, #ede9fe);
+  color: var(--color-primary, #6d5ef5);
+}
+.import-row-badge--recognized {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--color-success, #10b981);
+}
+.preview-row--existing td {
+  opacity: 0.55;
+}
+.preview-row--linkable {
+  background: rgba(109, 94, 245, 0.04);
+}
+
+/* Badge de contagem usado nas abas (reaproveitado pela aba Importações) */
+.trans-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 18px;
+  padding: 0 6px;
+  margin-left: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 9px;
+  background: var(--color-warning, #f59e0b);
+  color: #fff;
+}
+.orc-tab.active .trans-tab-count {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--color-primary);
+}
+
+/* Badges Auto/Manual/Pendente na lista de transações */
+.trans-conf-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.trans-conf-badge svg {
+  width: 11px;
+  height: 11px;
+}
+.trans-conf-badge--pendente {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--color-warning, #f59e0b);
+}
+.trans-conf-badge--auto {
+  background: rgba(109, 94, 245, 0.15);
+  color: var(--color-primary, #6d5ef5);
+}
+.trans-conf-badge--manual {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--color-success, #10b981);
+}
+
+/* Subseções da aba Importações (Pendentes / Confirmadas) */
+.import-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  user-select: none;
+}
+.import-section-header:hover { color: var(--color-text-main); }
+.import-section-count {
+  font-weight: 600;
+  font-size: 12px;
+  background: var(--color-bg-subtle, #f3f4f6);
+  color: var(--color-text-secondary);
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* =============================================================
+   Conciliação bancária — bloco no card de conta
+   (padrão Xero: saldo do banco + diferença sempre visíveis)
+   ============================================================= */
+.conta-conciliacao {
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-subtle, #f8f9fa);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+}
+.conta-conciliacao-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+.conta-conciliacao-row + .conta-conciliacao-row {
+  border-top: 1px dashed var(--color-border);
+}
+.conta-conciliacao-label {
+  color: var(--color-text-muted);
+  font-weight: var(--fw-medium);
+}
+.conta-conciliacao-valor {
+  color: var(--color-text-main);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+}
+.conta-conciliacao-diff.is-ok .conta-conciliacao-valor {
+  color: var(--color-success, #10b981);
+}
+.conta-conciliacao-diff.is-diff .conta-conciliacao-valor {
+  color: var(--color-danger, #ef4444);
+}
+.conta-conciliacao--empty {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.conta-conciliacao--empty .conta-conciliacao-cta {
+  color: var(--color-primary);
+  font-size: 11px;
+  font-style: italic;
+}
+
+/* KPI consolidado de conciliação (header /contas + /pagamentos) */
+.conciliacao-kpi {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--space-4);
+}
+.conciliacao-kpi-icon { font-size: 20px; }
+.conciliacao-kpi-body { flex: 1; }
+.conciliacao-kpi-title { font-weight: var(--fw-semibold); color: var(--color-text-main); }
+.conciliacao-kpi-sub { font-size: 12px; color: var(--color-text-muted); margin-top: 2px; }
+.conciliacao-kpi-diff { font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; }
+.conciliacao-kpi-diff.is-ok { color: var(--color-success, #10b981); }
+.conciliacao-kpi-diff.is-diff { color: var(--color-danger, #ef4444); }
+
+/* =============================================================
+   Tarefas — trigger no header + drawer lateral
+   ============================================================= */
+.tarefas-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  margin-right: var(--space-2);
+  transition: all var(--transition-fast);
+}
+.tarefas-trigger:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft, rgba(109,94,245,0.08));
+}
+.tarefas-trigger-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 9px;
+  background: var(--color-warning, #f59e0b);
+  color: #fff;
+  pointer-events: none;
+}
+
+.tarefas-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+}
+.tarefas-drawer.hidden { display: none; }
+.tarefas-drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  animation: tarefasFadeIn 0.15s ease-out;
+}
+.tarefas-drawer-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-surface);
+  box-shadow: -4px 0 24px rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  animation: tarefasSlideIn 0.2s ease-out;
+}
+@keyframes tarefasFadeIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes tarefasSlideIn { from { transform: translateX(100%) } to { transform: translateX(0) } }
+
+.tarefas-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.tarefas-drawer-title {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+}
+.tarefas-drawer-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+}
+.tarefas-drawer-close:hover { background: var(--color-bg-subtle, #f3f4f6); }
+.tarefas-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-3);
+}
+
+.tarefa-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+}
+.tarefa-item--alta {
+  border-left-color: var(--color-warning, #f59e0b);
+}
+.tarefa-item-title {
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+  color: var(--color-text-main);
+}
+.tarefa-item-desc {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+.tarefa-item-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.tarefas-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-6) var(--space-3);
+  gap: var(--space-2);
+}
+.tarefas-empty-title {
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-md);
+  margin: 0;
+}
+.tarefas-empty-sub {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* =============================================================
+   Caixa Livre — painel expansível no bloco de pagamentos
+   ============================================================= */
+.pagamento-bloco-stat-center--clickable {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  transition: background 0.15s ease;
+}
+.pagamento-bloco-stat-center--clickable:hover {
+  background: var(--color-bg-subtle, #f3f4f6);
+}
+.caixa-chevron {
+  display: inline-block;
+  margin-left: 4px;
+  transition: transform 0.15s ease;
+  vertical-align: middle;
+}
+.pagamento-bloco-stat-center--clickable[aria-expanded="true"] .caixa-chevron {
+  transform: rotate(180deg);
+}
+
+.caixa-livre-painel {
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+  background: linear-gradient(135deg, rgba(109,94,245,0.05), rgba(16,185,129,0.05));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  animation: caixaSlideDown 0.18s ease-out;
+}
+.caixa-livre-painel.hidden { display: none; }
+@keyframes caixaSlideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.caixa-livre-breakdown {
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-3);
+}
+.caixa-livre-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px var(--space-2);
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+}
+.caixa-livre-row--total {
+  font-weight: var(--fw-bold);
+  color: var(--color-text-main);
+  border-top: 1px solid var(--color-border);
+  margin-top: 4px;
+  padding-top: 10px;
+}
+.caixa-livre-alocacoes {
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+}
+.caixa-livre-alocacoes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-main);
+}
+.caixa-livre-empty {
+  text-align: center;
+  padding: var(--space-4);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+.caixa-livre-alocacao-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px var(--space-2);
+  border-bottom: 1px dashed var(--color-border);
+}
+.caixa-livre-alocacao-row:last-child { border-bottom: none; }
+.caixa-livre-alocacao-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.caixa-livre-alocacao-icon {
+  font-size: 18px;
+}
+.caixa-livre-alocacao-label {
+  font-weight: var(--fw-medium);
+  color: var(--color-text-main);
+}
+.caixa-livre-alocacao-tipo {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  background: var(--color-bg-subtle, #f3f4f6);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.caixa-livre-alocacao-valor {
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-primary);
+}
+.caixa-livre-alocacao-del {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s;
+}
+.caixa-livre-alocacao-del:hover {
+  color: var(--color-danger);
+  background: rgba(239,68,68,0.1);
+}
+.caixa-livre-resumo-line {
+  margin: var(--space-2) 0 0 0;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+/* =============================================================
+   Cards de Destino — modal de Nova alocação do Caixa Livre
+   ============================================================= */
+.aloc-destino-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--color-surface-alt, #f8f9fa);
+  border-radius: var(--radius-md);
+}
+.aloc-destino-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: var(--space-3) var(--space-2);
+  background: var(--color-surface);
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 88px;
+}
+.aloc-destino-card:hover {
+  border-color: var(--color-border);
+  transform: translateY(-1px);
+}
+.aloc-destino-card.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft, rgba(109,94,245,0.08));
+  color: var(--color-primary);
+  font-weight: var(--fw-bold);
+}
+.aloc-destino-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+}
+.aloc-destino-card.active .aloc-destino-icon {
+  color: var(--color-primary);
+}
+.aloc-destino-label {
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+/* Chevron mais óbvio do Caixa Livre — pisca sutil pra chamar atenção */
+.caixa-livre-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+}
+.caixa-livre-icon {
+  display: inline-flex;
+  color: var(--color-warning, #f59e0b);
+}
+.caixa-chevron-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-primary-soft, rgba(109,94,245,0.12));
+  color: var(--color-primary);
+  margin-left: 4px;
+  transition: transform 0.18s ease;
+}
+.pagamento-bloco-stat-center--clickable:hover .caixa-chevron-wrap {
+  background: var(--color-primary);
+  color: #fff;
+}
+.pagamento-bloco-stat-center--clickable[aria-expanded="true"] .caixa-chevron-wrap {
+  transform: rotate(180deg);
+  background: var(--color-primary);
+  color: #fff;
+}
+/* Esconde o estilo antigo pra não conflitar */
+.caixa-chevron { display: none !important; }
+
+/* Alocação row — ícone alinhado com cor sutil */
+.caixa-livre-alocacao-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--color-primary-soft, rgba(109,94,245,0.08));
+  color: var(--color-primary);
+}
+.caixa-livre-alocacao-row[data-destino="divida"] .caixa-livre-alocacao-icon {
+  background: rgba(239,68,68,0.10);
+  color: var(--color-danger);
+}
+.caixa-livre-alocacao-row[data-destino="caixinha"] .caixa-livre-alocacao-icon {
+  background: rgba(16,185,129,0.10);
+  color: var(--color-success);
+}
+.caixa-livre-alocacao-row[data-destino="avulsa"] .caixa-livre-alocacao-icon {
+  background: rgba(245,158,11,0.10);
+  color: var(--color-warning);
+}
+.caixa-livre-row--carry {
+  font-weight: var(--fw-semibold);
+  color: var(--color-success);
+}
+.caixa-livre-carry-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-success);
+}
+.caixa-livre-carry-label svg { color: var(--color-success); }
+
+/* =============================================================
+   Página /tarefas — grid + cards de tarefa
+   ============================================================= */
+.tarefas-page-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-3);
+}
+.tarefa-page-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.tarefa-page-card--alta  { border-left-color: var(--color-warning, #f59e0b); }
+.tarefa-page-card--baixa { border-left-color: var(--color-text-muted); }
+.tarefa-page-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.tarefa-page-card-title {
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-main);
+  font-size: var(--fs-md);
+  flex: 1;
+}
+.tarefa-page-card-desc {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+.tarefa-page-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin-top: auto;
+  padding-top: var(--space-2);
+  border-top: 1px dashed var(--color-border);
+}
+.tarefa-origem-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.tarefa-origem-badge--sistema {
+  background: var(--color-primary-soft, rgba(109,94,245,0.12));
+  color: var(--color-primary);
+}
+.tarefa-origem-badge--usuario {
+  background: rgba(16,185,129,0.12);
+  color: var(--color-success);
+}
+.tarefa-completed-at {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* =============================================================
+   Indicadores no card de conta (pendentes + status de importação)
+   ============================================================= */
+.conta-indicadores-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--space-2);
+}
+.conta-indicador {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.conta-indicador svg { flex-shrink: 0; }
+.conta-indicador--pendente {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--color-warning, #f59e0b);
+}
+.conta-indicador--pendente:hover {
+  background: rgba(245, 158, 11, 0.22);
+}
+.conta-indicador--ok {
+  background: rgba(16, 185, 129, 0.10);
+  color: var(--color-success, #10b981);
+}
+.conta-indicador--atrasada {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--color-danger, #ef4444);
+}
+.conta-indicador--atrasada:hover {
+  background: rgba(239, 68, 68, 0.22);
+}
+.conta-indicador--alerta {
+  background: rgba(107, 114, 128, 0.12);
+  color: var(--color-text-muted);
+}
+
+/* Tabela de configuração de importações */
+.cfg-imp-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.cfg-imp-table th,
+.cfg-imp-table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: middle;
+}
+.cfg-imp-table th {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+.cfg-imp-table tbody tr:hover {
+  background: var(--color-bg-subtle, #f8f9fa);
+}
+.cfg-imp-tipo {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  background: var(--color-bg-subtle, #f3f4f6);
+  color: var(--color-text-secondary);
+}
+
+/* =============================================================
+   Conta Card V3 — layout compacto (topo: avatar+nome+tipo; corpo: meta)
+   ============================================================= */
+.conta-card-v2 {
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  align-items: stretch;
+}
+.conta-card-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.conta-card-top-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.conta-card-top-info .conta-card-name {
+  font-size: var(--fs-md);
+  line-height: 1.2;
+  margin: 0;
+}
+.conta-card-tipo-wrap {
+  display: inline-flex;
+}
+.conta-card-tipo-wrap > * {
+  font-size: 11px;
+  padding: 3px 8px;
+}
+.conta-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.conta-card-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  flex-wrap: wrap;
+}
+.conta-card-row--meta { justify-content: space-between; }
+.conta-card-row strong {
+  color: var(--color-text-secondary);
+  font-weight: var(--fw-semibold);
+}
+.conta-card-row--datas {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+.conta-card-saldo-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+.conta-card-saldo-row .conta-card-row-label {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+.conta-card-saldo-row .conta-card-saldo-valor {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--color-success);
+  font-variant-numeric: tabular-nums;
+}
+.conta-card-saldo-row.is-negativo .conta-card-saldo-valor { color: var(--color-danger); }
+.conta-card-saldo-row.is-zero .conta-card-saldo-valor { color: var(--color-text-muted); }
+
+/* Esconde a descrição preview no card (só aparece no modal) */
+.conta-card-v2 .conta-card-desc { display: none; }
+
+/* Linha divisória nas contas tipo "Corrente" (que tinha border-top no .conta-card-saldo): remover */
+.conta-card-v2 .conta-card-saldo { border-top: none; padding-top: 0; }
+
+/* "Nunca importado" — vira CTA primário (roxo + branco + bold) */
+.conta-indicador--alerta {
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: var(--fw-bold);
+  border: none;
+}
+.conta-indicador--alerta:hover {
+  background: var(--color-primary-dark, #5b4ce0);
+  color: #fff;
+}
+.conta-indicador--alerta svg { color: #fff; }

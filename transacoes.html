@@ -31,16 +31,27 @@
           <p class="page-description" data-i18n-key="transacoes.descricao">Registro real do dinheiro que entrou e saiu — diferente do orçamento (planejado) e dos pagamentos (status mensal).</p>
         </div>
         <div class="page-header-actions">
-          <a href="/importar.html" class="btn btn-ghost">
+          <button class="btn btn-ghost" id="btn-nova-importacao" type="button">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
             Importar extrato
-          </a>
+          </button>
           <button class="btn btn-primary" id="btn-nova-transacao" type="button">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
             Nova transação
           </button>
         </div>
       </div>
+
+      <!-- Abas: Transações | Importações (mesmo padrão visual de Compromissos) -->
+      <nav class="orc-tab-strip" id="trans-tabs" aria-label="Abas de Transações">
+        <button class="orc-tab active" type="button" data-trans-tab="transacoes">
+          Transações
+        </button>
+        <button class="orc-tab" type="button" data-trans-tab="importacoes">
+          Importações
+          <span class="trans-tab-count hidden" id="trans-tab-import-count">0</span>
+        </button>
+      </nav>
 
       <!-- KPI strip compacto -->
       <div class="trans-kpis" id="trans-widgets">

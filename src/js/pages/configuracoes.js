@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.addEventListener('resize', updateStickyThTop);
   loadProfileSettings();  // async, non-blocking
 
-  const validCfgTabs = new Set(['categorias', 'aparencia', 'sistema']);
+  const validCfgTabs = new Set(['categorias', 'aparencia', 'sistema', 'importacoes']);
   const hashTab = location.hash.slice(1);
   if (validCfgTabs.has(hashTab) && hashTab !== 'categorias') {
     document.querySelector(`.cfg-sidenav-item[data-tab="${hashTab}"]`)?.click();
@@ -1028,12 +1028,114 @@ function bindTabEvents() {
 
       // Lazy-init Sistema panel
       if (target === 'sistema') renderSistemaPanel();
+      // Lazy-init Importações panel
+      if (target === 'importacoes') renderImportacoesPanel();
       // Troca o conteúdo interno do toolbar conforme a aba
       document.querySelectorAll('.cfg-toolbar-content').forEach((c) => {
         c.classList.toggle('hidden', c.id !== `cfg-toolbar-${target}`);
       });
 
       updateStickyThTop();
+    });
+  });
+}
+
+// -----------------------------
+// Importações panel — frequência de lembrete por conta
+// -----------------------------
+async function renderImportacoesPanel() {
+  const container = document.getElementById('cfg-importacoes-table');
+  if (!container) return;
+  container.innerHTML = '<div class="loading-overlay" style="position:relative;min-height:80px;"><span class="spinner"></span></div>';
+
+  // Carrega todas contas ativas + última importação
+  const { data: contas, error } = await supabase
+    .from('contas')
+    .select('id, nome, apelido, tipo, frequencia_importacao_dias, status')
+    .eq('status', 'ativa')
+    .order('nome');
+  if (error || !contas) {
+    container.innerHTML = '<p style="color:var(--color-danger);">Erro ao carregar contas.</p>';
+    return;
+  }
+
+  const contaIds = contas.map((c) => c.id);
+  let ultimaPorConta = new Map();
+  if (contaIds.length > 0) {
+    const { data: imps } = await supabase
+      .from('transacoes')
+      .select('conta_id, importada_em')
+      .in('conta_id', contaIds)
+      .not('importada_em', 'is', null);
+    for (const t of imps || []) {
+      const cur = ultimaPorConta.get(t.conta_id);
+      if (!cur || t.importada_em > cur) ultimaPorConta.set(t.conta_id, t.importada_em);
+    }
+  }
+
+  if (contas.length === 0) {
+    container.innerHTML = '<p style="color:var(--color-text-muted);">Nenhuma conta cadastrada ainda. Vá em <a href="/contas.html">/contas</a> pra criar uma.</p>';
+    return;
+  }
+
+  const rows = contas.map((c) => {
+    const display = escapeHtml(c.apelido?.trim() || c.nome);
+    const tipo = escapeHtml(c.tipo || '—');
+    const freq = c.frequencia_importacao_dias;
+    const ultIso = ultimaPorConta.get(c.id);
+    let statusHtml = '<span style="color:var(--color-text-muted);">Nunca importada</span>';
+    if (ultIso) {
+      const yy = ultIso.slice(0, 4), mm = ultIso.slice(5, 7), dd = ultIso.slice(8, 10);
+      const dias = Math.round((Date.now() - new Date(ultIso).getTime()) / 86400000);
+      const atrasada = freq != null && dias > freq;
+      statusHtml = atrasada
+        ? `<span style="color:var(--color-danger);">Última: ${dd}/${mm}/${yy.slice(2)} · atrasada ${dias - freq}d</span>`
+        : `<span style="color:var(--color-success);">Última: ${dd}/${mm}/${yy.slice(2)}</span>`;
+    }
+    return `
+      <tr data-conta-id="${c.id}">
+        <td>${display}</td>
+        <td><span class="cfg-imp-tipo">${tipo}</span></td>
+        <td>
+          <select class="select cfg-imp-freq" data-conta-id="${c.id}" style="max-width:200px;">
+            <option value="30" ${freq === 30 || freq == null ? 'selected' : ''}>Mensal (30 dias)</option>
+            <option value="15" ${freq === 15 ? 'selected' : ''}>Quinzenal (15 dias)</option>
+            <option value="7"  ${freq === 7  ? 'selected' : ''}>Semanal (7 dias)</option>
+            <option value="0"  ${freq === 0  ? 'selected' : ''}>Não lembrar</option>
+          </select>
+        </td>
+        <td>${statusHtml}</td>
+      </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <table class="cfg-imp-table">
+      <thead>
+        <tr>
+          <th>Conta</th>
+          <th>Tipo</th>
+          <th>Frequência</th>
+          <th>Última importação</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <p class="field-hint" style="margin-top:var(--space-3);">Mudanças são salvas automaticamente ao alterar o select.</p>
+  `;
+
+  container.querySelectorAll('.cfg-imp-freq').forEach((sel) => {
+    sel.addEventListener('change', async (e) => {
+      const contaId = e.target.dataset.contaId;
+      const newFreq = Number(e.target.value); // 0 = não lembrar; 7/15/30 = frequência
+      const { error: updErr } = await supabase
+        .from('contas')
+        .update({ frequencia_importacao_dias: newFreq })
+        .eq('id', contaId);
+      if (updErr) {
+        showToast('Erro ao salvar: ' + updErr.message, 'error', 8000);
+        return;
+      }
+      showToast('Frequência atualizada', 'success', 2500);
     });
   });
 }
