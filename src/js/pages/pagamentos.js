@@ -1328,16 +1328,25 @@ function renderPagamentoRow(p, catColor) {
        </span>`
     : '';
 
-  // Coluna Conta — logo do banco/cartão de origem
-  const contaOrigem = cachedContas.find((c) => c.id === sub?.conta_id);
-  const contaLabel  = contaOrigem ? escapeHtml(contaOrigem.apelido?.trim() || contaOrigem.nome) : '';
-  let contaLogoHtml = '';
+  // Coluna Conta — logo do banco/cartão de origem.
+  // Se o pagamento foi feito de OUTRA conta (conta_id_efetiva setada), mostra
+  // a conta efetiva + badge indicando que difere da config do compromisso.
+  const contaConfig  = cachedContas.find((c) => c.id === sub?.conta_id);
+  const contaEfetiva = p.conta_id_efetiva ? cachedContas.find((c) => c.id === p.conta_id_efetiva) : null;
+  const contaOrigem  = contaEfetiva || contaConfig;
+  const contaLabel   = contaOrigem ? escapeHtml(contaOrigem.apelido?.trim() || contaOrigem.nome) : '';
+  let contaLogoHtml  = '';
   if (contaOrigem) {
     const bank = findBank(contaOrigem.nome);
     const logoEl = bank
       ? `<img src="${logoUrl(bank.domain)}" alt="${contaLabel}" class="pag-conta-logo">`
       : `<span class="pag-conta-logo-fallback" style="--conta-color:${contaOrigem.icone_cor || '#9CA3AF'}">${(contaLabel[0] || '?').toUpperCase()}</span>`;
-    contaLogoHtml = `<div class="pag-conta-inner">${logoEl}<span class="pag-conta-name">${contaLabel}</span></div>`;
+    let efetivoBadge = '';
+    if (contaEfetiva && contaConfig && contaEfetiva.id !== contaConfig.id) {
+      const configNome = escapeHtml(contaConfig.apelido?.trim() || contaConfig.nome);
+      efetivoBadge = `<span class="pag-conta-efetiva-badge" title="Configurado pra ${configNome}, mas pago de ${contaLabel}">↔</span>`;
+    }
+    contaLogoHtml = `<div class="pag-conta-inner">${logoEl}<span class="pag-conta-name">${contaLabel}</span>${efetivoBadge}</div>`;
   }
 
   // Coluna Destino — badge Caixinha/Reserva p/ compromissos de poupança, Regular p/ os demais
@@ -1702,17 +1711,45 @@ async function saveStatus(select) {
 
   // Status virou pago/transferido → confirma data efetiva com o usuário
   let dataPagamento = null;
+  let contaEfetivaEscolhida = null; // null = usa conta do compromisso
   if (isPaidStatus(newStatus)) {
+    const sub = pag.subcategorias;
+    const isReceitaOuDespesa = sub?.tipo === 'Receita' || sub?.tipo === 'Despesa';
     const title = newStatus === 'Transferido' ? 'Quando foi transferido?' : 'Quando foi pago?';
-    dataPagamento = await showDateConfirmPopover({
+
+    // Pra Receita/Despesa, mostra selector de conta. Transferência/Caixinha
+    // já têm 2 contas explícitas no compromisso, não se aplica.
+    let accountSelector = null;
+    if (isReceitaOuDespesa && newStatus !== 'Transferido') {
+      const currentId = pag.conta_id_efetiva || sub?.conta_id || null;
+      const accounts = cachedContas
+        .filter((c) => c.tipo !== 'Cofrinho')
+        .map((c) => ({ id: c.id, name: c.apelido?.trim() || c.nome }));
+      if (accounts.length > 0 && currentId) {
+        accountSelector = { accounts, currentId, label: 'Saiu de qual conta?' };
+      }
+    }
+
+    const result = await showDateConfirmPopover({
       anchor: select,
       title,
       initialDate: pag.data_pagamento || null,
+      accountSelector,
     });
-    if (!dataPagamento) {
+    if (!result) {
       // Cancelado pelo usuário — reverte o select
       select.value = pag.status;
       return;
+    }
+    if (typeof result === 'string') {
+      dataPagamento = result;
+    } else {
+      dataPagamento = result.date;
+      // Se trocou a conta, marca pra setar conta_id_efetiva no update
+      const subContaId = pag.subcategorias?.conta_id || null;
+      if (result.accountId && result.accountId !== subContaId) {
+        contaEfetivaEscolhida = result.accountId;
+      }
     }
   }
 
@@ -1729,9 +1766,13 @@ async function saveStatus(select) {
   };
   if (isPaidStatus(newStatus)) {
     updatePayload.data_pagamento = dataPagamento;
+    // Se usuário escolheu conta diferente da configurada, guarda em conta_id_efetiva.
+    // Se igual (ou cancelou a escolha), limpa pra usar o default da subcategoria.
+    updatePayload.conta_id_efetiva = contaEfetivaEscolhida;
   } else {
-    // Reverte: limpa data_pagamento
+    // Reverte: limpa data_pagamento e conta_efetiva
     updatePayload.data_pagamento = null;
+    updatePayload.conta_id_efetiva = null;
   }
 
   const { error } = await supabase
@@ -1747,10 +1788,39 @@ async function saveStatus(select) {
 
   pag.status = newStatus;
   pag.data_pagamento = updatePayload.data_pagamento;
+  pag.conta_id_efetiva = updatePayload.conta_id_efetiva ?? null;
   STATUS_OPTIONS.forEach((s) => select.classList.remove(s.cls));
   const cur = STATUS_OPTIONS.find((s) => s.value === newStatus);
   if (cur) select.classList.add(cur.cls);
   renderPagamentos();
+
+  // Se a conta efetiva ≠ conta do compromisso, oferece atualizar o
+  // compromisso pra que os próximos pagamentos já saiam da conta nova.
+  if (contaEfetivaEscolhida && pag.subcategoria_id) {
+    const novaConta = cachedContas.find((c) => c.id === contaEfetivaEscolhida);
+    const novaContaNome = novaConta ? (novaConta.apelido?.trim() || novaConta.nome) : 'a conta escolhida';
+    const subNome = pag.subcategorias?.apelido?.trim() || pag.subcategorias?.nome || 'esse compromisso';
+    const ok = await showConfirm(
+      `Atualizar o compromisso "${escapeHtml(subNome)}" para que os próximos pagamentos saiam de <strong>${escapeHtml(novaContaNome)}</strong> por padrão?`,
+      { okLabel: 'Sim, atualizar', cancelLabel: 'Não, só este pagamento' }
+    );
+    if (ok) {
+      const { error: updSubErr } = await supabase
+        .from('subcategorias')
+        .update({ conta_id: contaEfetivaEscolhida })
+        .eq('id', pag.subcategoria_id);
+      if (updSubErr) {
+        showToast('Erro ao atualizar compromisso: ' + updSubErr.message, 'error', 6000);
+      } else {
+        if (pag.subcategorias) pag.subcategorias.conta_id = contaEfetivaEscolhida;
+        // Como agora a conta do compromisso = conta efetiva, limpa o flag.
+        await supabase.from('pagamentos').update({ conta_id_efetiva: null }).eq('id', id);
+        pag.conta_id_efetiva = null;
+        showToast(`Compromisso atualizado: próximos pagamentos sairão de ${novaContaNome}.`, 'success', 5000);
+        renderPagamentos();
+      }
+    }
+  }
 
   const dividaId = pag.subcategorias?.divida_id;
   if (dividaId) propagateDivida(dividaId);

@@ -7,6 +7,20 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-20-conta-efetiva-pagamento',
+    version: '1.0.4',
+    date: '20/05/2026',
+    title: 'Pagamento de outra conta — popover com seletor + match cross-conta no extrato',
+    items: [
+      { type: 'new', text: 'Popover "Quando foi pago?" agora tem campo "Saiu de qual conta?" — default é a conta do compromisso, mas você pode trocar se pagou de outra. Vale pra Pago e Cartão (não pra Transferido, que já tem 2 contas explícitas).' },
+      { type: 'new', text: 'Quando você troca a conta, o sistema pergunta se quer atualizar a configuração do compromisso para que os próximos pagamentos já saiam da conta nova por padrão. Se sim, atualiza automaticamente.' },
+      { type: 'new', text: 'Importação de extrato detecta pagamentos já marcados como pagos em OUTRAS contas com valor exato e data próxima (±3 dias). Mostra badge "🔄 Realocar de [Conta X]" — você confirma marcando o checkbox. Ao importar, o sistema realoca o pagamento pra conta correta e remove a transação fantasma na conta antiga.' },
+      { type: 'new', text: 'Coluna Conta em /pagamentos mostra a conta efetiva quando diferente da config, com ícone ↔ explicando o desvio.' },
+      { type: 'improvement', text: 'Migration 0111: nova coluna pagamentos.conta_id_efetiva rastreia conta real quando difere da configurada no compromisso. NULL = usa o default da subcategoria (caso normal).' },
+      { type: 'fix', text: 'Sintoma resolvido: antes, pagar de outra conta gerava transação fantasma na conta do compromisso (saldo errado lá) + transação duplicada no extrato real ao importar.' },
+    ],
+  },
+  {
     id: '2026-05-20-moedas-cards-cotacao',
     version: '1.0.3',
     date: '20/05/2026',

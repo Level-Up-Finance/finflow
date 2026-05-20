@@ -3441,6 +3441,20 @@ td .currency-split {
   white-space: nowrap;
   max-width: 100px;
 }
+.pag-conta-efetiva-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+  color: var(--color-warning);
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: 4px;
+  cursor: help;
+}
 .pag-conta-logo {
   display: block;
   width: 32px;
@@ -17301,11 +17315,19 @@ body.comp-embedded { background: transparent; }
   background: rgba(16, 185, 129, 0.12);
   color: var(--color-success, #10b981);
 }
+.import-row-badge--cross {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--color-warning, #f59e0b);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
 .preview-row--existing td {
   opacity: 0.55;
 }
 .preview-row--linkable {
   background: rgba(109, 94, 245, 0.04);
+}
+.preview-row--cross {
+  background: rgba(245, 158, 11, 0.05);
 }
 
 /* Badge de contagem usado nas abas (reaproveitado pela aba Importações) */

@@ -413,6 +413,7 @@ function bindStep2Events() {
     // Detecta já-existentes e matches com pagamentos agendados ANTES do preview
     await detectExistingTransacoes(previewData, selectedContaId);
     await applyPagamentoMatches(previewData, selectedContaId);
+    await applyCrossAccountMatches(previewData, selectedContaId);
     goToStep(3);
   });
 }
@@ -577,6 +578,101 @@ async function applyPagamentoMatches(rows, contaId) {
   }
 }
 
+// =============================================================
+// Match CROSS-CONTA: detecta pagamentos JÁ pagos em OUTRAS contas
+// =============================================================
+//
+// Cenário: usuário marcou "Aluguel" como Pago em /pagamentos (compromisso
+// configurado pra Nubank → criou tx manual fantasma na Nubank). Mas o
+// pagamento real saiu do Inter — agora, ao importar o extrato do Inter,
+// queremos detectar e oferecer ao usuário "realocar pra esta conta".
+//
+// Critério: pagamento status pago/cartão, valor exato, data ±3d, OUTRA conta.
+// O sistema NÃO realoca sozinho — o usuário decide via checkbox no preview.
+
+async function applyCrossAccountMatches(rows, contaId) {
+  if (!rows.length || !contaId) return;
+
+  // Considera só rows que ainda não têm match na própria conta
+  const candidates = rows.filter((r) => !r.alreadyExists && !r.matchedPagamento);
+  if (!candidates.length) return;
+
+  const minDate = candidates.map((r) => r.date).reduce((a, b) => (a < b ? a : b));
+  const maxDate = candidates.map((r) => r.date).reduce((a, b) => (a > b ? a : b));
+
+  // Subcategorias do USUÁRIO em outras contas (não a importada)
+  const { data: subs } = await supabase
+    .from('subcategorias')
+    .select('id, nome, apelido, conta_id, tipo')
+    .neq('conta_id', contaId)
+    .in('tipo', ['Receita', 'Despesa'])
+    .eq('status', 'ativa');
+  if (!subs?.length) return;
+  const subIds = subs.map((s) => s.id);
+  const subMap = new Map(subs.map((s) => [s.id, s]));
+
+  // Busca contas pra exibir nome amigável
+  const otherContaIds = [...new Set(subs.map((s) => s.conta_id).filter(Boolean))];
+  const contasMap = new Map();
+  if (otherContaIds.length) {
+    const { data: contas } = await supabase
+      .from('contas')
+      .select('id, nome, apelido')
+      .in('id', otherContaIds);
+    (contas || []).forEach((c) => contasMap.set(c.id, c.apelido?.trim() || c.nome));
+  }
+
+  // Pagamentos JÁ pagos (Pago/Cartão) nessas subs no range
+  const { data: pags } = await supabase
+    .from('pagamentos')
+    .select('id, subcategoria_id, status, valor_previsto, valor_real, data_vencimento, data_pagamento, conta_id_efetiva')
+    .in('subcategoria_id', subIds)
+    .in('status', ['Pago', 'Cartão'])
+    .gte('data_vencimento', expandDate(minDate, -10))
+    .lte('data_vencimento', expandDate(maxDate, 10));
+  if (!pags?.length) return;
+
+  const usedPagIds = new Set();
+
+  for (const row of candidates) {
+    const rowDate = new Date(row.date + 'T00:00:00');
+    const cands = [];
+    for (const p of pags) {
+      if (usedPagIds.has(p.id)) continue;
+      // Se conta_id_efetiva já foi setada pra a conta importada, esse já está OK
+      if (p.conta_id_efetiva === contaId) continue;
+      const sub = subMap.get(p.subcategoria_id);
+      if (!sub) continue;
+      if (sub.tipo !== row.tipo) continue;
+      // Usa data_pagamento se disponível, senão data_vencimento
+      const pagDateIso = p.data_pagamento || p.data_vencimento;
+      const pagDate = new Date(pagDateIso + 'T00:00:00');
+      const dayDiff = Math.abs(Math.round((pagDate - rowDate) / 86400000));
+      if (dayDiff > 3) continue;
+      const pagValor = Number(p.valor_real ?? p.valor_previsto);
+      if (!pagValor || pagValor <= 0) continue;
+      // Cross-conta: exige valor EXATO (mais conservador que match normal de 1%)
+      if (Math.abs(pagValor - row.valor) > 0.01) continue;
+      cands.push({ p, sub, score: dayDiff });
+    }
+    if (cands.length === 0) continue;
+    cands.sort((a, b) => a.score - b.score);
+    const best = cands[0];
+    const contaAntigaNome = contasMap.get(best.sub.conta_id) || 'outra conta';
+    row.crossAccountMatch = {
+      id: best.p.id,
+      subcategoria_id: best.p.subcategoria_id,
+      subcategoria_nome: best.sub.apelido?.trim() || best.sub.nome,
+      conta_antiga_id: best.sub.conta_id,
+      conta_antiga_nome: contaAntigaNome,
+      data_pagamento: best.p.data_pagamento || best.p.data_vencimento,
+      valor: Number(best.p.valor_real ?? best.p.valor_previsto),
+    };
+    row.subId = best.p.subcategoria_id;
+    usedPagIds.add(best.p.id);
+  }
+}
+
 // Fallback: match via campo "Nome no extrato" cadastrado no contato
 function suggestForDescription(desc) {
   const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
@@ -727,14 +823,16 @@ function renderStep3() {
   const recognized   = previewData.filter((r) => r.isRecognized).length;
   const existing     = previewData.filter((r) => r.alreadyExists).length;
   const linkable     = previewData.filter((r) => r.matchedPagamento && !r.alreadyExists).length;
-  const novel        = previewData.length - existing - linkable;
+  const crossMatched = previewData.filter((r) => r.crossAccountMatch && !r.alreadyExists && !r.matchedPagamento).length;
+  const novel        = previewData.length - existing - linkable - crossMatched;
 
   // Resumo no topo: contadores por grupo
   const summaryParts = [`${previewData.length} transaç${previewData.length === 1 ? 'ão' : 'ões'} encontradas`];
-  if (existing > 0)    summaryParts.push(`<span style="color:var(--color-text-muted)">${existing} já existem</span>`);
-  if (linkable > 0)    summaryParts.push(`<span style="color:var(--color-primary)">🔗 ${linkable} vincular a pagamento</span>`);
-  if (novel > 0)       summaryParts.push(`<span style="color:var(--color-success)">+ ${novel} nova${novel > 1 ? 's' : ''}</span>`);
-  if (recognized > 0)  summaryParts.push(`<span style="color:var(--color-text-muted)">${recognized} reconhecida${recognized > 1 ? 's' : ''}</span>`);
+  if (existing > 0)     summaryParts.push(`<span style="color:var(--color-text-muted)">${existing} já existem</span>`);
+  if (linkable > 0)     summaryParts.push(`<span style="color:var(--color-primary)">🔗 ${linkable} vincular a pagamento</span>`);
+  if (crossMatched > 0) summaryParts.push(`<span style="color:var(--color-warning)">🔄 ${crossMatched} realocar de outra conta</span>`);
+  if (novel > 0)        summaryParts.push(`<span style="color:var(--color-success)">+ ${novel} nova${novel > 1 ? 's' : ''}</span>`);
+  if (recognized > 0)   summaryParts.push(`<span style="color:var(--color-text-muted)">${recognized} reconhecida${recognized > 1 ? 's' : ''}</span>`);
   document.getElementById('step3-count').innerHTML = summaryParts.join(' · ');
 
   if (previewData.length === 0) {
@@ -755,13 +853,16 @@ function renderStep3() {
     const subSel      = `<select class="input input-sm preview-sub" data-idx="${i}" ${row.alreadyExists ? 'disabled' : ''}>${subOpts}</select>`;
     const contatoSel  = `<select class="input input-sm preview-contato" data-idx="${i}" ${row.alreadyExists ? 'disabled' : ''}>${contatoOpts}</select>`;
 
-    // Badge de status do match (prioridade: alreadyExists > matched > recognized > nada)
+    // Badge de status do match (prioridade: alreadyExists > matched > crossAccount > recognized > nada)
     let statusBadge = '';
     if (row.alreadyExists) {
       statusBadge = `<span class="import-row-badge import-row-badge--existing" title="Essa transação já existe no sistema. Será pulada.">✓ Já existe</span>`;
     } else if (row.matchedPagamento) {
       const mp = row.matchedPagamento;
       statusBadge = `<span class="import-row-badge import-row-badge--linkable" title="Vai vincular a '${escapeHtml(mp.subcategoria_nome)}' (vencia ${mp.data_vencimento}). O pagamento ficará marcado como Pago.">🔗 Vincular: ${escapeHtml(mp.subcategoria_nome)}</span>`;
+    } else if (row.crossAccountMatch) {
+      const cm = row.crossAccountMatch;
+      statusBadge = `<span class="import-row-badge import-row-badge--cross" title="O pagamento de '${escapeHtml(cm.subcategoria_nome)}' está marcado como pago em ${escapeHtml(cm.conta_antiga_nome)}. Se você marcar essa linha, o pagamento é realocado pra esta conta (a transação fantasma é removida).">🔄 Realocar de ${escapeHtml(cm.conta_antiga_nome)}: ${escapeHtml(cm.subcategoria_nome)}</span>`;
     } else if (row.isRecognized) {
       statusBadge = `<span class="import-row-badge import-row-badge--recognized" title="Reconhecida por histórico">✓ Reconhecida</span>`;
     }
@@ -773,7 +874,9 @@ function renderStep3() {
 
     const rowClass = row.alreadyExists
       ? 'preview-row--existing'
-      : (row.matchedPagamento ? 'preview-row--linkable' : (row.isRecognized ? 'preview-row--recognized' : ''));
+      : (row.matchedPagamento ? 'preview-row--linkable'
+        : (row.crossAccountMatch ? 'preview-row--cross'
+          : (row.isRecognized ? 'preview-row--recognized' : '')));
     const isChecked = !row.alreadyExists;
 
     return `<tr class="${rowClass}">
@@ -883,13 +986,15 @@ async function doImport() {
   }
   const extratoId = extrato?.id || null;
 
-  // 2. Separa candidatos selecionados em 3 grupos:
+  // 2. Separa candidatos selecionados em 4 grupos:
   //    - linkables: match com pagamento agendado → reconciliado + linkado
+  //    - crossRealocacoes: pagamento já pago em OUTRA conta → realocar pra esta
   //    - autoConfirmed: contato tem regra com auto_confirmar=true → reconciliado + auto
   //    - novos: ficam como 'importado' pendente de confirmação manual
-  const linkables = [];     // { row, payload, pagamento }
-  const autoConfirmed = []; // payload
-  const novos     = [];     // payload
+  const linkables = [];        // { row, payload, pagamento }
+  const crossRealocacoes = []; // { row, payload, cross }
+  const autoConfirmed = [];    // payload
+  const novos     = [];        // payload
   let skippedExisting = 0;
 
   document.querySelectorAll('.preview-row-check:checked').forEach((cb) => {
@@ -925,6 +1030,18 @@ async function doImport() {
         },
         pagamento: row.matchedPagamento,
       });
+    } else if (row.crossAccountMatch && subId === row.crossAccountMatch.subcategoria_id) {
+      // Realocação cross-conta: vincula a tx importada ao pagamento e marca
+      // pra atualizar conta_id_efetiva + deletar tx manual antiga na conta original.
+      crossRealocacoes.push({
+        row,
+        payload: {
+          ...basePayload,
+          reconciliacao_status: 'reconciliado',
+          pagamento_id: row.crossAccountMatch.id,
+        },
+        cross: row.crossAccountMatch,
+      });
     } else {
       // Verifica se há regra com auto_confirmar=true pra esse contato
       const rule = contatoId ? findRule(cachedRules, contatoId) : null;
@@ -944,7 +1061,7 @@ async function doImport() {
   // Evita double-count: contamos só 1x
   skippedExisting = previewData.filter((r) => r.alreadyExists).length;
 
-  const totalToImport = linkables.length + autoConfirmed.length + novos.length;
+  const totalToImport = linkables.length + crossRealocacoes.length + autoConfirmed.length + novos.length;
   if (totalToImport === 0) {
     const msg = skippedExisting > 0
       ? `Todas as ${skippedExisting} transações já existem no sistema.`
@@ -1013,11 +1130,47 @@ async function doImport() {
     linkedOk++;
   }
 
+  // 4b. Para cada cross-realocação: insere a tx importada vinculada ao pagamento,
+  //     atualiza conta_id_efetiva, e DELETA a tx manual antiga (fantasma) na conta original.
+  let crossRealocadoOk = 0;
+  for (const item of crossRealocacoes) {
+    // Insere a tx importada já reconciliada e linkada ao pagamento
+    const { error: trErr } = await supabase.from('transacoes').insert(item.payload);
+    if (trErr) {
+      console.error('[import] insert cross-realocacao failed', trErr);
+      continue;
+    }
+    // Atualiza pagamento: nova conta efetiva + data efetiva
+    const { error: pagErr } = await supabase
+      .from('pagamentos')
+      .update({
+        conta_id_efetiva: selectedContaId,
+        data_pagamento: item.row.date,
+        valor_real: item.row.valor,
+        status_atualizado_em: new Date().toISOString(),
+      })
+      .eq('id', item.cross.id);
+    if (pagErr) {
+      console.warn('[import] update pagamento cross failed', pagErr);
+    }
+    // Deleta tx manual antiga (fantasma) que tinha sido criada na conta config
+    const { error: delErr } = await supabase
+      .from('transacoes')
+      .delete()
+      .eq('pagamento_id', item.cross.id)
+      .eq('reconciliacao_status', 'manual')
+      .eq('conta_id', item.cross.conta_antiga_id);
+    if (delErr) {
+      console.warn('[import] delete tx manual antiga failed', delErr);
+    }
+    crossRealocadoOk++;
+  }
+
   // 5. Atualiza contadores do extrato
   if (extratoId) {
     await supabase.from('extratos_importados').update({
       total_novas: novos.length,
-      total_vinculadas: linkedOk,
+      total_vinculadas: linkedOk + crossRealocadoOk,
       total_auto_confirmadas: autoConfirmed.length,
       total_puladas: skippedExisting,
     }).eq('id', extratoId);
@@ -1049,6 +1202,7 @@ async function doImport() {
   const parts = [];
   if (novos.length > 0)         parts.push(`${novos.length} nova${novos.length > 1 ? 's' : ''} pendente${novos.length > 1 ? 's' : ''}`);
   if (linkedOk > 0)             parts.push(`${linkedOk} vinculada${linkedOk > 1 ? 's' : ''} a pagamento`);
+  if (crossRealocadoOk > 0)     parts.push(`${crossRealocadoOk} realocada${crossRealocadoOk > 1 ? 's' : ''} de outra conta`);
   if (autoConfirmed.length > 0) parts.push(`${autoConfirmed.length} auto-confirmada${autoConfirmed.length > 1 ? 's' : ''}`);
   if (skippedExisting > 0)      parts.push(`${skippedExisting} já existente${skippedExisting > 1 ? 's' : ''} pulada${skippedExisting > 1 ? 's' : ''}`);
   showToast(`Importação concluída: ${parts.join(' · ')}.`, 'success', 8000);

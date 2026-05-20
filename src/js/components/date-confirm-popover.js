@@ -1,20 +1,33 @@
 // =============================================================
-// FinFlow — Popover de confirmação de data
+// FinFlow — Popover de confirmação de data (+ opcional: conta)
 //
 // Usado pra confirmar a data efetiva ao mudar status de pagamento
-// pra Pago/Transferido. Retorna uma Promise que resolve com a data
-// confirmada (YYYY-MM-DD) ou null se o usuário cancelar.
+// pra Pago/Cartão/Transferido. Pode opcionalmente mostrar também um
+// seletor de conta — usado pra cobrir o caso "paguei de outra conta
+// que não a configurada no compromisso".
+//
+// Retorno:
+//  - sem accountSelector  → resolve(string YYYY-MM-DD | null)
+//  - com accountSelector  → resolve({ date, accountId } | null)
 // =============================================================
 
 /**
- * Exibe um popover flutuante ancorado a um elemento DOM.
  * @param {object} opts
  * @param {HTMLElement} opts.anchor - elemento ao qual o popover se ancora
  * @param {string} [opts.title='Quando foi pago?']
  * @param {string} [opts.initialDate] - YYYY-MM-DD (default: hoje)
- * @returns {Promise<string|null>} - data confirmada ou null se cancelado
+ * @param {object} [opts.accountSelector] - se setado, mostra select de conta
+ * @param {Array<{id, name}>} opts.accountSelector.accounts
+ * @param {string} opts.accountSelector.currentId - conta default selecionada
+ * @param {string} [opts.accountSelector.label='Conta']
+ * @returns {Promise<string|{date,accountId}|null>}
  */
-export function showDateConfirmPopover({ anchor, title = 'Quando foi pago?', initialDate = null } = {}) {
+export function showDateConfirmPopover({
+  anchor,
+  title = 'Quando foi pago?',
+  initialDate = null,
+  accountSelector = null,
+} = {}) {
   return new Promise((resolve) => {
     if (!anchor) { resolve(null); return; }
 
@@ -26,6 +39,20 @@ export function showDateConfirmPopover({ anchor, title = 'Quando foi pago?', ini
     // Remove qualquer popover anterior
     document.querySelectorAll('.date-confirm-popover').forEach((el) => el.remove());
 
+    // Monta opções do select de conta (se aplicável)
+    let accountSelectorHtml = '';
+    if (accountSelector?.accounts?.length) {
+      const label = accountSelector.label || 'Conta';
+      const opts = accountSelector.accounts.map((a) => {
+        const sel = a.id === accountSelector.currentId ? ' selected' : '';
+        return `<option value="${a.id}"${sel}>${escapeHtml(a.name)}</option>`;
+      }).join('');
+      accountSelectorHtml = `
+        <label class="date-confirm-popover-label">${label}</label>
+        <select class="input date-confirm-popover-account">${opts}</select>
+      `;
+    }
+
     // Cria o popover
     const pop = document.createElement('div');
     pop.className = 'date-confirm-popover';
@@ -35,6 +62,7 @@ export function showDateConfirmPopover({ anchor, title = 'Quando foi pago?', ini
       <div class="date-confirm-popover-arrow"></div>
       <p class="date-confirm-popover-title">${title}</p>
       <input class="input date-confirm-popover-input" type="date" value="${defaultDate}">
+      ${accountSelectorHtml}
       <div class="date-confirm-popover-actions">
         <button type="button" class="btn btn-ghost btn-sm" data-action="cancel">Cancelar</button>
         <button type="button" class="btn btn-primary btn-sm" data-action="confirm">Confirmar</button>
@@ -62,6 +90,7 @@ export function showDateConfirmPopover({ anchor, title = 'Quando foi pago?', ini
     if (placeAbove) pop.classList.add('date-confirm-popover--above');
 
     const input = pop.querySelector('.date-confirm-popover-input');
+    const accountEl = pop.querySelector('.date-confirm-popover-account');
     const btnConfirm = pop.querySelector('[data-action="confirm"]');
     const btnCancel = pop.querySelector('[data-action="cancel"]');
 
@@ -84,7 +113,11 @@ export function showDateConfirmPopover({ anchor, title = 'Quando foi pago?', ini
     const confirm = () => {
       const val = input.value;
       if (!val) { input.focus(); return; }
-      close(val);
+      if (accountSelector) {
+        close({ date: val, accountId: accountEl?.value || accountSelector.currentId });
+      } else {
+        close(val);
+      }
     };
 
     const onKeydown = (e) => {
@@ -102,4 +135,10 @@ export function showDateConfirmPopover({ anchor, title = 'Quando foi pago?', ini
     // Delay outside-click pra evitar fechar imediatamente
     setTimeout(() => document.addEventListener('mousedown', onOutsideClick), 50);
   });
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
 }

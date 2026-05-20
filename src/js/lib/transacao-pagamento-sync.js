@@ -98,6 +98,11 @@ export async function syncPagamentoToTransacao(pagamento, subcategoria) {
 
   // Status virou não-pago: deleta ou desvincula conforme origem da transação
   if (!isPaidStatus(pagamento.status)) {
+    // Limpa conta_id_efetiva (foi setada no contexto de Pago/Cartão).
+    // Se o usuário re-marcar Pago, volta ao default da subcategoria.
+    if (pagamento.conta_id_efetiva) {
+      await supabase.from('pagamentos').update({ conta_id_efetiva: null }).eq('id', pagamento.id);
+    }
     if (existing) {
       const origem = existing.reconciliacao_status || 'manual';
       if (origem === 'manual') {
@@ -118,7 +123,9 @@ export async function syncPagamentoToTransacao(pagamento, subcategoria) {
   const tipo     = subcategoria?.tipo === 'Receita' ? 'Receita' : 'Despesa';
   // Usa data_pagamento (data efetiva); fallback pra data_vencimento (planejada)
   const data     = pagamento.data_pagamento || pagamento.data_vencimento || todayISO();
-  const conta_id = subcategoria?.conta_id || null;
+  // Conta efetiva (se setada) tem prioridade sobre conta do compromisso —
+  // cobre o caso de pagamento sair de conta diferente da configurada.
+  const conta_id = pagamento.conta_id_efetiva || subcategoria?.conta_id || null;
   const moeda    = subcategoria?.moeda || pagamento.moeda || 'BRL';
 
   const payload = {
