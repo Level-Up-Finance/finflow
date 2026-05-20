@@ -14,7 +14,7 @@ import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
-import { formatCurrency, formatCurrencyHTML, MOEDAS } from '../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML, MOEDAS } from '../lib/moedas.js';
 import { fetchExchangeRate, startCurrencyAutoRefresh, toBRL } from '../lib/currency.js';
 import {
   countOccurrencesInMonth,

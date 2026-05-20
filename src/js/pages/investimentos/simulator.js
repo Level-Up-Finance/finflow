@@ -6,7 +6,7 @@ import { openModal, closeModal } from '../../components/modal.js';
 import { saldoFinal, tempoNecessario, aporteNecessario } from '../../lib/simulacao.js';
 import { fetchIndicadores, anualToMensal } from '../../lib/indicadores.js';
 import { parseDecimal, formatDecimal } from '../../lib/number-format.js';
-import { formatCurrency, formatCurrencyHTML } from '../../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML } from '../../lib/moedas.js';
 
 let simModo = 'saldo';
 let lastSimulacao = null; // { meta_valor, aporte_mensal, anos, pv } — pra "+ Criar projeto"

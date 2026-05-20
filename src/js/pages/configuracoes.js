@@ -11,7 +11,7 @@ import { CURRENCIES } from '../lib/currencies.js';
 import { escapeHtml, formatDateBR, todayISO } from '../lib/utils.js';
 import { DEFAULT_COLOR, renderColorPicker, setActiveColor } from '../lib/color-palette.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
-import { formatCurrency } from '../lib/compromissos-config.js';
+import { formatCurrency } from '../lib/moedas.js';
 
 // -----------------------------
 // State

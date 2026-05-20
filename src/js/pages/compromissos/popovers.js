@@ -5,7 +5,7 @@
 // showInfoPopup: dialog modal "Entendi" pra avisos
 // =============================================================
 import { escapeHtml } from '../../lib/utils.js';
-import { formatCurrencyHTML } from '../../lib/compromissos-config.js';
+import { formatCurrencyHTML } from '../../lib/moedas.js';
 
 /**
  * Mostra popover ancorado num badge .data-vinculo-* element.

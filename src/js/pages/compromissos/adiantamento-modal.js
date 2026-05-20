@@ -4,7 +4,7 @@
 import { openModal, closeModal } from '../../components/modal.js';
 import { showToast } from '../../components/toast.js';
 import { parseUserNumber } from '../../lib/utils.js';
-import { formatCurrency } from '../../lib/compromissos-config.js';
+import { formatCurrency } from '../../lib/moedas.js';
 import { registrarAdiantamento } from '../../lib/adiantamentos.js';
 import { supabase } from '../../lib/supabase.js';
 

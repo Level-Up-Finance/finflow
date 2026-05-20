@@ -8,7 +8,8 @@
 // Para openDayModal também: { getCompromissoById, openDetailsModal }
 // =============================================================
 import { escapeHtml } from '../../lib/utils.js';
-import { formatCurrencyHTML, tipoPill } from '../../lib/compromissos-config.js';
+import { tipoPill } from '../../lib/compromissos-config.js';
+import { formatCurrencyHTML } from '../../lib/moedas.js';
 import { openModal, closeModal } from '../../components/modal.js';
 // v0.6.x — usa helper compartilhado de recorrência pra eliminar drift entre
 // calendar.js, orcamento.js e table.js

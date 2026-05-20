@@ -183,7 +183,7 @@ async function handleForgotPassword(event) {
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     if (!isSupabaseConfigured()) {
-      showToast(t('login.aviso.supabase_config', 'Configure Supabase em src/js/lib/config.js'), 'warning', 8000);
+      showToast(t('login.aviso.supabase_config', 'Configure Supabase em .env.local (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY)'), 'warning', 8000);
       return;
     }
     // Captura o redirect pós-confirmação de email (PKCE: ?code=xxx na URL)

@@ -10,12 +10,9 @@
 // =============================================================
 import { escapeHtml, formatDateBR, getInitials } from '../../lib/utils.js';
 import {
-  tipoIcon,
-  tipoColor,
-  tipoPill,
-  formatCurrencyHTML,
-  diaSemanaLabel,
+  tipoIcon, tipoColor, tipoPill, diaSemanaLabel,
 } from '../../lib/compromissos-config.js';
+import { formatCurrencyHTML } from '../../lib/moedas.js';
 import { findBank, logoUrl } from '../../lib/banks.js';
 import { nextOccurrence as calcNextDueDate } from '../../lib/recurrence.js';
 

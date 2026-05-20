@@ -18,6 +18,7 @@
 //   - Marca como cancelado
 // =============================================================
 import { supabase } from './supabase.js';
+import { STORAGE_KEYS } from './storage-keys.js';
 
 /**
  * Lista adiantamentos do usuário, opcionalmente filtrado por sub.
@@ -224,7 +225,7 @@ Datas das parcelas: ${datas.join(' · ')}${observacao ? `\nObs: ${observacao}` :
  * (cache em localStorage).
  */
 export async function regenerarDescricoesAntigas() {
-  const CACHE_KEY = 'finflow.adiant.desc_regen';
+  const CACHE_KEY = STORAGE_KEYS.ADIANT_DESC_REGEN;
   if (localStorage.getItem(CACHE_KEY) === '1') return { skipped: true };
 
   const { data: { user } } = await supabase.auth.getUser();

@@ -1,4 +1,10 @@
-// Shared currency list used across contas, transações, and configurações.
+// Lista compacta de moedas disponíveis (15) usada em:
+//   /configuracoes — grid de checkboxes "Moedas utilizadas"
+//   pickers de moeda — ao listar opções não habilitadas
+// Para os 4 códigos suportados com formatação completa, ver lib/moedas.js.
+
+import { STORAGE_KEYS } from './storage-keys.js';
+
 export const CURRENCIES = [
   { code: 'BRL', label: 'Real Brasileiro'   },
   { code: 'USD', label: 'Dólar Americano'   },
@@ -21,13 +27,18 @@ export const CURRENCIES = [
 // Falls back to BRL + USD + EUR if not configured.
 export function getUserCurrencies() {
   try {
-    const raw = localStorage.getItem('finflow.moedas_widget');
+    const raw = localStorage.getItem(STORAGE_KEYS.MOEDAS_WIDGET);
     const list = raw ? JSON.parse(raw) : null;
     if (Array.isArray(list) && list.length) return list;
-  } catch { }
+  } catch { /* ignore */ }
   return ['BRL', 'USD', 'EUR'];
 }
 
+/**
+ * @deprecated v1.0.1 — Sistema usa BRL fixo como moeda padrão.
+ * Mantido só pra compatibilidade com código legado que ainda referencia.
+ * Não usar em código novo.
+ */
 export function getMoedaPadrao() {
-  return localStorage.getItem('finflow.moeda_padrao') || 'BRL';
+  return localStorage.getItem(STORAGE_KEYS.MOEDA_PADRAO) || 'BRL';
 }

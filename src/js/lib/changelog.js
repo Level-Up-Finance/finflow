@@ -7,6 +7,24 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-20-auditoria-completa',
+    version: '1.0.2',
+    date: '20/05/2026',
+    title: 'Auditoria completa — refatoração, testes e padronização',
+    items: [
+      { type: 'improvement', text: 'Auditoria completa do sistema em 14 módulos + camada arquitetural. Sem mudança de comportamento visível ao usuário — só melhorias internas de qualidade e manutenibilidade.' },
+      { type: 'improvement', text: 'Novo módulo lib/moedas.js — formatação monetária e MOEDAS/MOEDA_BY_CODE extraídos de compromissos-config.js. Compatibilidade mantida via re-export.' },
+      { type: 'improvement', text: 'Novo módulo lib/storage-keys.js — todas as chaves de localStorage padronizadas e centralizadas (prefixo finflow.*).' },
+      { type: 'improvement', text: 'Nova camada services/queries.js — esqueleto de queries Supabase com COLUMNS canônicas para dividas, subcategorias, contas e projetos_investimento. Reduz risco de drift quando schema mudar.' },
+      { type: 'improvement', text: '14 páginas + submodules migrados pra importar formatação monetária da nova lib (em vez do re-export legado).' },
+      { type: 'improvement', text: '5 libs (theme, adiantamentos, tarefas, currencies, moedas) agora usam STORAGE_KEYS em vez de strings hardcoded.' },
+      { type: 'improvement', text: '5 novos arquivos de teste — 70 testes adicionais cobrindo lógica financeira pura: number-format, simulação de investimento (PV/PMT/FV), amortização (SAC/Price/Customizado), status unificado (taxonomia + badges), caixa-livre. Cobertura total: 106 testes passando em ~100ms.' },
+      { type: 'fix', text: 'login.js: mensagem desatualizada apontava para src/js/lib/config.js; agora indica .env.local + VITE_SUPABASE_*.' },
+      { type: 'fix', text: 'lib/icons.js órfão (zero importadores) removido.' },
+      { type: 'fix', text: 'compromissos.js: comentário TODO desatualizado removido (refatoração já concluída).' },
+    ],
+  },
+  {
     id: '2026-05-20-relatorios-patrimonio-caixinha-status',
     version: '1.0.1',
     date: '20/05/2026',

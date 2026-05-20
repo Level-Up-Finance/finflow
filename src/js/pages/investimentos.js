@@ -16,7 +16,8 @@ import {
   STATUS_BY_CONTEXT,
   renderStatusOptions, calcularBadgeAtraso, statusConfig as statusConfigUnified,
 } from '../lib/status-config.js';
-import { formatCurrency, formatCurrencyHTML, PERIODOS, DIAS_SEMANA, TIPOS_PAGAMENTO, renderMoedaOptions } from '../lib/compromissos-config.js';
+import { PERIODOS, DIAS_SEMANA, TIPOS_PAGAMENTO } from '../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML, renderMoedaOptions } from '../lib/moedas.js';
 import { initColVisibility } from '../lib/col-visibility.js';
 import { escapeHtml, formatDateBR, isoMonth, parseUserNumber } from '../lib/utils.js';
 import { DEFAULT_COLOR, renderColorPicker, setActiveColor } from '../lib/color-palette.js';

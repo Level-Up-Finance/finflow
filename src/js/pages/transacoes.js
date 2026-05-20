@@ -18,7 +18,7 @@ import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
-import { formatCurrency, formatCurrencyHTML, renderMoedaOptions, moedaInputPlaceholder } from '../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML, renderMoedaOptions, moedaInputPlaceholder } from '../lib/moedas.js';
 import {
   findMatchingPagamento,
   findTransacaoLinkedToPagamento,

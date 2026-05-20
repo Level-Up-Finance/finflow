@@ -1,10 +1,4 @@
 // =============================================================
-// TODO refactor (continuação): mais ainda a extrair:
-//   compromissos/dre.js       — renderDre + renderDreBlock + renderDreItem + renderDreSummary (~160L)
-//   compromissos/popovers.js  — vinculo-popover + showInfoPopup (~100L)
-//   compromissos/valores-mensais.js — populate/collect/save grid (~100L)
-// Já extraído: compromissos/calendar.js (renderCalendar + occursOn + openDayModal)
-// =============================================================
 // FinFlow — Página: Compromissos (antes "Categorias")
 //
 // Hierarquia: Categoria (parent) → Subcategoria/Compromisso (filha)
@@ -22,20 +16,13 @@ import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { initCurrencyWidget } from '../components/currency-widget.js';
 import {
-  TIPOS,
-  tipoIcon,
-  tipoColor,
-  tipoPill,
-  PERIODOS,
-  DIAS_SEMANA,
-  diaSemanaLabel,
-  TIPOS_PAGAMENTO,
-  formatCurrency,
-  formatCurrencyHTML,
-  CATEGORIAS_DEFAULT,
-  renderMoedaOptions,
-  moedaInputPlaceholder,
+  TIPOS, tipoIcon, tipoColor, tipoPill,
+  PERIODOS, DIAS_SEMANA, diaSemanaLabel,
+  TIPOS_PAGAMENTO, CATEGORIAS_DEFAULT,
 } from '../lib/compromissos-config.js';
+import {
+  formatCurrency, formatCurrencyHTML, renderMoedaOptions, moedaInputPlaceholder,
+} from '../lib/moedas.js';
 import { initColVisibility } from '../lib/col-visibility.js';
 import { escapeHtml, formatDateBR, todayISO, getInitials } from '../lib/utils.js';
 import { autoAttachDecimalInputs } from '../lib/number-format.js';

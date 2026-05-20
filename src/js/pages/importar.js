@@ -10,7 +10,7 @@ import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { loadRules, findRule } from '../lib/regras-reconciliacao.js';
-import { formatCurrency } from '../lib/compromissos-config.js';
+import { formatCurrency } from '../lib/moedas.js';
 import { escapeHtml } from '../lib/utils.js';
 import { createContaPicker } from '../lib/conta-picker.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';

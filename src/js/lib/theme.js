@@ -13,8 +13,9 @@
 //   await setTheme('escuro');    // troca explícita
 // =============================================================
 import { supabase } from './supabase.js';
+import { STORAGE_KEYS } from './storage-keys.js';
 
-const STORAGE_KEY = 'finflow.tema';
+const STORAGE_KEY = STORAGE_KEYS.TEMA;
 const VALID = ['claro', 'escuro', 'auto'];
 
 let mediaQuery = null;

@@ -16,7 +16,7 @@ import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
-import { formatCurrency, formatCurrencyHTML, MOEDAS } from '../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML, MOEDAS } from '../lib/moedas.js';
 import { fetchExchangeRate } from '../lib/currency.js';
 import { initCurrencyWidget } from '../components/currency-widget.js';
 import { findBank, logoUrl } from '../lib/banks.js';

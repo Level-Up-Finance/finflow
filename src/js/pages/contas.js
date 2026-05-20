@@ -17,7 +17,7 @@ import { initColVisibility } from '../lib/col-visibility.js';
 import { autoAttachDecimalInputs } from '../lib/number-format.js';
 import { escapeHtml, formatDateBR, todayISO, parseUserNumber } from '../lib/utils.js';
 import { checkAndCloseFaturas } from '../lib/faturas-cartao.js';
-import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML } from '../lib/moedas.js';
 import { COLOR_PALETTE, DEFAULT_COLOR, renderColorPicker } from '../lib/color-palette.js';
 import { fetchExchangeRate } from '../lib/currency.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';

@@ -11,7 +11,7 @@ import {
   renderStatusOptions, calcularBadgeAtraso, statusConfig as statusConfigUnified,
 } from '../lib/status-config.js';
 import { openModal, closeModal } from '../components/modal.js';
-import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.js';
+import { formatCurrency, formatCurrencyHTML } from '../lib/moedas.js';
 import { initColVisibility } from '../lib/col-visibility.js';
 import { escapeHtml, parseUserNumber, todayISO } from '../lib/utils.js';
 import { createContaPicker } from '../lib/conta-picker.js';

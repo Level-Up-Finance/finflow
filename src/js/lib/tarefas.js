@@ -7,9 +7,10 @@
 // Geração automática roda quando init é chamado (uma vez por sessão).
 // =============================================================
 import { supabase } from './supabase.js';
+import { STORAGE_KEYS } from './storage-keys.js';
 
-const SESSION_CACHE_KEY = 'finflow.tarefas.generated_at';
-const SESSION_CACHE_KEY_RECON = 'finflow.tarefas.recon_at';
+const SESSION_CACHE_KEY       = STORAGE_KEYS.TAREFAS_GENERATED_AT;
+const SESSION_CACHE_KEY_RECON = STORAGE_KEYS.TAREFAS_RECON_AT;
 const SESSION_CACHE_MS  = 5 * 60 * 1000;  // 5 minutos
 
 /**

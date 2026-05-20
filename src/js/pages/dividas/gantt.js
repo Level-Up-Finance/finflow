@@ -4,7 +4,7 @@
 // Pure renderer — recebe lista de dívidas e config de zoom como input.
 // Não toca em estado global de dividas.js. Caller injeta STATUS_CONFIG.
 import { escapeHtml } from '../../lib/utils.js';
-import { formatCurrency } from '../../lib/compromissos-config.js';
+import { formatCurrency } from '../../lib/moedas.js';
 
 const today = new Date();
 const MES_ABBR = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
