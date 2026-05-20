@@ -7,6 +7,19 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-20-recorrencia-conta-transferido-cleanup',
+    version: '1.0.5',
+    date: '20/05/2026',
+    title: 'Recorrência de conta para Transferido + popup melhorado + cleanup',
+    items: [
+      { type: 'new', text: 'Popover "Quando foi transferido?" agora também tem seletor "Saiu de qual conta?" — antes só Pago/Cartão tinham. Default = origem do compromisso, conta de destino fica excluída automaticamente (não pode origem = destino).' },
+      { type: 'new', text: 'Quando você troca a conta de origem da transferência, o sistema oferece atualizar a configuração do compromisso pra que as próximas transferências saiam dessa conta por padrão — mesma UX já existente em Pago/Cartão.' },
+      { type: 'improvement', text: 'Popup de "aplicar à recorrência?" redesenhado: avatar circular colorido do banco + nome em destaque, mensagem clara em duas etapas, botão "Sim" verde e "Não" vermelho. Tag <strong> aparecendo como texto cru foi corrigida.' },
+      { type: 'improvement', text: 'Widget "Saldo total nas contas" removido do topo de /pagamentos — a página voltou a focar no que importa: pagamentos. Saldos continuam acessíveis em /contas.' },
+      { type: 'improvement', text: 'Nova classe utilitária .btn-success em components.css para botões de confirmação positiva.' },
+    ],
+  },
+  {
     id: '2026-05-20-conta-efetiva-pagamento',
     version: '1.0.4',
     date: '20/05/2026',

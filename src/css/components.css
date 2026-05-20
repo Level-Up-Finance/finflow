@@ -51,6 +51,13 @@
 }
 .btn-danger:hover { background: #DC2626; }
 
+.btn-success {
+  background: var(--color-success);
+  color: #fff;
+  border-color: var(--color-success);
+}
+.btn-success:hover { background: #059669; }
+
 .btn-warning {
   background: var(--color-warning);
   color: #fff;

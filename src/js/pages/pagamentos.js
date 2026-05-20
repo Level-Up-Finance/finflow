@@ -87,7 +87,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadSubcategorias();
   await loadContas();
   await loadMonth();
-  renderConciliacaoKpi(); // fire-and-forget
 });
 
 async function loadCategorias() {
@@ -102,80 +101,6 @@ async function loadCategorias() {
     return;
   }
   cachedCategorias = data || [];
-}
-
-/**
- * KPI compacto de conciliação bancária no header de /pagamentos.
- * Calcula saldo total das contas (calculado FinFlow vs banco) e mostra a diferença.
- * Estilo similar ao Xero.
- */
-async function renderConciliacaoKpi() {
-  const container = document.getElementById('pag-conciliacao-kpi');
-  if (!container || cachedContas.length === 0) return;
-
-  const activeContaIds = cachedContas.map((c) => c.id);
-  if (!activeContaIds.length) return;
-
-  // Carrega snapshots de saldo (do OFX) em paralelo com transações pra calcular saldo do FinFlow
-  const { loadLatestSnapshots } = await import('../lib/saldos-bancarios.js');
-  const [snapshots, { data: trData }] = await Promise.all([
-    loadLatestSnapshots(activeContaIds),
-    supabase
-      .from('transacoes')
-      .select('conta_id, tipo, valor, conta_destino_id, transferencia_par_id, reconciliacao_status')
-      .in('conta_id', activeContaIds)
-      .neq('reconciliacao_status', 'importado'),
-  ]);
-
-  // Saldo calculado por conta (mesma lógica de /contas)
-  const saldosCalculados = new Map(activeContaIds.map((id) => [id, 0]));
-  for (const tr of (trData || [])) {
-    const cur = saldosCalculados.get(tr.conta_id) ?? 0;
-    const isEntrada = tr.tipo === 'Receita'
-      || (tr.tipo === 'Transferência' && tr.transferencia_par_id && !tr.conta_destino_id);
-    const isSaida = tr.tipo === 'Despesa'
-      || (tr.tipo === 'Transferência' && !!tr.conta_destino_id);
-    if (isEntrada) saldosCalculados.set(tr.conta_id, cur + Number(tr.valor || 0));
-    else if (isSaida) saldosCalculados.set(tr.conta_id, cur - Number(tr.valor || 0));
-  }
-
-  let totalCalculado = 0;
-  let totalBanco = 0;
-  let contasComSnapshot = 0;
-  let maxData = null;
-  for (const c of cachedContas) {
-    totalCalculado += saldosCalculados.get(c.id) ?? 0;
-    const snap = snapshots.get(c.id);
-    if (snap) {
-      totalBanco += Number(snap.saldo);
-      contasComSnapshot++;
-      if (!maxData || snap.data > maxData) maxData = snap.data;
-    }
-  }
-  const diff = totalCalculado - totalBanco;
-  const bate = Math.abs(diff) < 0.005;
-  const semSnapshots = contasComSnapshot === 0;
-
-  let diffHtml;
-  if (semSnapshots) {
-    diffHtml = `<span class="conciliacao-kpi-sub">Nenhuma conciliação ainda — importe um extrato pra começar</span>`;
-  } else {
-    const diffSign = diff < 0 ? '-' : (diff > 0 ? '+' : '');
-    const dataLabel = maxData ? (() => { const [yy, mm, dd] = maxData.split('-'); return `${dd}/${mm}/${yy.slice(2)}`; })() : '—';
-    diffHtml = `
-      <span class="conciliacao-kpi-sub">${contasComSnapshot} de ${cachedContas.length} contas · última: ${dataLabel}</span>
-      <span class="conciliacao-kpi-diff ${bate ? 'is-ok' : 'is-diff'}">${bate ? '✓ Tudo bate' : `Diferença: ${diffSign}${formatCurrency(Math.abs(diff), 'BRL')}`}</span>
-    `;
-  }
-  container.innerHTML = `
-    <div class="conciliacao-kpi">
-      <span class="conciliacao-kpi-icon">🏦</span>
-      <div class="conciliacao-kpi-body">
-        <div class="conciliacao-kpi-title">Saldo total nas contas: ${formatCurrency(totalCalculado, 'BRL')}</div>
-        ${diffHtml}
-      </div>
-    </div>
-  `;
 }
 
 async function loadContas() {
@@ -1695,6 +1620,61 @@ async function saveObservacao() {
 }
 
 
+/**
+ * Modal de confirmação customizado: "mudou a conta — quer aplicar à recorrência?"
+ * Mostra avatar + nome do banco. Botão "Sim" verde, "Não" vermelho.
+ */
+function askRecorrenciaConta(conta, contaNome) {
+  return new Promise((resolve) => {
+    const existing = document.getElementById('pag-recorrencia-modal');
+    if (existing) existing.remove();
+
+    const cor = conta?.icone_cor || '#9CA3AF';
+    const inicial = (contaNome[0] || '?').toUpperCase();
+
+    const backdrop = document.createElement('div');
+    backdrop.id = 'pag-recorrencia-modal';
+    backdrop.className = 'modal-backdrop';
+    backdrop.setAttribute('role', 'alertdialog');
+    backdrop.setAttribute('aria-modal', 'true');
+
+    backdrop.innerHTML = `
+      <div class="modal" style="max-width:440px;">
+        <div class="modal-header">
+          <h3 class="modal-title">Aplicar à recorrência?</h3>
+        </div>
+        <div class="modal-body" style="padding:var(--space-4);">
+          <p style="margin:0 0 var(--space-3);">Você mudou esse pagamento para a conta:</p>
+          <div style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3);background:var(--color-surface-alt);border-radius:var(--radius-md);margin-bottom:var(--space-4);">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:${cor};color:#fff;font-size:13px;font-weight:bold;flex-shrink:0;">${inicial}</span>
+            <strong style="font-size:var(--fs-md);">${escapeHtml(contaNome)}</strong>
+          </div>
+          <p style="margin:0;">Quer que os próximos pagamentos desse compromisso também saiam dessa conta?</p>
+        </div>
+        <div class="modal-footer" style="display:flex;gap:var(--space-2);justify-content:flex-end;padding:var(--space-4);">
+          <button type="button" class="btn btn-danger" id="pag-rec-no">Não</button>
+          <button type="button" class="btn btn-success" id="pag-rec-yes">Sim</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(backdrop);
+    backdrop.querySelector('#pag-rec-yes').focus();
+
+    function cleanup(result) {
+      backdrop.remove();
+      document.removeEventListener('keydown', onKey);
+      resolve(result);
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') cleanup(false);
+    }
+    backdrop.querySelector('#pag-rec-no').addEventListener('click', () => cleanup(false));
+    backdrop.querySelector('#pag-rec-yes').addEventListener('click', () => cleanup(true));
+    backdrop.addEventListener('click', (e) => { if (e.target === backdrop) cleanup(false); });
+    document.addEventListener('keydown', onKey);
+  });
+}
+
 async function saveStatus(select) {
   const id = select.dataset.pagamentoId;
   const newStatus = select.value;
@@ -1717,13 +1697,18 @@ async function saveStatus(select) {
     const isReceitaOuDespesa = sub?.tipo === 'Receita' || sub?.tipo === 'Despesa';
     const title = newStatus === 'Transferido' ? 'Quando foi transferido?' : 'Quando foi pago?';
 
-    // Pra Receita/Despesa, mostra selector de conta. Transferência/Caixinha
-    // já têm 2 contas explícitas no compromisso, não se aplica.
+    // Pra Receita/Despesa, mostra selector de "Saiu de qual conta?".
+    // Pra Transferência, mesma coisa mas para a conta de origem (a conta
+    // de destino fica imutável, vem do compromisso).
     let accountSelector = null;
-    if (isReceitaOuDespesa && newStatus !== 'Transferido') {
+    const isTransferencia = newStatus === 'Transferido';
+    if (isReceitaOuDespesa || isTransferencia) {
       const currentId = pag.conta_id_efetiva || sub?.conta_id || null;
+      const contaDestinoId = sub?.conta_destino_id || null;
       const accounts = cachedContas
         .filter((c) => c.tipo !== 'Cofrinho')
+        // Pra transferência, exclui a conta de destino (não pode origem = destino)
+        .filter((c) => !isTransferencia || c.id !== contaDestinoId)
         .map((c) => ({ id: c.id, name: c.apelido?.trim() || c.nome }));
       if (accounts.length > 0 && currentId) {
         accountSelector = { accounts, currentId, label: 'Saiu de qual conta?' };
@@ -1755,7 +1740,28 @@ async function saveStatus(select) {
 
   if (newStatus === 'Transferido') {
     select.value = pag.status; // revert enquanto processa
-    await createTransferPairAndUpdateStatus(pag, select, dataPagamento);
+    await createTransferPairAndUpdateStatus(pag, select, dataPagamento, contaEfetivaEscolhida);
+    // Se trocou a conta de origem, oferece atualizar o compromisso
+    if (contaEfetivaEscolhida && pag.subcategoria_id && pag.status === 'Transferido') {
+      const novaConta = cachedContas.find((c) => c.id === contaEfetivaEscolhida);
+      const novaContaNome = novaConta ? (novaConta.apelido?.trim() || novaConta.nome) : 'a conta escolhida';
+      const ok = await askRecorrenciaConta(novaConta, novaContaNome);
+      if (ok) {
+        const { error: updSubErr } = await supabase
+          .from('subcategorias')
+          .update({ conta_id: contaEfetivaEscolhida })
+          .eq('id', pag.subcategoria_id);
+        if (updSubErr) {
+          showToast('Erro ao atualizar compromisso: ' + updSubErr.message, 'error', 6000);
+        } else {
+          if (pag.subcategorias) pag.subcategorias.conta_id = contaEfetivaEscolhida;
+          await supabase.from('pagamentos').update({ conta_id_efetiva: null }).eq('id', id);
+          pag.conta_id_efetiva = null;
+          showToast(`Compromisso atualizado: próximas transferências sairão de ${novaContaNome}.`, 'success', 5000);
+          renderPagamentos();
+        }
+      }
+    }
     return;
   }
 
@@ -1799,11 +1805,7 @@ async function saveStatus(select) {
   if (contaEfetivaEscolhida && pag.subcategoria_id) {
     const novaConta = cachedContas.find((c) => c.id === contaEfetivaEscolhida);
     const novaContaNome = novaConta ? (novaConta.apelido?.trim() || novaConta.nome) : 'a conta escolhida';
-    const subNome = pag.subcategorias?.apelido?.trim() || pag.subcategorias?.nome || 'esse compromisso';
-    const ok = await showConfirm(
-      `Atualizar o compromisso "${escapeHtml(subNome)}" para que os próximos pagamentos saiam de <strong>${escapeHtml(novaContaNome)}</strong> por padrão?`,
-      { okLabel: 'Sim, atualizar', cancelLabel: 'Não, só este pagamento' }
-    );
+    const ok = await askRecorrenciaConta(novaConta, novaContaNome);
     if (ok) {
       const { error: updSubErr } = await supabase
         .from('subcategorias')
@@ -1831,8 +1833,9 @@ async function saveStatus(select) {
 // -----------------------------
 // Transferência automática — usa contas já definidas no compromisso
 // -----------------------------
-async function createTransferPairAndUpdateStatus(pag, select, dataPagamento = null) {
-  const contaOrigemId  = pag.subcategorias?.conta_id;
+async function createTransferPairAndUpdateStatus(pag, select, dataPagamento = null, contaEfetivaEscolhida = null) {
+  // contaEfetivaEscolhida (se setada) sobrescreve a origem configurada no compromisso
+  const contaOrigemId  = contaEfetivaEscolhida || pag.subcategorias?.conta_id;
   const contaDestinoId = pag.subcategorias?.conta_destino_id;
 
   if (!contaOrigemId || !contaDestinoId) {
@@ -1840,6 +1843,10 @@ async function createTransferPairAndUpdateStatus(pag, select, dataPagamento = nu
       'Configure as contas de origem e destino no compromisso antes de marcar como Transferido.',
       'warning', 7000
     );
+    return;
+  }
+  if (contaOrigemId === contaDestinoId) {
+    showToast('Conta de origem e destino não podem ser a mesma.', 'warning', 6000);
     return;
   }
 
@@ -1882,12 +1889,13 @@ async function createTransferPairAndUpdateStatus(pag, select, dataPagamento = nu
     // Liga saída ↔ entrada
     await supabase.from('transacoes').update({ transferencia_par_id: entrada.id }).eq('id', saida.id);
 
-    // Atualiza pagamento
+    // Atualiza pagamento (incluindo conta_id_efetiva se a origem mudou)
     const { error: pagErr } = await supabase
       .from('pagamentos')
       .update({
         status: 'Transferido',
         data_pagamento: dataPagamento || null,
+        conta_id_efetiva: contaEfetivaEscolhida,
         status_atualizado_em: new Date().toISOString(),
       })
       .eq('id', pag.id);
@@ -1895,6 +1903,7 @@ async function createTransferPairAndUpdateStatus(pag, select, dataPagamento = nu
 
     pag.status = 'Transferido';
     pag.data_pagamento = dataPagamento || null;
+    pag.conta_id_efetiva = contaEfetivaEscolhida;
     renderPagamentos();
     const dividaId = pag.subcategorias?.divida_id;
     if (dividaId) propagateDivida(dividaId);
