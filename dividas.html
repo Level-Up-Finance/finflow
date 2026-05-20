@@ -302,14 +302,9 @@
 
           <div class="field-group" style="grid-template-columns: 1fr 1fr;">
             <div class="field">
-              <label class="field-label" for="div-status">Status</label>
-              <select class="select" id="div-status">
-                <option value="Ativa">Ativa</option>
-                <option value="Negociando">Negociando</option>
-                <option value="Atrasada">Atrasada</option>
-                <option value="Quitada">Quitada</option>
-                <option value="Arquivada">Arquivada</option>
-              </select>
+              <label class="field-label" for="div-status">Status <span class="required">*</span></label>
+              <select class="select" id="div-status" required></select>
+              <p class="field-hint" id="div-status-desc"></p>
             </div>
             <div class="field">
               <label class="field-label" for="div-conta">Conta vinculada</label>

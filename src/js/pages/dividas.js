@@ -6,6 +6,10 @@ import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
+import {
+  STATUS_IDS, STATUS_RULES, STATUS_BY_CONTEXT,
+  renderStatusOptions, calcularBadgeAtraso, statusConfig as statusConfigUnified,
+} from '../lib/status-config.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { formatCurrency, formatCurrencyHTML } from '../lib/compromissos-config.js';
 import { initColVisibility } from '../lib/col-visibility.js';
@@ -275,41 +279,77 @@ function addFaseRow() {
 // -----------------------------
 // Status config
 // -----------------------------
-const STATUS_CONFIG = {
-  'Ativa':      { label: 'Ativa',      color: 'var(--color-primary)', bg: 'var(--color-primary-50)' },
-  'Atrasada':   { label: 'Atrasada',   color: 'var(--color-danger)',  bg: 'var(--color-danger-bg)' },
-  'Negociando': { label: 'Negociando', color: 'var(--color-warning)', bg: 'var(--color-warning-bg)' },
-  'Quitada':    { label: 'Quitada',    color: 'var(--color-success)', bg: 'var(--color-success-bg)' },
-  'Arquivada':  { label: 'Arquivada',  color: 'var(--color-text-muted)', bg: 'var(--color-surface-alt)' },
-};
+// STATUS_CONFIG agora é derivado de status-config.js (taxonomia unificada).
+// Construção dinâmica pra manter compatibilidade com o resto do arquivo.
+const STATUS_CONFIG = Object.fromEntries(
+  STATUS_IDS.map((id) => {
+    const cfg = STATUS_BY_CONTEXT.divida[id];
+    return [cfg.dbValue, { label: cfg.label, color: cfg.color, bg: 'transparent' }];
+  })
+);
 
-const TERMINADO_STATUS = new Set(['Quitada', 'Arquivada']);
+const _TERMINADO_STATUS = new Set(
+  STATUS_IDS.filter((id) => STATUS_RULES[id].terminado).map((id) => STATUS_BY_CONTEXT.divida[id].dbValue)
+);
+
+// Atalhos pros dbValues mais usados no arquivo
+const ST_DIV_APAGAR  = STATUS_BY_CONTEXT.divida.a_comecar.dbValue;     // 'A pagar'
+const ST_DIV_PAGANDO = STATUS_BY_CONTEXT.divida.em_curso.dbValue;      // 'Pagando'
+const ST_DIV_QUITADA = STATUS_BY_CONTEXT.divida.sucesso.dbValue;       // 'Quitada'
+
+// Quando uma quitação é desfeita (valor_pago volta a ser < valor_total),
+// escolhe o status ativo adequado: 'Pagando' se ainda tem algo pago, 'A pagar' senão.
+function statusAposDesquitar(valorPago) {
+  return Number(valorPago) > 0 ? ST_DIV_PAGANDO : ST_DIV_APAGAR;
+}
+
+// Atualiza o hint descritivo embaixo do select de status no modal
+function updateStatusDescDivida() {
+  const sel  = document.getElementById('div-status');
+  const desc = document.getElementById('div-status-desc');
+  if (!sel || !desc) return;
+  const cfg = statusConfigUnified(sel.value, 'divida');
+  desc.textContent = cfg?.desc || '';
+}
 const DIVIDA_COLLAPSED_KEY = 'finflow_div_bloco_collapsed';
 
+// Grupos == status (1:1). Cada bloco corresponde a um status semântico.
 const BLOCOS = [
   {
-    id: 'sem_configuracao',
-    label: 'Sem Configuração',
-    filter: (d) => !TERMINADO_STATUS.has(d.status) && !Number(d.valor_total),
-    emptyMsg: 'Nenhuma dívida aguardando configuração.',
+    id: 'sem_definicao',
+    label: STATUS_BY_CONTEXT.divida.sem_definicao.label,         // "Sem plano"
+    filter: (d) => d.status === STATUS_BY_CONTEXT.divida.sem_definicao.dbValue,
+    emptyMsg: 'Nenhuma dívida sem plano definido.',
   },
   {
-    id: 'em_progresso',
-    label: 'Em progresso',
-    filter: (d) => !TERMINADO_STATUS.has(d.status) && Number(d.valor_total) > 0 && Number(d.valor_pago) > 0,
+    id: 'a_comecar',
+    label: STATUS_BY_CONTEXT.divida.a_comecar.label,             // "A pagar"
+    filter: (d) => d.status === STATUS_BY_CONTEXT.divida.a_comecar.dbValue,
+    emptyMsg: 'Nenhuma dívida aguardando início de pagamento.',
+  },
+  {
+    id: 'em_curso',
+    label: STATUS_BY_CONTEXT.divida.em_curso.label,              // "Pagando"
+    filter: (d) => d.status === STATUS_BY_CONTEXT.divida.em_curso.dbValue,
     emptyMsg: 'Nenhuma dívida em andamento.',
   },
   {
-    id: 'por_comecar',
-    label: 'Por começar',
-    filter: (d) => !TERMINADO_STATUS.has(d.status) && Number(d.valor_total) > 0 && Number(d.valor_pago) === 0,
-    emptyMsg: 'Nenhuma dívida aguardando início.',
+    id: 'pausado',
+    label: STATUS_BY_CONTEXT.divida.pausado.label,               // "Em negociação"
+    filter: (d) => d.status === STATUS_BY_CONTEXT.divida.pausado.dbValue,
+    emptyMsg: 'Nenhuma dívida em negociação.',
   },
   {
-    id: 'terminado',
-    label: 'Terminado',
-    filter: (d) => TERMINADO_STATUS.has(d.status),
-    emptyMsg: 'Nenhuma dívida finalizada ainda.',
+    id: 'sucesso',
+    label: STATUS_BY_CONTEXT.divida.sucesso.label,               // "Quitada"
+    filter: (d) => d.status === STATUS_BY_CONTEXT.divida.sucesso.dbValue,
+    emptyMsg: 'Nenhuma dívida quitada ainda.',
+  },
+  {
+    id: 'arquivado',
+    label: STATUS_BY_CONTEXT.divida.arquivado.label,             // "Arquivada"
+    filter: (d) => d.status === STATUS_BY_CONTEXT.divida.arquivado.dbValue,
+    emptyMsg: 'Nenhuma dívida arquivada.',
   },
 ];
 
@@ -789,12 +829,17 @@ function openDividaDetails(id) {
   const pago    = Number(d.valor_pago);
   const restante = Math.max(0, total - pago);
   const pct     = total > 0 ? Math.min(100, (pago / total) * 100) : 0;
-  const st      = STATUS_CONFIG[d.status] || STATUS_CONFIG['Ativa'];
+  const st      = STATUS_CONFIG[d.status] || STATUS_CONFIG[ST_DIV_APAGAR];
   const conta   = cachedContas.find((c) => c.id === d.conta_id);
   const fmtDate = (iso) => { if (!iso) return null; const [y, m, day] = iso.split('-'); return `${day}/${m}/${y}`; };
 
+  const atrasoBadge = calcularBadgeAtraso(d, d.status, 'divida');
+  const atrasoHtml  = atrasoBadge
+    ? ` <span class="div-card-badge" style="color:${atrasoBadge.color};background:transparent;border:1px solid ${atrasoBadge.color}40;font-size:var(--fs-xs);vertical-align:middle;">⚠ ${atrasoBadge.label}</span>`
+    : '';
+
   document.getElementById('div-details-title').innerHTML =
-    `${escapeHtml(d.nome)} <span class="div-card-badge" style="color:${st.color};background:${st.bg};font-size:var(--fs-xs);vertical-align:middle;">${st.label}</span>`
+    `${escapeHtml(d.nome)} <span class="div-card-badge" style="color:${st.color};background:${st.bg};font-size:var(--fs-xs);vertical-align:middle;">${st.label}</span>${atrasoHtml}`
     + (d.tipo === 'a_receber' ? ' <span class="div-card-tipo-badge div-card-tipo-badge--receber" style="font-size:var(--fs-xs);vertical-align:middle;">↙ A receber</span>' : '');
 
   document.getElementById('div-details-body').innerHTML = `
@@ -845,7 +890,7 @@ function openDividaDetails(id) {
 }
 
 function renderCard(d) {
-  const st      = STATUS_CONFIG[d.status] || STATUS_CONFIG['Ativa'];
+  const st      = STATUS_CONFIG[d.status] || STATUS_CONFIG[ST_DIV_APAGAR];
   const total   = Number(d.valor_total);
   const pago    = Number(d.valor_pago);
   const restante = Math.max(0, total - pago);
@@ -883,12 +928,18 @@ function renderCard(d) {
     else                 vencInfo = `<span class="div-card-venc-ok">Vence em ${vencimento}</span>`;
   }
 
+  const cardAtrasoBadge = calcularBadgeAtraso(d, d.status, 'divida');
+  const cardAtrasoHtml = cardAtrasoBadge
+    ? `<span class="div-card-badge" style="color:${cardAtrasoBadge.color};background:transparent;border:1px solid ${cardAtrasoBadge.color}40;">⚠ ${cardAtrasoBadge.label}</span>`
+    : '';
+
   return `
     <div class="div-card ${d.tipo === 'a_receber' ? 'div-card--receber' : ''}" data-id="${d.id}">
       <div class="div-card-header">
         <div class="div-card-title-row">
           <span class="div-card-nome">${d.nome}</span>
           <span class="div-card-badge" style="color:${st.color}; background:${st.bg};">${st.label}</span>
+          ${cardAtrasoHtml}
           ${d.tipo === 'a_receber' ? `<span class="div-card-tipo-badge div-card-tipo-badge--receber" title="Empréstimo a receber">↙ A receber</span>` : ''}
           ${d.inclui_no_patrimonio ? `<span class="tag-patrimonio" title="Incluído no cálculo de patrimônio">💎 Patrimônio</span>` : ''}
           ${quitada && pago < total ? `<span class="tag-parcial" title="Encerrada antes de quitar o valor total">Parcial</span>` : ''}
@@ -1102,6 +1153,9 @@ function bindEvents() {
   document.getElementById('div-data-vencimento').addEventListener('input', (e) => {
     e.target.dataset.userEdited = 'true';
   });
+
+  // Atualiza hint embaixo do select de status
+  document.getElementById('div-status').addEventListener('change', updateStatusDescDivida);
 
   // Nova dívida
   document.getElementById('btn-nova-divida').addEventListener('click', () => openModalDivida(null));
@@ -1428,7 +1482,11 @@ async function openModalDivida(id) {
   vencEl.value = d?.data_vencimento ?? '';
   // Marca como "editado pelo usuário" se já tinha valor salvo (não sobrescreve)
   vencEl.dataset.userEdited = d?.data_vencimento ? 'true' : 'false';
-  document.getElementById('div-status').value          = d?.status           ?? 'Ativa';
+  // Popula opções dinamicamente (taxonomia unificada) e seleciona o status atual
+  document.getElementById('div-status').innerHTML = renderStatusOptions('divida', d?.status);
+  document.getElementById('div-status').value          = d?.status           ?? ST_DIV_APAGAR;
+  // Hint descritivo abaixo do select
+  updateStatusDescDivida();
   document.getElementById('div-moeda').value           = d?.moeda            ?? 'BRL';
   divContaPicker?.setValue(d?.conta_id || '');
 
@@ -2021,7 +2079,7 @@ async function confirmarExcluir() {
     // Recria a subcategoria (ensureSubcategoriaForDivida pula se já existir)
     if (d && d.regime && d.n_parcelas) {
       // Atualiza status no payload pra ensureSubcategoria criar com dados corretos
-      const dvdAtualizada = { ...d, status: 'Ativa' };
+      const dvdAtualizada = { ...d, status: statusAposDesquitar(d?.valor_pago) };
       try { await ensureSubcategoriaForDivida(pendingDeleteId, dvdAtualizada); }
       catch (err) { console.warn('[restaurar] ensureSubcategoria', err); }
     }
@@ -2258,7 +2316,9 @@ async function saveParcela() {
 
     const novasParcelasPagas = pagas + pagarParcelaN;
     const novoValorPago      = Number(d.valor_pago) + rows.reduce((s, r) => s + r.amortizacao, 0);
-    const novoStatus         = novasParcelasPagas >= n ? 'Quitada' : (d.status === 'Quitada' ? 'Ativa' : d.status);
+    const novoStatus         = novasParcelasPagas >= n
+      ? ST_DIV_QUITADA
+      : (d.status === ST_DIV_QUITADA ? statusAposDesquitar(novoValorPago) : d.status);
 
     const { error: updErr } = await dividasService.updateDividaPagamento(pagarParcelaId, {
       parcelasPagas: novasParcelasPagas,
@@ -2580,7 +2640,7 @@ function renderTable(dividas) {
   };
 
   const rows = dividas.map((d) => {
-    const st      = STATUS_CONFIG[d.status] || STATUS_CONFIG['Ativa'];
+    const st      = STATUS_CONFIG[d.status] || STATUS_CONFIG[ST_DIV_APAGAR];
     const total   = Number(d.valor_total);
     const pago    = Number(d.valor_pago);
     const restante = Math.max(0, total - pago);
@@ -2622,6 +2682,10 @@ function renderTable(dividas) {
         <td data-col="credor" class="text-muted-if-empty">${d.credor ? escapeHtml(d.credor) : '<span class="text-muted">—</span>'}</td>
         <td data-col="status">
           <span class="div-card-badge" style="color:${st.color};background:${st.bg};">${st.label}</span>
+          ${(() => {
+            const ab = calcularBadgeAtraso(d, d.status, 'divida');
+            return ab ? `<span class="div-card-badge" style="color:${ab.color};background:transparent;border:1px solid ${ab.color}40;margin-left:4px;">⚠ ${ab.label}</span>` : '';
+          })()}
           ${quitada && pago < total ? `<span class="tag-parcial" title="Encerrada antes de quitar o valor total">Parcial</span>` : ''}
         </td>
         <td data-col="total"   class="text-right tabular">${formatCurrencyHTML(total)}</td>
@@ -2752,8 +2816,9 @@ async function saveHistoricoDivida() {
   try {
     if (mode === 'total') {
       const valor = parseUserNumber(document.getElementById('hist-divida-total-valor').value) || 0;
-      const novoStatus = valor >= Number(d.valor_total) ? 'Quitada'
-        : (d.status === 'Quitada' ? 'Ativa' : d.status);
+      const novoStatus = valor >= Number(d.valor_total)
+        ? ST_DIV_QUITADA
+        : (d.status === ST_DIV_QUITADA ? statusAposDesquitar(valor) : d.status);
       const { error } = await supabase
         .from('dividas')
         .update({ valor_pago: valor, status: novoStatus })
@@ -2789,8 +2854,9 @@ async function saveHistoricoDivida() {
 
       // Recalculate valor_pago from sum of extrato entries
       const totalPago = rows.reduce((s, r) => s + Number(r.valor), 0);
-      const novoStatus = totalPago >= Number(d.valor_total) ? 'Quitada'
-        : (d.status === 'Quitada' && totalPago < Number(d.valor_total) ? 'Ativa' : d.status);
+      const novoStatus = totalPago >= Number(d.valor_total)
+        ? ST_DIV_QUITADA
+        : (d.status === ST_DIV_QUITADA ? statusAposDesquitar(totalPago) : d.status);
       const { error: updErr } = await supabase
         .from('dividas')
         .update({ valor_pago: totalPago, status: novoStatus })

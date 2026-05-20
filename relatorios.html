@@ -81,6 +81,13 @@
         <button class="relat-tab active" data-tab="fluxo" type="button">Fluxo de Caixa</button>
         <button class="relat-tab" data-tab="previsto" type="button">Previsto vs Real</button>
         <button class="relat-tab" data-tab="categorias" type="button">Categorias</button>
+        <button class="relat-tab" data-tab="compromissos" type="button">Compromissos</button>
+        <button class="relat-tab" data-tab="contas" type="button">Contas &amp; Saldos</button>
+        <button class="relat-tab" data-tab="dividas" type="button">Dívidas</button>
+        <button class="relat-tab" data-tab="investimentos" type="button">Investimentos</button>
+        <button class="relat-tab" data-tab="saude" type="button">Saúde Financeira</button>
+        <button class="relat-tab" data-tab="patrimonio" type="button">Patrimônio</button>
+        <button class="relat-tab" data-tab="fiscal" type="button">Fiscal</button>
       </div>
 
       <!-- Loading -->
@@ -185,6 +192,726 @@
           </div>
         </div>
       </div>
+
+      <!-- ===================================================
+           PANEL: Compromissos (R-05 a R-09)
+           =================================================== -->
+      <div id="panel-compromissos" class="relat-panel hidden">
+
+        <!-- Sub-navegação -->
+        <div class="relat-subtabs" id="compromissos-subtabs" role="tablist" aria-label="Relatórios de compromissos">
+          <button class="relat-subtab active" data-subtab="cartoes" type="button" role="tab" aria-selected="true" aria-controls="subpanel-cartoes">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            Por Cartão
+          </button>
+          <button class="relat-subtab" data-subtab="tipopgto" type="button" role="tab" aria-selected="false" aria-controls="subpanel-tipopgto">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            Por Tipo de Pgto.
+          </button>
+          <button class="relat-subtab" data-subtab="calendario" type="button" role="tab" aria-selected="false" aria-controls="subpanel-calendario">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Vencimentos
+          </button>
+          <button class="relat-subtab" data-subtab="cumprimento" type="button" role="tab" aria-selected="false" aria-controls="subpanel-cumprimento">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Cumprimento
+          </button>
+          <button class="relat-subtab" data-subtab="inativos" type="button" role="tab" aria-selected="false" aria-controls="subpanel-inativos">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></svg>
+            Inativos
+          </button>
+        </div>
+
+        <!-- R-05: Por Cartão de Crédito -->
+        <div id="subpanel-cartoes" class="relat-subpanel" role="tabpanel">
+          <p class="relat-snapshot-note">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Estado atual dos compromissos — o filtro de período acima não afeta este relatório.
+          </p>
+          <div class="relat-kpis" id="cartoes-kpis"></div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Total comprometido por cartão (mensal)</h3>
+            <div id="cartoes-hbars"></div>
+          </div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Compromissos por cartão</h3>
+            <div class="table-wrapper">
+              <table class="table" id="cartoes-table">
+                <thead>
+                  <tr>
+                    <th>Cartão / Compromisso</th>
+                    <th>Categoria</th>
+                    <th>Período</th>
+                    <th class="relat-th-num">Vencimento</th>
+                    <th class="relat-th-num">Valor base</th>
+                  </tr>
+                </thead>
+                <tbody id="cartoes-tbody"></tbody>
+                <tfoot id="cartoes-tfoot"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- R-06: Por Tipo de Pagamento -->
+        <div id="subpanel-tipopgto" class="relat-subpanel hidden" role="tabpanel">
+          <p class="relat-snapshot-note">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Estado atual dos compromissos — o filtro de período acima não afeta este relatório.
+          </p>
+          <div class="relat-kpis" id="tipopgto-kpis"></div>
+          <div class="relat-two-col">
+            <div class="relat-card" style="margin-bottom:0">
+              <h3 class="relat-card-title">Nº de compromissos por tipo</h3>
+              <div class="relat-chart-area" id="tipopgto-donut"></div>
+            </div>
+            <div class="relat-card" style="margin-bottom:0">
+              <h3 class="relat-card-title">Valor mensal por tipo</h3>
+              <div id="tipopgto-hbars"></div>
+            </div>
+          </div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Detalhe por tipo de pagamento</h3>
+            <div class="table-wrapper">
+              <table class="table" id="tipopgto-table">
+                <thead>
+                  <tr>
+                    <th>Tipo / Compromisso</th>
+                    <th>Categoria</th>
+                    <th class="relat-th-num">Valor base</th>
+                  </tr>
+                </thead>
+                <tbody id="tipopgto-tbody"></tbody>
+                <tfoot id="tipopgto-tfoot"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- R-07: Calendário de Vencimentos -->
+        <div id="subpanel-calendario" class="relat-subpanel hidden" role="tabpanel">
+          <p class="relat-snapshot-note">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Exibe compromissos mensais e anuais com dia fixo de vencimento. Não filtrado por período.
+          </p>
+          <div class="relat-kpis" id="cal-kpis"></div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Mapa de vencimentos por dia do mês</h3>
+            <p class="field-hint" style="margin:0 0 var(--space-4)">Intensidade de cor proporcional ao valor total do dia. Passe o mouse sobre um compromisso para ver o valor.</p>
+            <div id="cal-grid"></div>
+          </div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Lista de vencimentos por dia</h3>
+            <div class="table-wrapper">
+              <table class="table" id="cal-table">
+                <thead>
+                  <tr>
+                    <th>Dia</th>
+                    <th>Compromissos</th>
+                    <th class="relat-th-num">Qtd.</th>
+                    <th class="relat-th-num">Total do dia</th>
+                  </tr>
+                </thead>
+                <tbody id="cal-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- R-08: Taxa de Cumprimento -->
+        <div id="subpanel-cumprimento" class="relat-subpanel hidden" role="tabpanel">
+          <div class="relat-kpis" id="cump-kpis"></div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Taxa de execução ao longo do tempo</h3>
+            <div class="relat-chart-area" id="cump-chart"></div>
+          </div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Detalhe por mês</h3>
+            <div class="table-wrapper">
+              <table class="table" id="cump-table">
+                <thead>
+                  <tr>
+                    <th>Mês</th>
+                    <th class="relat-th-num">Total</th>
+                    <th class="relat-th-num">Pagos</th>
+                    <th class="relat-th-num">Pendentes</th>
+                    <th class="relat-th-num">Cancelados</th>
+                    <th class="relat-th-num">% Execução</th>
+                  </tr>
+                </thead>
+                <tbody id="cump-tbody"></tbody>
+                <tfoot id="cump-tfoot"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- R-09: Inativos / Arquivados -->
+        <div id="subpanel-inativos" class="relat-subpanel hidden" role="tabpanel">
+          <p class="relat-snapshot-note">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Histórico completo de compromissos encerrados — não é afetado pelo filtro de período.
+          </p>
+          <div class="relat-kpis" id="inat-kpis"></div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Compromissos encerrados e inativos</h3>
+            <div class="table-wrapper">
+              <table class="table" id="inat-table">
+                <thead>
+                  <tr>
+                    <th>Compromisso</th>
+                    <th>Categoria</th>
+                    <th>Tipo</th>
+                    <th>Período</th>
+                    <th class="relat-th-num">Valor base</th>
+                    <th>Status</th>
+                    <th>Encerrado em</th>
+                  </tr>
+                </thead>
+                <tbody id="inat-tbody"></tbody>
+                <tfoot id="inat-tfoot"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /panel-compromissos -->
+
+      <!-- ============================================== -->
+      <!-- TAB 5: CONTAS & SALDOS (R-10 / R-11 / R-12)    -->
+      <!-- ============================================== -->
+      <div id="panel-contas" class="relat-panel hidden">
+
+        <div class="relat-subtabs" id="contas-subtabs" role="tablist">
+          <button class="relat-subtab active" data-subtab="saldos"      type="button">Saldos atuais</button>
+          <button class="relat-subtab"        data-subtab="evolucao"    type="button">Evolução</button>
+          <button class="relat-subtab"        data-subtab="movimentacao" type="button">Movimentação</button>
+        </div>
+
+        <!-- R-10: Saldos atuais -->
+        <div id="subpanel-saldos" class="relat-subpanel">
+          <div class="relat-snapshot-note">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>Snapshot atual do patrimônio em contas — o filtro de período acima não afeta este relatório.</span>
+          </div>
+          <div class="relat-kpis" id="saldos-kpis"></div>
+          <div class="relat-two-col">
+            <div class="relat-card">
+              <h3 class="relat-card-title">Distribuição por tipo de conta</h3>
+              <div id="saldos-donut"></div>
+            </div>
+            <div class="relat-card">
+              <h3 class="relat-card-title">Top contas</h3>
+              <div id="saldos-hbars"></div>
+            </div>
+          </div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Contas</h3>
+            <table class="relat-table" id="saldos-table">
+              <thead><tr>
+                <th>Conta</th>
+                <th>Tipo</th>
+                <th>Descrição</th>
+                <th class="relat-th-num">Saldo</th>
+                <th class="relat-th-num">% do total</th>
+              </tr></thead>
+              <tbody id="saldos-tbody"></tbody>
+              <tfoot id="saldos-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- R-11: Evolução do saldo no período -->
+        <div id="subpanel-evolucao" class="relat-subpanel hidden">
+          <div class="relat-kpis" id="evol-kpis"></div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Saldo consolidado ao longo do período</h3>
+            <div id="evol-chart"></div>
+          </div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Variação por mês</h3>
+            <table class="relat-table" id="evol-table">
+              <thead><tr>
+                <th>Mês</th>
+                <th class="relat-th-num">Entradas</th>
+                <th class="relat-th-num">Saídas</th>
+                <th class="relat-th-num">Variação</th>
+                <th class="relat-th-num">Saldo acumulado</th>
+              </tr></thead>
+              <tbody id="evol-tbody"></tbody>
+              <tfoot id="evol-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- R-12: Movimentação por conta -->
+        <div id="subpanel-movimentacao" class="relat-subpanel hidden">
+          <div class="relat-kpis" id="mov-kpis"></div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Entradas vs Saídas por conta</h3>
+            <div id="mov-chart"></div>
+          </div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Detalhamento por conta</h3>
+            <table class="relat-table" id="mov-table">
+              <thead><tr>
+                <th>Conta</th>
+                <th class="relat-th-num">Entradas</th>
+                <th class="relat-th-num">Saídas</th>
+                <th class="relat-th-num">Saldo líquido</th>
+                <th class="relat-th-num"># Transações</th>
+              </tr></thead>
+              <tbody id="mov-tbody"></tbody>
+              <tfoot id="mov-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /panel-contas -->
+
+      <!-- ============================================== -->
+      <!-- TAB 6: DÍVIDAS (R-13 / R-14 / R-15 / R-16)     -->
+      <!-- ============================================== -->
+      <div id="panel-dividas" class="relat-panel hidden">
+
+        <div class="relat-subtabs" id="dividas-subtabs" role="tablist">
+          <button class="relat-subtab active" data-subtab="visao"     type="button">Visão geral</button>
+          <button class="relat-subtab"        data-subtab="apagar"    type="button">A pagar</button>
+          <button class="relat-subtab"        data-subtab="areceber"  type="button">A receber</button>
+          <button class="relat-subtab"        data-subtab="historico" type="button">Histórico</button>
+        </div>
+
+        <!-- R-13: Visão geral -->
+        <div id="subpanel-visao" class="relat-subpanel">
+          <div class="relat-snapshot-note">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>Snapshot atual das dívidas — o filtro de período acima não afeta este relatório.</span>
+          </div>
+          <div class="relat-kpis" id="div-visao-kpis"></div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Distribuição de dívidas</h3>
+            <div id="div-visao-donut"></div>
+          </div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Todas as dívidas</h3>
+            <table class="relat-table" id="div-visao-table">
+              <thead><tr>
+                <th>Dívida</th>
+                <th>Tipo</th>
+                <th>Status</th>
+                <th class="relat-th-num">Total</th>
+                <th class="relat-th-num">Pago</th>
+                <th class="relat-th-num">Restante</th>
+                <th class="relat-th-num">% Quitado</th>
+              </tr></thead>
+              <tbody id="div-visao-tbody"></tbody>
+              <tfoot id="div-visao-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- R-14: A pagar -->
+        <div id="subpanel-apagar" class="relat-subpanel hidden">
+          <div class="relat-snapshot-note">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>Snapshot atual — dívidas que você precisa pagar.</span>
+          </div>
+          <div class="relat-kpis" id="div-apagar-kpis"></div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Progresso de quitação</h3>
+            <table class="relat-table" id="div-apagar-table">
+              <thead><tr>
+                <th>Dívida</th>
+                <th>Credor</th>
+                <th class="relat-th-num">Parcelas</th>
+                <th class="relat-th-num">Restante</th>
+                <th>Progresso</th>
+              </tr></thead>
+              <tbody id="div-apagar-tbody"></tbody>
+              <tfoot id="div-apagar-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- R-15: A receber -->
+        <div id="subpanel-areceber" class="relat-subpanel hidden">
+          <div class="relat-snapshot-note">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>Snapshot atual — empréstimos que você fez e ainda não recebeu de volta.</span>
+          </div>
+          <div class="relat-kpis" id="div-areceber-kpis"></div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Empréstimos a receber</h3>
+            <table class="relat-table" id="div-areceber-table">
+              <thead><tr>
+                <th>Dívida</th>
+                <th>Devedor</th>
+                <th class="relat-th-num">Parcelas</th>
+                <th class="relat-th-num">Restante</th>
+                <th>Progresso</th>
+              </tr></thead>
+              <tbody id="div-areceber-tbody"></tbody>
+              <tfoot id="div-areceber-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- R-16: Histórico de pagamentos -->
+        <div id="subpanel-historico" class="relat-subpanel hidden">
+          <div class="relat-kpis" id="div-hist-kpis"></div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Pagamentos por dívida no período</h3>
+            <div id="div-hist-hbars"></div>
+          </div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Histórico detalhado</h3>
+            <table class="relat-table" id="div-hist-table">
+              <thead><tr>
+                <th>Data</th>
+                <th>Dívida</th>
+                <th>Tipo</th>
+                <th>Descrição</th>
+                <th class="relat-th-num">Valor</th>
+              </tr></thead>
+              <tbody id="div-hist-tbody"></tbody>
+              <tfoot id="div-hist-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /panel-dividas -->
+
+      <!-- ============================================== -->
+      <!-- TAB 7: INVESTIMENTOS (R-17 / R-18 / R-19)      -->
+      <!-- ============================================== -->
+      <div id="panel-investimentos" class="relat-panel hidden">
+
+        <div class="relat-subtabs" id="invest-subtabs" role="tablist">
+          <button class="relat-subtab active" data-subtab="visao"     type="button">Visão geral</button>
+          <button class="relat-subtab"        data-subtab="progresso" type="button">Progresso</button>
+          <button class="relat-subtab"        data-subtab="aportes"   type="button">Aportes</button>
+        </div>
+
+        <!-- R-17: Visão geral -->
+        <div id="subpanel-inv-visao" class="relat-subpanel">
+          <div class="relat-snapshot-note">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>Snapshot atual dos projetos de investimento — o filtro de período acima não afeta este relatório.</span>
+          </div>
+          <div class="relat-kpis" id="inv-visao-kpis"></div>
+          <div class="relat-two-col">
+            <div class="relat-card">
+              <h3 class="relat-card-title">Distribuição por projeto</h3>
+              <div id="inv-visao-donut"></div>
+            </div>
+            <div class="relat-card">
+              <h3 class="relat-card-title">Top projetos</h3>
+              <div id="inv-visao-hbars"></div>
+            </div>
+          </div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Todos os projetos</h3>
+            <table class="relat-table" id="inv-visao-table">
+              <thead><tr>
+                <th>Projeto</th>
+                <th>Status</th>
+                <th class="relat-th-num">Realizado</th>
+                <th class="relat-th-num">Meta</th>
+                <th class="relat-th-num">% atingido</th>
+                <th>Data alvo</th>
+              </tr></thead>
+              <tbody id="inv-visao-tbody"></tbody>
+              <tfoot id="inv-visao-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- R-18: Progresso -->
+        <div id="subpanel-inv-progresso" class="relat-subpanel hidden">
+          <div class="relat-snapshot-note">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>Snapshot atual — quanto falta para atingir cada meta.</span>
+          </div>
+          <div class="relat-kpis" id="inv-prog-kpis"></div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Quanto falta para a meta</h3>
+            <table class="relat-table" id="inv-prog-table">
+              <thead><tr>
+                <th>Projeto</th>
+                <th class="relat-th-num">Realizado</th>
+                <th class="relat-th-num">Meta</th>
+                <th class="relat-th-num">Falta</th>
+                <th>Progresso</th>
+              </tr></thead>
+              <tbody id="inv-prog-tbody"></tbody>
+              <tfoot id="inv-prog-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- R-19: Aportes no período -->
+        <div id="subpanel-inv-aportes" class="relat-subpanel hidden">
+          <div class="relat-kpis" id="inv-aportes-kpis"></div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Aportes por projeto no período</h3>
+            <div id="inv-aportes-hbars"></div>
+          </div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Histórico de aportes</h3>
+            <table class="relat-table" id="inv-aportes-table">
+              <thead><tr>
+                <th>Data</th>
+                <th>Projeto</th>
+                <th>Descrição</th>
+                <th class="relat-th-num">Valor</th>
+              </tr></thead>
+              <tbody id="inv-aportes-tbody"></tbody>
+              <tfoot id="inv-aportes-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /panel-investimentos -->
+
+      <!-- ============================================== -->
+      <!-- TAB 8: SAÚDE FINANCEIRA (R-20 / R-21 / R-22)   -->
+      <!-- ============================================== -->
+      <div id="panel-saude" class="relat-panel hidden">
+
+        <div class="relat-subtabs" id="saude-subtabs" role="tablist">
+          <button class="relat-subtab active" data-subtab="indicadores" type="button">Indicadores</button>
+          <button class="relat-subtab"        data-subtab="comparativo" type="button">Comparativo</button>
+          <button class="relat-subtab"        data-subtab="tendencias"  type="button">Tendências</button>
+        </div>
+
+        <!-- R-20: Indicadores de saúde -->
+        <div id="subpanel-saude-indicadores" class="relat-subpanel">
+          <div class="relat-kpis" id="saude-ind-kpis"></div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Diagnóstico</h3>
+            <div id="saude-ind-diag"></div>
+          </div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Detalhamento dos indicadores</h3>
+            <table class="relat-table" id="saude-ind-table">
+              <thead><tr>
+                <th>Indicador</th>
+                <th class="relat-th-num">Seu valor</th>
+                <th class="relat-th-num">Meta saudável</th>
+                <th>Status</th>
+                <th>O que significa</th>
+              </tr></thead>
+              <tbody id="saude-ind-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- R-21: Comparativo com período anterior -->
+        <div id="subpanel-saude-comparativo" class="relat-subpanel hidden">
+          <div class="relat-kpis" id="saude-comp-kpis"></div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Maiores variações de categoria</h3>
+            <div id="saude-comp-bars"></div>
+          </div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Comparativo por categoria</h3>
+            <table class="relat-table" id="saude-comp-table">
+              <thead><tr>
+                <th>Categoria</th>
+                <th class="relat-th-num">Período anterior</th>
+                <th class="relat-th-num">Período atual</th>
+                <th class="relat-th-num">Variação R$</th>
+                <th class="relat-th-num">Variação %</th>
+              </tr></thead>
+              <tbody id="saude-comp-tbody"></tbody>
+              <tfoot id="saude-comp-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- R-22: Tendências e projeções -->
+        <div id="subpanel-saude-tendencias" class="relat-subpanel hidden">
+          <div class="relat-kpis" id="saude-tend-kpis"></div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Receitas e despesas — histórico e projeção</h3>
+            <div id="saude-tend-chart"></div>
+            <p class="relat-footnote">Projeção dos próximos 3 meses calculada pela média dos meses do período selecionado.</p>
+          </div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Médias mensais</h3>
+            <table class="relat-table" id="saude-tend-table">
+              <thead><tr>
+                <th>Mês</th>
+                <th class="relat-th-num">Receitas</th>
+                <th class="relat-th-num">Despesas</th>
+                <th class="relat-th-num">Saldo</th>
+                <th>Tipo</th>
+              </tr></thead>
+              <tbody id="saude-tend-tbody"></tbody>
+              <tfoot id="saude-tend-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /panel-saude -->
+
+      <!-- ============================================== -->
+      <!-- TAB 9: PATRIMÔNIO                              -->
+      <!-- ============================================== -->
+      <div id="panel-patrimonio" class="relat-panel hidden">
+
+        <div class="relat-subtabs" id="patr-subtabs" role="tablist">
+          <button class="relat-subtab active" data-subtab="visao"      type="button">Visão geral</button>
+          <button class="relat-subtab"        data-subtab="composicao" type="button">Composição</button>
+          <button class="relat-subtab"        data-subtab="evolucao"   type="button">Evolução</button>
+        </div>
+
+        <!-- Visão geral -->
+        <div id="subpanel-patr-visao" class="relat-subpanel">
+          <div class="relat-snapshot-note">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>Snapshot atual do patrimônio — soma de ativos menos passivos. O filtro de período acima não afeta este relatório.</span>
+          </div>
+          <div class="relat-kpis" id="patr-visao-kpis"></div>
+          <div class="relat-two-col">
+            <div class="relat-card">
+              <h3 class="relat-card-title">Ativos (o que você tem)</h3>
+              <table class="relat-table">
+                <thead><tr>
+                  <th>Categoria</th>
+                  <th class="relat-th-num">Valor</th>
+                  <th class="relat-th-num">% dos ativos</th>
+                </tr></thead>
+                <tbody id="patr-ativos-tbody"></tbody>
+                <tfoot id="patr-ativos-tfoot"></tfoot>
+              </table>
+            </div>
+            <div class="relat-card">
+              <h3 class="relat-card-title">Passivos (o que você deve)</h3>
+              <table class="relat-table">
+                <thead><tr>
+                  <th>Categoria</th>
+                  <th class="relat-th-num">Valor</th>
+                  <th class="relat-th-num">% dos passivos</th>
+                </tr></thead>
+                <tbody id="patr-passivos-tbody"></tbody>
+                <tfoot id="patr-passivos-tfoot"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Composição -->
+        <div id="subpanel-patr-composicao" class="relat-subpanel hidden">
+          <div class="relat-snapshot-note">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>Como o seu patrimônio está distribuído entre classes de ativos.</span>
+          </div>
+          <div class="relat-kpis" id="patr-comp-kpis"></div>
+          <div class="relat-two-col">
+            <div class="relat-card">
+              <h3 class="relat-card-title">Distribuição por classe</h3>
+              <div id="patr-comp-donut"></div>
+            </div>
+            <div class="relat-card">
+              <h3 class="relat-card-title">Top itens</h3>
+              <div id="patr-comp-hbars"></div>
+            </div>
+          </div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Detalhamento</h3>
+            <table class="relat-table" id="patr-comp-table">
+              <thead><tr>
+                <th>Item</th>
+                <th>Classe</th>
+                <th class="relat-th-num">Valor</th>
+                <th class="relat-th-num">% do patrimônio</th>
+              </tr></thead>
+              <tbody id="patr-comp-tbody"></tbody>
+              <tfoot id="patr-comp-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Evolução -->
+        <div id="subpanel-patr-evolucao" class="relat-subpanel hidden">
+          <div class="relat-kpis" id="patr-evol-kpis"></div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Patrimônio líquido ao longo dos meses</h3>
+            <div id="patr-evol-chart"></div>
+            <p class="relat-footnote">Calculado a partir do histórico de transações. Cálculo on-the-fly — pode demorar alguns segundos em históricos longos.</p>
+          </div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Snapshot mensal</h3>
+            <table class="relat-table" id="patr-evol-table">
+              <thead><tr>
+                <th>Mês</th>
+                <th class="relat-th-num">Ativos</th>
+                <th class="relat-th-num">Passivos</th>
+                <th class="relat-th-num">Patrimônio líquido</th>
+                <th class="relat-th-num">Variação</th>
+              </tr></thead>
+              <tbody id="patr-evol-tbody"></tbody>
+              <tfoot id="patr-evol-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /panel-patrimonio -->
+
+      <!-- ============================================== -->
+      <!-- TAB 10: FISCAL (R-23)                          -->
+      <!-- ============================================== -->
+      <div id="panel-fiscal" class="relat-panel hidden">
+
+        <div class="relat-snapshot-note">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span>Despesas potencialmente dedutíveis no IR — identificadas pelo nome da categoria. Use filtro "Ano" para o resumo anual. Confirme com seu contador.</span>
+        </div>
+
+        <div class="relat-kpis" id="fiscal-kpis"></div>
+
+        <div class="relat-two-col">
+          <div class="relat-card">
+            <h3 class="relat-card-title">Distribuição por tipo</h3>
+            <div id="fiscal-donut"></div>
+          </div>
+          <div class="relat-card">
+            <h3 class="relat-card-title">Por mês</h3>
+            <div id="fiscal-monthly"></div>
+          </div>
+        </div>
+
+        <div class="relat-card">
+          <h3 class="relat-card-title">Categorias dedutíveis no período</h3>
+          <table class="relat-table" id="fiscal-table">
+            <thead><tr>
+              <th>Categoria</th>
+              <th>Tipo dedutível</th>
+              <th class="relat-th-num">Total no período</th>
+              <th class="relat-th-num"># Transações</th>
+            </tr></thead>
+            <tbody id="fiscal-tbody"></tbody>
+            <tfoot id="fiscal-tfoot"></tfoot>
+          </table>
+        </div>
+
+        <div class="relat-card">
+          <h3 class="relat-card-title">Transações dedutíveis (detalhe)</h3>
+          <table class="relat-table" id="fiscal-table-tx">
+            <thead><tr>
+              <th>Data</th>
+              <th>Categoria</th>
+              <th>Subcategoria</th>
+              <th>Tipo dedutível</th>
+              <th class="relat-th-num">Valor</th>
+            </tr></thead>
+            <tbody id="fiscal-tx-tbody"></tbody>
+            <tfoot id="fiscal-tx-tfoot"></tfoot>
+          </table>
+        </div>
+
+      </div><!-- /panel-fiscal -->
 
     </main>
   </div>

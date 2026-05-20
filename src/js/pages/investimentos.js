@@ -12,6 +12,10 @@ import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
+import {
+  STATUS_BY_CONTEXT,
+  renderStatusOptions, calcularBadgeAtraso, statusConfig as statusConfigUnified,
+} from '../lib/status-config.js';
 import { formatCurrency, formatCurrencyHTML, PERIODOS, DIAS_SEMANA, TIPOS_PAGAMENTO, renderMoedaOptions } from '../lib/compromissos-config.js';
 import { initColVisibility } from '../lib/col-visibility.js';
 import { escapeHtml, formatDateBR, isoMonth, parseUserNumber } from '../lib/utils.js';
@@ -42,38 +46,68 @@ const today = new Date();
 const viewYear = today.getFullYear();
 const viewMonth = today.getMonth();
 
-const STATUS_LABELS = {
-  ativo: 'Ativo',
-  concluido: 'Concluído',
-  pausado: 'Pausado',
-  arquivado: 'Arquivado',
-};
+// STATUS_LABELS deriva da taxonomia unificada — chave é o dbValue, valor o rótulo
+const STATUS_LABELS = Object.fromEntries(
+  Object.values(STATUS_BY_CONTEXT.investimento)
+    .filter((s) => s.dbValue)
+    .map((s) => [s.dbValue, s.label])
+);
 const INV_COLLAPSED_KEY = 'finflow_inv_bloco_collapsed';
 
+// Atualiza o hint descritivo embaixo do select de status no modal
+function updateStatusDescProj() {
+  const sel  = document.getElementById('proj-status');
+  const desc = document.getElementById('proj-status-desc');
+  if (!sel || !desc) return;
+  const cfg = statusConfigUnified(sel.value, 'investimento');
+  desc.textContent = cfg?.desc || '';
+}
+
+// Atalhos pros dbValues do contexto "investimento"
+const ST_INV_SEM_META  = STATUS_BY_CONTEXT.investimento.sem_definicao.dbValue;  // 'Sem meta'
+const ST_INV_ACOMECAR  = STATUS_BY_CONTEXT.investimento.a_comecar.dbValue;      // 'A começar'
+const ST_INV_APORTANDO = STATUS_BY_CONTEXT.investimento.em_curso.dbValue;       // 'Aportando'
+const ST_INV_PAUSADO   = STATUS_BY_CONTEXT.investimento.pausado.dbValue;        // 'Pausado'
+const ST_INV_CONCLUIDO = STATUS_BY_CONTEXT.investimento.sucesso.dbValue;        // 'Concluído'
+const ST_INV_ARQUIVADO = STATUS_BY_CONTEXT.investimento.arquivado.dbValue;      // 'Arquivado'
+
+// Grupos == status (1:1)
 const BLOCOS = [
   {
-    id: 'sem_configuracao',
-    label: 'Sem Configuração',
-    filter: (p) => (p.status === 'ativo' || p.status === 'pausado') && calcRealizado(p.id) === 0 && !Number(p.meta_valor),
-    emptyMsg: 'Nenhum projeto aguardando configuração.',
+    id: 'sem_definicao',
+    label: STATUS_BY_CONTEXT.investimento.sem_definicao.label,
+    filter: (p) => p.status === ST_INV_SEM_META,
+    emptyMsg: 'Nenhum projeto sem meta definida.',
   },
   {
-    id: 'em_progresso',
-    label: 'Em progresso',
-    filter: (p) => p.status === 'ativo' && calcRealizado(p.id) > 0,
-    emptyMsg: 'Nenhum projeto em andamento.',
+    id: 'a_comecar',
+    label: STATUS_BY_CONTEXT.investimento.a_comecar.label,
+    filter: (p) => p.status === ST_INV_ACOMECAR,
+    emptyMsg: 'Nenhum projeto aguardando início.',
   },
   {
-    id: 'por_comecar',
-    label: 'Por começar',
-    filter: (p) => (p.status === 'ativo' || p.status === 'pausado') && calcRealizado(p.id) === 0 && Number(p.meta_valor) > 0,
-    emptyMsg: 'Nenhum projeto sem início ainda.',
+    id: 'em_curso',
+    label: STATUS_BY_CONTEXT.investimento.em_curso.label,
+    filter: (p) => p.status === ST_INV_APORTANDO,
+    emptyMsg: 'Nenhum projeto recebendo aportes.',
   },
   {
-    id: 'terminado',
-    label: 'Terminado',
-    filter: (p) => p.status === 'concluido' || p.status === 'arquivado',
+    id: 'pausado',
+    label: STATUS_BY_CONTEXT.investimento.pausado.label,
+    filter: (p) => p.status === ST_INV_PAUSADO,
+    emptyMsg: 'Nenhum projeto pausado.',
+  },
+  {
+    id: 'sucesso',
+    label: STATUS_BY_CONTEXT.investimento.sucesso.label,
+    filter: (p) => p.status === ST_INV_CONCLUIDO,
     emptyMsg: 'Nenhum projeto concluído ainda.',
+  },
+  {
+    id: 'arquivado',
+    label: STATUS_BY_CONTEXT.investimento.arquivado.label,
+    filter: (p) => p.status === ST_INV_ARQUIVADO,
+    emptyMsg: 'Nenhum projeto arquivado.',
   },
 ];
 
@@ -249,6 +283,8 @@ function bindEvents() {
     setActiveColor(document.getElementById('proj-cor-picker'), color);
   });
 
+  document.getElementById('proj-status').addEventListener('change', updateStatusDescProj);
+
   document.getElementById('btn-editar-projeto').addEventListener('click', () => {
     const proj = cachedProjetos.find((p) => p.id === detailsId);
     if (!proj) return;
@@ -366,7 +402,7 @@ async function render() {
 // KPI widgets (topo da página)
 // -----------------------------
 async function renderWidgets(counts) {
-  const ativosNaoArq = cachedProjetos.filter(p => p.status !== 'arquivado');
+  const ativosNaoArq = cachedProjetos.filter((p) => p.status !== ST_INV_ARQUIVADO);
 
   // Agrupa realizado por moeda do projeto
   const byCurrency = {};
@@ -509,7 +545,7 @@ function renderCard(p) {
     }
   }
 
-  const isParcial = (p.status === 'concluido' || p.status === 'arquivado') && meta > 0 && realizado < meta;
+  const isParcial = (p.status === ST_INV_CONCLUIDO || p.status === ST_INV_ARQUIVADO) && meta > 0 && realizado < meta;
 
   return `
     <article class="projeto-card status-${p.status}" data-id="${p.id}" style="--projeto-cor: ${p.cor};">
@@ -703,7 +739,11 @@ function renderTable(projetos) {
         </td>
         <td data-col="status">
           <span class="projeto-card-status status-${p.status}">${STATUS_LABELS[p.status] || p.status}</span>
-          ${(p.status === 'concluido' || p.status === 'arquivado') && meta > 0 && realizado < meta ? `<span class="tag-parcial" title="Encerrado antes de atingir a meta">Parcial</span>` : ''}
+          ${(p.status === ST_INV_CONCLUIDO || p.status === ST_INV_ARQUIVADO) && meta > 0 && realizado < meta ? `<span class="tag-parcial" title="Encerrado antes de atingir a meta">Parcial</span>` : ''}
+          ${(() => {
+            const ab = calcularBadgeAtraso(p, p.status, 'investimento');
+            return ab ? `<span class="div-card-badge" style="color:${ab.color};background:transparent;border:1px solid ${ab.color}40;margin-left:4px;">⚠ ${ab.label}</span>` : '';
+          })()}
         </td>
         <td data-col="realizado" class="text-right tabular text-bold">${formatCurrencyHTML(realizado, 'BRL')}</td>
         <td data-col="previsto-mes" class="text-right tabular">${formatCurrencyHTML(previstoMes, 'BRL')}</td>
@@ -1046,7 +1086,10 @@ function openProjetoModal(p = null, prefill = null) {
   const corPickerEl = document.getElementById('proj-cor-picker');
   const activeCor = renderColorPicker(corPickerEl, initialCor);
   document.getElementById('proj-cor').value = activeCor;
-  document.getElementById('proj-status').value        = p?.status || 'ativo';
+  // Popula opções dinamicamente (taxonomia unificada)
+  document.getElementById('proj-status').innerHTML = renderStatusOptions('investimento', p?.status);
+  document.getElementById('proj-status').value        = p?.status || ST_INV_SEM_META;
+  updateStatusDescProj();
   document.getElementById('proj-data-inicio').value   = p?.data_inicio || '';
   document.getElementById('proj-meta-valor').value    = p?.meta_valor ?? (prefill?.meta_valor ?? '');
   document.getElementById('proj-data-alvo').value     = p?.data_alvo || (prefill?.data_alvo || '');
@@ -1565,7 +1608,7 @@ function openDetailsModal(id) {
     }
   `;
 
-  const arquivado = p.status === 'arquivado';
+  const arquivado = p.status === ST_INV_ARQUIVADO;
   document.getElementById('btn-excluir-projeto').classList.toggle('hidden', arquivado);
   document.getElementById('btn-restaurar-projeto').classList.toggle('hidden', !arquivado);
   document.getElementById('btn-editar-projeto').classList.toggle('hidden', arquivado);
@@ -1685,9 +1728,14 @@ async function confirmarAcaoProjeto() {
 
   try {
     if (pendingAcaoProjeto === 'restaurar') {
+      // Ao restaurar, escolhe status baseado em meta/realizado
+      const realizado = calcRealizado(p.id);
+      const novoStatus = realizado > 0
+        ? ST_INV_APORTANDO
+        : (Number(p.meta_valor) > 0 ? ST_INV_ACOMECAR : ST_INV_SEM_META);
       const { error: updErr } = await supabase
         .from('projetos_investimento')
-        .update({ status: 'ativo' })
+        .update({ status: novoStatus })
         .eq('id', p.id);
       if (updErr) throw updErr;
 
@@ -1729,7 +1777,7 @@ async function confirmarAcaoProjeto() {
 
       const { error: updErr } = await supabase
         .from('projetos_investimento')
-        .update({ status: 'arquivado', ...backupPayload })
+        .update({ status: ST_INV_ARQUIVADO, ...backupPayload })
         .eq('id', p.id);
       if (updErr) throw updErr;
 

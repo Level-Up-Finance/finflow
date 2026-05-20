@@ -113,13 +113,9 @@
           </div>
 
           <div class="field">
-            <label class="field-label" for="proj-status">Status</label>
-            <select id="proj-status" class="select">
-              <option value="ativo">Ativo</option>
-              <option value="concluido">Concluído</option>
-              <option value="pausado">Pausado</option>
-              <option value="arquivado">Arquivado</option>
-            </select>
+            <label class="field-label" for="proj-status">Status <span class="required">*</span></label>
+            <select id="proj-status" class="select" required></select>
+            <p class="field-hint" id="proj-status-desc"></p>
           </div>
 
           <div class="field">

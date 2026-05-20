@@ -1302,14 +1302,18 @@ function render() {
     shellRendered = true;
   }
 
+  // Quando há filtro por conta/caixinha, mostra do mais antigo pro mais novo
+  // para que o saldo corrente cresça/decresça naturalmente de cima pra baixo.
+  const display = filterConta ? [...filtered].reverse() : filtered;
+
   const dataTbody = document.getElementById('trans-data-tbody');
-  dataTbody.innerHTML = renderDataRows(filtered);
+  dataTbody.innerHTML = renderDataRows(display);
   bindRowEvents();
   updateSelectionBar();
 
-  // Saldo: só exibe quando uma única conta está filtrada
+  // Saldo: exibe quando uma única conta ou caixinha está filtrada
   const table = document.querySelector('.trans-table');
-  if (table) table.classList.toggle('saldo-hidden', !filterConta || filterConta.startsWith('cx:'));
+  if (table) table.classList.toggle('saldo-hidden', !filterConta);
 }
 
 function applyFilters(items) {
@@ -1348,6 +1352,12 @@ function applyFilters(items) {
           pagSubId = par?.pagamento?.subcategoria_id;
         }
         if (pagSubId !== cxId) return false;
+        // Mostra só a perna cuja conta_id = conta reserva da caixinha (perspectiva da caixinha).
+        // Caixinha não é conta — cada operação é UMA linha do ponto de vista dela:
+        //   abastecimento → ENTRADA (perna na reserva é a creditadora)
+        //   resgate       → SAÍDA   (perna na reserva é a debitadora)
+        const cx = cachedSubcategorias.find((s) => s.id === cxId);
+        if (cx?.conta_destino_id && t.conta_id !== cx.conta_destino_id) return false;
       } else if (t.conta_id !== filterConta) {
         return false;
       }
@@ -1466,11 +1476,13 @@ function renderDataRows(items) {
     return `<tr class="trans-empty-row"><td colspan="12">Nenhuma transação encontrada com os filtros atuais.</td></tr>`;
   }
 
-  // Saldo corrente: acumula do mais antigo para o mais novo (items vem newest-first)
+  // Saldo corrente: acumula sempre do mais antigo para o mais novo,
+  // independente da ordem de exibição.
   const parById = new Map(cachedTransacoes.map((x) => [x.id, x]));
   const runningBalances = new Map();
   let balance = 0;
-  const itemsAsc = [...items].reverse();
+  const itemsAsc = [...items].sort((a, b) => (a.data || '').localeCompare(b.data || '')
+    || (a.created_at || '').localeCompare(b.created_at || ''));
   for (const t of itemsAsc) {
     const isEntradaT = t.tipo === 'Transferência' && !!t.transferencia_par_id && !t.conta_destino_id;
     balance += (t.tipo === 'Receita' || isEntradaT) ? Number(t.valor || 0) : -Number(t.valor || 0);

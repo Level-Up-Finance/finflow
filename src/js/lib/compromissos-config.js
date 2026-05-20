@@ -104,10 +104,23 @@ export const MOEDAS = [
 const MOEDA_BY_CODE = Object.fromEntries(MOEDAS.map((m) => [m.code, m]));
 
 /** Gera <option> para cada moeda com exemplo do formato numérico.
+ *  Filtra pelas moedas habilitadas em /configuracoes (BRL sempre presente).
+ *  Se a moeda atualmente selecionada não estiver na lista (ex: dado legado),
+ *  ela é incluída ao final pra não sumir do select.
  *  Ex: "BRL — R$ 1.234,56"  |  "USD — $1,234.56"
  */
 export function renderMoedaOptions(selectedCode = 'BRL') {
-  return MOEDAS.map((m) => {
+  let enabledCodes;
+  try {
+    const raw = localStorage.getItem('finflow.moedas_widget');
+    const list = raw ? JSON.parse(raw) : null;
+    enabledCodes = Array.isArray(list) && list.length ? new Set(list) : null;
+  } catch { enabledCodes = null; }
+  if (!enabledCodes) enabledCodes = new Set(['BRL', 'USD', 'EUR']);
+  enabledCodes.add('BRL');
+  if (selectedCode) enabledCodes.add(selectedCode);
+
+  return MOEDAS.filter((m) => enabledCodes.has(m.code)).map((m) => {
     let example;
     try {
       example = new Intl.NumberFormat(m.locale, {

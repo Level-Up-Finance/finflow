@@ -11,7 +11,7 @@ import { CURRENCIES } from '../lib/currencies.js';
 import { escapeHtml, formatDateBR, todayISO } from '../lib/utils.js';
 import { DEFAULT_COLOR, renderColorPicker, setActiveColor } from '../lib/color-palette.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
-import { formatCurrency, renderMoedaOptions } from '../lib/compromissos-config.js';
+import { formatCurrency } from '../lib/compromissos-config.js';
 
 // -----------------------------
 // State
@@ -1242,42 +1242,30 @@ function renderSistemaPanel() {
   if (sistemaPanelRendered) return;
   sistemaPanelRendered = true;
 
-  const moedaPadrao = localStorage.getItem('finflow.moeda_padrao') || 'BRL';
   const moedasRaw   = localStorage.getItem('finflow.moedas_widget');
-  const moedasAtivas = moedasRaw ? JSON.parse(moedasRaw) : ['BRL', 'USD', 'EUR', 'GBP'];
+  const moedasAtivas = moedasRaw ? JSON.parse(moedasRaw) : ['BRL', 'USD', 'EUR'];
 
-  // Populate moeda_padrao select
-  const selPadrao = document.getElementById('cfg-moeda-padrao');
-  selPadrao.innerHTML = renderMoedaOptions(moedaPadrao);
-
-  // Populate moedas checkboxes
+  // Populate moedas checkboxes (BRL sempre marcado e desabilitado)
   const grid = document.getElementById('cfg-moedas-grid');
-  grid.innerHTML = CURRENCIES.map((c) => `
-    <label class="cfg-moeda-item">
+  grid.innerHTML = CURRENCIES.map((c) => {
+    const isBRL = c.code === 'BRL';
+    const checked = isBRL || moedasAtivas.includes(c.code);
+    return `
+    <label class="cfg-moeda-item${isBRL ? ' cfg-moeda-item--locked' : ''}">
       <input type="checkbox" class="cfg-moeda-check" value="${c.code}"
-             ${moedasAtivas.includes(c.code) ? 'checked' : ''}>
+             ${checked ? 'checked' : ''} ${isBRL ? 'disabled' : ''}>
       <span class="cfg-moeda-code">${c.code}</span>
-      <span class="cfg-moeda-label">${c.label}</span>
-    </label>`).join('');
+      <span class="cfg-moeda-label">${c.label}${isBRL ? ' (sempre incluído)' : ''}</span>
+    </label>`;
+  }).join('');
 
   document.getElementById('btn-save-sistema').addEventListener('click', async () => {
-    const newPadrao  = document.getElementById('cfg-moeda-padrao').value;
-    const newMoedas  = Array.from(document.querySelectorAll('.cfg-moeda-check:checked')).map((cb) => cb.value);
+    const newMoedas = Array.from(document.querySelectorAll('.cfg-moeda-check:checked')).map((cb) => cb.value);
+    if (!newMoedas.includes('BRL')) newMoedas.unshift('BRL');
 
-    // Moeda principal sempre inclusa na lista
-    if (!newMoedas.includes(newPadrao)) newMoedas.unshift(newPadrao);
-
-    localStorage.setItem('finflow.moeda_padrao',  newPadrao);
     localStorage.setItem('finflow.moedas_widget', JSON.stringify(newMoedas));
-    await saveProfileSettings({ moeda_padrao: newPadrao, moedas_widget: newMoedas });
+    await saveProfileSettings({ moedas_widget: newMoedas });
     showToast(t('configuracoes.toast.salvas', 'Configurações salvas.'), 'success');
-  });
-
-  // When moeda_padrao changes, auto-check it in the grid
-  selPadrao.addEventListener('change', () => {
-    const v = selPadrao.value;
-    const cb = document.querySelector(`.cfg-moeda-check[value="${v}"]`);
-    if (cb) cb.checked = true;
   });
 }
 

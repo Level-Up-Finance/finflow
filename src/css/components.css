@@ -10513,6 +10513,274 @@ td .currency-split {
   color: var(--color-text-main);
 }
 
+/* --- Sub-tabs (Compromissos, etc.) --- */
+.relat-subtabs {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0;
+  flex-wrap: wrap;
+}
+
+.relat-subtab {
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.relat-subtab:hover {
+  color: var(--color-text-main);
+  background: var(--color-surface-alt);
+}
+.relat-subtab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* --- Snapshot note callout --- */
+.relat-snapshot-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  background: color-mix(in srgb, var(--color-info) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-info) 25%, transparent);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+}
+.relat-snapshot-note svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--color-info);
+}
+
+/* --- Day grid (R-07 Vencimentos) --- */
+.relat-day-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+
+.relat-day-cell {
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  min-height: 52px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: box-shadow 0.12s;
+}
+.relat-day-cell--active {
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+}
+.relat-day-cell--active:hover {
+  box-shadow: var(--shadow-sm);
+}
+.relat-day-cell--empty {
+  background: transparent;
+  border-color: transparent;
+  pointer-events: none;
+}
+
+.relat-day-num {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  line-height: 1;
+}
+.relat-day-cell--active .relat-day-num {
+  color: var(--color-primary);
+}
+
+.relat-day-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.relat-day-item {
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 1px 3px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+.relat-day-total {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-align: right;
+  margin-top: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Indicador de limite do cartão (R-05) --- */
+.relat-card-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+}
+.relat-card-row > strong:first-child {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.relat-card-limit {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+  justify-content: flex-end;
+}
+.relat-card-limit-text {
+  font-size: var(--fs-xs);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.relat-card-limit-bar {
+  flex: 1;
+  max-width: 200px;
+  min-width: 60px;
+  height: 8px;
+  background: var(--color-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.relat-card-limit-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.25s ease;
+}
+.relat-card-limit-pct {
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  min-width: 42px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* --- Saúde Financeira (R-20 a R-22) --- */
+.saude-diag {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-left: 4px solid var(--color-success);
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-md);
+}
+.saude-diag-score {
+  font-size: 2.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.saude-diag-score-suffix {
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+.saude-diag-text {
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+}
+.saude-status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.saude-comp-bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.saude-comp-row {
+  display: grid;
+  grid-template-columns: 180px 1fr 140px;
+  align-items: center;
+  gap: var(--space-3);
+}
+.saude-comp-name {
+  font-size: var(--fs-sm);
+  color: var(--color-text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.saude-comp-bar-wrap {
+  height: 8px;
+  background: var(--color-surface-alt);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.saude-comp-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.25s ease;
+}
+.saude-comp-val {
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  font-weight: 600;
+}
+
+/* --- Cell com barra de progresso (R-14 / R-15) --- */
+.relat-progress-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 180px;
+}
+.relat-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--color-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.relat-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.25s ease;
+}
+.relat-progress-pct {
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+  min-width: 36px;
+  text-align: right;
+}
+
 /* --- Responsivo --- */
 @media (max-width: 768px) {
   .relat-two-col       { grid-template-columns: 1fr; }
@@ -10521,6 +10789,15 @@ td .currency-split {
   .relat-hbar-row      { grid-template-columns: 100px 1fr 80px; }
   .relat-filterbar     { gap: var(--space-2); }
   .relat-export-btns   { width: 100%; justify-content: flex-end; }
+  .relat-day-grid      { grid-template-columns: repeat(4, 1fr); }
+  .relat-subtabs       { gap: var(--space-1); }
+  .relat-subtab        { padding: var(--space-2) var(--space-2); font-size: var(--fs-xs); }
+  .relat-card-row      { flex-wrap: wrap; gap: var(--space-2); }
+  .relat-card-limit    { width: 100%; justify-content: flex-start; }
+  .relat-card-limit-bar { max-width: none; }
+  .relat-progress-cell { min-width: 120px; }
+  .saude-comp-row      { grid-template-columns: 120px 1fr 100px; gap: var(--space-2); }
+  .saude-diag          { flex-direction: column; align-items: flex-start; gap: var(--space-2); }
 }
 
 /* --- Print / PDF --- */

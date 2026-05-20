@@ -10,7 +10,6 @@ import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
-import { CURRENCIES, getMoedaPadrao, getUserCurrencies } from '../lib/currencies.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { ACCOUNT_TYPES, typeIcon, typeColor, typePill } from '../lib/account-types.js';
 import { findBank, logoUrl, searchBanks } from '../lib/banks.js';
@@ -216,13 +215,6 @@ function bindEvents() {
   // Bank combobox
   initBankCombobox();
 
-  // Origem: Nacional / Estrangeira
-  document.getElementById('conta-origem-segmented').addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-origem]');
-    if (!btn) return;
-    setOrigem(btn.dataset.origem);
-  });
-
   // Form submit
   document.getElementById('form-conta').addEventListener('submit', saveConta);
 
@@ -255,6 +247,16 @@ function bindEvents() {
     if (!detailsCaixinha) return;
     closeModal('modal-caixinha-details');
     location.href = `compromissos.html?cfg_sub=${encodeURIComponent(detailsCaixinha.id)}`;
+  });
+
+  document.getElementById('btn-cx-resgatar').addEventListener('click', () => {
+    if (!detailsCaixinha) return;
+    openCaixinhaResgateModal(detailsCaixinha);
+  });
+
+  document.getElementById('form-cx-resgate').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await submitCaixinhaResgate();
   });
 
   document.getElementById('btn-cx-arquivar').addEventListener('click', async () => {
@@ -523,17 +525,6 @@ function pickColorByName(name) {
 // -----------------------------
 // Conditional fields (Cartão)
 // -----------------------------
-function setOrigem(origem) {
-  document.querySelectorAll('#conta-origem-segmented [data-origem]').forEach((b) =>
-    b.classList.toggle('active', b.dataset.origem === origem)
-  );
-  const isEstrangeira = origem === 'estrangeira';
-  document.getElementById('conta-moeda-field').classList.toggle('hidden', !isEstrangeira);
-  if (!isEstrangeira) {
-    document.getElementById('conta-moeda').value = 'BRL';
-  }
-}
-
 function toggleCartaoFields() {
   const tipo = document.getElementById('conta-tipo').value;
   const cartaoFields = document.getElementById('cartao-fields');
@@ -585,26 +576,10 @@ function openContaModal(conta = null) {
   document.getElementById('conta-cor').value = cor;
   document.getElementById('conta-descricao').value = conta?.descricao || '';
 
-  // Populate moeda select with user's configured currencies + any current value
-  const userCurrencies = getUserCurrencies();
-  const currentMoeda   = conta?.moeda || getMoedaPadrao();
-  const allCodes = [...new Set([...userCurrencies, currentMoeda].filter((c) => c !== 'BRL'))];
-  const moedaSel = document.getElementById('conta-moeda');
-  moedaSel.innerHTML = allCodes.map((code) => {
-    const cur = CURRENCIES.find((c) => c.code === code);
-    const label = cur ? `${code} — ${cur.label}` : code;
-    return `<option value="${code}" ${code === currentMoeda ? 'selected' : ''}>${label}</option>`;
-  }).join('');
-  // Add "Outra…" group for currencies not in user list
-  const otherCurrencies = CURRENCIES.filter((c) => c.code !== 'BRL' && !allCodes.includes(c.code));
-  if (otherCurrencies.length) {
-    moedaSel.innerHTML += `<optgroup label="Outras">`
-      + otherCurrencies.map((c) => `<option value="${c.code}">${c.code} — ${c.label}</option>`).join('')
-      + `</optgroup>`;
-  }
+  // Moeda da conta é sempre BRL — outras moedas são usadas só em
+  // compromissos/transações/investimentos.
+  document.getElementById('conta-moeda').value = 'BRL';
 
-  // Origem: Nacional (BRL) ou Estrangeira
-  setOrigem(currentMoeda === 'BRL' ? 'nacional' : 'estrangeira');
   document.getElementById('conta-desde').value = conta?.desde || todayISO();
   document.getElementById('conta-fechada-em').value = conta?.fechada_em || '';
   document.getElementById('conta-fec-fatura').value = conta?.fec_fatura || '';
@@ -1750,6 +1725,193 @@ async function openCaixinhaDetailsModal(cx) {
   }
 
   openModal('modal-caixinha-details');
+}
+
+// -------------------------------------------------------
+// Resgate de Caixinha
+// -------------------------------------------------------
+let resgateCaixinha = null;
+
+function openCaixinhaResgateModal(cx) {
+  resgateCaixinha = cx;
+  const saldo = cachedCaixinhasMaps.saldo.get(cx.id) ?? 0;
+  const display = cx.apelido?.trim() || cx.nome;
+
+  // Conta reserva é obrigatória — sem ela não tem de onde sair o dinheiro
+  const contaReserva = cx.conta_destino_id ? cachedContas.find((c) => c.id === cx.conta_destino_id) : null;
+  if (!contaReserva) {
+    showToast('Esta caixinha não tem conta reserva configurada. Edite a caixinha primeiro.', 'error', 7000);
+    return;
+  }
+
+  document.getElementById('cx-resg-info').innerHTML =
+    `Resgatando da caixinha <strong>${escapeHtml(display)}</strong>. Cria uma transferência da conta reserva para a conta de destino e reduz o saldo acumulado da caixinha.`;
+
+  document.getElementById('cx-resg-origem').textContent = contaReserva.apelido?.trim() || contaReserva.nome;
+
+  document.getElementById('cx-resg-saldo-hint').textContent =
+    `Saldo acumulado na caixinha: ${formatCurrency(saldo, cx.moeda || 'BRL')}`;
+
+  const valorInput = document.getElementById('cx-resg-valor');
+  valorInput.value = '';
+  valorInput.max  = saldo > 0 ? saldo : '';
+
+  // Conta destino: ativas, exceto Cofrinhos e a própria conta reserva
+  const contaSel = document.getElementById('cx-resg-conta');
+  const defaultDest = cx.conta_id; // banco/cartão de origem da caixinha
+  const opcoes = cachedContas
+    .filter((c) => c.status === 'ativa' && c.tipo !== 'Cofrinho' && c.id !== cx.conta_destino_id)
+    .map((c) => {
+      const name = c.apelido?.trim() || c.nome;
+      const sel  = c.id === defaultDest ? ' selected' : '';
+      return `<option value="${c.id}"${sel}>${escapeHtml(name)}</option>`;
+    }).join('');
+  contaSel.innerHTML = opcoes || '<option value="">Nenhuma conta disponível</option>';
+
+  document.getElementById('cx-resg-data').value = todayISO();
+  document.getElementById('cx-resg-descricao').value = '';
+
+  openModal('modal-cx-resgate');
+}
+
+async function submitCaixinhaResgate() {
+  if (!resgateCaixinha) return;
+  const cx = resgateCaixinha;
+  const valor = Number(document.getElementById('cx-resg-valor').value);
+  const contaDestId = document.getElementById('cx-resg-conta').value;
+  const data = document.getElementById('cx-resg-data').value;
+  const descricao = document.getElementById('cx-resg-descricao').value.trim();
+  const saldoAtual = cachedCaixinhasMaps.saldo.get(cx.id) ?? 0;
+
+  if (!(valor > 0)) { showToast('Informe um valor maior que zero.', 'error', 5000); return; }
+  if (!contaDestId) { showToast('Escolha a conta de destino.', 'error', 5000); return; }
+  if (!data) { showToast('Escolha a data do resgate.', 'error', 5000); return; }
+  if (saldoAtual <= 0) {
+    showToast('Esta caixinha não tem saldo disponível para resgate.', 'error', 6000);
+    return;
+  }
+  if (valor > saldoAtual) {
+    showToast(`Valor maior que o saldo disponível (${formatCurrency(saldoAtual, cx.moeda || 'BRL')}).`, 'error', 6000);
+    return;
+  }
+
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  const btn = document.getElementById('btn-cx-resg-confirmar');
+  btn.disabled = true;
+  btn.textContent = 'Salvando...';
+
+  try {
+    // mes_ano = primeiro dia do mês da data
+    const d = new Date(data + 'T00:00:00');
+    const mesAno = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+    const bloco  = d.getDate() <= 15 ? 1 : 2;
+
+    // Busca ou cria orcamento_geral para a caixinha no mês
+    let orcId;
+    const { data: orcExistente } = await supabase
+      .from('orcamento_geral')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('subcategoria_id', cx.id)
+      .eq('mes_ano', mesAno)
+      .maybeSingle();
+
+    if (orcExistente) {
+      orcId = orcExistente.id;
+    } else {
+      const { data: novoOrc, error: orcErr } = await supabase
+        .from('orcamento_geral')
+        .insert({
+          user_id:         user.id,
+          subcategoria_id: cx.id,
+          mes_ano:         mesAno,
+          valor_previsto:  0,
+          moeda:           cx.moeda || 'BRL',
+        })
+        .select('id')
+        .single();
+      if (orcErr) throw orcErr;
+      orcId = novoOrc.id;
+    }
+
+    // Insere o pagamento com valor_real NEGATIVO — reduz o saldo lógico da caixinha
+    const obs = descricao
+      ? `Resgate: ${descricao}`
+      : 'Resgate da caixinha';
+
+    const { data: pagInserted, error: pagErr } = await supabase.from('pagamentos').insert({
+      user_id:         user.id,
+      orcamento_id:    orcId,
+      subcategoria_id: cx.id,
+      mes_ano:         mesAno,
+      bloco_quinzenal: bloco,
+      valor_previsto:  0,
+      valor_real:      -Math.abs(valor),
+      moeda:           cx.moeda || 'BRL',
+      status:          'Transferido',
+      data_vencimento: data,
+      observacao:      obs,
+    }).select('id').single();
+    if (pagErr) throw pagErr;
+
+    // Par de transações tipo Transferência (simétrico ao abastecimento):
+    //   saída: conta_reserva → conta_destino   (deduz saldo da reserva)
+    //   entrada: conta_destino                  (acrescenta saldo no destino)
+    // Vinculadas por transferencia_par_id em ambos os sentidos.
+    const { data: saida, error: saidaErr } = await supabase
+      .from('transacoes')
+      .insert({
+        user_id:              user.id,
+        data,
+        tipo:                 'Transferência',
+        valor:                valor,
+        moeda:                cx.moeda || 'BRL',
+        conta_id:             cx.conta_destino_id,
+        conta_destino_id:     contaDestId,
+        subcategoria_id:      cx.id,
+        pagamento_id:         pagInserted.id,
+        descricao:            obs,
+        reconciliacao_status: 'manual',
+      })
+      .select('id')
+      .single();
+    if (saidaErr) throw saidaErr;
+
+    const { data: entrada, error: entradaErr } = await supabase
+      .from('transacoes')
+      .insert({
+        user_id:              user.id,
+        data,
+        tipo:                 'Transferência',
+        valor:                valor,
+        moeda:                cx.moeda || 'BRL',
+        conta_id:             contaDestId,
+        transferencia_par_id: saida.id,
+        subcategoria_id:      cx.id,
+        pagamento_id:         pagInserted.id,
+        descricao:            obs,
+        reconciliacao_status: 'manual',
+      })
+      .select('id')
+      .single();
+    if (entradaErr) throw entradaErr;
+
+    // Fecha o par: aponta a saída pra entrada também
+    await supabase.from('transacoes').update({ transferencia_par_id: entrada.id }).eq('id', saida.id);
+
+    showToast(`Resgate de ${formatCurrency(valor, cx.moeda || 'BRL')} registrado.`, 'success', 5000);
+    closeModal('modal-cx-resgate');
+    closeModal('modal-caixinha-details');
+    await renderCaixinhasSection();
+  } catch (err) {
+    console.error('[submitCaixinhaResgate]', err);
+    showToast('Erro ao salvar resgate: ' + (err.message || JSON.stringify(err)), 'error', 8000);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Confirmar resgate';
+  }
 }
 
 function renderCaixinhaCard(cx, saldoMap, contribMap, histMap) {

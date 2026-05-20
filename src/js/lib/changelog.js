@@ -7,6 +7,28 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-20-relatorios-patrimonio-caixinha-status',
+    version: '1.0.1',
+    date: '20/05/2026',
+    title: 'Relatórios completos + Resgate de Caixinha + Status unificado',
+    items: [
+      { type: 'new', text: 'Relatórios — todos os 23 relatórios implementados: Fluxo, Previsto vs Real, Categorias, Compromissos (5 sub-abas), Contas & Saldos (3), Dívidas (4), Investimentos (3), Saúde Financeira (3), Patrimônio (3) e Fiscal.' },
+      { type: 'new', text: 'Patrimônio — nova aba em /relatorios com Visão geral (ativos vs passivos), Composição (donut por classe) e Evolução (line chart histórico calculado on-the-fly).' },
+      { type: 'new', text: 'Caixinhas — botão "Resgatar" no modal de detalhes: cria transferência da conta reserva para a conta destino escolhida, reduzindo o saldo da caixinha. Bloqueia se não houver saldo suficiente.' },
+      { type: 'new', text: 'Status unificado em /dividas e /investimentos: 6 grupos = 6 status (1:1). Para dívidas: Sem plano, A pagar, Pagando, Em negociação, Quitada, Arquivada. Para investimentos: Sem meta, A começar, Aportando, Pausado, Concluído, Arquivado.' },
+      { type: 'new', text: 'Status "Sem plano" / "Sem meta" — registra ciência da dívida ou projeto sem precisar definir data ou parcelas/aportes.' },
+      { type: 'new', text: 'Badge derivado "Atrasada" / "Meta vencida" — aparece automaticamente quando a data de vencimento/alvo já passou e o status ainda é ativo.' },
+      { type: 'new', text: 'Indicador de limite usado por cartão no relatório Compromissos → Por Cartão: barra de progresso + valor usado/limite + %.' },
+      { type: 'improvement', text: 'Configurações → Sistema — removida a opção "Moeda principal". Agora você só escolhe quais moedas habilitar (BRL sempre incluído).' },
+      { type: 'improvement', text: 'Contas — toggle "Nacional vs Estrangeira" removido. Contas usam sempre BRL; outras moedas continuam disponíveis em compromissos, transações e investimentos.' },
+      { type: 'improvement', text: 'Pickers de moeda em /compromissos, /transacoes e /investimentos agora respeitam as moedas habilitadas em Configurações.' },
+      { type: 'improvement', text: 'Transações — quando filtrado por uma caixinha, mostra apenas a perspectiva da caixinha (1 linha por operação) com saldo acumulado.' },
+      { type: 'improvement', text: 'Transações — quando filtrado por conta ou caixinha, mostra do mais antigo para o mais novo (saldo cresce naturalmente de cima para baixo).' },
+      { type: 'fix', text: 'Bug no select de status em /dividas: opção "Arquivada" no HTML não existia no CHECK do banco. Resolvido com taxonomia unificada.' },
+      { type: 'fix', text: 'Constraint único de pagamentos agora aceita múltiplos resgates de caixinha no mesmo dia (constraint parcial — só pagamentos positivos).' },
+    ],
+  },
+  {
     id: '2026-05-19-situacao-3-adiantamento',
     version: '1.0.0',
     date: '19/05/2026',

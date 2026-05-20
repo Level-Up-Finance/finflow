@@ -192,12 +192,65 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
           Arquivar
         </button>
-        <button type="button" class="btn btn-primary" id="btn-cx-editar">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-          Editar caixinha
-        </button>
+        <div style="display:flex; gap: var(--space-2);">
+          <button type="button" class="btn btn-secondary" id="btn-cx-resgatar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+            Resgatar
+          </button>
+          <button type="button" class="btn btn-primary" id="btn-cx-editar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+            Editar caixinha
+          </button>
+        </div>
       </div>
     </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Resgatar caixinha
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-cx-resgate" role="dialog" aria-modal="true">
+    <form class="modal" id="form-cx-resgate" novalidate>
+      <div class="modal-header">
+        <h2 class="modal-title">Resgatar da caixinha</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-cx-resgate" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="field-hint" id="cx-resg-info" style="margin-bottom: var(--space-4);"></p>
+
+        <div class="field">
+          <label class="field-label">De (conta reserva)</label>
+          <div class="input" id="cx-resg-origem" style="background: var(--color-surface-alt); cursor: default;"></div>
+          <p class="field-hint">É a conta reserva configurada na caixinha — o saldo dela vai diminuir.</p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="cx-resg-conta">Para (conta de destino) <span class="required">*</span></label>
+          <select id="cx-resg-conta" class="input" required></select>
+          <p class="field-hint">Conta onde o dinheiro vai entrar.</p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="cx-resg-valor">Valor a resgatar <span class="required">*</span></label>
+          <input type="number" id="cx-resg-valor" class="input" step="0.01" min="0.01" required>
+          <p class="field-hint" id="cx-resg-saldo-hint"></p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="cx-resg-data">Data <span class="required">*</span></label>
+          <input type="date" id="cx-resg-data" class="input" required>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="cx-resg-descricao">Descrição (opcional)</label>
+          <input type="text" id="cx-resg-descricao" class="input" maxlength="120" placeholder="Ex: Passagem de viagem">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-cx-resgate">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="btn-cx-resg-confirmar">Confirmar resgate</button>
+      </div>
+    </form>
   </div>
 
   <!-- ============================================================
@@ -267,20 +320,7 @@
           <input type="hidden" name="icone_cor" id="conta-cor" value="#6D5EF5">
         </div>
 
-        <!-- Moeda -->
-        <div class="field">
-          <label class="field-label">Origem da conta <span class="required">*</span></label>
-          <div class="segmented" id="conta-origem-segmented">
-            <button type="button" class="segmented-btn active" data-origem="nacional">🇧🇷 Nacional (BRL)</button>
-            <button type="button" class="segmented-btn" data-origem="estrangeira">🌐 Estrangeira</button>
-          </div>
-        </div>
-        <div class="field hidden" id="conta-moeda-field">
-          <label class="field-label" for="conta-moeda">Moeda <span class="required">*</span></label>
-          <select id="conta-moeda" name="moeda" class="input"></select>
-          <p class="field-hint">Gerencia as moedas disponíveis em Configurações → Sistema.</p>
-        </div>
-        <input type="hidden" id="conta-moeda-nacional" value="BRL">
+        <input type="hidden" id="conta-moeda" name="moeda" value="BRL">
 
         <!-- Descrição -->
         <div class="field">
