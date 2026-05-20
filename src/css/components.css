@@ -8904,7 +8904,7 @@ td .currency-split {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  overflow: hidden;
+  /* overflow:hidden removido — cortava dropdowns (col-vis, etc.) que extrapolam o container */
 }
 
 /* Generic row */
@@ -17757,3 +17757,26 @@ body.comp-embedded { background: transparent; }
   color: #fff;
 }
 .conta-indicador--alerta svg { color: #fff; }
+
+/* Resumo dinâmico do modal de Adiantamento de Receita */
+.adiant-resumo {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: linear-gradient(135deg, rgba(109,94,245,0.05), rgba(16,185,129,0.05));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/* Badge de adiantamento em pagamento de receita */
+.pag-adiant-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 4px;
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--color-warning, #f59e0b);
+  white-space: nowrap;
+  margin-left: 4px;
+}

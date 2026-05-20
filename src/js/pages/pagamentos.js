@@ -37,6 +37,7 @@ let cachedCategorias = [];    // pra ordenação dos blocos
 let cachedContas = [];        // pra display de banco
 let cachedPagamentos = [];    // entries do mês/período visível com subcategoria + categoria aninhadas
 let cachedAlocacoes = [];     // alocações do Caixa Livre do mês visível
+let cachedAdiantamentosMap = new Map(); // chave `${subId}__${mesAno}` → { total, parcelas:[{indice,n_parcelas}], ... }
 let detailsPagamento = null;  // pagamento exibido no modal de detalhes
 let filterStatus = 'todos';   // 'todos' | 'pendentes' | 'atrasados' | 'pagos' | 'cancelados'
 let viewMode = 'blocos';      // 'blocos' | 'proximos'
@@ -348,6 +349,10 @@ async function loadMonth() {
   cachedAlocacoes = await loadAlocacoesMes(mesAno);
   await ensureCarryForward(mesAno);
 
+  // 7. Carrega mapa de descontos de adiantamento ativos
+  const { loadDescontosAtivos } = await import('../lib/adiantamentos.js');
+  cachedAdiantamentosMap = await loadDescontosAtivos();
+
   renderPagamentos();
 }
 
@@ -610,6 +615,8 @@ async function loadFlat() {
   cachedPagamentos = (data || []).filter((p) => p.subcategorias?.status === 'ativa');
   await attachLinkedTransacoes(cachedPagamentos);
   await refreshRates();
+  const { loadDescontosAtivos } = await import('../lib/adiantamentos.js');
+  cachedAdiantamentosMap = await loadDescontosAtivos();
   renderFlat();
 }
 
@@ -1237,6 +1244,17 @@ function renderPagamentoRow(p, catColor) {
   const sub = p.subcategorias;
   const display = displayName(p);
   const tipo = sub?.tipo;
+  // Adiantamento ativo? (receita com desconto no mês)
+  const adiantKey = `${p.subcategoria_id}__${p.mes_ano}`;
+  const adiantInfo = cachedAdiantamentosMap.get(adiantKey);
+  const adiantBadge = adiantInfo && tipo === 'Receita'
+    ? (() => {
+        const ind = adiantInfo.parcelas[0]?.indice || 1;
+        const tot = adiantInfo.parcelas[0]?.n_parcelas || 1;
+        const icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11" style="vertical-align:-2px;margin-right:3px;"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>`;
+        return `<span class="pag-adiant-badge" aria-label="Receita reduzida por adiantamento (parcela ${ind} de ${tot})">${icon}Adiantado ${ind}/${tot}</span>`;
+      })()
+    : '';
   const tipoColor = tipo === 'Receita' ? 'var(--color-success)' : 'var(--color-danger)';
   const tipoSymbol = tipo === 'Receita' ? '+' : '-';
   const moeda = p.moeda || 'BRL';
@@ -1369,6 +1387,7 @@ function renderPagamentoRow(p, catColor) {
         <div style="display: flex; align-items: center; gap: var(--space-2); min-width: 0;">
           <span style="color: ${tipoColor}; font-weight: var(--fw-bold); font-size: var(--fs-sm);">${tipoSymbol}</span>
           <span style="font-weight: var(--fw-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(display)}</span>
+          ${adiantBadge}
           ${obsIcon}
           ${descIcon}
         </div>

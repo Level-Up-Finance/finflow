@@ -939,6 +939,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   autoAttachDecimalInputs();
   await loadAll();
   render();
+  // Migração retroativa de descrições de adiantamentos (one-shot, cache em localStorage)
+  import('../lib/adiantamentos.js').then((m) => m.regenerarDescricoesAntigas()).catch(() => {});
 });
 
 // -----------------------------

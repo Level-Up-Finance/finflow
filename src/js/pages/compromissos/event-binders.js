@@ -276,6 +276,14 @@ export function bindAllEvents(deps) {
     d.openEncerrarModal(c);
   });
 
+  // Registrar adiantamento (só visível pra subs Receita)
+  document.getElementById('btn-registrar-adiantamento')?.addEventListener('click', async () => {
+    const c = d.getDetailsCompromisso();
+    if (!c) return;
+    const { openAdiantamentoModal } = await import('./adiantamento-modal.js');
+    openAdiantamentoModal(c, d);
+  });
+
   document.getElementById('btn-confirmar-encerrar').addEventListener('click', d.confirmarEncerrar);
 
   // Confirmar

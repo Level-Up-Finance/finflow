@@ -1171,6 +1171,14 @@ async function openDetailsModal(c) {
 
   document.getElementById('btn-encerrar').classList.toggle('hidden', c.status === 'arquivada' || !!c.terminado_em);
 
+  // Botão "Registrar adiantamento" — apenas pra subs Receita ativas/inativas
+  const btnAdiant = document.getElementById('btn-registrar-adiantamento');
+  if (btnAdiant) {
+    const podeAdiantar = c.tipo === 'Receita' && c.status !== 'arquivada' && !c.terminado_em;
+    btnAdiant.classList.toggle('hidden', !podeAdiantar);
+    btnAdiant.dataset.subId = c.id;
+  }
+
   // ── Próximas 3 / Últimas 3 ocorrências (v0.6.x) ──
   renderOcorrenciasSections(c);
 
