@@ -12,6 +12,8 @@ import { escapeHtml, formatDateBR, todayISO } from '../lib/utils.js';
 import { DEFAULT_COLOR, renderColorPicker, setActiveColor } from '../lib/color-palette.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 import { formatCurrency } from '../lib/moedas.js';
+import { fetchExchangeRate, startCurrencyAutoRefresh } from '../lib/currency.js';
+import { STORAGE_KEYS } from '../lib/storage-keys.js';
 
 // -----------------------------
 // State
@@ -1242,28 +1244,94 @@ function renderSistemaPanel() {
   if (sistemaPanelRendered) return;
   sistemaPanelRendered = true;
 
-  const moedasRaw   = localStorage.getItem('finflow.moedas_widget');
-  const moedasAtivas = moedasRaw ? JSON.parse(moedasRaw) : ['BRL', 'USD', 'EUR'];
+  const moedasRaw   = localStorage.getItem(STORAGE_KEYS.MOEDAS_WIDGET);
+  const moedasAtivas = moedasRaw ? JSON.parse(moedasRaw) : ['BRL', 'USD', 'EUR', 'GBP'];
 
-  // Populate moedas checkboxes (BRL sempre marcado e desabilitado)
+  // Cache local pra cotações (preenchido por refreshCotacoes)
+  const cotacoes = new Map(); // code → { umBRL, umMoeda, ts }
+
   const grid = document.getElementById('cfg-moedas-grid');
-  grid.innerHTML = CURRENCIES.map((c) => {
-    const isBRL = c.code === 'BRL';
-    const checked = isBRL || moedasAtivas.includes(c.code);
-    return `
-    <label class="cfg-moeda-item${isBRL ? ' cfg-moeda-item--locked' : ''}">
-      <input type="checkbox" class="cfg-moeda-check" value="${c.code}"
-             ${checked ? 'checked' : ''} ${isBRL ? 'disabled' : ''}>
-      <span class="cfg-moeda-code">${c.code}</span>
-      <span class="cfg-moeda-label">${c.label}${isBRL ? ' (sempre incluído)' : ''}</span>
-    </label>`;
-  }).join('');
+
+  function renderGrid() {
+    grid.innerHTML = CURRENCIES.map((c) => {
+      const isBRL = c.code === 'BRL';
+      const checked = isBRL || moedasAtivas.includes(c.code);
+
+      // Linha BRL — bloco simples sem cotação (é a base)
+      if (isBRL) {
+        return `
+        <div class="cfg-moeda-card cfg-moeda-card--base" data-code="${c.code}">
+          <div class="cfg-moeda-card-header">
+            <span class="cfg-moeda-card-code">${c.code}</span>
+            <span class="cfg-moeda-card-label">${c.label}</span>
+            <span class="cfg-moeda-card-flag" title="Moeda base — sempre incluída">★ Base</span>
+          </div>
+        </div>`;
+      }
+
+      // Cards USD/EUR/GBP — com cotação ao vivo
+      const cot = cotacoes.get(c.code);
+      const umBRL   = cot ? `1 BRL = ${cot.umBRL.toFixed(4).replace('.', ',')} ${c.code}` : '1 BRL = …';
+      const umMoeda = cot ? `1 ${c.code} = R$ ${cot.umMoeda.toFixed(4).replace('.', ',')}` : `1 ${c.code} = …`;
+      const time    = cot
+        ? `<span class="cfg-moeda-card-time" title="Atualizado">${cot.ts.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>`
+        : `<span class="cfg-moeda-card-time cfg-moeda-card-time--loading">Carregando…</span>`;
+
+      return `
+      <label class="cfg-moeda-card${checked ? ' cfg-moeda-card--active' : ''}" data-code="${c.code}">
+        <div class="cfg-moeda-card-header">
+          <span class="cfg-moeda-card-code">${c.code}</span>
+          <span class="cfg-moeda-card-label">${c.label}</span>
+          <input type="checkbox" class="cfg-moeda-check" value="${c.code}" ${checked ? 'checked' : ''}
+                 aria-label="Incluir ${c.code} nos pickers">
+        </div>
+        <div class="cfg-moeda-card-rates">
+          <div class="cfg-moeda-card-rate">${umBRL}</div>
+          <div class="cfg-moeda-card-rate">${umMoeda}</div>
+        </div>
+        <div class="cfg-moeda-card-footer">${time}</div>
+      </label>`;
+    }).join('');
+
+    // Atualiza estado visual ao toggle
+    grid.querySelectorAll('.cfg-moeda-check').forEach((cb) => {
+      cb.addEventListener('change', () => {
+        const card = cb.closest('.cfg-moeda-card');
+        card?.classList.toggle('cfg-moeda-card--active', cb.checked);
+      });
+    });
+  }
+
+  async function refreshCotacoes() {
+    const moedas = CURRENCIES.filter((c) => c.code !== 'BRL');
+    const results = await Promise.allSettled(
+      moedas.map(async (m) => {
+        const umMoeda = await fetchExchangeRate(m.code, 'BRL'); // 1 moeda = X BRL
+        return [m.code, umMoeda];
+      })
+    );
+    const now = new Date();
+    for (const r of results) {
+      if (r.status === 'fulfilled') {
+        const [code, umMoeda] = r.value;
+        cotacoes.set(code, { umMoeda, umBRL: 1 / umMoeda, ts: now });
+      } else {
+        console.warn('[cfg-cotacoes] falhou:', r.reason);
+      }
+    }
+    renderGrid();
+  }
+
+  // Render inicial + busca cotações
+  renderGrid();
+  refreshCotacoes();
+  startCurrencyAutoRefresh(refreshCotacoes);
 
   document.getElementById('btn-save-sistema').addEventListener('click', async () => {
     const newMoedas = Array.from(document.querySelectorAll('.cfg-moeda-check:checked')).map((cb) => cb.value);
     if (!newMoedas.includes('BRL')) newMoedas.unshift('BRL');
 
-    localStorage.setItem('finflow.moedas_widget', JSON.stringify(newMoedas));
+    localStorage.setItem(STORAGE_KEYS.MOEDAS_WIDGET, JSON.stringify(newMoedas));
     await saveProfileSettings({ moedas_widget: newMoedas });
     showToast(t('configuracoes.toast.salvas', 'Configurações salvas.'), 'success');
   });

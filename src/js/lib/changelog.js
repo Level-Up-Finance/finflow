@@ -7,6 +7,18 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-20-moedas-cards-cotacao',
+    version: '1.0.3',
+    date: '20/05/2026',
+    title: 'Moedas — lista enxuta + cards de cotação ao vivo',
+    items: [
+      { type: 'improvement', text: 'Lista de moedas suportadas reduzida para BRL, USD, EUR e GBP — foco no essencial.' },
+      { type: 'new', text: 'Configurações → Sistema: cada moeda estrangeira (USD/EUR/GBP) agora aparece como card mostrando código, nome e duas cotações ao vivo: "1 BRL = X moeda" e "1 moeda = R$ X". Atualização automática a cada 5 minutos via Frankfurter API.' },
+      { type: 'improvement', text: 'Card destaca visualmente quando a moeda está incluída nos pickers de transações/compromissos/investimentos.' },
+      { type: 'improvement', text: 'Real (BRL) aparece como card de "Moeda base — sempre incluída".' },
+    ],
+  },
+  {
     id: '2026-05-20-auditoria-completa',
     version: '1.0.2',
     date: '20/05/2026',
