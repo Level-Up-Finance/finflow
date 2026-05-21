@@ -1,90 +1,69 @@
 /* ============================================================
    FinFlow — Design Tokens
-   Paleta: Roxo Tech + Lime Statement (mix A+D, aprovada 21/05/2026)
-
-   Filosofia:
-   - Roxo (#6D5EF5) como primary: energia jovem, tech moderno
-   - Lime (#C2F542) como secondary: statement pop, accent ousado
-   - Sidebar preto absoluto (#0A0A0A): contraste dramático
-   - Status mantém semântica clássica (verde/amarelo/vermelho)
-   - Cartão vira neutro cinza pra não conflitar com roxo primary
+   Conceito 1: Moderno Premium (Roxo + Azul + Cinza)
    ============================================================ */
 
 :root {
-  /* ---------- Cores primárias (Roxo) ---------- */
+  /* ---------- Cores primárias ---------- */
   --color-primary: #6D5EF5;
   --color-primary-dark: #4B3FD6;
   --color-primary-light: #8B7FF7;
   --color-primary-50: #F1EFFE;
   --color-primary-100: #E5E1FD;
 
-  /* ---------- Cores secundárias (Lime) — usar com parcimônia ---------- */
-  /* Lime aparece em: CTAs de marketing, accents premium, badges especiais.
-     NÃO usar como cor principal de status — o lime + verde-sucesso ficaria
-     confuso. Status mantém verde-floresta tradicional. */
-  --color-secondary: #C2F542;
-  --color-secondary-dark: #A3D331;
-  --color-secondary-light: #D6FA72;
-  --color-secondary-50: #F7FDE6;
+  --color-secondary: #3B82F6;
+  --color-secondary-dark: #2563EB;
+  --color-secondary-light: #93C5FD;
+  --color-secondary-50: #EFF6FF;
 
   /* ---------- Neutros ---------- */
-  --color-text-main: #0F172A;
-  --color-text-secondary: #525252;
-  --color-text-muted: #A3A3A3;
+  --color-text-main: #1F2937;
+  --color-text-secondary: #6B7280;
+  --color-text-muted: #9CA3AF;
   --color-border: #E5E7EB;
-  --color-border-strong: #D4D4D8;
-  --color-background: #FAFAFA;
+  --color-border-strong: #D1D5DB;
+  --color-background: #F8FAFC;
   --color-surface: #FFFFFF;
-  --color-surface-alt: #F4F4F5;
+  --color-surface-alt: #F9FAFB;
 
-  /* ---------- Sidebar (preto absoluto, mantém escura em ambos os temas) ---------- */
-  --color-sidebar-bg: #0A0A0A;
-  --color-sidebar-text: #A3A3A3;
+  /* Sidebar (escuro) */
+  --color-sidebar-bg: #1F2937;
+  --color-sidebar-text: #D1D5DB;
   --color-sidebar-text-active: #FFFFFF;
-  --color-sidebar-border: #1F1F1F;
+  --color-sidebar-border: #374151;
 
-  /* ---------- Semânticas (mantém verde/amarelo/vermelho clássicos) ---------- */
-  --color-success: #047857;
+  /* ---------- Semânticas ---------- */
+  --color-success: #10B981;
   --color-success-bg: #D1FAE5;
-  --color-warning: #B45309;
+  --color-warning: #F59E0B;
   --color-warning-bg: #FEF3C7;
-  --color-danger: #B91C1C;
+  --color-danger: #EF4444;
   --color-danger-bg: #FEE2E2;
-  --color-info: #2563EB;
+  --color-info: #3B82F6;
   --color-info-bg: #DBEAFE;
 
   /* ---------- Status de pagamento ---------- */
-  /* Pago = success (verde-floresta) */
   --status-pago-bg: #D1FAE5;
-  --status-pago-text: #047857;
-  /* Transferido = info (azul, distinto do primary roxo) */
+  --status-pago-text: #065F46;
   --status-transferido-bg: #DBEAFE;
   --status-transferido-text: #1E40AF;
-  /* Agendado = warning (amarelo) */
   --status-agendado-bg: #FEF3C7;
-  --status-agendado-text: #B45309;
-  /* Cancelado = cinza muito sutil */
-  --status-cancelado-bg: #F4F4F5;
-  --status-cancelado-text: #525252;
-  /* A Transferir = azul claro (variante de info) */
+  --status-agendado-text: #92400E;
+  --status-cancelado-bg: #F3F4F6;
+  --status-cancelado-text: #4B5563;
   --status-a-transferir-bg: #E0F2FE;
   --status-a-transferir-text: #0369A1;
-  /* Cartão = cinza-escuro (mudança 21/05 — antes era roxo, conflitava com primary) */
-  --status-cartao-bg: #F4F4F5;
-  --status-cartao-text: #27272A;
-  /* Parcial = laranja (entre warning e danger) */
+  --status-cartao-bg: #EDE9FE;
+  --status-cartao-text: #5B21B6;
   --status-parcial-bg: #FFEDD5;
   --status-parcial-text: #9A3412;
 
   /* ---------- Gradientes ---------- */
-  /* Primary: roxo → roxo escuro (sem lime, conservador) */
-  --gradient-primary: linear-gradient(135deg, #6D5EF5 0%, #4B3FD6 100%);
-  /* Soft: tom roxo translúcido pra fundos sutis */
-  --gradient-primary-soft: linear-gradient(135deg, rgba(109,94,245,0.08) 0%, rgba(75,63,214,0.08) 100%);
-  /* Hero: roxo → roxo escuro → preto → lime (4 paradas pra transição limpa) */
-  --gradient-hero: linear-gradient(135deg, #6D5EF5 0%, #4B3FD6 40%, #0A0A0A 70%, #C2F542 100%);
+  --gradient-primary: linear-gradient(135deg, #6D5EF5 0%, #3B82F6 100%);
+  --gradient-primary-soft: linear-gradient(135deg, rgba(109,94,245,0.08) 0%, rgba(59,130,246,0.08) 100%);
+  --gradient-hero: linear-gradient(135deg, #6D5EF5 0%, #4B3FD6 50%, #3B82F6 100%);
 
-  /* ---------- Tipografia (mantém Manrope + Inter) ---------- */
+  /* ---------- Tipografia ---------- */
   --font-display: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
@@ -122,9 +101,9 @@
   --radius-xl: 28px;
   --radius-full: 9999px;
 
-  /* ---------- Shadows (tom roxo sutil no card, mantém assinatura) ---------- */
+  /* ---------- Shadows ---------- */
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(109,94,245,0.08);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(109,94,245,0.06);
   --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.05);
   --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.05);
   --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.04);
@@ -136,8 +115,8 @@
   --transition-slow: 300ms ease;
 
   /* ---------- Layout ---------- */
-  --sidebar-width: 72px;
-  --sidebar-width-expanded: 240px;
+  --sidebar-width: 72px;          /* ícone-only por padrão (era 240px com labels) */
+  --sidebar-width-expanded: 240px; /* reservado pra modo expansivo futuro */
   --sidebar-width-collapsed: 64px;
   --header-height: 64px;
   --content-max-width: 1600px;
@@ -152,41 +131,32 @@
 }
 
 /* ============================================================
-   DARK THEME — DRAFT v0 (refinar depois)
-
-   Decisão de 21/05/2026: focar em light mode primeiro. Dark mode
-   atual usa adaptação direta da nova paleta — pode não estar
-   100% refinado em todas as combinações. Quando o light estabilizar,
-   fazer pass dedicado em dark.
+   DARK THEME — sobrescreve neutros e semânticas com versão escura.
+   Aplicado via [data-theme="dark"] no <html> (ver lib/theme.js).
+   Usa :root pra ganhar especificidade em qualquer cascata.
    ============================================================ */
 :root[data-theme="dark"] {
   /* Neutros */
-  --color-text-main: #FAFAFA;
-  --color-text-secondary: #D4D4D8;
-  --color-text-muted: #A1A1AA;
-  --color-border: #27272A;
-  --color-border-strong: #3F3F46;
-  --color-background: #0A0A0A;
-  --color-surface: #18181B;
-  --color-surface-alt: #27272A;
+  --color-text-main: #F1F5F9;
+  --color-text-secondary: #CBD5E1;
+  --color-text-muted: #94A3B8;
+  --color-border: #334155;
+  --color-border-strong: #475569;
+  --color-background: #0F172A;
+  --color-surface: #1E293B;
+  --color-surface-alt: #273449;
 
-  /* Sidebar: preto absoluto em ambos os temas (mais profundo no dark) */
-  --color-sidebar-bg: #000000;
-  --color-sidebar-text: #71717A;
-  --color-sidebar-text-active: #FAFAFA;
-  --color-sidebar-border: #18181B;
+  /* Sidebar (mantém escura em ambos os temas, mas levemente mais profunda no dark) */
+  --color-sidebar-bg: #0B1220;
+  --color-sidebar-text: #94A3B8;
+  --color-sidebar-text-active: #F1F5F9;
+  --color-sidebar-border: #1E293B;
 
-  /* Primary: roxo light pra ficar visível em fundo escuro */
-  --color-primary: #8B7FF7;
-  --color-primary-dark: #6D5EF5;
-  --color-primary-light: #A99FF9;
-  --color-primary-50: #2A2356;
-  --color-primary-100: #1E1A3D;
+  /* Primárias — leve ajuste pra ficar legíveis em fundo escuro */
+  --color-primary-50: #1E1A3D;
+  --color-primary-100: #2A2356;
 
-  /* Secondary: lime mantém (já tem contraste alto contra preto) */
-  --color-secondary: #C2F542;
-  --color-secondary-dark: #A3D331;
-  --color-secondary-50: #1F2E08;
+  --color-secondary-50: #0E2240;
 
   /* Semânticas — backgrounds escurecidos */
   --color-success-bg: #064E3B;
@@ -194,32 +164,32 @@
   --color-danger-bg: #7F1D1D;
   --color-info-bg: #1E3A8A;
 
-  /* Status — adaptados */
+  /* Status */
   --status-pago-bg: #064E3B;
   --status-pago-text: #6EE7B7;
   --status-transferido-bg: #1E3A8A;
   --status-transferido-text: #93C5FD;
   --status-agendado-bg: #78350F;
   --status-agendado-text: #FCD34D;
-  --status-cancelado-bg: #27272A;
-  --status-cancelado-text: #A1A1AA;
+  --status-cancelado-bg: #1F2937;
+  --status-cancelado-text: #9CA3AF;
   --status-a-transferir-bg: #0C4A6E;
   --status-a-transferir-text: #7DD3FC;
-  --status-cartao-bg: #27272A;
-  --status-cartao-text: #D4D4D8;
+  --status-cartao-bg: #4C1D95;
+  --status-cartao-text: #C4B5FD;
   --status-parcial-bg: #7C2D12;
   --status-parcial-text: #FDBA74;
 
   /* Sombras — mais sutis em dark */
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
-  --shadow-card: 0 1px 3px rgba(0,0,0,0.4), 0 4px 16px rgba(109,94,245,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4), 0 2px 4px -2px rgba(0,0,0,0.3);
   --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5), 0 4px 6px -4px rgba(0,0,0,0.3);
   --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.5), 0 8px 10px -6px rgba(0,0,0,0.3);
   --shadow-modal: 0 25px 50px -12px rgba(0,0,0,0.7);
 
   /* Gradiente soft pra cards no dark */
-  --gradient-primary-soft: linear-gradient(135deg, rgba(139,127,247,0.12) 0%, rgba(109,94,245,0.12) 100%);
+  --gradient-primary-soft: linear-gradient(135deg, rgba(109,94,245,0.12) 0%, rgba(59,130,246,0.12) 100%);
 
   color-scheme: dark;
 }
