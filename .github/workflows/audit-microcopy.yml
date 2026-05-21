@@ -1,0 +1,136 @@
+name: Audit Microcopy
+
+# Roda em push pra main e em cada Pull Request.
+# Falha o build se houver violações HIGH (vocabulário banido do BRAND.md).
+# MEDIUM e LOW são reportados mas não bloqueiam.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.html'
+      - 'src/js/**'
+      - 'docs/BRAND.md'
+      - 'scripts/audit-microcopy.py'
+      - 'scripts/extract-strings.js'
+      - '.github/workflows/audit-microcopy.yml'
+  pull_request:
+    paths:
+      - '**.html'
+      - 'src/js/**'
+      - 'docs/BRAND.md'
+      - 'scripts/audit-microcopy.py'
+      - 'scripts/extract-strings.js'
+
+permissions:
+  contents: read
+  pull-requests: write  # pra postar comentário no PR
+
+jobs:
+  audit:
+    name: Audit microcopy vs BRAND.md
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências Python
+        run: pip install markdown
+
+      - name: Extrair strings do código
+        run: node scripts/extract-strings.js
+
+      - name: Auditar microcopy (falha em HIGH)
+        run: python3 scripts/audit-microcopy.py --fail-on=HIGH
+
+      - name: Upload do relatório
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-report
+          path: docs/AUDIT-MICROCOPY.md
+          retention-days: 30
+
+      - name: Postar resumo no PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Extrai apenas dados estruturais do relatório (não interpola
+            // conteúdo arbitrário em markdown — defensive coding)
+            const report = fs.readFileSync('docs/AUDIT-MICROCOPY.md', 'utf8');
+
+            // Parse seguro: extrai contadores via regex específica
+            const matchTotal = report.match(/\*\*Issues encontrados\*\*:\s*(\d+)/);
+            const matchHigh = report.match(/Alta[^|]*\|\s*\*\*(\d+)\*\*/);
+            const matchMed = report.match(/M[eé]dia[^|]*\|\s*\*\*(\d+)\*\*/);
+            const matchLow = report.match(/Baixa[^|]*\|\s*\*\*(\d+)\*\*/);
+            const matchStrings = report.match(/analisadas\*\*:\s*(\d+)/);
+
+            const total = matchTotal ? parseInt(matchTotal[1]) : 0;
+            const high = matchHigh ? parseInt(matchHigh[1]) : 0;
+            const medium = matchMed ? parseInt(matchMed[1]) : 0;
+            const low = matchLow ? parseInt(matchLow[1]) : 0;
+            const strings = matchStrings ? parseInt(matchStrings[1]) : 0;
+
+            const status = high > 0 ? '❌ Falhou' : '✅ Passou';
+            const verdict = high > 0
+              ? `**Bloqueia merge** — ${high} violação(ões) HIGH encontrada(s).`
+              : `**Pode dar merge** — sem violações críticas.`;
+
+            const body = [
+              '<!-- audit-microcopy-report -->',
+              '## 🎯 Auditoria de Microcopy',
+              '',
+              `${status}. ${verdict}`,
+              '',
+              '| Métrica | Valor |',
+              '|---------|-------|',
+              `| Strings analisadas | ${strings} |`,
+              `| 🔴 HIGH (bloqueia) | ${high} |`,
+              `| 🟡 MEDIUM (aviso) | ${medium} |`,
+              `| 🟢 LOW (estilo) | ${low} |`,
+              `| **Total** | **${total}** |`,
+              '',
+              `_Regras: \`docs/BRAND.md\`. Relatório completo: baixe o artifact \`audit-report\` na aba Actions._`,
+            ].join('\n');
+
+            // Procura comentário anterior pra atualizar
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const previous = comments.find(c =>
+              c.body && c.body.includes('<!-- audit-microcopy-report -->')
+            );
+
+            if (previous) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: previous.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

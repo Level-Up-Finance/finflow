@@ -135,11 +135,24 @@ def audit_string(s):
 
 
 def main():
-    project = Path('/Users/arnaldodlanra/Library/CloudStorage/'
-                   'GoogleDrive-arnaldo@leveluponline.org/'
-                   'My Drive/Claude/finflow')
+    # Detecta raiz do projeto: usa CWD se rodar de dentro do repo,
+    # senão usa caminho explícito (uso local)
+    cwd = Path.cwd()
+    if (cwd / 'extracted-strings.json').exists():
+        project = cwd
+    else:
+        project = Path('/Users/arnaldodlanra/Library/CloudStorage/'
+                       'GoogleDrive-arnaldo@leveluponline.org/'
+                       'My Drive/Claude/finflow')
     catalog_path = project / 'extracted-strings.json'
     output_path = project / 'docs' / 'AUDIT-MICROCOPY.md'
+
+    # CLI args (simples — sem argparse pra evitar dep)
+    import sys
+    fail_on = None  # None | 'HIGH' | 'MEDIUM' | 'LOW'
+    for arg in sys.argv[1:]:
+        if arg.startswith('--fail-on='):
+            fail_on = arg.split('=', 1)[1].upper()
 
     strings = json.loads(catalog_path.read_text(encoding='utf-8'))
     print(f'Carregadas {len(strings)} strings do catálogo')
@@ -304,6 +317,17 @@ def main():
     print(f'  HIGH: {len(by_severity.get("HIGH", []))}')
     print(f'  MEDIUM: {len(by_severity.get("MEDIUM", []))}')
     print(f'  LOW: {len(by_severity.get("LOW", []))}')
+
+    # Exit code não-zero se houver issues do nível especificado (pra CI)
+    if fail_on:
+        levels = ['HIGH', 'MEDIUM', 'LOW']
+        threshold_idx = levels.index(fail_on) if fail_on in levels else 0
+        # Falha se houver issues no nível threshold OU acima (mais severo)
+        for lvl in levels[:threshold_idx + 1]:
+            if len(by_severity.get(lvl, [])) > 0:
+                print(f'\n❌ Auditoria falhou: {len(by_severity[lvl])} issue(s) {lvl} encontrado(s)')
+                sys.exit(1)
+        print(f'\n✅ Auditoria passou no critério --fail-on={fail_on}')
 
 
 if __name__ == '__main__':
