@@ -1,0 +1,1019 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visual Identity Explorer — FinFlow</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --gray-50: #F9FAFB;
+  --gray-100: #F3F4F6;
+  --gray-200: #E5E7EB;
+  --gray-300: #D1D5DB;
+  --gray-500: #6B7280;
+  --gray-700: #374151;
+  --gray-900: #111827;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--gray-50);
+  color: var(--gray-900);
+  line-height: 1.5;
+  padding: 2rem 1rem 6rem;
+}
+.container { max-width: 1200px; margin: 0 auto; }
+
+/* ============================================================ */
+/* HEADER */
+/* ============================================================ */
+header.intro {
+  text-align: center;
+  padding: 3rem 1rem 5rem;
+  background: white;
+  border-radius: 24px;
+  margin-bottom: 3rem;
+  border: 1px solid var(--gray-200);
+}
+header.intro h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.03em;
+}
+header.intro p {
+  font-size: 1.125rem;
+  color: var(--gray-500);
+  max-width: 640px;
+  margin: 0 auto 1.5rem;
+}
+.steps-mini {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+}
+.steps-mini span {
+  background: var(--gray-100);
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  color: var(--gray-700);
+}
+
+/* ============================================================ */
+/* SECTION TITLES */
+/* ============================================================ */
+.section {
+  margin-bottom: 5rem;
+}
+.section-head {
+  margin-bottom: 2rem;
+}
+.section-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gray-500);
+}
+.section-head h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-top: 0.25rem;
+  letter-spacing: -0.02em;
+}
+.section-head p {
+  color: var(--gray-500);
+  margin-top: 0.5rem;
+  font-size: 1.05rem;
+  max-width: 720px;
+}
+
+/* ============================================================ */
+/* PALETA CARDS */
+/* ============================================================ */
+.palettes {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+@media (min-width: 720px) {
+  .palettes { grid-template-columns: 1fr 1fr; }
+}
+
+.palette {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.palette-header {
+  padding: 1.5rem 1.5rem 1rem;
+}
+.palette-id {
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin-bottom: 0.5rem;
+}
+.palette-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.palette-vibe {
+  color: var(--gray-500);
+  margin-top: 0.4rem;
+  font-size: 0.95rem;
+}
+.palette-refs {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  margin-top: 0.5rem;
+}
+.palette-refs strong { color: var(--gray-700); }
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  height: 60px;
+}
+.swatch {
+  position: relative;
+}
+.swatch::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: 6px;
+  left: 8px;
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  opacity: 0.85;
+}
+.swatch.light::after {
+  color: var(--gray-900);
+  text-shadow: 0 1px 2px rgba(255,255,255,0.5);
+}
+
+/* ============================================================ */
+/* PALETA PREVIEW: botão + card + badge */
+/* ============================================================ */
+.palette-preview {
+  padding: 1.5rem;
+  background: var(--bg, var(--gray-50));
+  border-top: 1px solid var(--gray-200);
+}
+.preview-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.preview-row:last-child { margin-bottom: 0; }
+
+.preview-btn-primary {
+  background: var(--primary);
+  color: white;
+  padding: 0.7rem 1.2rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.preview-btn-ghost {
+  background: transparent;
+  color: var(--text-main, var(--gray-900));
+  padding: 0.7rem 1.2rem;
+  border: 1px solid var(--border, var(--gray-300));
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+.preview-badge {
+  background: var(--success-bg);
+  color: var(--success);
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+.preview-badge.warn {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+.preview-badge.danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.preview-card {
+  background: var(--surface, white);
+  border: 1px solid var(--border, var(--gray-200));
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+.preview-card-text {
+  font-size: 0.95rem;
+  color: var(--text-main, var(--gray-900));
+}
+.preview-card-value {
+  font-weight: 700;
+  font-family: 'Geist Mono', monospace;
+  color: var(--primary);
+}
+
+/* ============================================================ */
+/* Paleta A: Atual (Roxo + Azul) */
+.pa-a {
+  --primary: #6D5EF5;
+  --secondary: #3B82F6;
+  --success: #065F46;
+  --success-bg: #D1FAE5;
+  --warning: #92400E;
+  --warning-bg: #FEF3C7;
+  --danger: #991B1B;
+  --danger-bg: #FEE2E2;
+  --bg: #F8FAFC;
+  --surface: white;
+  --border: #E5E7EB;
+  --text-main: #1F2937;
+}
+
+/* Paleta B: Verde Sálvia + Areia */
+.pa-b {
+  --primary: #2D6A4F;
+  --secondary: #95D5B2;
+  --success: #14532D;
+  --success-bg: #D1FAE5;
+  --warning: #854D0E;
+  --warning-bg: #FEF3C7;
+  --danger: #7F1D1D;
+  --danger-bg: #FEE2E2;
+  --bg: #FAF8F5;
+  --surface: white;
+  --border: #E7E2D8;
+  --text-main: #1A2E1F;
+}
+
+/* Paleta C: Azul Profundo + Coral */
+.pa-c {
+  --primary: #1E40AF;
+  --secondary: #F97316;
+  --success: #047857;
+  --success-bg: #D1FAE5;
+  --warning: #B45309;
+  --warning-bg: #FEF3C7;
+  --danger: #991B1B;
+  --danger-bg: #FEE2E2;
+  --bg: #F1F5F9;
+  --surface: white;
+  --border: #CBD5E1;
+  --text-main: #0F172A;
+}
+
+/* Paleta D: Bold (Preto + Lime) */
+.pa-d {
+  --primary: #000000;
+  --secondary: #C2F542;
+  --success: #166534;
+  --success-bg: #DCFCE7;
+  --warning: #854D0E;
+  --warning-bg: #FEF9C3;
+  --danger: #991B1B;
+  --danger-bg: #FEE2E2;
+  --bg: #FAFAFA;
+  --surface: white;
+  --border: #E5E5E5;
+  --text-main: #0A0A0A;
+}
+
+/* Paleta E: Indigo + Salmão (Warm Pro) */
+.pa-e {
+  --primary: #4F46E5;
+  --secondary: #FB7185;
+  --success: #047857;
+  --success-bg: #D1FAE5;
+  --warning: #B45309;
+  --warning-bg: #FEF3C7;
+  --danger: #991B1B;
+  --danger-bg: #FEE2E2;
+  --bg: #FAFAFE;
+  --surface: white;
+  --border: #E5E5F0;
+  --text-main: #1E1B4B;
+}
+
+/* ============================================================ */
+/* TIPOGRAFIA */
+/* ============================================================ */
+.type-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+.type-card {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 16px;
+  padding: 2rem;
+}
+.type-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--gray-100);
+}
+.type-id {
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+.type-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+.type-vibe {
+  color: var(--gray-500);
+  font-size: 0.9rem;
+}
+
+.type-sample-display {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 0.5rem;
+}
+.type-sample-sub {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+.type-sample-body {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--gray-700);
+  max-width: 640px;
+  margin-bottom: 0.75rem;
+}
+.type-sample-mono {
+  font-size: 0.9rem;
+  color: var(--gray-500);
+}
+
+/* Type pairs */
+.tp-a { /* Atual: Manrope + Inter */
+  --font-display: 'Manrope', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+.tp-b { /* Plus Jakarta + Inter */
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+.tp-c { /* Inter solo */
+  --font-display: 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+.tp-d { /* Geist + Geist Mono */
+  --font-display: 'Geist', sans-serif;
+  --font-body: 'Geist', sans-serif;
+}
+.tp-e { /* Space Grotesk + Inter */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+.type-card .type-sample-display,
+.type-card .type-sample-sub { font-family: var(--font-display); }
+.type-card .type-sample-body { font-family: var(--font-body); }
+.type-card .type-sample-mono { font-family: 'Geist Mono', monospace; }
+
+/* ============================================================ */
+/* UI MOCKS — Combinações aplicadas */
+/* ============================================================ */
+.mocks {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+@media (min-width: 720px) {
+  .mocks { grid-template-columns: 1fr 1fr; }
+}
+
+.mock {
+  background: var(--bg, white);
+  border: 1px solid var(--gray-200);
+  border-radius: 20px;
+  padding: 2rem;
+  font-family: var(--font-body, -apple-system, sans-serif);
+}
+.mock-id {
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--gray-500);
+  margin-bottom: 0.5rem;
+}
+.mock-title {
+  font-family: var(--font-display, sans-serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+}
+.mock-kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.mock-kpi-label {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.mock-kpi-value {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-top: 0.25rem;
+  letter-spacing: -0.02em;
+}
+.mock-kpi-trend {
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+.mock-kpi-trend.up { color: var(--success); }
+
+.mock-payment {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.mock-payment-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.mock-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.mock-payment-text strong {
+  font-size: 0.95rem;
+  color: var(--text-main);
+  display: block;
+}
+.mock-payment-text span {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+}
+.mock-payment-value {
+  font-family: 'Geist Mono', monospace;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.mock-status {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-right: 0.5rem;
+}
+.mock-status.pago { background: var(--success-bg); color: var(--success); }
+.mock-status.agendado { background: var(--warning-bg); color: var(--warning); }
+
+.mock-cta {
+  background: var(--primary);
+  color: white;
+  padding: 0.7rem 1.2rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+  font-family: var(--font-body);
+}
+
+/* ============================================================ */
+/* DECIDE / VOTAÇÃO */
+/* ============================================================ */
+.decide {
+  background: #FFFBEB;
+  border: 2px dashed #F59E0B;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-top: 4rem;
+}
+.decide h3 {
+  font-size: 1.5rem;
+  color: #92400E;
+  margin-bottom: 0.5rem;
+}
+.decide p {
+  color: #78350F;
+  margin-bottom: 1rem;
+}
+.decide ol {
+  list-style-position: inside;
+  color: #78350F;
+}
+.decide li {
+  padding: 0.25rem 0;
+}
+.decide code {
+  background: white;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  border: 1px solid #FDE68A;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<!-- INTRODUÇÃO -->
+<header class="intro">
+  <h1>🎨 Visual Identity Explorer</h1>
+  <p>Antes de fechar a identidade visual do FinFlow, vamos explorar opções de paleta e tipografia.<br>
+  Navegue, marque suas favoritas comigo, e a partir delas a gente fecha o sistema.</p>
+  <div class="steps-mini">
+    <span>1. Paletas alternativas</span>
+    <span>2. Pares tipográficos</span>
+    <span>3. Aplicação em UI real</span>
+    <span>4. Decisão</span>
+  </div>
+</header>
+
+<!-- ============================================================ -->
+<!-- SEÇÃO 1: PALETAS DE COR                                        -->
+<!-- ============================================================ -->
+<section class="section">
+  <div class="section-head">
+    <span class="section-tag">Etapa 1</span>
+    <h2>5 Paletas alternativas</h2>
+    <p>Cada paleta carrega uma "vibe" diferente. A primeira é a atual do app (`variables.css`) — pra você ter referência. As outras 4 exploram caminhos distintos baseados em referências de marcas conhecidas.</p>
+  </div>
+
+  <div class="palettes">
+
+    <!-- A — Atual -->
+    <div class="palette">
+      <div class="palette-header">
+        <div class="palette-id">PALETA A</div>
+        <div class="palette-name">Roxo Tech (Atual)</div>
+        <div class="palette-vibe">Moderno premium, geek-friendly, energia jovem. Roxo carrega "tech" sem perder humanidade. Azul como acento equilibra.</div>
+        <div class="palette-refs"><strong>Referências:</strong> Notion, Linear, Stripe, Vercel</div>
+      </div>
+      <div class="swatches">
+        <div class="swatch" style="background:#6D5EF5;" data-label="6D5EF5"></div>
+        <div class="swatch" style="background:#3B82F6;" data-label="3B82F6"></div>
+        <div class="swatch" style="background:#1F2937;" data-label="1F2937"></div>
+        <div class="swatch" style="background:#10B981;" data-label="10B981"></div>
+        <div class="swatch" style="background:#F59E0B;" data-label="F59E0B"></div>
+        <div class="swatch light" style="background:#F8FAFC;" data-label="F8FAFC"></div>
+      </div>
+      <div class="palette-preview pa-a">
+        <div class="preview-row">
+          <button class="preview-btn-primary">Marcar como pago</button>
+          <button class="preview-btn-ghost">Cancelar</button>
+        </div>
+        <div class="preview-row">
+          <span class="preview-badge">Pago</span>
+          <span class="preview-badge warn">Agendado</span>
+          <span class="preview-badge danger">Atrasado</span>
+        </div>
+        <div class="preview-card">
+          <span class="preview-card-text">Aluguel — Maio/2026</span>
+          <span class="preview-card-value">R$ 2.500,00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- B — Verde Sálvia -->
+    <div class="palette">
+      <div class="palette-header">
+        <div class="palette-id">PALETA B</div>
+        <div class="palette-name">Verde Sálvia + Areia</div>
+        <div class="palette-vibe">Calmo, equilibrado, "slow money". Verde profundo (não eco-clichê) com terra clara. Sensação de crescimento sustentável, não de hype.</div>
+        <div class="palette-refs"><strong>Referências:</strong> Wise, Monarch, Lunch Money</div>
+      </div>
+      <div class="swatches">
+        <div class="swatch" style="background:#2D6A4F;" data-label="2D6A4F"></div>
+        <div class="swatch" style="background:#95D5B2;" data-label="95D5B2"></div>
+        <div class="swatch" style="background:#1A2E1F;" data-label="1A2E1F"></div>
+        <div class="swatch" style="background:#854D0E;" data-label="854D0E"></div>
+        <div class="swatch light" style="background:#FAF8F5;" data-label="FAF8F5"></div>
+        <div class="swatch light" style="background:#E7E2D8;" data-label="E7E2D8"></div>
+      </div>
+      <div class="palette-preview pa-b">
+        <div class="preview-row">
+          <button class="preview-btn-primary">Marcar como pago</button>
+          <button class="preview-btn-ghost">Cancelar</button>
+        </div>
+        <div class="preview-row">
+          <span class="preview-badge">Pago</span>
+          <span class="preview-badge warn">Agendado</span>
+          <span class="preview-badge danger">Atrasado</span>
+        </div>
+        <div class="preview-card">
+          <span class="preview-card-text">Aluguel — Maio/2026</span>
+          <span class="preview-card-value">R$ 2.500,00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- C — Azul Profundo + Coral -->
+    <div class="palette">
+      <div class="palette-header">
+        <div class="palette-id">PALETA C</div>
+        <div class="palette-name">Azul Marinho + Coral</div>
+        <div class="palette-vibe">Premium-financial, mas com calor. Azul profundo "banking heritage" balanceado com coral vibrante que tira o peso institucional. Confiança + acessibilidade.</div>
+        <div class="palette-refs"><strong>Referências:</strong> Mercury, Brex, Ramp</div>
+      </div>
+      <div class="swatches">
+        <div class="swatch" style="background:#1E40AF;" data-label="1E40AF"></div>
+        <div class="swatch" style="background:#F97316;" data-label="F97316"></div>
+        <div class="swatch" style="background:#0F172A;" data-label="0F172A"></div>
+        <div class="swatch" style="background:#047857;" data-label="047857"></div>
+        <div class="swatch light" style="background:#F1F5F9;" data-label="F1F5F9"></div>
+        <div class="swatch" style="background:#CBD5E1;" data-label="CBD5E1"></div>
+      </div>
+      <div class="palette-preview pa-c">
+        <div class="preview-row">
+          <button class="preview-btn-primary">Marcar como pago</button>
+          <button class="preview-btn-ghost">Cancelar</button>
+        </div>
+        <div class="preview-row">
+          <span class="preview-badge">Pago</span>
+          <span class="preview-badge warn">Agendado</span>
+          <span class="preview-badge danger">Atrasado</span>
+        </div>
+        <div class="preview-card">
+          <span class="preview-card-text">Aluguel — Maio/2026</span>
+          <span class="preview-card-value">R$ 2.500,00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- D — Preto + Lime -->
+    <div class="palette">
+      <div class="palette-header">
+        <div class="palette-id">PALETA D</div>
+        <div class="palette-name">Bold Preto + Lime</div>
+        <div class="palette-vibe">Contemporâneo, ousado, statement. Preto absoluto com pop de verde lime. Tem energia e atitude — funciona pra quem quer marca disruptiva, joven. Pode ser intenso demais pra família.</div>
+        <div class="palette-refs"><strong>Referências:</strong> Cash App, Robinhood (2020+), Twitch</div>
+      </div>
+      <div class="swatches">
+        <div class="swatch" style="background:#000000;" data-label="000000"></div>
+        <div class="swatch light" style="background:#C2F542;" data-label="C2F542"></div>
+        <div class="swatch" style="background:#0A0A0A;" data-label="0A0A0A"></div>
+        <div class="swatch" style="background:#166534;" data-label="166534"></div>
+        <div class="swatch light" style="background:#FAFAFA;" data-label="FAFAFA"></div>
+        <div class="swatch light" style="background:#E5E5E5;" data-label="E5E5E5"></div>
+      </div>
+      <div class="palette-preview pa-d">
+        <div class="preview-row">
+          <button class="preview-btn-primary">Marcar como pago</button>
+          <button class="preview-btn-ghost">Cancelar</button>
+        </div>
+        <div class="preview-row">
+          <span class="preview-badge">Pago</span>
+          <span class="preview-badge warn">Agendado</span>
+          <span class="preview-badge danger">Atrasado</span>
+        </div>
+        <div class="preview-card">
+          <span class="preview-card-text">Aluguel — Maio/2026</span>
+          <span class="preview-card-value">R$ 2.500,00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- E — Indigo + Salmão -->
+    <div class="palette">
+      <div class="palette-header">
+        <div class="palette-id">PALETA E</div>
+        <div class="palette-name">Indigo + Salmão (Warm Pro)</div>
+        <div class="palette-vibe">Amigável-profissional. Indigo carrega seriedade, salmão traz calor humano. Boa pra "casal/família" — tem temperatura sem ser fofo. Equilíbrio raro entre cool e warm.</div>
+        <div class="palette-refs"><strong>Referências:</strong> Stripe, Plaid, Affirm</div>
+      </div>
+      <div class="swatches">
+        <div class="swatch" style="background:#4F46E5;" data-label="4F46E5"></div>
+        <div class="swatch" style="background:#FB7185;" data-label="FB7185"></div>
+        <div class="swatch" style="background:#1E1B4B;" data-label="1E1B4B"></div>
+        <div class="swatch" style="background:#047857;" data-label="047857"></div>
+        <div class="swatch light" style="background:#FAFAFE;" data-label="FAFAFE"></div>
+        <div class="swatch" style="background:#E5E5F0;" data-label="E5E5F0"></div>
+      </div>
+      <div class="palette-preview pa-e">
+        <div class="preview-row">
+          <button class="preview-btn-primary">Marcar como pago</button>
+          <button class="preview-btn-ghost">Cancelar</button>
+        </div>
+        <div class="preview-row">
+          <span class="preview-badge">Pago</span>
+          <span class="preview-badge warn">Agendado</span>
+          <span class="preview-badge danger">Atrasado</span>
+        </div>
+        <div class="preview-card">
+          <span class="preview-card-text">Aluguel — Maio/2026</span>
+          <span class="preview-card-value">R$ 2.500,00</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SEÇÃO 2: TIPOGRAFIA                                            -->
+<!-- ============================================================ -->
+<section class="section">
+  <div class="section-head">
+    <span class="section-tag">Etapa 2</span>
+    <h2>5 Pares tipográficos</h2>
+    <p>O par de fontes carrega tanto da identidade quanto a cor. A primeira opção é a atual (Manrope + Inter). As outras exploram alternativas modernas, todas no Google Fonts (gratuitas).</p>
+  </div>
+
+  <div class="type-grid">
+
+    <!-- A: Atual -->
+    <div class="type-card tp-a">
+      <div class="type-meta">
+        <div>
+          <div class="type-id">TIPO A · ATUAL</div>
+          <div class="type-name">Manrope + Inter</div>
+        </div>
+        <div class="type-vibe">Geometric humanist · Tech moderno · Notion, Linear</div>
+      </div>
+      <div class="type-sample-display">FinFlow</div>
+      <div class="type-sample-sub">Organize compromissos, não tickets de extrato.</div>
+      <div class="type-sample-body">A gente vê os próximos 12 meses antes deles chegarem. Você cadastra os compromissos — aluguel, salário, parcelas — e o FinFlow gera os pagamentos futuros sozinho.</div>
+      <div class="type-sample-mono">R$ 12.345,67 · USD 2.500,00 · 23 relatórios</div>
+    </div>
+
+    <!-- B: Plus Jakarta + Inter -->
+    <div class="type-card tp-b">
+      <div class="type-meta">
+        <div>
+          <div class="type-id">TIPO B</div>
+          <div class="type-name">Plus Jakarta Sans + Inter</div>
+        </div>
+        <div class="type-vibe">Friendly geometric · Mais arredondado · Casal/família</div>
+      </div>
+      <div class="type-sample-display">FinFlow</div>
+      <div class="type-sample-sub">Organize compromissos, não tickets de extrato.</div>
+      <div class="type-sample-body">A gente vê os próximos 12 meses antes deles chegarem. Você cadastra os compromissos — aluguel, salário, parcelas — e o FinFlow gera os pagamentos futuros sozinho.</div>
+      <div class="type-sample-mono">R$ 12.345,67 · USD 2.500,00 · 23 relatórios</div>
+    </div>
+
+    <!-- C: Inter solo -->
+    <div class="type-card tp-c">
+      <div class="type-meta">
+        <div>
+          <div class="type-id">TIPO C</div>
+          <div class="type-name">Inter (single family)</div>
+        </div>
+        <div class="type-vibe">Minimal, máxima consistência · Vercel, Linear</div>
+      </div>
+      <div class="type-sample-display">FinFlow</div>
+      <div class="type-sample-sub">Organize compromissos, não tickets de extrato.</div>
+      <div class="type-sample-body">A gente vê os próximos 12 meses antes deles chegarem. Você cadastra os compromissos — aluguel, salário, parcelas — e o FinFlow gera os pagamentos futuros sozinho.</div>
+      <div class="type-sample-mono">R$ 12.345,67 · USD 2.500,00 · 23 relatórios</div>
+    </div>
+
+    <!-- D: Geist -->
+    <div class="type-card tp-d">
+      <div class="type-meta">
+        <div>
+          <div class="type-id">TIPO D</div>
+          <div class="type-name">Geist (Vercel)</div>
+        </div>
+        <div class="type-vibe">Hyper-modern, dev-tools, premium tech</div>
+      </div>
+      <div class="type-sample-display">FinFlow</div>
+      <div class="type-sample-sub">Organize compromissos, não tickets de extrato.</div>
+      <div class="type-sample-body">A gente vê os próximos 12 meses antes deles chegarem. Você cadastra os compromissos — aluguel, salário, parcelas — e o FinFlow gera os pagamentos futuros sozinho.</div>
+      <div class="type-sample-mono">R$ 12.345,67 · USD 2.500,00 · 23 relatórios</div>
+    </div>
+
+    <!-- E: Space Grotesk + Inter -->
+    <div class="type-card tp-e">
+      <div class="type-meta">
+        <div>
+          <div class="type-id">TIPO E</div>
+          <div class="type-name">Space Grotesk + Inter</div>
+        </div>
+        <div class="type-vibe">Distintivo, geek-friendly, hits diferente</div>
+      </div>
+      <div class="type-sample-display">FinFlow</div>
+      <div class="type-sample-sub">Organize compromissos, não tickets de extrato.</div>
+      <div class="type-sample-body">A gente vê os próximos 12 meses antes deles chegarem. Você cadastra os compromissos — aluguel, salário, parcelas — e o FinFlow gera os pagamentos futuros sozinho.</div>
+      <div class="type-sample-mono">R$ 12.345,67 · USD 2.500,00 · 23 relatórios</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SEÇÃO 3: COMBINAÇÕES APLICADAS                                 -->
+<!-- ============================================================ -->
+<section class="section">
+  <div class="section-head">
+    <span class="section-tag">Etapa 3</span>
+    <h2>UI real com 4 combinações</h2>
+    <p>Mesma tela do app (KPI do dashboard + 2 pagamentos) com 4 combinações de paleta+tipo. Pra você ver como cada vibe se sente em uso real.</p>
+  </div>
+
+  <div class="mocks">
+
+    <!-- Mock 1: A + A (atual completo) -->
+    <div class="mock pa-a tp-a">
+      <div class="mock-id">PALETA A + TIPO A · Atual completo</div>
+      <div class="mock-title">Maio de 2026</div>
+      <div class="mock-kpi">
+        <div class="mock-kpi-label">Saldo total</div>
+        <div class="mock-kpi-value">R$ 28.450,12</div>
+        <div class="mock-kpi-trend up">↑ R$ 1.240 vs mês passado</div>
+      </div>
+      <div class="mock-payment">
+        <div class="mock-payment-info">
+          <div class="mock-avatar">A</div>
+          <div class="mock-payment-text">
+            <strong>Aluguel</strong>
+            <span><span class="mock-status pago">Pago</span> 05/05</span>
+          </div>
+        </div>
+        <div class="mock-payment-value">R$ 2.500,00</div>
+      </div>
+      <div class="mock-payment">
+        <div class="mock-payment-info">
+          <div class="mock-avatar">L</div>
+          <div class="mock-payment-text">
+            <strong>Luz</strong>
+            <span><span class="mock-status agendado">Agendado</span> 15/05</span>
+          </div>
+        </div>
+        <div class="mock-payment-value">R$ 380,45</div>
+      </div>
+      <button class="mock-cta">Marcar como pago</button>
+    </div>
+
+    <!-- Mock 2: B + B -->
+    <div class="mock pa-b tp-b">
+      <div class="mock-id">PALETA B + TIPO B · Verde Sálvia + Plus Jakarta</div>
+      <div class="mock-title">Maio de 2026</div>
+      <div class="mock-kpi">
+        <div class="mock-kpi-label">Saldo total</div>
+        <div class="mock-kpi-value">R$ 28.450,12</div>
+        <div class="mock-kpi-trend up">↑ R$ 1.240 vs mês passado</div>
+      </div>
+      <div class="mock-payment">
+        <div class="mock-payment-info">
+          <div class="mock-avatar">A</div>
+          <div class="mock-payment-text">
+            <strong>Aluguel</strong>
+            <span><span class="mock-status pago">Pago</span> 05/05</span>
+          </div>
+        </div>
+        <div class="mock-payment-value">R$ 2.500,00</div>
+      </div>
+      <div class="mock-payment">
+        <div class="mock-payment-info">
+          <div class="mock-avatar">L</div>
+          <div class="mock-payment-text">
+            <strong>Luz</strong>
+            <span><span class="mock-status agendado">Agendado</span> 15/05</span>
+          </div>
+        </div>
+        <div class="mock-payment-value">R$ 380,45</div>
+      </div>
+      <button class="mock-cta">Marcar como pago</button>
+    </div>
+
+    <!-- Mock 3: C + D (Azul + Geist) -->
+    <div class="mock pa-c tp-d">
+      <div class="mock-id">PALETA C + TIPO D · Marinho + Coral + Geist</div>
+      <div class="mock-title">Maio de 2026</div>
+      <div class="mock-kpi">
+        <div class="mock-kpi-label">Saldo total</div>
+        <div class="mock-kpi-value">R$ 28.450,12</div>
+        <div class="mock-kpi-trend up">↑ R$ 1.240 vs mês passado</div>
+      </div>
+      <div class="mock-payment">
+        <div class="mock-payment-info">
+          <div class="mock-avatar">A</div>
+          <div class="mock-payment-text">
+            <strong>Aluguel</strong>
+            <span><span class="mock-status pago">Pago</span> 05/05</span>
+          </div>
+        </div>
+        <div class="mock-payment-value">R$ 2.500,00</div>
+      </div>
+      <div class="mock-payment">
+        <div class="mock-payment-info">
+          <div class="mock-avatar">L</div>
+          <div class="mock-payment-text">
+            <strong>Luz</strong>
+            <span><span class="mock-status agendado">Agendado</span> 15/05</span>
+          </div>
+        </div>
+        <div class="mock-payment-value">R$ 380,45</div>
+      </div>
+      <button class="mock-cta">Marcar como pago</button>
+    </div>
+
+    <!-- Mock 4: E + E (Indigo + Space Grotesk) -->
+    <div class="mock pa-e tp-e">
+      <div class="mock-id">PALETA E + TIPO E · Indigo + Salmão + Space Grotesk</div>
+      <div class="mock-title">Maio de 2026</div>
+      <div class="mock-kpi">
+        <div class="mock-kpi-label">Saldo total</div>
+        <div class="mock-kpi-value">R$ 28.450,12</div>
+        <div class="mock-kpi-trend up">↑ R$ 1.240 vs mês passado</div>
+      </div>
+      <div class="mock-payment">
+        <div class="mock-payment-info">
+          <div class="mock-avatar">A</div>
+          <div class="mock-payment-text">
+            <strong>Aluguel</strong>
+            <span><span class="mock-status pago">Pago</span> 05/05</span>
+          </div>
+        </div>
+        <div class="mock-payment-value">R$ 2.500,00</div>
+      </div>
+      <div class="mock-payment">
+        <div class="mock-payment-info">
+          <div class="mock-avatar">L</div>
+          <div class="mock-payment-text">
+            <strong>Luz</strong>
+            <span><span class="mock-status agendado">Agendado</span> 15/05</span>
+          </div>
+        </div>
+        <div class="mock-payment-value">R$ 380,45</div>
+      </div>
+      <button class="mock-cta">Marcar como pago</button>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- DECISÃO                                                       -->
+<!-- ============================================================ -->
+<div class="decide">
+  <h3>🗳️ Etapa 4 — Sua decisão</h3>
+  <p>Agora me conta lá no chat o que sente. Pode ser:</p>
+  <ol>
+    <li><strong>Paleta favorita:</strong> <code>A</code> · <code>B</code> · <code>C</code> · <code>D</code> · <code>E</code> (ou combinação tipo "C com bg de B")</li>
+    <li><strong>Par tipográfico favorito:</strong> <code>A</code> · <code>B</code> · <code>C</code> · <code>D</code> · <code>E</code></li>
+    <li><strong>Combinação favorita aplicada:</strong> "Mock 1" · "Mock 2" · "Mock 3" · "Mock 4"</li>
+    <li><strong>Feeling geral:</strong> alguma vibe te chamou? Alguma te incomodou?</li>
+  </ol>
+  <p style="margin-top: 1rem;">Não precisa decidir tudo de uma vez. Pode até dizer "gostei de duas, fica difícil escolher". A partir do que você sentir, refino — posso gerar variações, misturar paletas, testar outras fontes.</p>
+</div>
+
+</div>
+</body>
+</html>
