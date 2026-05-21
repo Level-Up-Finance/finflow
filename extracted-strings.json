@@ -155,7 +155,7 @@
   },
   {
     "chave": "compromissos.descricao",
-    "pt_br": "Suas entradas e saídas recorrentes. Organizadas em Categorias e Subcategorias.",
+    "pt_br": "Aqui você configura seus compromissos — entradas e saídas recorrentes. As demais abas (Mensal, Anual, Histórico) são apenas visualização.",
     "pagina": "compromissos",
     "fontes": [
       "compromissos.html"
@@ -177,7 +177,7 @@
   },
   {
     "chave": "compromissos.titulo",
-    "pt_br": "Compromissos",
+    "pt_br": "Compromissos e Orçamentos",
     "pagina": "compromissos",
     "fontes": [
       "compromissos.html"
@@ -771,7 +771,7 @@
   },
   {
     "chave": "dividas.titulo",
-    "pt_br": "Dívidas",
+    "pt_br": "Financiamentos e Dívidas",
     "pagina": "dividas",
     "fontes": [
       "dividas.html"
@@ -1034,50 +1034,6 @@
     ]
   },
   {
-    "chave": "feedback.group.analise",
-    "pt_br": "Em análise e em andamento",
-    "pagina": "feedback",
-    "fontes": [
-      "src/js/pages/feedback.js"
-    ],
-    "kinds": [
-      "js"
-    ]
-  },
-  {
-    "chave": "feedback.group.concluidas",
-    "pt_br": "Concluídas e rejeitadas",
-    "pagina": "feedback",
-    "fontes": [
-      "src/js/pages/feedback.js"
-    ],
-    "kinds": [
-      "js"
-    ]
-  },
-  {
-    "chave": "feedback.group.novas",
-    "pt_br": "Novas",
-    "pagina": "feedback",
-    "fontes": [
-      "src/js/pages/feedback.js"
-    ],
-    "kinds": [
-      "js"
-    ]
-  },
-  {
-    "chave": "feedback.placeholder.titulo",
-    "pt_br": "Resumo curto do que aconteceu ou da ideia",
-    "pagina": "feedback",
-    "fontes": [
-      "feedback.html"
-    ],
-    "kinds": [
-      "html"
-    ]
-  },
-  {
     "chave": "feedback.titulo",
     "pt_br": "Sugestões & Bugs",
     "pagina": "feedback",
@@ -1189,7 +1145,7 @@
   },
   {
     "chave": "importar.descricao",
-    "pt_br": "Importe CSV ou Excel do seu banco. As transações entram como",
+    "pt_br": "Importe CSV, Excel ou OFX do seu banco. As transações entram como",
     "pagina": "importar",
     "fontes": [
       "importar.html"
@@ -1233,7 +1189,7 @@
   },
   {
     "chave": "importar.toast.formato_nao_suportado",
-    "pt_br": "Formato não suportado. Use CSV, XLSX ou XLS.",
+    "pt_br": "Formato não suportado. Use CSV, XLSX, XLS ou OFX.",
     "pagina": "importar",
     "fontes": [
       "src/js/pages/importar.js"
@@ -1332,7 +1288,7 @@
   },
   {
     "chave": "investimentos.toast.criado_com_compromisso",
-    "pt_br": "Projeto criado e compromisso vinculado",
+    "pt_br": "Projeto salvo e compromisso vinculado",
     "pagina": "investimentos",
     "fontes": [
       "src/js/pages/investimentos.js"
@@ -1420,7 +1376,7 @@
   },
   {
     "chave": "login.aviso.supabase_config",
-    "pt_br": "Configure Supabase em src/js/lib/config.js",
+    "pt_br": "Configure Supabase em .env.local (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY)",
     "pagina": "login",
     "fontes": [
       "src/js/pages/login.js"
@@ -1596,7 +1552,7 @@
   },
   {
     "chave": "login.validacao.senha_obrigatoria",
-    "pt_br": "A senha precisa de no mínimo 6 caracteres",
+    "pt_br": "A senha precisa de no mínimo 8 caracteres",
     "pagina": "login",
     "fontes": [
       "src/js/pages/login.js"
@@ -1618,7 +1574,7 @@
   },
   {
     "chave": "nav.dividas",
-    "pt_br": "Dívidas",
+    "pt_br": "Financiamentos e Dívidas",
     "pagina": "nav",
     "fontes": [
       "dividas.html"
@@ -1651,7 +1607,7 @@
   },
   {
     "chave": "orcamento.descricao",
-    "pt_br": "Visão financeira mensal — gerada automaticamente a partir dos seus compromissos. Edite valores específicos sem alterar a configuração base.",
+    "pt_br": "Visão financeira gerada a partir dos seus compromissos. Use a aba",
     "pagina": "orcamento",
     "fontes": [
       "orcamento.html"
@@ -1662,7 +1618,7 @@
   },
   {
     "chave": "orcamento.titulo",
-    "pt_br": "Orçamento Geral",
+    "pt_br": "Compromissos e Orçamentos",
     "pagina": "orcamento",
     "fontes": [
       "orcamento.html"
@@ -1760,74 +1716,8 @@
     ]
   },
   {
-    "chave": "pagamentos.toast.erro_limpar",
-    "pt_br": "Erro ao limpar pagamentos",
-    "pagina": "pagamentos",
-    "fontes": [
-      "src/js/pages/pagamentos.js"
-    ],
-    "kinds": [
-      "js"
-    ]
-  },
-  {
-    "chave": "pagamentos.toast.erro_marcar_pago",
-    "pt_br": "Erro ao marcar como pago",
-    "pagina": "pagamentos",
-    "fontes": [
-      "src/js/pages/pagamentos.js"
-    ],
-    "kinds": [
-      "js"
-    ]
-  },
-  {
-    "chave": "pagamentos.toast.limpos",
-    "pt_br": "Pagamentos pendentes limpos. Regenerando…",
-    "pagina": "pagamentos",
-    "fontes": [
-      "src/js/pages/pagamentos.js"
-    ],
-    "kinds": [
-      "js"
-    ]
-  },
-  {
-    "chave": "pagamentos.toast.marcado_pago",
-    "pt_br": "Marcado como pago",
-    "pagina": "pagamentos",
-    "fontes": [
-      "src/js/pages/pagamentos.js"
-    ],
-    "kinds": [
-      "js"
-    ]
-  },
-  {
-    "chave": "pagamentos.toast.regenerados",
-    "pt_br": "Blocos regenerados",
-    "pagina": "pagamentos",
-    "fontes": [
-      "src/js/pages/pagamentos.js"
-    ],
-    "kinds": [
-      "js"
-    ]
-  },
-  {
     "chave": "pagamentos.toast.schema_desatualizado",
     "pt_br": "Schema desatualizado. Rode a migration 0011 no Supabase pra blocos dinâmicos.",
-    "pagina": "pagamentos",
-    "fontes": [
-      "src/js/pages/pagamentos.js"
-    ],
-    "kinds": [
-      "js"
-    ]
-  },
-  {
-    "chave": "pagamentos.validacao.data_inicio",
-    "pt_br": "Informe a data de início",
     "pagina": "pagamentos",
     "fontes": [
       "src/js/pages/pagamentos.js"
@@ -3785,7 +3675,7 @@
   },
   {
     "chave": "tutorial.transacoes.tagline",
-    "pt_br": "Registre movimentações reais e mantenha seu extrato reconciliado.",
+    "pt_br": "Registre transações reais e mantenha seu extrato reconciliado.",
     "pagina": "tutorial",
     "fontes": [
       "src/js/lib/tutorial-content.js"

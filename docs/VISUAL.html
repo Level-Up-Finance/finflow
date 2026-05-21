@@ -1129,7 +1129,92 @@ Alinhado com: <code>docs/BRAND.md</code> (identidade verbal) e v1.0.5 do produto
 <li><strong>Cor herdada</strong> do contexto (<code>currentColor</code>) — ícone branco em botão primário, ícone cinza em botão ghost.</li>
 <li><strong>Consistência de família</strong> — escolher UMA biblioteca, não misturar 3.</li>
 </ol>
-<p><strong>Recomendação</strong>: <strong>Lucide</strong> (sucessor do Feather Icons). Free, MIT, 1300+ ícones, estética moderna que combina com Manrope/Inter.</p>
+<p><strong>Recomendação aprovada</strong>: <strong>Lucide</strong> (sucessor do Feather Icons). Free, MIT, 1300+ ícones, estética moderna que combina com Manrope/Inter.</p>
+<h4 id="como-instalar-quando-for-adotar">Como instalar (quando for adotar)</h4>
+<pre><code class="language-bash">npm install lucide
+</code></pre>
+<p>Uso típico em vanilla JS (sem framework):</p>
+<pre><code class="language-js">import { createElement, Wallet, ArrowDownUp, Calendar } from 'lucide';
+
+// Em qualquer elemento:
+const icon = createElement(Wallet, {
+  'stroke-width': 1.5,
+  'class': 'icon-md'
+});
+document.querySelector('.button').prepend(icon);
+</code></pre>
+<p>CSS de tamanhos sugerido:</p>
+<pre><code class="language-css">.icon-sm { width: 16px; height: 16px; }
+.icon-md { width: 20px; height: 20px; }
+.icon-lg { width: 24px; height: 24px; }
+.icon-xl { width: 32px; height: 32px; }
+
+/* Herda cor do contexto */
+.lucide { color: currentColor; }
+</code></pre>
+<h4 id="mapeamento-emojis-atuais-icones-lucide-quando-substituir">Mapeamento — emojis atuais → ícones Lucide (quando substituir)</h4>
+<table>
+<thead>
+<tr>
+<th>Emoji atual</th>
+<th>Lucide equivalente</th>
+<th>Contexto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>🏦</td>
+<td><code>Landmark</code></td>
+<td>Banco/conta</td>
+</tr>
+<tr>
+<td>💰</td>
+<td><code>Wallet</code> ou <code>Banknote</code></td>
+<td>Dinheiro/saldo</td>
+</tr>
+<tr>
+<td>📅</td>
+<td><code>Calendar</code></td>
+<td>Datas, agendamento</td>
+</tr>
+<tr>
+<td>⚡</td>
+<td><code>Zap</code></td>
+<td>Execução, ações rápidas</td>
+</tr>
+<tr>
+<td>📊</td>
+<td><code>BarChart3</code> ou <code>PieChart</code></td>
+<td>Análises, relatórios</td>
+</tr>
+<tr>
+<td>🔐</td>
+<td><code>Lock</code> ou <code>Shield</code></td>
+<td>Auth, privacidade</td>
+</tr>
+<tr>
+<td>↔️</td>
+<td><code>ArrowLeftRight</code></td>
+<td>Conta efetiva ≠ config</td>
+</tr>
+<tr>
+<td>🔄</td>
+<td><code>RefreshCcw</code> ou <code>Repeat</code></td>
+<td>Recorrência, realocação</td>
+</tr>
+<tr>
+<td>⏩</td>
+<td><code>FastForward</code> ou <code>Skip</code></td>
+<td>Adiantamento</td>
+</tr>
+<tr>
+<td>✓</td>
+<td><code>Check</code></td>
+<td>Sucesso, match</td>
+</tr>
+</tbody>
+</table>
+<p>A substituição não precisa ser big-bang — substitua emoji por Lucide à medida que tocar cada componente.</p>
 <h3 id="113-quando-emoji-vs-icone">11.3. Quando emoji vs ícone</h3>
 <ul>
 <li><strong>Emoji</strong> — comunicação rápida com personalidade (changelog, headers, badges contextuais raros). Não escala bem entre platforms.</li>

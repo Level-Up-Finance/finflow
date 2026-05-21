@@ -26,3 +26,5 @@ dist/
 
 # Claude Code
 .claude/
+FinFlow — Manual completo.gdoc
+*.gdoc

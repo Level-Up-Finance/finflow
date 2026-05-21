@@ -331,7 +331,7 @@ Ideal para parcelamentos informais ou pagamentos em aberto.`),
     title: t('tutorial.transacoes.title', 'Transações'),
     category: 'operacional',
     categoryLabel: t('tutorial.transacoes.category_label', 'Operacional'),
-    tagline: t('tutorial.transacoes.tagline', 'Registre movimentações reais e mantenha seu extrato reconciliado.'),
+    tagline: t('tutorial.transacoes.tagline', 'Registre transações reais e mantenha seu extrato reconciliado.'),
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`,
     color: '#6366F1',
     sections: [

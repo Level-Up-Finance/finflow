@@ -419,7 +419,54 @@ Quando for adotar biblioteca de ícones (Lucide, Phosphor, Heroicons), seguir:
 3. **Cor herdada** do contexto (`currentColor`) — ícone branco em botão primário, ícone cinza em botão ghost.
 4. **Consistência de família** — escolher UMA biblioteca, não misturar 3.
 
-**Recomendação**: **Lucide** (sucessor do Feather Icons). Free, MIT, 1300+ ícones, estética moderna que combina com Manrope/Inter.
+**Recomendação aprovada**: **Lucide** (sucessor do Feather Icons). Free, MIT, 1300+ ícones, estética moderna que combina com Manrope/Inter.
+
+#### Como instalar (quando for adotar)
+
+```bash
+npm install lucide
+```
+
+Uso típico em vanilla JS (sem framework):
+
+```js
+import { createElement, Wallet, ArrowDownUp, Calendar } from 'lucide';
+
+// Em qualquer elemento:
+const icon = createElement(Wallet, {
+  'stroke-width': 1.5,
+  'class': 'icon-md'
+});
+document.querySelector('.button').prepend(icon);
+```
+
+CSS de tamanhos sugerido:
+```css
+.icon-sm { width: 16px; height: 16px; }
+.icon-md { width: 20px; height: 20px; }
+.icon-lg { width: 24px; height: 24px; }
+.icon-xl { width: 32px; height: 32px; }
+
+/* Herda cor do contexto */
+.lucide { color: currentColor; }
+```
+
+#### Mapeamento — emojis atuais → ícones Lucide (quando substituir)
+
+| Emoji atual | Lucide equivalente | Contexto |
+|-------------|-------------------|----------|
+| 🏦 | `Landmark` | Banco/conta |
+| 💰 | `Wallet` ou `Banknote` | Dinheiro/saldo |
+| 📅 | `Calendar` | Datas, agendamento |
+| ⚡ | `Zap` | Execução, ações rápidas |
+| 📊 | `BarChart3` ou `PieChart` | Análises, relatórios |
+| 🔐 | `Lock` ou `Shield` | Auth, privacidade |
+| ↔️ | `ArrowLeftRight` | Conta efetiva ≠ config |
+| 🔄 | `RefreshCcw` ou `Repeat` | Recorrência, realocação |
+| ⏩ | `FastForward` ou `Skip` | Adiantamento |
+| ✓ | `Check` | Sucesso, match |
+
+A substituição não precisa ser big-bang — substitua emoji por Lucide à medida que tocar cada componente.
 
 ### 11.3. Quando emoji vs ícone
 
