@@ -1,4 +1,4 @@
-# Brand Voice Guidelines — FinFlow
+q# Brand Voice Guidelines — FinFlow
 
 > Versão deste documento: 1.0
 > Data: 20/05/2026

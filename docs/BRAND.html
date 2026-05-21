@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brand Voice Guidelines — FinFlow</title>
+<style>
+:root {
+  --color-text: #1a1a1a;
+  --color-text-muted: #6b7280;
+  --color-bg: #fafafa;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --color-accent: #2563eb;
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --color-code-bg: #f3f4f6;
+  --max-width: 780px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-text: #e5e7eb;
+    --color-text-muted: #9ca3af;
+    --color-bg: #111827;
+    --color-surface: #1f2937;
+    --color-border: #374151;
+    --color-accent: #60a5fa;
+    --color-code-bg: #1f2937;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.65;
+  color: var(--color-text);
+  background: var(--color-bg);
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 3rem 1.5rem 6rem;
+  background: var(--color-surface);
+  min-height: 100vh;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+@media (min-width: 1024px) {
+  .container {
+    margin: 2rem auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    min-height: auto;
+  }
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 2.5rem 0 1rem;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: 2.25rem;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: 0.75rem;
+}
+
+h2 {
+  font-size: 1.625rem;
+  margin-top: 3rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.5rem;
+}
+
+h3 {
+  font-size: 1.25rem;
+  color: var(--color-accent);
+}
+
+h4 {
+  font-size: 1.05rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+p {
+  margin: 0 0 1rem;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+a:hover { border-bottom-color: var(--color-accent); }
+
+strong {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+em {
+  font-style: italic;
+}
+
+code {
+  font-family: "SF Mono", Monaco, Menlo, Consolas, monospace;
+  font-size: 0.875em;
+  background: var(--color-code-bg);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  color: var(--color-danger);
+}
+
+pre {
+  background: var(--color-code-bg);
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid var(--color-border);
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+blockquote {
+  border-left: 4px solid var(--color-accent);
+  padding: 0.5rem 0 0.5rem 1.25rem;
+  margin: 1.5rem 0;
+  color: var(--color-text-muted);
+  background: var(--color-code-bg);
+  border-radius: 0 6px 6px 0;
+}
+
+blockquote p:last-child { margin-bottom: 0; }
+
+ul, ol {
+  margin: 0 0 1rem;
+  padding-left: 1.5rem;
+}
+
+li {
+  margin: 0.4rem 0;
+}
+
+li > ul, li > ol {
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin: 2.5rem 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  font-size: 0.95rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  display: block;
+  overflow-x: auto;
+  white-space: normal;
+}
+
+thead {
+  background: var(--color-code-bg);
+}
+
+th, td {
+  text-align: left;
+  padding: 0.7rem 0.95rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+th {
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+tbody tr:last-child td { border-bottom: none; }
+
+tbody tr:hover {
+  background: var(--color-code-bg);
+}
+
+/* Table of Contents (auto-gerado) */
+.toc {
+  background: var(--color-code-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin: 2rem 0;
+}
+
+.toc-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin: 0 0 0.5rem;
+  font-weight: 700;
+}
+
+.toc ol {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.toc a {
+  border-bottom: none;
+}
+
+.toc a:hover {
+  border-bottom-color: var(--color-accent);
+}
+
+/* Print */
+@media print {
+  body { background: white; color: black; }
+  .container { box-shadow: none; max-width: none; padding: 0; }
+  a { color: inherit; border: none; }
+  pre, blockquote, table { page-break-inside: avoid; }
+}
+
+/* Header com info */
+.meta-bar {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-bottom: 2rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-code-bg);
+  border-radius: 6px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Brand Voice Guidelines — FinFlow</h1>
+<div class="meta-bar">Gerado a partir de <code>BRAND.md</code></div>
+<nav class="toc"><div class="toc-title">Conteúdo</div><ol><li><a href="#1-quem-somos-e-quem-não-somos">1. Quem somos (e quem não somos)</a></li><li><a href="#2-voz-constante-não-muda">2. Voz constante (não muda)</a></li><li><a href="#3-tom-flexível-muda-por-contexto">3. Tom flexível (muda por contexto)</a></li><li><a href="#4-regras-de-escrita">4. Regras de escrita</a></li><li><a href="#5-padrões-de-copy-por-componente-ui">5. Padrões de copy por componente UI</a></li><li><a href="#6-o-que-dizer-o-que-evitar-exemplos-lado-a-lado">6. O que dizer / O que evitar — exemplos lado a lado</a></li><li><a href="#7-personalidade-aplicada-ao-multi-perfil-futuro">7. Personalidade aplicada ao multi-perfil (futuro)</a></li><li><a href="#8-aplicação-ao-naming-fase-2">8. Aplicação ao naming (Fase 2)</a></li><li><a href="#9-confidence-scores-por-seção">9. Confidence scores por seção</a></li><li><a href="#10-open-questions">10. Open Questions</a></li><li><a href="#11-como-usar-este-documento">11. Como usar este documento</a></li><li><a href="#12-histórico-de-versões">12. Histórico de versões</a></li></ol></nav>
+<p>q# Brand Voice Guidelines — FinFlow</p>
+<blockquote>
+<p>Versão deste documento: 1.0
+Data: 20/05/2026
+Fonte primária: <code>docs/MANUAL.md</code> (alinhado com v1.0.5 do produto)
+Público-alvo: pessoa física + casal/família brasileira; futuro internacional
+Personalidade aprovada: <strong>Amigável + Inteligente + Opinativo</strong></p>
+</blockquote>
+<hr />
+<h2 id="1-quem-somos-e-quem-nao-somos">1. Quem somos (e quem não somos)</h2>
+<p>A âncora da marca. Toda decisão de copy, naming, design e tom de voz deriva dessa tabela.</p>
+<table>
+<thead>
+<tr>
+<th>We Are</th>
+<th>We Are Not</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Próximos</strong> — falamos &ldquo;você&rdquo;/&rdquo;vocês&rdquo;, usamos contrações (&ldquo;pra&rdquo;, &ldquo;dá pra&rdquo;), explicamos sem condescender</td>
+<td><strong>Íntimos demais</strong> — não somos &ldquo;amigão de boteco&rdquo; nem usamos gírias datadas (&ldquo;mano&rdquo;, &ldquo;tipo&rdquo;)</td>
+</tr>
+<tr>
+<td><strong>Inteligentes</strong> — temos profundidade real (4 moedas, conciliação OFX, 23 relatórios, matemática de SAC/Price)</td>
+<td><strong>Pedantes</strong> — não exibimos complexidade pra impressionar; explicamos sempre o &ldquo;porquê&rdquo;</td>
+</tr>
+<tr>
+<td><strong>Opinativos</strong> — defendemos uma filosofia (&ldquo;comprometido vs. executado&rdquo;), guiamos o usuário ativamente</td>
+<td><strong>Mandões</strong> — não damos bronca, não envergonhamos quem gastou demais, não somos coach moralista</td>
+</tr>
+<tr>
+<td><strong>Detalhistas</strong> — rastreamos coisas que outros apps ignoram (<code>conta_id_efetiva</code>, caixinhas, cross-conta)</td>
+<td><strong>Burocráticos</strong> — não enchemos o usuário de campos opcionais nem checklist infinita</td>
+</tr>
+<tr>
+<td><strong>Realistas</strong> — assumimos que a vida financeira é bagunçada (pagou da outra conta, esqueceu de marcar, adiantou receita)</td>
+<td><strong>Cínicos</strong> — não tratamos o usuário como descuidado; oferecemos ferramenta de correção, não julgamento</td>
+</tr>
+<tr>
+<td><strong>Brasileiros sem provincianismo</strong> — pt-BR como base, mas multimoeda e termos técnicos em inglês onde fazem sentido (OFX, ledger)</td>
+<td><strong>Anglo-aspiracionais</strong> — não usamos inglês de enfeite (&ldquo;dashboard insights&rdquo;, &ldquo;AI-powered&rdquo;); só quando é mais preciso</td>
+</tr>
+<tr>
+<td><strong>Calmos</strong> — finança é tema sensível, então não usamos urgência fabricada (&ldquo;Última chance!&rdquo;, &ldquo;Faltam 2 dias!&rdquo;)</td>
+<td><strong>Indiferentes</strong> — também não somos passivos: avisamos atrasos, criamos tarefas, sugerimos ações</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Confiança nessa tabela:</strong> 🟢 <strong>Alta</strong> — 7 atributos derivados de padrões consistentes em 14 regras transversais + escolhas de naming de telas + microcopy presente no MANUAL.md.</p>
+<hr />
+<h2 id="2-voz-constante-nao-muda">2. Voz constante (não muda)</h2>
+<p>A <strong>voz</strong> é a personalidade. Não flexa por contexto.</p>
+<h3 id="21-principios-de-voz">2.1. Princípios de voz</h3>
+<ol>
+<li><strong>Trate o usuário como adulto inteligente.</strong> Explique conceitos novos uma vez, com clareza, e depois confie que ele entendeu.</li>
+<li><strong>Tenha opinião.</strong> Defenda escolhas de design (&ldquo;foi assim que pensamos&rdquo;) em vez de relativizar tudo.</li>
+<li><strong>Mostre o trabalho.</strong> Quando o app fizer algo automaticamente (gerar pagamentos, sincronizar transações, realocar conta), explique o que aconteceu.</li>
+<li><strong>Fale plural quando fizer sentido.</strong> &ldquo;Vocês&rdquo; e &ldquo;a gente&rdquo; pra casais/famílias; &ldquo;você&rdquo; pra individual. Nunca &ldquo;o usuário&rdquo;, &ldquo;a conta&rdquo;, &ldquo;o cliente&rdquo;.</li>
+<li><strong>Português de verdade, não traduzido.</strong> Usamos &ldquo;compromisso&rdquo; e &ldquo;caixinha&rdquo; porque são mais precisos que &ldquo;transação recorrente&rdquo; e &ldquo;envelope&rdquo;. Mas aceitamos OFX, ledger, cashflow quando são o termo certo.</li>
+</ol>
+<h3 id="22-vocabulario-canonico-use-sempre">2.2. Vocabulário canônico (use sempre)</h3>
+<p>Termos do produto têm tradução fixa. Não invente sinônimos:</p>
+<table>
+<thead>
+<tr>
+<th>Conceito</th>
+<th>Termo correto</th>
+<th>Não usar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Promessa de receita/despesa recorrente</td>
+<td><strong>Compromisso</strong></td>
+<td>&ldquo;Despesa fixa&rdquo;, &ldquo;lançamento recorrente&rdquo;</td>
+</tr>
+<tr>
+<td>Ocorrência mensal de um compromisso</td>
+<td><strong>Pagamento</strong></td>
+<td>&ldquo;Conta&rdquo;, &ldquo;boleto&rdquo;, &ldquo;lançamento&rdquo;</td>
+</tr>
+<tr>
+<td>Registro real do dinheiro saindo/entrando</td>
+<td><strong>Transação</strong></td>
+<td>&ldquo;Movimentação&rdquo;, &ldquo;lançamento&rdquo;, &ldquo;operação&rdquo;</td>
+</tr>
+<tr>
+<td>Sub-saldo dentro de uma conta</td>
+<td><strong>Caixinha</strong></td>
+<td>&ldquo;Envelope&rdquo;, &ldquo;Pote&rdquo;, &ldquo;Meta&rdquo;</td>
+</tr>
+<tr>
+<td>Saldo livre, não alocado em caixinhas</td>
+<td><strong>Caixa Livre</strong></td>
+<td>&ldquo;Saldo disponível&rdquo;, &ldquo;Livre&rdquo;</td>
+</tr>
+<tr>
+<td>Conta de onde o dinheiro saiu de fato</td>
+<td><strong>Conta efetiva</strong></td>
+<td>&ldquo;Conta real&rdquo;, &ldquo;Origem real&rdquo;</td>
+</tr>
+<tr>
+<td>Bater pagamentos com extrato do banco</td>
+<td><strong>Conciliação</strong> ou <strong>reconciliação</strong></td>
+<td>&ldquo;Match&rdquo;, &ldquo;verificação&rdquo;</td>
+</tr>
+<tr>
+<td>Receita recebida antes do previsto</td>
+<td><strong>Adiantamento de receita</strong></td>
+<td>&ldquo;Antecipação&rdquo;, &ldquo;pagamento antecipado&rdquo;</td>
+</tr>
+<tr>
+<td>Ativos (contas+investimentos+bens) − passivos (dívidas)</td>
+<td><strong>Patrimônio</strong></td>
+<td>&ldquo;Net worth&rdquo; (em português), &ldquo;fortuna&rdquo;</td>
+</tr>
+<tr>
+<td>Promessa de aporte com meta + prazo</td>
+<td><strong>Projeto de investimento</strong></td>
+<td>&ldquo;Objetivo&rdquo;, &ldquo;goal&rdquo;</td>
+</tr>
+<tr>
+<td>Snapshot de saldo do banco via OFX</td>
+<td><strong>Saldo do banco</strong></td>
+<td>&ldquo;Saldo real&rdquo; (ambíguo), &ldquo;snapshot&rdquo; (técnico)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="23-vocabulario-banido-nunca-use">2.3. Vocabulário banido (nunca use)</h3>
+<ul>
+<li>❌ <strong>&ldquo;Investidor&rdquo;</strong> quando se trata de pessoa comum gerenciando finanças. Use &ldquo;você&rdquo;.</li>
+<li>❌ <strong>&ldquo;Cliente&rdquo;</strong> — somos um app, eles são usuários ou simplesmente &ldquo;você&rdquo;.</li>
+<li>❌ <strong>&ldquo;Robô&rdquo; / &ldquo;IA&rdquo; / &ldquo;inteligência artificial&rdquo;</strong> — não somos isso. Somos um app determinístico bem projetado.</li>
+<li>❌ <strong>&ldquo;Plataforma&rdquo;</strong> quando dá pra dizer &ldquo;app&rdquo; ou &ldquo;FinFlow&rdquo;.</li>
+<li>❌ <strong>&ldquo;Solução&rdquo;</strong> — é vendedor demais. Diga o que faz.</li>
+<li>❌ <strong>&ldquo;Empoderar&rdquo;</strong> — palavra desgastada de marketing.</li>
+<li>❌ <strong>Anglicismos desnecessários</strong>: &ldquo;insights&rdquo;, &ldquo;dashboard&rdquo; (em UI tudo bem, em copy de marketing não), &ldquo;tracking&rdquo;, &ldquo;report&rdquo;.</li>
+</ul>
+<p><strong>Confiança vocabulário:</strong> 🟢 <strong>Alta</strong> — extraído diretamente do glossário do MANUAL.md (seção 7) e nomenclatura consistente em todas as páginas.</p>
+<hr />
+<h2 id="3-tom-flexivel-muda-por-contexto">3. Tom flexível (muda por contexto)</h2>
+<p>O <strong>tom</strong> flexa formalidade, energia e profundidade técnica conforme onde a mensagem aparece.</p>
+<table>
+<thead>
+<tr>
+<th>Contexto</th>
+<th>Formalidade</th>
+<th>Energia</th>
+<th>Densidade técnica</th>
+<th>Exemplo (escrever assim)</th>
+<th>Anti-padrão (não escrever)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Microcopy no app (botão, label)</strong></td>
+<td>Baixa</td>
+<td>Baixa</td>
+<td>Baixa</td>
+<td>&ldquo;Marcar como pago&rdquo;, &ldquo;Quando foi pago?&rdquo;, &ldquo;Saiu de qual conta?&rdquo;</td>
+<td>&ldquo;Confirmar Status do Pagamento&rdquo;, &ldquo;Inserir Dados de Quitação&rdquo;</td>
+</tr>
+<tr>
+<td><strong>Toast/notificação de sucesso</strong></td>
+<td>Baixa</td>
+<td>Média</td>
+<td>Baixa</td>
+<td>&ldquo;Pagamento marcado. Saldo atualizado.&rdquo;, &ldquo;Compromisso atualizado: próximos pagamentos sairão de Nubank.&rdquo;</td>
+<td>&ldquo;Operação realizada com sucesso!&rdquo;</td>
+</tr>
+<tr>
+<td><strong>Toast/notificação de erro</strong></td>
+<td>Média</td>
+<td>Baixa</td>
+<td>Média</td>
+<td>&ldquo;Conta de origem e destino não podem ser a mesma.&rdquo;, &ldquo;Câmbio USD indisponível agora — tenta de novo em alguns minutos.&rdquo;</td>
+<td>&ldquo;Erro 500: Internal Server Error&rdquo;, &ldquo;Ops! Algo deu errado&rdquo;</td>
+</tr>
+<tr>
+<td><strong>Dialog de confirmação</strong></td>
+<td>Baixa</td>
+<td>Baixa</td>
+<td>Baixa</td>
+<td>&ldquo;Você mudou esse pagamento para a conta: [Banco]. Quer que os próximos pagamentos desse compromisso também saiam dessa conta?&rdquo;</td>
+<td>&ldquo;Tem certeza? Esta ação não pode ser desfeita.&rdquo;</td>
+</tr>
+<tr>
+<td><strong>Vazio (empty state)</strong></td>
+<td>Baixa</td>
+<td>Média</td>
+<td>Baixa</td>
+<td>&ldquo;Nenhum compromisso ainda. Comece cadastrando seu salário ou aluguel — o resto a gente preenche.&rdquo;</td>
+<td>&ldquo;Lista vazia&rdquo;</td>
+</tr>
+<tr>
+<td><strong>Onboarding</strong></td>
+<td>Baixa</td>
+<td>Média</td>
+<td>Média</td>
+<td>&ldquo;FinFlow funciona assim: você cadastra <strong>compromissos</strong> (aluguel, salário) e a gente gera os <strong>pagamentos</strong> futuros sozinho. No fim do mês, você só confirma o que rolou.&rdquo;</td>
+<td>&ldquo;Bem-vindo! Vamos começar sua jornada financeira!&rdquo;</td>
+</tr>
+<tr>
+<td><strong>Email transacional (reset senha, etc.)</strong></td>
+<td>Média</td>
+<td>Baixa</td>
+<td>Baixa</td>
+<td>&ldquo;Pra trocar sua senha, clica aqui. O link vale por 1 hora.&rdquo;</td>
+<td>&ldquo;Prezado usuário, segue link para redefinição de credenciais.&rdquo;</td>
+</tr>
+<tr>
+<td><strong>Email marketing / changelog</strong></td>
+<td>Baixa</td>
+<td>Média</td>
+<td>Média</td>
+<td>&ldquo;Saiu a v1.0.5: agora você consegue marcar transferência por uma conta diferente sem bagunçar o histórico. Detalhes nas novidades.&rdquo;</td>
+<td>&ldquo;🚀 BIG UPDATE! Confira as novidades INCRÍVEIS!&rdquo;</td>
+</tr>
+<tr>
+<td><strong>Landing page (hero)</strong></td>
+<td>Média</td>
+<td>Média</td>
+<td>Baixa</td>
+<td>&ldquo;Organize compromissos, não tickets de extrato.&rdquo;</td>
+<td>&ldquo;A melhor plataforma de gestão financeira pessoal do Brasil&rdquo;</td>
+</tr>
+<tr>
+<td><strong>Documentação técnica (developer-facing)</strong></td>
+<td>Média</td>
+<td>Baixa</td>
+<td>Alta</td>
+<td>&ldquo;<code>conta_id_efetiva</code> rastreia a conta real quando difere da configurada no compromisso. NULL = usa o default da subcategoria.&rdquo;</td>
+<td>&ldquo;Esta coluna armazena dados sobre a conta efetiva.&rdquo;</td>
+</tr>
+<tr>
+<td><strong>Suporte ao usuário (resposta a bug)</strong></td>
+<td>Média</td>
+<td>Baixa</td>
+<td>Média</td>
+<td>&ldquo;Boa! Reproduzi aqui. O problema é X, corrigimos na v1.0.6. Te aviso quando subir.&rdquo;</td>
+<td>&ldquo;Lamentamos o ocorrido. Estamos investigando.&rdquo;</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Confiança tom:</strong> 🟡 <strong>Média</strong> — derivado parcialmente de copy existente no app (toasts, popovers) e parcialmente extrapolado pra contextos novos (landing, email marketing) que ainda não existem.</p>
+<hr />
+<h2 id="4-regras-de-escrita">4. Regras de escrita</h2>
+<h3 id="41-estrutura-de-frase">4.1. Estrutura de frase</h3>
+<ul>
+<li><strong>Frases curtas.</strong> Idealmente até 15 palavras. Se passar de 25, quebre.</li>
+<li><strong>Voz ativa.</strong> &ldquo;O FinFlow gera os pagamentos&rdquo; &gt; &ldquo;Os pagamentos são gerados pelo FinFlow&rdquo;.</li>
+<li><strong>Sujeito explícito.</strong> &ldquo;Você marca como pago&rdquo; &gt; &ldquo;Ao marcar como pago&rdquo;.</li>
+<li><strong>Verbo de ação no início de botões.</strong> &ldquo;Marcar como pago&rdquo;, &ldquo;Importar extrato&rdquo;, &ldquo;Registrar adiantamento&rdquo; — não &ldquo;Pagamento&rdquo; ou &ldquo;Importação&rdquo;.</li>
+</ul>
+<h3 id="42-pontuacao-e-tipografia">4.2. Pontuação e tipografia</h3>
+<ul>
+<li><strong>Travessão (—) sim, hífen (-) não pra interrupções.</strong> &ldquo;FinFlow funciona assim — você cadastra…&rdquo; (não usar <code>--</code> nem <code>-</code>).</li>
+<li><strong>Aspas duplas</strong> (&ldquo;&rdquo;) pra citações curtas; aspas simples (&lsquo;&rsquo;) pra termos técnicos quando precisar destacar.</li>
+<li><strong>Negrito</strong> só pra termos canônicos ou ações primárias. Nunca pra ênfase emocional.</li>
+<li><strong>Itálico</strong> evitar em copy de produto; aceitável em documentação pra metadados.</li>
+<li><strong>Sem ALL CAPS</strong> pra ênfase. Use bold ou exclamação (com parcimônia).</li>
+<li><strong>Sem emoji excessivo.</strong> Aceitável em headers de docs/changelog (🔐 📒 ✨) e em badges funcionais (↔️, ⏩) onde transmite info. Não em copy de marketing nem em CTAs.</li>
+</ul>
+<h3 id="43-numeros-moeda-data">4.3. Números, moeda, data</h3>
+<ul>
+<li><strong>Valores monetários</strong>: sempre com símbolo (R$ 1.500,00) — não &ldquo;1500 reais&rdquo; em UI.</li>
+<li><strong>Datas</strong>: dd/mm/aaaa (formato BR) pra brasileiro; ISO (aaaa-mm-dd) em logs e documentação técnica.</li>
+<li><strong>Porcentagem</strong>: &ldquo;15%&rdquo;, não &ldquo;15 por cento&rdquo;.</li>
+<li><strong>Grandes números</strong>: separador de milhar com ponto, decimal com vírgula (R$ 100.000,00). Pra textos longos, abreviar é OK (&ldquo;100k&rdquo;, &ldquo;1,5M&rdquo;).</li>
+<li><strong>Câmbio</strong>: mostrar sempre par e direção (&ldquo;1 BRL = 0,18 USD&rdquo; e &ldquo;1 USD = R$ 5,52&rdquo;).</li>
+</ul>
+<h3 id="44-inclusao-e-linguagem-neutra">4.4. Inclusão e linguagem neutra</h3>
+<ul>
+<li><strong>&ldquo;Você&rdquo;</strong> é gênero-neutro. Use livremente.</li>
+<li><strong>&ldquo;A gente&rdquo;</strong> vale como &ldquo;nós&rdquo; coloquial — não soa nem masculino nem feminino.</li>
+<li><strong>Evite assumir estrutura familiar.</strong> &ldquo;Seu parceiro/parceira&rdquo; é melhor que &ldquo;seu marido&rdquo;/&rdquo;sua esposa&rdquo;. &ldquo;Sua família&rdquo; é melhor que &ldquo;seus filhos&rdquo; quando não sabemos.</li>
+<li><strong>Não assumir relação com dinheiro.</strong> Não diga &ldquo;investidor experiente&rdquo;, &ldquo;iniciante&rdquo;, &ldquo;endividado&rdquo;. Trate cada usuário como capaz de aprender o necessário.</li>
+</ul>
+<hr />
+<h2 id="5-padroes-de-copy-por-componente-ui">5. Padrões de copy por componente UI</h2>
+<h3 id="51-botoes-ctas">5.1. Botões (CTAs)</h3>
+<table>
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Padrão</th>
+<th>Exemplos</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ação primária</td>
+<td>Verbo + objeto curto</td>
+<td>&ldquo;Marcar como pago&rdquo;, &ldquo;Salvar alterações&rdquo;, &ldquo;Importar extrato&rdquo;</td>
+</tr>
+<tr>
+<td>Ação secundária</td>
+<td>Verbo ou substantivo neutro</td>
+<td>&ldquo;Cancelar&rdquo;, &ldquo;Fechar&rdquo;, &ldquo;Voltar&rdquo;</td>
+</tr>
+<tr>
+<td>Confirmação positiva</td>
+<td>&ldquo;Sim, [verbo]&rdquo; ou só &ldquo;Sim&rdquo;</td>
+<td>&ldquo;Sim, atualizar&rdquo;, &ldquo;Sim&rdquo;</td>
+</tr>
+<tr>
+<td>Confirmação negativa</td>
+<td>&ldquo;Não&rdquo; ou &ldquo;Não, [contexto]&rdquo;</td>
+<td>&ldquo;Não&rdquo;, &ldquo;Não, só este pagamento&rdquo;</td>
+</tr>
+<tr>
+<td>Destrutiva</td>
+<td>Verbo direto, sem eufemismo</td>
+<td>&ldquo;Excluir conta&rdquo;, &ldquo;Cancelar compromisso&rdquo;, &ldquo;Resetar dados&rdquo;</td>
+</tr>
+</tbody>
+</table>
+<h3 id="52-empty-states-estado-vazio">5.2. Empty states (estado vazio)</h3>
+<p>Estrutura sugerida em 2 linhas:
+1. <strong>O que está vazio + por quê</strong> (&ldquo;Nenhum compromisso ainda. Você precisa de pelo menos um pra começar.&rdquo;)
+2. <strong>O que fazer agora + botão</strong> (&ldquo;Cadastre seu salário ou aluguel.&rdquo;) + botão &ldquo;Novo compromisso&rdquo;</p>
+<p>Evitar:
+- Frases motivacionais (&ldquo;Vamos lá, sua jornada começa aqui!&rdquo;)
+- Apenas &ldquo;Sem dados&rdquo;</p>
+<h3 id="53-toasts">5.3. Toasts</h3>
+<ul>
+<li><strong>Sucesso</strong>: confirma + estado novo. &ldquo;Transferência registrada. Saldos atualizados em /contas.&rdquo;</li>
+<li><strong>Erro</strong>: causa + próximo passo. &ldquo;Câmbio USD indisponível agora. Tenta de novo em alguns minutos.&rdquo;</li>
+<li><strong>Aviso</strong>: alerta + ação opcional. &ldquo;Importação tem 3 transações sem categoria. Reconciliar agora?&rdquo;</li>
+<li><strong>Info</strong>: estado novo apenas. &ldquo;Compromisso arquivado.&rdquo;</li>
+</ul>
+<p>Duração: 3–5s pra sucesso, 6–8s pra erro/aviso (precisa ler).</p>
+<h3 id="54-modais-de-confirmacao">5.4. Modais de confirmação</h3>
+<p>Estrutura em 4 partes:
+1. <strong>Pergunta clara</strong> no título (&ldquo;Aplicar à recorrência?&rdquo;, &ldquo;Excluir esta dívida?&rdquo;)
+2. <strong>Contexto visual</strong> (avatar do banco, ícone do tipo, valor)
+3. <strong>Consequência explícita</strong> (&ldquo;Os próximos 24 pagamentos serão excluídos.&rdquo;)
+4. <strong>Dois botões com verbo</strong>: ação positiva primeiro (verde), negativa segundo (vermelho/ghost)</p>
+<hr />
+<h2 id="6-o-que-dizer-o-que-evitar-exemplos-lado-a-lado">6. O que dizer / O que evitar — exemplos lado a lado</h2>
+<h3 id="61-erros-e-problemas">6.1. Erros e problemas</h3>
+<table>
+<thead>
+<tr>
+<th>❌ Não escrever</th>
+<th>✅ Escrever</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&ldquo;Ops! Algo deu errado.&rdquo;</td>
+<td>&ldquo;Câmbio USD indisponível agora — tenta de novo em alguns minutos.&rdquo;</td>
+</tr>
+<tr>
+<td>&ldquo;Erro de validação no campo.&rdquo;</td>
+<td>&ldquo;Conta de origem e destino precisam ser diferentes.&rdquo;</td>
+</tr>
+<tr>
+<td>&ldquo;Operação não autorizada.&rdquo;</td>
+<td>&ldquo;Esse pagamento tá vinculado a uma transação importada do banco. Desvincule em Transações antes de mudar o status.&rdquo;</td>
+</tr>
+<tr>
+<td>&ldquo;Sucesso!&rdquo;</td>
+<td>&ldquo;Pagamento marcado como Pago. Transação criada no Itaú.&rdquo;</td>
+</tr>
+</tbody>
+</table>
+<h3 id="62-pedindo-decisao">6.2. Pedindo decisão</h3>
+<table>
+<thead>
+<tr>
+<th>❌ Não escrever</th>
+<th>✅ Escrever</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&ldquo;Tem certeza?&rdquo;</td>
+<td>&ldquo;Excluir esse compromisso vai cancelar os 12 pagamentos futuros que ainda não rolaram. OK?&rdquo;</td>
+</tr>
+<tr>
+<td>&ldquo;Deseja prosseguir?&rdquo;</td>
+<td>&ldquo;Aplicar essa mudança aos próximos pagamentos também?&rdquo;</td>
+</tr>
+<tr>
+<td>&ldquo;Selecione uma opção:&rdquo;</td>
+<td>&ldquo;Saiu de qual conta?&rdquo;</td>
+</tr>
+</tbody>
+</table>
+<h3 id="63-onboarding-e-ensinando">6.3. Onboarding e ensinando</h3>
+<table>
+<thead>
+<tr>
+<th>❌ Não escrever</th>
+<th>✅ Escrever</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&ldquo;Bem-vindo ao FinFlow! Sua jornada financeira começa aqui!&rdquo;</td>
+<td>&ldquo;Beleza — pra começar, cadastra seu salário e seus gastos fixos. A gente gera os pagamentos do ano inteiro automaticamente.&rdquo;</td>
+</tr>
+<tr>
+<td>&ldquo;Categorias permitem organizar suas despesas.&rdquo;</td>
+<td>&ldquo;Categorias agrupam compromissos parecidos — Custo de Vida, Lazer, Investimentos. Você não precisa criar agora; já vem com as principais.&rdquo;</td>
+</tr>
+</tbody>
+</table>
+<h3 id="64-marketing-e-landing">6.4. Marketing e landing</h3>
+<table>
+<thead>
+<tr>
+<th>❌ Não escrever</th>
+<th>✅ Escrever</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&ldquo;A plataforma definitiva de gestão financeira.&rdquo;</td>
+<td>&ldquo;Pare de cadastrar transação por transação. Cadastre compromissos.&rdquo;</td>
+</tr>
+<tr>
+<td>&ldquo;Empoderamos sua vida financeira.&rdquo;</td>
+<td>&ldquo;Você sabe quanto vai sobrar em outubro. Antes de outubro chegar.&rdquo;</td>
+</tr>
+<tr>
+<td>&ldquo;AI-powered insights.&rdquo;</td>
+<td>&ldquo;23 relatórios que mostram pra onde seu dinheiro foi — e pra onde vai.&rdquo;</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-personalidade-aplicada-ao-multi-perfil-futuro">7. Personalidade aplicada ao multi-perfil (futuro)</h2>
+<p>Quando a funcionalidade de múltiplos perfis na mesma conta sair, a voz precisa acomodar:</p>
+<ul>
+<li><strong>Padrão singular continua</strong> quando a ação é individual (&ldquo;Você cadastrou um compromisso.&rdquo;).</li>
+<li><strong>Plural automático</strong> quando a ação afeta o grupo (&ldquo;Vocês têm 3 compromissos compartilhados em outubro.&rdquo;).</li>
+<li><strong>Nomes próprios</strong> quando há ambiguidade (&ldquo;Arnaldo marcou o aluguel como pago.&rdquo;, &ldquo;Maria registrou um adiantamento.&rdquo;).</li>
+<li><strong>Evitar &ldquo;usuário X&rdquo; ou &ldquo;membro Y&rdquo;</strong> — sempre o nome ou o pronome.</li>
+</ul>
+<p>Exemplos de copy multi-perfil:
+- ✅ &ldquo;Vocês economizaram R$ 2.400 esse mês comparado ao mês passado.&rdquo;
+- ✅ &ldquo;Maria atualizou a conta do aluguel.&rdquo;
+- ❌ &ldquo;O usuário principal alterou as configurações.&rdquo;
+- ❌ &ldquo;Membro adicional realizou um pagamento.&rdquo;</p>
+<hr />
+<h2 id="8-aplicacao-ao-naming-fase-2">8. Aplicação ao naming (Fase 2)</h2>
+<p>Quando a gente for buscar nome alternativo ao FinFlow, esses filtros vão guiar:</p>
+<table>
+<thead>
+<tr>
+<th>Filtro</th>
+<th>Critério</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Tom</strong></td>
+<td>Deve soar amigável-inteligente. Não corporativo (Bradesco, Itaú), não fofo (Mobills, MoneyLover)</td>
+</tr>
+<tr>
+<td><strong>Pronúncia</strong></td>
+<td>Funciona em PT-BR e EN sem ajustar</td>
+</tr>
+<tr>
+<td><strong>Comprimento</strong></td>
+<td>1–3 sílabas (Linear, Notion, Stripe)</td>
+</tr>
+<tr>
+<td><strong>Domínio</strong></td>
+<td>.com disponível ou comprável (até R$ 5k razoável)</td>
+</tr>
+<tr>
+<td><strong>Tradução de &ldquo;Flow&rdquo;</strong></td>
+<td>Manter sensação de movimento/leveza/continuidade — não cair em &ldquo;gestão&rdquo;, &ldquo;controle&rdquo;, &ldquo;planner&rdquo;</td>
+</tr>
+<tr>
+<td><strong>Substantivo concreto &gt; abstração genérica</strong></td>
+<td>&ldquo;Notion&rdquo; e &ldquo;Stripe&rdquo; funcionam; &ldquo;FinanceManager&rdquo; não</td>
+</tr>
+</tbody>
+</table>
+<p>Categorias de naming a explorar na Fase 2:
+1. <strong>Metáforas de fluxo</strong> (Stream, Tide, Current, Drift)
+2. <strong>Termos contábeis poéticos</strong> (Ledger, Tally, Ream, Quill)
+3. <strong>Palavras inventadas curtas</strong> (Klop, Vena, Mire, Joon)
+4. <strong>Palavras brasileiras universais</strong> (Ipê, Voto, Mira, Lume)
+5. <strong>Composições híbridas</strong> (Penny+verbo, verbo+Money, etc.)</p>
+<hr />
+<h2 id="9-confidence-scores-por-secao">9. Confidence scores por seção</h2>
+<table>
+<thead>
+<tr>
+<th>Seção</th>
+<th>Confiança</th>
+<th>Motivo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. We Are / We Are Not</td>
+<td>🟢 Alta</td>
+<td>7 atributos com evidência direta no MANUAL</td>
+</tr>
+<tr>
+<td>2. Voz constante</td>
+<td>🟢 Alta</td>
+<td>Padrões consistentes em microcopy + filosofia explícita</td>
+</tr>
+<tr>
+<td>2.2 Vocabulário canônico</td>
+<td>🟢 Alta</td>
+<td>Glossário do MANUAL + nomenclatura em 26 páginas</td>
+</tr>
+<tr>
+<td>2.3 Vocabulário banido</td>
+<td>🟡 Média</td>
+<td>Derivado por contraste; precisa validação em uso real</td>
+</tr>
+<tr>
+<td>3. Tom por contexto</td>
+<td>🟡 Média</td>
+<td>Confiante em microcopy in-app; especulativo em landing/email marketing</td>
+</tr>
+<tr>
+<td>4. Regras de escrita</td>
+<td>🟢 Alta</td>
+<td>Padrões observáveis no produto</td>
+</tr>
+<tr>
+<td>5. Padrões UI</td>
+<td>🟢 Alta</td>
+<td>Componentes já existem com esses padrões</td>
+</tr>
+<tr>
+<td>6. Lado a lado</td>
+<td>🟡 Média</td>
+<td>Exemplos sintéticos; precisa real A/B em alguns casos</td>
+</tr>
+<tr>
+<td>7. Multi-perfil</td>
+<td>🟠 Baixa</td>
+<td>Funcionalidade ainda não existe — antecipa direção</td>
+</tr>
+<tr>
+<td>8. Filtros de naming</td>
+<td>🟢 Alta</td>
+<td>Derivado direto da personalidade aprovada</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="10-open-questions">10. Open Questions</h2>
+<h3 id="alta-prioridade-afeta-entregaveis-proximos">Alta prioridade (afeta entregáveis próximos)</h3>
+<ol>
+<li>
+<p><strong>Como tratar plural genérico antes do multi-perfil existir?</strong>
+   - Hoje o app sempre fala &ldquo;você&rdquo; porque é mono-usuário. Mas a landing/email marketing pode falar &ldquo;vocês&rdquo;/&rdquo;a gente&rdquo; pra mostrar a aspiração de casal/família.
+   - <strong>Recomendação</strong>: usar &ldquo;vocês&rdquo; e &ldquo;a gente&rdquo; em copy de marketing <strong>agora</strong>, mesmo antes da feature existir. Sinaliza ambição e prepara o terreno.
+   - <strong>Decisão necessária</strong>: confirma esse rumo, ou prefere ficar no &ldquo;você&rdquo; até a feature existir?</p>
+</li>
+<li>
+<p><strong>Tagline definitiva?</strong>
+   - MANUAL.md tem várias formulações fortes da filosofia: &ldquo;comprometido vs. executado&rdquo;, &ldquo;antecipa o futuro&rdquo;, &ldquo;patrimônio vivo&rdquo;.
+   - <strong>Recomendação</strong>: testar 3–5 tagline candidatas na Fase 2 (junto com naming).
+   - <strong>Decisão</strong>: agora ou depois do naming?</p>
+</li>
+<li>
+<p><strong>Uso de emojis na comunicação externa (não-UI)?</strong>
+   - No app, emojis são funcionais (badges ↔, ⏩, ✓). No MANUAL.md, headers usam emojis 🔐 📒 ✨.
+   - Em landing/email/social, ainda é OK?
+   - <strong>Recomendação</strong>: emojis sutis e contextuais em email/changelog OK; em landing principal e sites institucionais, evitar.
+   - <strong>Decisão</strong>: confirma?</p>
+</li>
+</ol>
+<h3 id="media-prioridade-afeta-evolucao">Média prioridade (afeta evolução)</h3>
+<ol start="4">
+<li><strong>Tutela de termos PT vs. EN.</strong> &ldquo;Cashflow&rdquo; ou &ldquo;Fluxo de caixa&rdquo;? &ldquo;Budget&rdquo; ou &ldquo;Orçamento&rdquo;? Hoje o MANUAL usa PT (Orçamento, Fluxo). Manter assim em toda a marca?</li>
+<li><strong>Linguagem em estados de erro graves.</strong> Quando o usuário perde dados / sincronização falha grave / dívida calcula errado, sobe o nível de seriedade?</li>
+</ol>
+<hr />
+<h2 id="11-como-usar-este-documento">11. Como usar este documento</h2>
+<ul>
+<li><strong>Designers de UI</strong>: consulte §4 (regras de escrita), §5 (padrões UI), §6 (exemplos lado a lado).</li>
+<li><strong>Copy de marketing</strong>: consulte §3 (tom por contexto — linha &ldquo;Landing page&rdquo;) e §6.4.</li>
+<li><strong>Suporte</strong>: consulte §3 (linha &ldquo;Suporte&rdquo;) e §6.1.</li>
+<li><strong>Engenharia</strong>: consulte §2.2 (vocabulário canônico — <code>subcategorias</code>, <code>pagamentos</code>, não <code>transactions</code>/<code>bills</code>).</li>
+<li><strong>Naming (Fase 2)</strong>: consulte §8.</li>
+</ul>
+<p>Para validar qualquer copy contra essas guidelines, use o skill <code>/brand-voice:enforce-voice</code> — ele lê este arquivo automaticamente.</p>
+<hr />
+<h2 id="12-historico-de-versoes">12. Histórico de versões</h2>
+<ul>
+<li><strong>1.0 — 20/05/2026</strong>: versão inicial extraída de <code>docs/MANUAL.md</code> (v1.0.5). Aprovação de personalidade: Amigável + Inteligente + Opinativo. Aprovação de público: PF + Casal/Família PT-BR com futuro internacional.</li>
+</ul>
+</div>
+</body>
+</html>
