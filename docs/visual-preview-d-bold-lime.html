@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bold Preto + Lime — FinFlow Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --color-primary: #0A0A0A;
+  --color-primary-dark: #000000;
+  --color-primary-light: #404040;
+  --color-primary-50: #FAFAFA;
+  --color-primary-100: #F0F0F0;
+  --color-secondary: #C2F542;
+  --color-secondary-dark: #A3D331;
+  --color-text-main: #0A0A0A;
+  --color-text-secondary: #525252;
+  --color-text-muted: #A3A3A3;
+  --color-border: #E5E5E5;
+  --color-background: #FAFAFA;
+  --color-surface: #FFFFFF;
+  --color-sidebar-bg: #000000;
+  --color-sidebar-text: #A3A3A3;
+  --color-success: #166534;
+  --color-success-bg: #DCFCE7;
+  --color-warning: #854D0E;
+  --color-warning-bg: #FEF9C3;
+  --color-danger: #991B1B;
+  --color-danger-bg: #FEE2E2;
+  --color-cartao: #5B21B6;
+  --color-cartao-bg: #EDE9FE;
+  --gradient-hero: linear-gradient(135deg, #000000 0%, #1A1A1A 50%, #C2F542 100%);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.08);
+  --focus-ring: rgba(0,0,0,0.15);
+
+  --font-display: 'Manrope', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-body);
+  background: var(--color-background);
+  color: var(--color-text-main);
+  line-height: 1.5;
+  padding: 2rem 1rem;
+  min-height: 100vh;
+}
+.wrapper { max-width: 1200px; margin: 0 auto; }
+.tabular { font-variant-numeric: tabular-nums; font-family: 'Geist Mono', monospace; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em; }
+
+.intro {
+  background: var(--color-surface);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid var(--color-border);
+}
+.intro h1 { font-size: 1.75rem; margin-bottom: 0.5rem; }
+.intro .meta { color: var(--color-text-secondary); font-size: 0.95rem; }
+.intro .meta strong { color: var(--color-text-main); }
+.intro .pill {
+  display: inline-block;
+  background: var(--color-primary-50);
+  color: var(--color-primary-dark);
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
+}
+@media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+
+.sidebar {
+  background: var(--color-sidebar-bg);
+  border-radius: 16px;
+  padding: 1.25rem 0.75rem;
+  height: fit-content;
+}
+.sidebar-logo {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: white;
+  padding: 0.5rem 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.sidebar-logo-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--gradient-hero);
+}
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  color: var(--color-sidebar-text);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin-bottom: 0.15rem;
+  cursor: pointer;
+}
+.sidebar-item.active {
+  background: var(--color-primary);
+  color: white;
+}
+.sidebar-item.active.bold-secondary { color: var(--color-secondary); }
+
+.main { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.topbar {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.topbar h2 { font-size: 1.5rem; }
+
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+.btn-primary:hover { background: var(--color-primary-dark); }
+.btn-secondary {
+  background: var(--color-secondary);
+  color: var(--color-text-main);
+  padding: 0.6rem 1.2rem;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+.btn-secondary:hover { background: var(--color-secondary-dark); color: white; }
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-main);
+  padding: 0.6rem 1.2rem;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+@media (max-width: 700px) { .kpi-row { grid-template-columns: 1fr; } }
+
+.kpi {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+}
+.kpi-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.kpi-value {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-trend {
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+.kpi-trend.up { color: var(--color-success); }
+.kpi-trend.down { color: var(--color-danger); }
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+}
+.card-title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.table { width: 100%; }
+.row {
+  display: grid;
+  grid-template-columns: 32px 1fr auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.row:last-child { border-bottom: none; }
+.row-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.row-avatar.itau { background: #EC7000; }
+.row-avatar.nu { background: #8A05BE; }
+.row-info strong {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.row-info span {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+.row-value {
+  font-variant-numeric: tabular-nums;
+  font-family: 'Geist Mono', monospace;
+  font-weight: 600;
+}
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.badge.pago { background: var(--color-success-bg); color: var(--color-success); }
+.badge.agendado { background: var(--color-warning-bg); color: var(--color-warning); }
+.badge.atrasado { background: var(--color-danger-bg); color: var(--color-danger); }
+.badge.cartao { background: var(--color-cartao-bg); color: var(--color-cartao); }
+
+.cta-hero {
+  background: var(--gradient-hero);
+  border-radius: 16px;
+  padding: 2rem;
+  color: white;
+  text-align: center;
+}
+.cta-hero h2 { color: white; font-size: 1.75rem; margin-bottom: 0.5rem; }
+.cta-hero p { color: rgba(255,255,255,0.85); margin-bottom: 1rem; }
+.cta-hero button {
+  background: white;
+  color: var(--color-text-main);
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+.form-row label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+.form-row input,
+.form-row select {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  outline: none;
+  background: var(--color-surface);
+  color: var(--color-text-main);
+}
+.form-row input:focus,
+.form-row select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.swatches-strip {
+  display: flex;
+  gap: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 1rem;
+  height: 40px;
+}
+.swatches-strip .sw {
+  flex: 1;
+  position: relative;
+}
+.swatches-strip .sw::after {
+  content: attr(data-name);
+  position: absolute;
+  bottom: 3px;
+  left: 6px;
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--label-color, white);
+  opacity: 0.85;
+  font-weight: 500;
+}
+
+.footer {
+  margin-top: 3rem;
+  padding: 1.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+.footer code {
+  background: var(--color-primary-50);
+  color: var(--color-primary-dark);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="intro">
+    <span class="pill">Paleta D + Tipo A</span>
+    <h1>FinFlow — Bold Preto + Lime</h1>
+    <p class="meta"><strong>Mood:</strong> Contemporâneo, ousado, statement · Cash App, Robinhood · <strong>Tipografia:</strong> Manrope + Inter</p>
+    <div class="swatches-strip">
+      <div class="sw" style="background: #0A0A0A;" data-name="primary"></div>
+      <div class="sw" style="background: #C2F542; --label-color: black;" data-name="secondary"></div>
+      <div class="sw" style="background: #000000;" data-name="sidebar"></div>
+      <div class="sw" style="background: #166534;" data-name="success"></div>
+      <div class="sw" style="background: #854D0E;" data-name="warning"></div>
+      <div class="sw" style="background: #991B1B;" data-name="danger"></div>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span class="sidebar-logo-mark"></span>
+        FinFlow
+      </div>
+      <div class="sidebar-item">Dashboard</div>
+      <div class="sidebar-item active">Pagamentos</div>
+      <div class="sidebar-item">Contas</div>
+      <div class="sidebar-item">Compromissos</div>
+      <div class="sidebar-item">Transações</div>
+      <div class="sidebar-item">Dívidas</div>
+      <div class="sidebar-item">Investimentos</div>
+      <div class="sidebar-item">Relatórios</div>
+    </aside>
+
+    <div class="main">
+
+      <div class="topbar">
+        <h2>Pagamentos · Maio/2026</h2>
+        <button class="btn-primary">+ Novo compromisso</button>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-label">Saldo total</div>
+          <div class="kpi-value">R$ 28.450,12</div>
+          <div class="kpi-trend up">↑ R$ 1.240 vs mês passado</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">A pagar este mês</div>
+          <div class="kpi-value">R$ 7.850,00</div>
+          <div class="kpi-trend">12 compromissos</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Patrimônio</div>
+          <div class="kpi-value">R$ 142.300,50</div>
+          <div class="kpi-trend up">↑ 2,4% no mês</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Próximos pagamentos</div>
+        <div class="table">
+          <div class="row">
+            <div class="row-avatar itau">I</div>
+            <div class="row-info">
+              <strong>Aluguel</strong>
+              <span>Custo de Vida · vence 05/05</span>
+            </div>
+            <span class="badge pago">Pago</span>
+            <span class="row-value">R$ 2.500,00</span>
+          </div>
+          <div class="row">
+            <div class="row-avatar nu">N</div>
+            <div class="row-info">
+              <strong>Luz</strong>
+              <span>Custo de Vida · vence 15/05</span>
+            </div>
+            <span class="badge agendado">Agendado</span>
+            <span class="row-value">R$ 380,45</span>
+          </div>
+          <div class="row">
+            <div class="row-avatar">B</div>
+            <div class="row-info">
+              <strong>Mercado da semana</strong>
+              <span>Alimentação · vence 18/05</span>
+            </div>
+            <span class="badge atrasado">Atrasado 2d</span>
+            <span class="row-value">R$ 620,00</span>
+          </div>
+          <div class="row">
+            <div class="row-avatar itau">I</div>
+            <div class="row-info">
+              <strong>Internet</strong>
+              <span>Custo de Vida · vence 20/05</span>
+            </div>
+            <span class="badge cartao">Cartão</span>
+            <span class="row-value">R$ 129,90</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Novo compromisso</div>
+        <div class="form-row">
+          <label>Nome</label>
+          <input type="text" placeholder="Ex: Aluguel">
+        </div>
+        <div class="form-row">
+          <label>Conta</label>
+          <select>
+            <option>Itaú Corrente</option>
+            <option>Nubank</option>
+            <option>Banco Inter</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+          <button class="btn-primary">Salvar compromisso</button>
+          <button class="btn-ghost">Cancelar</button>
+        </div>
+      </div>
+
+      <div class="cta-hero">
+        <h2>Pronto pra organizar de verdade?</h2>
+        <p>A gente vê pra onde foi o dinheiro. E pra onde vai.</p>
+        <button>Começar agora</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Botões e ações</div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn-primary">Primário</button>
+          <button class="btn-secondary">Secundário</button>
+          <button class="btn-ghost">Ghost</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer">
+    Preview da paleta <code>D</code> + tipografia Manrope/Inter.<br>
+    Gerado por <code>scripts/generate-visual-previews.py</code>.
+  </div>
+
+</div>
+</body>
+</html>
