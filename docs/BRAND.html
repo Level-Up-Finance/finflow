@@ -271,7 +271,7 @@ tbody tr:hover {
 <div class="container">
 <h1>Brand Voice Guidelines — FinFlow</h1>
 <div class="meta-bar">Gerado a partir de <code>BRAND.md</code></div>
-<nav class="toc"><div class="toc-title">Conteúdo</div><ol><li><a href="#1-quem-somos-e-quem-não-somos">1. Quem somos (e quem não somos)</a></li><li><a href="#2-voz-constante-não-muda">2. Voz constante (não muda)</a></li><li><a href="#3-tom-flexível-muda-por-contexto">3. Tom flexível (muda por contexto)</a></li><li><a href="#4-regras-de-escrita">4. Regras de escrita</a></li><li><a href="#5-padrões-de-copy-por-componente-ui">5. Padrões de copy por componente UI</a></li><li><a href="#6-o-que-dizer-o-que-evitar-exemplos-lado-a-lado">6. O que dizer / O que evitar — exemplos lado a lado</a></li><li><a href="#7-personalidade-aplicada-ao-multi-perfil-futuro">7. Personalidade aplicada ao multi-perfil (futuro)</a></li><li><a href="#8-aplicação-ao-naming-fase-2">8. Aplicação ao naming (Fase 2)</a></li><li><a href="#9-confidence-scores-por-seção">9. Confidence scores por seção</a></li><li><a href="#10-open-questions">10. Open Questions</a></li><li><a href="#11-como-usar-este-documento">11. Como usar este documento</a></li><li><a href="#12-histórico-de-versões">12. Histórico de versões</a></li></ol></nav>
+<nav class="toc"><div class="toc-title">Conteúdo</div><ol><li><a href="#1-quem-somos-e-quem-não-somos">1. Quem somos (e quem não somos)</a></li><li><a href="#2-voz-constante-não-muda">2. Voz constante (não muda)</a></li><li><a href="#3-tom-flexível-muda-por-contexto">3. Tom flexível (muda por contexto)</a></li><li><a href="#4-regras-de-escrita">4. Regras de escrita</a></li><li><a href="#5-padrões-de-copy-por-componente-ui">5. Padrões de copy por componente UI</a></li><li><a href="#6-o-que-dizer-o-que-evitar-exemplos-lado-a-lado">6. O que dizer / O que evitar — exemplos lado a lado</a></li><li><a href="#7-personalidade-aplicada-ao-multi-perfil-futuro">7. Personalidade aplicada ao multi-perfil (futuro)</a></li><li><a href="#8-aplicação-ao-naming-fase-2">8. Aplicação ao naming (Fase 2)</a></li><li><a href="#9-confidence-scores-por-seção">9. Confidence scores por seção</a></li><li><a href="#10-decisões-fechadas">10. Decisões fechadas</a></li><li><a href="#11-open-questions-ainda-em-aberto">11. Open Questions ainda em aberto</a></li><li><a href="#12-como-usar-este-documento">12. Como usar este documento</a></li><li><a href="#13-histórico-de-versões">13. Histórico de versões</a></li></ol></nav>
 <p>q# Brand Voice Guidelines — FinFlow</p>
 <blockquote>
 <p>Versão deste documento: 1.0
@@ -826,36 +826,88 @@ Personalidade aprovada: <strong>Amigável + Inteligente + Opinativo</strong></p>
 </tbody>
 </table>
 <hr />
-<h2 id="10-open-questions">10. Open Questions</h2>
-<h3 id="alta-prioridade-afeta-entregaveis-proximos">Alta prioridade (afeta entregáveis próximos)</h3>
-<ol>
-<li>
-<p><strong>Como tratar plural genérico antes do multi-perfil existir?</strong>
-   - Hoje o app sempre fala &ldquo;você&rdquo; porque é mono-usuário. Mas a landing/email marketing pode falar &ldquo;vocês&rdquo;/&rdquo;a gente&rdquo; pra mostrar a aspiração de casal/família.
-   - <strong>Recomendação</strong>: usar &ldquo;vocês&rdquo; e &ldquo;a gente&rdquo; em copy de marketing <strong>agora</strong>, mesmo antes da feature existir. Sinaliza ambição e prepara o terreno.
-   - <strong>Decisão necessária</strong>: confirma esse rumo, ou prefere ficar no &ldquo;você&rdquo; até a feature existir?</p>
-</li>
-<li>
-<p><strong>Tagline definitiva?</strong>
-   - MANUAL.md tem várias formulações fortes da filosofia: &ldquo;comprometido vs. executado&rdquo;, &ldquo;antecipa o futuro&rdquo;, &ldquo;patrimônio vivo&rdquo;.
-   - <strong>Recomendação</strong>: testar 3–5 tagline candidatas na Fase 2 (junto com naming).
-   - <strong>Decisão</strong>: agora ou depois do naming?</p>
-</li>
-<li>
-<p><strong>Uso de emojis na comunicação externa (não-UI)?</strong>
-   - No app, emojis são funcionais (badges ↔, ⏩, ✓). No MANUAL.md, headers usam emojis 🔐 📒 ✨.
-   - Em landing/email/social, ainda é OK?
-   - <strong>Recomendação</strong>: emojis sutis e contextuais em email/changelog OK; em landing principal e sites institucionais, evitar.
-   - <strong>Decisão</strong>: confirma?</p>
-</li>
-</ol>
+<h2 id="10-decisoes-fechadas">10. Decisões fechadas</h2>
+<p>Estas questões eram open questions e foram fechadas em 21/05/2026.</p>
+<h3 id="101-plural-generico-vocesa-gente-antes-do-multi-perfil-existir">10.1. Plural genérico (&ldquo;vocês&rdquo;/&rdquo;a gente&rdquo;) antes do multi-perfil existir</h3>
+<p>✅ <strong>Decisão: USAR plural genérico em marketing desde já</strong>.</p>
+<ul>
+<li><strong>Onde aplica</strong>: landing page, email marketing, social media, página pública.</li>
+<li><strong>Onde NÃO aplica</strong>: UI do app (continua &ldquo;você&rdquo; enquanto for mono-usuário). Microcopy interna mantém singular.</li>
+<li><strong>Razão</strong>: o público-alvo é PF + Casal/Família. Posicionar pra casal/família desde o primeiro contato prepara terreno pra feature de multi-perfil futura. Usuário solo se vê em &ldquo;a gente&rdquo; naturalmente — vira &ldquo;eu e meu dinheiro&rdquo; sem soar errado.</li>
+</ul>
+<p><strong>Exemplos</strong>:
+- ✅ Landing hero: &ldquo;Vocês veem onde tá indo cada real&rdquo;
+- ✅ Email marketing: &ldquo;A gente avisa quando rolar&rdquo;
+- ✅ Social media: &ldquo;Pra você e pra família&rdquo;
+- ⚠️ UI do app: mantém &ldquo;você&rdquo; até multi-perfil existir, daí flexa pra &ldquo;vocês&rdquo; quando aplicável</p>
+<h3 id="102-tagline-quando-definir">10.2. Tagline — quando definir</h3>
+<p>✅ <strong>Decisão: AGORA, separadamente do naming</strong>.</p>
+<ul>
+<li><strong>Razão</strong>: naming foi adiado pra pré-lançamento (a-lá Twitter→Burbn — ver <code>NAMING.md</code>), mas tagline serve pra marketing já. Tagline não depende de nome final — ela carrega filosofia, e a filosofia já existe.</li>
+<li><strong>Quando</strong>: brainstorm na primeira sessão de landing page (próximo passo de aplicação). Tagline nasce testando-se no contexto real.</li>
+<li><strong>Candidatas iniciais</strong> (a refinar): partir das formulações fortes do MANUAL — &ldquo;comprometido vs. executado&rdquo;, &ldquo;antecipa o futuro&rdquo;, &ldquo;patrimônio vivo&rdquo;, &ldquo;organize compromissos, não tickets de extrato&rdquo;.</li>
+</ul>
+<h3 id="103-emojis-em-landing-email-social-nao-ui">10.3. Emojis em landing / email / social (não-UI)</h3>
+<p>✅ <strong>Decisão: SUTIL e contextual — nunca abundante</strong>.</p>
+<p>Regra prática:</p>
+<table>
+<thead>
+<tr>
+<th>Contexto</th>
+<th>Emoji OK?</th>
+<th>Limite</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hero da landing</td>
+<td>❌ Não</td>
+<td>Zero — soa Mint/MoneyLover</td>
+</tr>
+<tr>
+<td>Página institucional (sobre, termos)</td>
+<td>❌ Não</td>
+<td>Zero — manter sóbrio</td>
+</tr>
+<tr>
+<td>Comunicado oficial / press</td>
+<td>❌ Não</td>
+<td>Zero</td>
+</tr>
+<tr>
+<td>Email transacional (reset, confirmação)</td>
+<td>✅ Sim, leve</td>
+<td>Máximo 1 por email</td>
+</tr>
+<tr>
+<td>Email marketing / changelog</td>
+<td>✅ Sim, contextual</td>
+<td>Máximo 2 por email, <strong>com função</strong></td>
+</tr>
+<tr>
+<td>Social media casual (LinkedIn/Twitter informal)</td>
+<td>✅ Sim</td>
+<td>1–2 por post</td>
+</tr>
+<tr>
+<td><strong>UI do app</strong> (já existente)</td>
+<td>✅ Sim, <strong>funcional</strong></td>
+<td>Badges com significado (↔, ⏩, ✓)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Comparação</strong>:
+- ❌ &ldquo;🎉 NOVIDADE INCRÍVEL! 🚀💰 v1.0.5 chegou! 🔥&rdquo; (Mint-style)
+- ✅ &ldquo;Saiu a v1.0.5. Agora dá pra marcar transferência por outra conta sem bagunçar o histórico.&rdquo;
+- ✅ &ldquo;Pra trocar sua senha, clica aqui 🔒. Link vale 1h.&rdquo; (1 emoji funcional)</p>
+<h2 id="11-open-questions-ainda-em-aberto">11. Open Questions ainda em aberto</h2>
 <h3 id="media-prioridade-afeta-evolucao">Média prioridade (afeta evolução)</h3>
-<ol start="4">
+<ol>
 <li><strong>Tutela de termos PT vs. EN.</strong> &ldquo;Cashflow&rdquo; ou &ldquo;Fluxo de caixa&rdquo;? &ldquo;Budget&rdquo; ou &ldquo;Orçamento&rdquo;? Hoje o MANUAL usa PT (Orçamento, Fluxo). Manter assim em toda a marca?</li>
 <li><strong>Linguagem em estados de erro graves.</strong> Quando o usuário perde dados / sincronização falha grave / dívida calcula errado, sobe o nível de seriedade?</li>
 </ol>
 <hr />
-<h2 id="11-como-usar-este-documento">11. Como usar este documento</h2>
+<h2 id="12-como-usar-este-documento">12. Como usar este documento</h2>
 <ul>
 <li><strong>Designers de UI</strong>: consulte §4 (regras de escrita), §5 (padrões UI), §6 (exemplos lado a lado).</li>
 <li><strong>Copy de marketing</strong>: consulte §3 (tom por contexto — linha &ldquo;Landing page&rdquo;) e §6.4.</li>
@@ -865,9 +917,10 @@ Personalidade aprovada: <strong>Amigável + Inteligente + Opinativo</strong></p>
 </ul>
 <p>Para validar qualquer copy contra essas guidelines, use o skill <code>/brand-voice:enforce-voice</code> — ele lê este arquivo automaticamente.</p>
 <hr />
-<h2 id="12-historico-de-versoes">12. Histórico de versões</h2>
+<h2 id="13-historico-de-versoes">13. Histórico de versões</h2>
 <ul>
 <li><strong>1.0 — 20/05/2026</strong>: versão inicial extraída de <code>docs/MANUAL.md</code> (v1.0.5). Aprovação de personalidade: Amigável + Inteligente + Opinativo. Aprovação de público: PF + Casal/Família PT-BR com futuro internacional.</li>
+<li><strong>1.1 — 21/05/2026</strong>: fechadas 3 open questions de alta prioridade. (1) Plural genérico em marketing desde já. (2) Tagline a definir AGORA, separado do naming. (3) Emojis sutil/contextual em comunicação externa, nunca abundante. Seção §10 renomeada de &ldquo;Open Questions&rdquo; pra &ldquo;Decisões fechadas&rdquo;. Restantes vão pra §11.</li>
 </ul>
 </div>
 </body>

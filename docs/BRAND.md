@@ -260,34 +260,63 @@ Categorias de naming a explorar na Fase 2:
 
 ---
 
-## 10. Open Questions
+## 10. Decisões fechadas
 
-### Alta prioridade (afeta entregáveis próximos)
+Estas questões eram open questions e foram fechadas em 21/05/2026.
 
-1. **Como tratar plural genérico antes do multi-perfil existir?**
-   - Hoje o app sempre fala "você" porque é mono-usuário. Mas a landing/email marketing pode falar "vocês"/"a gente" pra mostrar a aspiração de casal/família.
-   - **Recomendação**: usar "vocês" e "a gente" em copy de marketing **agora**, mesmo antes da feature existir. Sinaliza ambição e prepara o terreno.
-   - **Decisão necessária**: confirma esse rumo, ou prefere ficar no "você" até a feature existir?
+### 10.1. Plural genérico ("vocês"/"a gente") antes do multi-perfil existir
 
-2. **Tagline definitiva?**
-   - MANUAL.md tem várias formulações fortes da filosofia: "comprometido vs. executado", "antecipa o futuro", "patrimônio vivo".
-   - **Recomendação**: testar 3–5 tagline candidatas na Fase 2 (junto com naming).
-   - **Decisão**: agora ou depois do naming?
+✅ **Decisão: USAR plural genérico em marketing desde já**.
 
-3. **Uso de emojis na comunicação externa (não-UI)?**
-   - No app, emojis são funcionais (badges ↔, ⏩, ✓). No MANUAL.md, headers usam emojis 🔐 📒 ✨.
-   - Em landing/email/social, ainda é OK?
-   - **Recomendação**: emojis sutis e contextuais em email/changelog OK; em landing principal e sites institucionais, evitar.
-   - **Decisão**: confirma?
+- **Onde aplica**: landing page, email marketing, social media, página pública.
+- **Onde NÃO aplica**: UI do app (continua "você" enquanto for mono-usuário). Microcopy interna mantém singular.
+- **Razão**: o público-alvo é PF + Casal/Família. Posicionar pra casal/família desde o primeiro contato prepara terreno pra feature de multi-perfil futura. Usuário solo se vê em "a gente" naturalmente — vira "eu e meu dinheiro" sem soar errado.
+
+**Exemplos**:
+- ✅ Landing hero: "Vocês veem onde tá indo cada real"
+- ✅ Email marketing: "A gente avisa quando rolar"
+- ✅ Social media: "Pra você e pra família"
+- ⚠️ UI do app: mantém "você" até multi-perfil existir, daí flexa pra "vocês" quando aplicável
+
+### 10.2. Tagline — quando definir
+
+✅ **Decisão: AGORA, separadamente do naming**.
+
+- **Razão**: naming foi adiado pra pré-lançamento (a-lá Twitter→Burbn — ver `NAMING.md`), mas tagline serve pra marketing já. Tagline não depende de nome final — ela carrega filosofia, e a filosofia já existe.
+- **Quando**: brainstorm na primeira sessão de landing page (próximo passo de aplicação). Tagline nasce testando-se no contexto real.
+- **Candidatas iniciais** (a refinar): partir das formulações fortes do MANUAL — "comprometido vs. executado", "antecipa o futuro", "patrimônio vivo", "organize compromissos, não tickets de extrato".
+
+### 10.3. Emojis em landing / email / social (não-UI)
+
+✅ **Decisão: SUTIL e contextual — nunca abundante**.
+
+Regra prática:
+
+| Contexto | Emoji OK? | Limite |
+|----------|-----------|--------|
+| Hero da landing | ❌ Não | Zero — soa Mint/MoneyLover |
+| Página institucional (sobre, termos) | ❌ Não | Zero — manter sóbrio |
+| Comunicado oficial / press | ❌ Não | Zero |
+| Email transacional (reset, confirmação) | ✅ Sim, leve | Máximo 1 por email |
+| Email marketing / changelog | ✅ Sim, contextual | Máximo 2 por email, **com função** |
+| Social media casual (LinkedIn/Twitter informal) | ✅ Sim | 1–2 por post |
+| **UI do app** (já existente) | ✅ Sim, **funcional** | Badges com significado (↔, ⏩, ✓) |
+
+**Comparação**:
+- ❌ "🎉 NOVIDADE INCRÍVEL! 🚀💰 v1.0.5 chegou! 🔥" (Mint-style)
+- ✅ "Saiu a v1.0.5. Agora dá pra marcar transferência por outra conta sem bagunçar o histórico."
+- ✅ "Pra trocar sua senha, clica aqui 🔒. Link vale 1h." (1 emoji funcional)
+
+## 11. Open Questions ainda em aberto
 
 ### Média prioridade (afeta evolução)
 
-4. **Tutela de termos PT vs. EN.** "Cashflow" ou "Fluxo de caixa"? "Budget" ou "Orçamento"? Hoje o MANUAL usa PT (Orçamento, Fluxo). Manter assim em toda a marca?
-5. **Linguagem em estados de erro graves.** Quando o usuário perde dados / sincronização falha grave / dívida calcula errado, sobe o nível de seriedade?
+1. **Tutela de termos PT vs. EN.** "Cashflow" ou "Fluxo de caixa"? "Budget" ou "Orçamento"? Hoje o MANUAL usa PT (Orçamento, Fluxo). Manter assim em toda a marca?
+2. **Linguagem em estados de erro graves.** Quando o usuário perde dados / sincronização falha grave / dívida calcula errado, sobe o nível de seriedade?
 
 ---
 
-## 11. Como usar este documento
+## 12. Como usar este documento
 
 - **Designers de UI**: consulte §4 (regras de escrita), §5 (padrões UI), §6 (exemplos lado a lado).
 - **Copy de marketing**: consulte §3 (tom por contexto — linha "Landing page") e §6.4.
@@ -299,6 +328,7 @@ Para validar qualquer copy contra essas guidelines, use o skill `/brand-voice:en
 
 ---
 
-## 12. Histórico de versões
+## 13. Histórico de versões
 
 - **1.0 — 20/05/2026**: versão inicial extraída de `docs/MANUAL.md` (v1.0.5). Aprovação de personalidade: Amigável + Inteligente + Opinativo. Aprovação de público: PF + Casal/Família PT-BR com futuro internacional.
+- **1.1 — 21/05/2026**: fechadas 3 open questions de alta prioridade. (1) Plural genérico em marketing desde já. (2) Tagline a definir AGORA, separado do naming. (3) Emojis sutil/contextual em comunicação externa, nunca abundante. Seção §10 renomeada de "Open Questions" pra "Decisões fechadas". Restantes vão pra §11.
