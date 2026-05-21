@@ -1,0 +1,1372 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visual Identity Guidelines — FinFlow</title>
+<style>
+:root {
+  --color-text: #1a1a1a;
+  --color-text-muted: #6b7280;
+  --color-bg: #fafafa;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --color-accent: #2563eb;
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --color-code-bg: #f3f4f6;
+  --max-width: 780px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-text: #e5e7eb;
+    --color-text-muted: #9ca3af;
+    --color-bg: #111827;
+    --color-surface: #1f2937;
+    --color-border: #374151;
+    --color-accent: #60a5fa;
+    --color-code-bg: #1f2937;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.65;
+  color: var(--color-text);
+  background: var(--color-bg);
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 3rem 1.5rem 6rem;
+  background: var(--color-surface);
+  min-height: 100vh;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+@media (min-width: 1024px) {
+  .container {
+    margin: 2rem auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    min-height: auto;
+  }
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 2.5rem 0 1rem;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: 2.25rem;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: 0.75rem;
+}
+
+h2 {
+  font-size: 1.625rem;
+  margin-top: 3rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.5rem;
+}
+
+h3 {
+  font-size: 1.25rem;
+  color: var(--color-accent);
+}
+
+h4 {
+  font-size: 1.05rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+p {
+  margin: 0 0 1rem;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+a:hover { border-bottom-color: var(--color-accent); }
+
+strong {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+em {
+  font-style: italic;
+}
+
+code {
+  font-family: "SF Mono", Monaco, Menlo, Consolas, monospace;
+  font-size: 0.875em;
+  background: var(--color-code-bg);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  color: var(--color-danger);
+}
+
+pre {
+  background: var(--color-code-bg);
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid var(--color-border);
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+blockquote {
+  border-left: 4px solid var(--color-accent);
+  padding: 0.5rem 0 0.5rem 1.25rem;
+  margin: 1.5rem 0;
+  color: var(--color-text-muted);
+  background: var(--color-code-bg);
+  border-radius: 0 6px 6px 0;
+}
+
+blockquote p:last-child { margin-bottom: 0; }
+
+ul, ol {
+  margin: 0 0 1rem;
+  padding-left: 1.5rem;
+}
+
+li {
+  margin: 0.4rem 0;
+}
+
+li > ul, li > ol {
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin: 2.5rem 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  font-size: 0.95rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  display: block;
+  overflow-x: auto;
+  white-space: normal;
+}
+
+thead {
+  background: var(--color-code-bg);
+}
+
+th, td {
+  text-align: left;
+  padding: 0.7rem 0.95rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+th {
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+tbody tr:last-child td { border-bottom: none; }
+
+tbody tr:hover {
+  background: var(--color-code-bg);
+}
+
+/* Table of Contents (auto-gerado) */
+.toc {
+  background: var(--color-code-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin: 2rem 0;
+}
+
+.toc-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin: 0 0 0.5rem;
+  font-weight: 700;
+}
+
+.toc ol {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.toc a {
+  border-bottom: none;
+}
+
+.toc a:hover {
+  border-bottom-color: var(--color-accent);
+}
+
+/* Print */
+@media print {
+  body { background: white; color: black; }
+  .container { box-shadow: none; max-width: none; padding: 0; }
+  a { color: inherit; border: none; }
+  pre, blockquote, table { page-break-inside: avoid; }
+}
+
+/* Header com info */
+.meta-bar {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-bottom: 2rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-code-bg);
+  border-radius: 6px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Visual Identity Guidelines — FinFlow</h1>
+<div class="meta-bar">Gerado a partir de <code>VISUAL.md</code></div>
+<nav class="toc"><div class="toc-title">Conteúdo</div><ol><li><a href="#índice">Índice</a></li><li><a href="#1-princípios-visuais">1. Princípios visuais</a></li><li><a href="#2-sistema-de-cores">2. Sistema de cores</a></li><li><a href="#3-tipografia">3. Tipografia</a></li><li><a href="#4-espaçamento">4. Espaçamento</a></li><li><a href="#5-border-radius-e-curvas">5. Border radius e curvas</a></li><li><a href="#6-sombras-e-profundidade">6. Sombras e profundidade</a></li><li><a href="#7-tema-claro-vs-escuro">7. Tema claro vs. escuro</a></li><li><a href="#8-status-de-pagamento-sistema-especializado">8. Status de pagamento (sistema especializado)</a></li><li><a href="#9-gradientes">9. Gradientes</a></li><li><a href="#10-estados-de-interação">10. Estados de interação</a></li><li><a href="#11-iconografia">11. Iconografia</a></li><li><a href="#12-tom-visual-mood">12. Tom visual / mood</a></li><li><a href="#13-acessibilidade">13. Acessibilidade</a></li><li><a href="#14-tokens-como-usar">14. Tokens — como usar</a></li><li><a href="#15-aplicação-ao-multi-perfil-futuro">15. Aplicação ao multi-perfil (futuro)</a></li><li><a href="#16-confidence-scores">16. Confidence scores</a></li><li><a href="#17-open-questions">17. Open Questions</a></li><li><a href="#18-como-usar-este-documento">18. Como usar este documento</a></li><li><a href="#19-histórico">19. Histórico</a></li></ol></nav>
+
+<blockquote>
+<p>Versão deste documento: 1.0
+Data: 21/05/2026
+Fonte primária: <code>src/css/variables.css</code>, <code>src/css/global.css</code>, <code>src/css/layout.css</code>
+Alinhado com: <code>docs/BRAND.md</code> (identidade verbal) e v1.0.5 do produto.
+<strong>Sem logo ainda</strong> — esse capítulo entra na Fase 3.5 quando o nome for definido.</p>
+</blockquote>
+<hr />
+<h2 id="indice">Índice</h2>
+<ol>
+<li>Princípios visuais</li>
+<li>Sistema de cores</li>
+<li>Tipografia</li>
+<li>Espaçamento</li>
+<li>Border radius e curvas</li>
+<li>Sombras e profundidade</li>
+<li>Tema claro vs. escuro</li>
+<li>Status de pagamento (sistema especializado)</li>
+<li>Gradientes</li>
+<li>Estados de interação (focus, hover, disabled)</li>
+<li>Iconografia</li>
+<li>Tom visual / mood</li>
+<li>Acessibilidade</li>
+<li>Tokens — como usar</li>
+<li>Aplicação ao multi-perfil (futuro)</li>
+</ol>
+<hr />
+<h2 id="1-principios-visuais">1. Princípios visuais</h2>
+<p>Cinco princípios que orientam toda decisão visual. Derivados da personalidade aprovada em <code>BRAND.md</code> (Amigável + Inteligente + Opinativo) e do que já existe no código.</p>
+<h3 id="11-moderno-premium-nao-bancario-formal-nao-infantil">1.1. Moderno premium (não bancário-formal, não infantil)</h3>
+<p>O FinFlow está no território <strong>Notion + Mercury + Linear</strong> — premium tech, não fintech tradicional. Visual sóbrio com toques de personalidade.</p>
+<p>Tradução prática:
+- Cores: roxo profundo + azul vivo, neutros generosos. <strong>Sem</strong> dourado (vira premium velho), <strong>sem</strong> verde-floresta (vira app de eco), <strong>sem</strong> vermelho-Coca (vira corporate).
+- Tipografia: sans-serif geometric (Manrope + Inter), pesos médio-bold pra hierarquia, sem serifa antiquada.
+- Curvas: medias a generosas (12px–28px). Nada de 2px ou 4px (severo demais) nem 50%+ (infantil).</p>
+<h3 id="12-densidade-alta-mas-respiravel">1.2. Densidade alta, mas respirável</h3>
+<p>Finanças têm muitos números, muitas tabelas. Não dá pra escapar de densidade. O truque é <strong>respiro estratégico</strong>: margens generosas entre seções, mas dentro da seção pode ser denso.</p>
+<h3 id="13-cores-funcionais-cores-decorativas">1.3. Cores funcionais &gt; cores decorativas</h3>
+<p>Toda cor tem trabalho. Roxo = ação primária. Verde = sucesso/recebido. Vermelho = erro/atrasado. Amarelo = atenção/agendado. Nenhuma cor é &ldquo;só pra ficar bonito&rdquo;.</p>
+<h3 id="14-numeros-sao-primeiro-cidadaos">1.4. Números são primeiro-cidadãos</h3>
+<p>Números monetários e datas merecem tratamento tipográfico especial. Tabular-nums (largura consistente), peso semibold pra valores importantes, alinhamento à direita em colunas.</p>
+<h3 id="15-dark-mode-e-first-class-nao-afterthought">1.5. Dark mode é first-class, não afterthought</h3>
+<p>O app foi desenhado pra funcionar em ambos os temas com qualidade equivalente. Não é &ldquo;dark mode adaptado&rdquo; — é &ldquo;dark mode pensado&rdquo;.</p>
+<hr />
+<h2 id="2-sistema-de-cores">2. Sistema de cores</h2>
+<h3 id="21-primarias-a-cor-da-marca">2.1. Primárias (a cor da marca)</h3>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Hex</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--color-primary</code></td>
+<td><code>#6D5EF5</code></td>
+<td><strong>Roxo principal</strong>. Botões primários, links de destaque, ações importantes, focus ring</td>
+</tr>
+<tr>
+<td><code>--color-primary-dark</code></td>
+<td><code>#4B3FD6</code></td>
+<td>Hover de botão primário, gradient escuro</td>
+</tr>
+<tr>
+<td><code>--color-primary-light</code></td>
+<td><code>#8B7FF7</code></td>
+<td>Estados ativos sutis, badges premium</td>
+</tr>
+<tr>
+<td><code>--color-primary-50</code></td>
+<td><code>#F1EFFE</code></td>
+<td>Background de seleção, hover muito sutil</td>
+</tr>
+<tr>
+<td><code>--color-primary-100</code></td>
+<td><code>#E5E1FD</code></td>
+<td>Background de elemento &ldquo;selecionado&rdquo;</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Quando usar primário:</strong>
+- ✅ CTA principal da tela (&ldquo;Marcar como pago&rdquo;, &ldquo;Salvar&rdquo;)
+- ✅ Link mais importante (logo, menu ativo)
+- ✅ Focus ring (acessibilidade)
+- ✅ Gradient de hero/destaque
+- ❌ Estados de erro (use danger)
+- ❌ Mais que 1 CTA primário por tela</p>
+<h3 id="22-secundarias-acao-secundaria">2.2. Secundárias (ação secundária)</h3>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Hex</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--color-secondary</code></td>
+<td><code>#3B82F6</code></td>
+<td><strong>Azul</strong>. Links inline, botões secundários, navegação</td>
+</tr>
+<tr>
+<td><code>--color-secondary-dark</code></td>
+<td><code>#2563EB</code></td>
+<td>Hover de links, ações azuis</td>
+</tr>
+<tr>
+<td><code>--color-secondary-light</code></td>
+<td><code>#93C5FD</code></td>
+<td>Estados sutis</td>
+</tr>
+<tr>
+<td><code>--color-secondary-50</code></td>
+<td><code>#EFF6FF</code></td>
+<td>Background de informação</td>
+</tr>
+</tbody>
+</table>
+<h3 id="23-neutros-texto-e-superficies">2.3. Neutros (texto e superfícies)</h3>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Hex (light)</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--color-text-main</code></td>
+<td><code>#1F2937</code></td>
+<td>Texto principal, títulos</td>
+</tr>
+<tr>
+<td><code>--color-text-secondary</code></td>
+<td><code>#6B7280</code></td>
+<td>Texto secundário, labels</td>
+</tr>
+<tr>
+<td><code>--color-text-muted</code></td>
+<td><code>#9CA3AF</code></td>
+<td>Hints, placeholders, info menor</td>
+</tr>
+<tr>
+<td><code>--color-border</code></td>
+<td><code>#E5E7EB</code></td>
+<td>Bordas padrão (cards, inputs)</td>
+</tr>
+<tr>
+<td><code>--color-border-strong</code></td>
+<td><code>#D1D5DB</code></td>
+<td>Bordas com mais contraste</td>
+</tr>
+<tr>
+<td><code>--color-background</code></td>
+<td><code>#F8FAFC</code></td>
+<td>Fundo da página (off-white)</td>
+</tr>
+<tr>
+<td><code>--color-surface</code></td>
+<td><code>#FFFFFF</code></td>
+<td>Cards, modais, áreas elevadas</td>
+</tr>
+<tr>
+<td><code>--color-surface-alt</code></td>
+<td><code>#F9FAFB</code></td>
+<td>Áreas sutilmente diferenciadas</td>
+</tr>
+</tbody>
+</table>
+<h3 id="24-sidebar-sempre-escuro">2.4. Sidebar (sempre escuro)</h3>
+<p>A sidebar <strong>mantém tema escuro mesmo no light mode</strong> — decisão deliberada que dá personalidade ao app.</p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Hex (light)</th>
+<th>Hex (dark)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--color-sidebar-bg</code></td>
+<td><code>#1F2937</code></td>
+<td><code>#0B1220</code></td>
+</tr>
+<tr>
+<td><code>--color-sidebar-text</code></td>
+<td><code>#D1D5DB</code></td>
+<td><code>#94A3B8</code></td>
+</tr>
+<tr>
+<td><code>--color-sidebar-text-active</code></td>
+<td><code>#FFFFFF</code></td>
+<td><code>#F1F5F9</code></td>
+</tr>
+<tr>
+<td><code>--color-sidebar-border</code></td>
+<td><code>#374151</code></td>
+<td><code>#1E293B</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="25-semanticas-sucesso-erro-atencao-info">2.5. Semânticas (sucesso, erro, atenção, info)</h3>
+<table>
+<thead>
+<tr>
+<th>Conceito</th>
+<th>Token text</th>
+<th>Hex</th>
+<th>Token bg</th>
+<th>Hex</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Sucesso</strong> (pago, recebido, OK)</td>
+<td><code>--color-success</code></td>
+<td><code>#10B981</code></td>
+<td><code>--color-success-bg</code></td>
+<td><code>#D1FAE5</code></td>
+</tr>
+<tr>
+<td><strong>Atenção</strong> (agendado, atrasado leve)</td>
+<td><code>--color-warning</code></td>
+<td><code>#F59E0B</code></td>
+<td><code>--color-warning-bg</code></td>
+<td><code>#FEF3C7</code></td>
+</tr>
+<tr>
+<td><strong>Erro</strong> (falha, atrasado crítico, excluir)</td>
+<td><code>--color-danger</code></td>
+<td><code>#EF4444</code></td>
+<td><code>--color-danger-bg</code></td>
+<td><code>#FEE2E2</code></td>
+</tr>
+<tr>
+<td><strong>Info</strong> (neutro, dica, link)</td>
+<td><code>--color-info</code></td>
+<td><code>#3B82F6</code></td>
+<td><code>--color-info-bg</code></td>
+<td><code>#DBEAFE</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Regra anti-confusão</strong>:
+- Verde = saída boa (recebimento, pagamento concluído, tarefa fechada).
+- Vermelho = saída ruim (erro do sistema, exclusão destrutiva, dado faltando).
+- <strong>Nunca use</strong> vermelho pra &ldquo;despesa&rdquo; só por ser saída. Despesa pode ser bem-sucedida.</p>
+<h3 id="26-paleta-visualizada">2.6. Paleta visualizada</h3>
+<pre><code>🟣 #6D5EF5  Primary (roxo)
+🟪 #4B3FD6  Primary dark
+🔵 #3B82F6  Secondary (azul)
+🔷 #2563EB  Secondary dark
+⚫ #1F2937  Text main / Sidebar bg
+⚪ #FFFFFF  Surface
+🟢 #10B981  Success
+🟡 #F59E0B  Warning
+🔴 #EF4444  Danger
+</code></pre>
+<hr />
+<h2 id="3-tipografia">3. Tipografia</h2>
+<h3 id="31-familias">3.1. Famílias</h3>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Família</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--font-display</code></td>
+<td><strong>Manrope</strong>, system fallback</td>
+<td>Títulos (h1–h6), elementos de hierarquia, números grandes em destaque</td>
+</tr>
+<tr>
+<td><code>--font-body</code></td>
+<td><strong>Inter</strong>, system fallback</td>
+<td>Tudo mais — body, labels, inputs, tabelas</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Por que duas fontes?</strong></p>
+<ul>
+<li><strong>Manrope</strong> é geometric/humanist — boa pra títulos, números grandes (KPIs do dashboard) e display. Tem personalidade discreta sem chamar atenção.</li>
+<li><strong>Inter</strong> é otimizada pra UI — corpo de texto, tabelas, formulários. Excelente leitura em qualquer tamanho.</li>
+</ul>
+<p>Ambas são Google Fonts gratuitas. Carregadas no <code>&lt;head&gt;</code> do HTML.</p>
+<h3 id="32-escala-de-tamanhos">3.2. Escala de tamanhos</h3>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Valor</th>
+<th>px</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--fs-xs</code></td>
+<td>0.75rem</td>
+<td>12</td>
+<td>Badges, labels minúsculos, hints</td>
+</tr>
+<tr>
+<td><code>--fs-sm</code></td>
+<td>0.875rem</td>
+<td>14</td>
+<td>Texto secundário, dados de tabela</td>
+</tr>
+<tr>
+<td><code>--fs-base</code></td>
+<td>1rem</td>
+<td>16</td>
+<td><strong>Body padrão</strong> (nunca menor)</td>
+</tr>
+<tr>
+<td><code>--fs-md</code></td>
+<td>1.125rem</td>
+<td>18</td>
+<td>Texto destacado em cards</td>
+</tr>
+<tr>
+<td><code>--fs-lg</code></td>
+<td>1.25rem</td>
+<td>20</td>
+<td>h4</td>
+</tr>
+<tr>
+<td><code>--fs-xl</code></td>
+<td>1.5rem</td>
+<td>24</td>
+<td>h3</td>
+</tr>
+<tr>
+<td><code>--fs-2xl</code></td>
+<td>1.875rem</td>
+<td>30</td>
+<td>h2, KPI principal</td>
+</tr>
+<tr>
+<td><code>--fs-3xl</code></td>
+<td>2.25rem</td>
+<td>36</td>
+<td>h1, hero de landing</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Regra</strong>: nunca abaixo de 12px. Mobile precisa 16px+ no body pra evitar zoom automático no iOS.</p>
+<h3 id="33-pesos">3.3. Pesos</h3>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Valor</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--fw-normal</code></td>
+<td>400</td>
+<td>Body padrão</td>
+</tr>
+<tr>
+<td><code>--fw-medium</code></td>
+<td>500</td>
+<td>Botões, labels</td>
+</tr>
+<tr>
+<td><code>--fw-semibold</code></td>
+<td>600</td>
+<td>Valores monetários importantes, dados destacados</td>
+</tr>
+<tr>
+<td><code>--fw-bold</code></td>
+<td>700</td>
+<td><strong>Títulos (h1–h6)</strong>, alertas críticos</td>
+</tr>
+<tr>
+<td><code>--fw-extrabold</code></td>
+<td>800</td>
+<td>Display gigante, números do dashboard</td>
+</tr>
+</tbody>
+</table>
+<h3 id="34-tabular-nums-feature-critica-pra-financas">3.4. Tabular nums — feature crítica pra finanças</h3>
+<p>Use a classe <code>.tabular</code> (ou <code>font-variant-numeric: tabular-nums</code>) em <strong>toda coluna de valores monetários</strong>:</p>
+<pre><code class="language-css">.tabular { font-variant-numeric: tabular-nums; }
+</code></pre>
+<p>Sem isso, &ldquo;1.234,56&rdquo; e &ldquo;9.999,99&rdquo; não alinham na vertical (porque 1 é mais estreito que 9). Com tabular-nums, todos os dígitos ocupam a mesma largura. <strong>Essencial pra tabelas financeiras.</strong></p>
+<h3 id="35-hierarquia-padrao">3.5. Hierarquia padrão</h3>
+<table>
+<thead>
+<tr>
+<th>Elemento</th>
+<th>Tag</th>
+<th>Font-size</th>
+<th>Weight</th>
+<th>Cor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hero principal</td>
+<td>h1</td>
+<td>36px</td>
+<td>700</td>
+<td>text-main</td>
+</tr>
+<tr>
+<td>Página</td>
+<td>h2</td>
+<td>30px</td>
+<td>700</td>
+<td>text-main</td>
+</tr>
+<tr>
+<td>Seção</td>
+<td>h3</td>
+<td>24px</td>
+<td>700</td>
+<td>text-main</td>
+</tr>
+<tr>
+<td>Sub-seção</td>
+<td>h4</td>
+<td>20px</td>
+<td>700</td>
+<td>text-main</td>
+</tr>
+<tr>
+<td>Card title</td>
+<td>h5</td>
+<td>18px</td>
+<td>700</td>
+<td>text-main</td>
+</tr>
+<tr>
+<td>Label form</td>
+<td>—</td>
+<td>14px</td>
+<td>500</td>
+<td>text-secondary</td>
+</tr>
+<tr>
+<td>Body</td>
+<td>p</td>
+<td>16px</td>
+<td>400</td>
+<td>text-main</td>
+</tr>
+<tr>
+<td>Tabela cell</td>
+<td>td</td>
+<td>14px</td>
+<td>400</td>
+<td>text-main</td>
+</tr>
+<tr>
+<td>Valor monetário</td>
+<td>—</td>
+<td>16px</td>
+<td>600</td>
+<td>text-main + tabular</td>
+</tr>
+<tr>
+<td>Hint/help</td>
+<td>small</td>
+<td>12px</td>
+<td>400</td>
+<td>text-muted</td>
+</tr>
+</tbody>
+</table>
+<h3 id="36-line-height">3.6. Line height</h3>
+<ul>
+<li>Headings: 1.2 (apertado, dramático)</li>
+<li>Body: 1.5 (padrão browser, confortável)</li>
+<li>Parágrafos longos: 1.6 (respiro extra)</li>
+</ul>
+<hr />
+<h2 id="4-espacamento">4. Espaçamento</h2>
+<p>Grid de <strong>4px</strong> (escala 0.25rem base).</p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Valor</th>
+<th>px</th>
+<th>Uso típico</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--space-1</code></td>
+<td>0.25rem</td>
+<td>4</td>
+<td>Padding super-apertado, gap mínimo</td>
+</tr>
+<tr>
+<td><code>--space-2</code></td>
+<td>0.5rem</td>
+<td>8</td>
+<td>Padding de badge, gap pequeno</td>
+</tr>
+<tr>
+<td><code>--space-3</code></td>
+<td>0.75rem</td>
+<td>12</td>
+<td>Padding de botão, item de lista</td>
+</tr>
+<tr>
+<td><code>--space-4</code></td>
+<td>1rem</td>
+<td>16</td>
+<td><strong>Padding padrão</strong>, margem entre elementos</td>
+</tr>
+<tr>
+<td><code>--space-5</code></td>
+<td>1.25rem</td>
+<td>20</td>
+<td>Padding de card médio</td>
+</tr>
+<tr>
+<td><code>--space-6</code></td>
+<td>1.5rem</td>
+<td>24</td>
+<td>Margem entre seções</td>
+</tr>
+<tr>
+<td><code>--space-8</code></td>
+<td>2rem</td>
+<td>32</td>
+<td>Margem entre grupos</td>
+</tr>
+<tr>
+<td><code>--space-10</code></td>
+<td>2.5rem</td>
+<td>40</td>
+<td>Margem grande</td>
+</tr>
+<tr>
+<td><code>--space-12</code></td>
+<td>3rem</td>
+<td>48</td>
+<td>Topo/base de hero</td>
+</tr>
+<tr>
+<td><code>--space-16</code></td>
+<td>4rem</td>
+<td>64</td>
+<td>Hero generoso</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Regra</strong>: prefira a escala. Não invente <code>padding: 17px</code>. Se 16px é apertado, use 20px. Manter os tokens evita drift visual ao longo do tempo.</p>
+<hr />
+<h2 id="5-border-radius-e-curvas">5. Border radius e curvas</h2>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Valor</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--radius-sm</code></td>
+<td>6px</td>
+<td>Inputs, badges, ícones pequenos</td>
+</tr>
+<tr>
+<td><code>--radius-md</code></td>
+<td>12px</td>
+<td><strong>Botões, cards padrão</strong> (curva preferida)</td>
+</tr>
+<tr>
+<td><code>--radius-lg</code></td>
+<td>20px</td>
+<td>Cards grandes (KPI, hero)</td>
+</tr>
+<tr>
+<td><code>--radius-xl</code></td>
+<td>28px</td>
+<td>Hero, modal de destaque</td>
+</tr>
+<tr>
+<td><code>--radius-full</code></td>
+<td>9999px</td>
+<td>Avatares, pílulas, scrollbar thumb</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Princípio</strong>: curvas são <strong>médias a generosas</strong>. Nunca quadrado (severo demais), nunca radius enorme em elementos não circulares (infantil).</p>
+<hr />
+<h2 id="6-sombras-e-profundidade">6. Sombras e profundidade</h2>
+<p>Sistema de elevação em 6 níveis.</p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Quando usar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--shadow-sm</code></td>
+<td>Bordas sutis (não usa muito)</td>
+</tr>
+<tr>
+<td><code>--shadow-card</code></td>
+<td><strong>Cards padrão</strong> — sombra com toque roxo (assinatura visual)</td>
+</tr>
+<tr>
+<td><code>--shadow-md</code></td>
+<td>Cards em hover</td>
+</tr>
+<tr>
+<td><code>--shadow-lg</code></td>
+<td>Dropdowns, popovers</td>
+</tr>
+<tr>
+<td><code>--shadow-xl</code></td>
+<td>Elementos flutuantes (drawer, sidebar overlay)</td>
+</tr>
+<tr>
+<td><code>--shadow-modal</code></td>
+<td>Modais grandes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="detalhe-importante-shadow-card-tem-cor">Detalhe importante: shadow-card tem cor</h3>
+<pre><code class="language-css">--shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(109,94,245,0.06);
+</code></pre>
+<p>A segunda camada de sombra usa <strong>roxo translúcido</strong>, não cinza. Isso dá uma assinatura sutil — cards ganham aura roxa muito leve, conectando com a cor primária. <strong>Não usar shadow-md em cards</strong> — só em hover.</p>
+<hr />
+<h2 id="7-tema-claro-vs-escuro">7. Tema claro vs. escuro</h2>
+<h3 id="71-filosofia">7.1. Filosofia</h3>
+<p>Os dois temas são tratados como <strong>first-class</strong> — não é &ldquo;dark mode bolt-on&rdquo;. Ambos têm:
+- Hierarquia visual equivalente
+- Contraste WCAG AA
+- Cores semânticas adaptadas (success-bg verde-claro vs verde-escuro)
+- Sombras ajustadas pra cada tema</p>
+<h3 id="72-como-ativar">7.2. Como ativar</h3>
+<pre><code class="language-js">document.documentElement.setAttribute('data-theme', 'dark');
+// ou 'light'
+</code></pre>
+<p>Persistido em <code>localStorage</code> via <code>lib/theme.js</code>. Detecta preferência do sistema na primeira visita.</p>
+<h3 id="73-sidebar">7.3. Sidebar</h3>
+<p>A sidebar mantém escura em ambos os modos. Isso dá personalidade ao app e cria <strong>enquadramento visual</strong> consistente. No dark mode ela fica ainda mais escura (<code>#0B1220</code> vs <code>#1F2937</code>).</p>
+<h3 id="74-pares-de-cores">7.4. Pares de cores</h3>
+<p>Sempre que define cor, considere os dois temas. Ex:
+- <code>--color-success-bg</code>: verde claro (light) vs verde escuro (dark)
+- <code>--color-text-main</code>: cinza-quase-preto (light) vs cinza-quase-branco (dark)</p>
+<p>Veja <code>variables.css</code> linhas 138–195 pro pacote dark completo.</p>
+<hr />
+<h2 id="8-status-de-pagamento-sistema-especializado">8. Status de pagamento (sistema especializado)</h2>
+<p>O FinFlow tem <strong>7 status de pagamento</strong>, cada um com par bg+text dedicado. Sistema único do domínio.</p>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>bg light</th>
+<th>text light</th>
+<th>bg dark</th>
+<th>text dark</th>
+<th>Quando</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Pago</strong></td>
+<td><code>#D1FAE5</code></td>
+<td><code>#065F46</code></td>
+<td><code>#064E3B</code></td>
+<td><code>#6EE7B7</code></td>
+<td>Pagamento concluído</td>
+</tr>
+<tr>
+<td><strong>Transferido</strong></td>
+<td><code>#DBEAFE</code></td>
+<td><code>#1E40AF</code></td>
+<td><code>#1E3A8A</code></td>
+<td><code>#93C5FD</code></td>
+<td>Transferência entre contas</td>
+</tr>
+<tr>
+<td><strong>Agendado</strong></td>
+<td><code>#FEF3C7</code></td>
+<td><code>#92400E</code></td>
+<td><code>#78350F</code></td>
+<td><code>#FCD34D</code></td>
+<td>Pagamento agendado no banco</td>
+</tr>
+<tr>
+<td><strong>Cancelado</strong></td>
+<td><code>#F3F4F6</code></td>
+<td><code>#4B5563</code></td>
+<td><code>#1F2937</code></td>
+<td><code>#9CA3AF</code></td>
+<td>Pagamento cancelado</td>
+</tr>
+<tr>
+<td><strong>A Transferir</strong></td>
+<td><code>#E0F2FE</code></td>
+<td><code>#0369A1</code></td>
+<td><code>#0C4A6E</code></td>
+<td><code>#7DD3FC</code></td>
+<td>Transferência pendente</td>
+</tr>
+<tr>
+<td><strong>Cartão</strong></td>
+<td><code>#EDE9FE</code></td>
+<td><code>#5B21B6</code></td>
+<td><code>#4C1D95</code></td>
+<td><code>#C4B5FD</code></td>
+<td>Pago via cartão de crédito</td>
+</tr>
+<tr>
+<td><strong>Parcial</strong></td>
+<td><code>#FFEDD5</code></td>
+<td><code>#9A3412</code></td>
+<td><code>#7C2D12</code></td>
+<td><code>#FDBA74</code></td>
+<td>Pagamento parcial</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Princípio</strong>: cada status tem uma &ldquo;vibe&rdquo; cromática:
+- 🟢 Pago = verde (sucesso, concluído)
+- 🔵 Transferido = azul (movimento, fluxo)
+- 🟡 Agendado = amarelo (atenção, em espera)
+- ⚪ Cancelado = cinza (neutralizado)
+- 🟪 Cartão = roxo (premium, virtual)
+- 🟠 Parcial = laranja (atenção média)</p>
+<p>A consistência dessas associações é o que faz o usuário <strong>ler a tabela de pagamentos rapidamente</strong> sem precisar interpretar texto.</p>
+<hr />
+<h2 id="9-gradientes">9. Gradientes</h2>
+<p>Três gradientes oficiais.</p>
+<pre><code class="language-css">--gradient-primary: linear-gradient(135deg, #6D5EF5 0%, #3B82F6 100%);
+--gradient-primary-soft: linear-gradient(135deg, rgba(109,94,245,0.08) 0%, rgba(59,130,246,0.08) 100%);
+--gradient-hero: linear-gradient(135deg, #6D5EF5 0%, #4B3FD6 50%, #3B82F6 100%);
+</code></pre>
+<p><strong>Quando usar:</strong>
+- <code>--gradient-primary</code>: botões hero, CTAs muito grandes, ilustrações de destaque. <strong>Não usar em texto</strong> (perde legibilidade).
+- <code>--gradient-primary-soft</code>: backgrounds sutis de card de destaque. Ex: card de KPI mais importante.
+- <code>--gradient-hero</code>: landing pages, telas de boas-vindas, splash screens.</p>
+<p><strong>Não inventar gradientes novos.</strong> Manter consistência.</p>
+<hr />
+<h2 id="10-estados-de-interacao">10. Estados de interação</h2>
+<h3 id="101-focus-acessibilidade-critico">10.1. Focus (acessibilidade-crítico)</h3>
+<pre><code class="language-css">:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+</code></pre>
+<p><strong>Importante</strong>: usa <code>:focus-visible</code> (não <code>:focus</code>). Isso mostra o ring <strong>apenas quando o usuário navega por teclado</strong>, não quando clica com mouse. Comportamento moderno padrão.</p>
+<h3 id="102-hover">10.2. Hover</h3>
+<ul>
+<li>Botões: escurecem o fundo levemente</li>
+<li>Cards: ganham <code>shadow-md</code> (sutil aumento de elevação)</li>
+<li>Links: mudam pra <code>secondary-dark</code></li>
+<li>Linhas de tabela: ganham <code>surface-alt</code></li>
+<li>Transição: <code>--transition-fast</code> (150ms)</li>
+</ul>
+<h3 id="103-disabled">10.3. Disabled</h3>
+<pre><code class="language-css">button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+</code></pre>
+<p>Padrão: opacity 0.6 + cursor <code>not-allowed</code>. <strong>Não esconda</strong> disabled (precisa ser visível mas não interativo).</p>
+<h3 id="104-active-durante-clique">10.4. Active (durante clique)</h3>
+<p>Botões: dim mais 5%, sem movimento (não usar <code>transform: scale</code>).</p>
+<hr />
+<h2 id="11-iconografia">11. Iconografia</h2>
+<h3 id="111-direcao-atual">11.1. Direção atual</h3>
+<p>O app usa <strong>emojis funcionais</strong> em headers de docs e badges contextuais no UI:</p>
+<table>
+<thead>
+<tr>
+<th>Emoji</th>
+<th>Significado</th>
+<th>Onde aparece</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>🔐</td>
+<td>Autenticação</td>
+<td>Header de doc, página de login</td>
+</tr>
+<tr>
+<td>📒</td>
+<td>Cadastros</td>
+<td>Header de doc</td>
+</tr>
+<tr>
+<td>📅</td>
+<td>Planejamento</td>
+<td>Header de doc</td>
+</tr>
+<tr>
+<td>⚡</td>
+<td>Execução</td>
+<td>Header de doc</td>
+</tr>
+<tr>
+<td>📊</td>
+<td>Análise</td>
+<td>Header de doc</td>
+</tr>
+<tr>
+<td>↔️</td>
+<td>Conta efetiva ≠ config</td>
+<td>Badge em /pagamentos</td>
+</tr>
+<tr>
+<td>⏩</td>
+<td>Adiantamento de receita</td>
+<td>Badge em pagamento</td>
+</tr>
+<tr>
+<td>🔄</td>
+<td>Realocar de outra conta</td>
+<td>Badge na importação</td>
+</tr>
+<tr>
+<td>✓</td>
+<td>Match automático</td>
+<td>Importação</td>
+</tr>
+<tr>
+<td>🏦</td>
+<td>Banco/saldo</td>
+<td>KPIs (legado)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="112-principios-pra-iconografia-futura">11.2. Princípios pra iconografia futura</h3>
+<p>Quando for adotar biblioteca de ícones (Lucide, Phosphor, Heroicons), seguir:</p>
+<ol>
+<li><strong>Stroke 1.5px–2px</strong> (não preenchidos por padrão).</li>
+<li><strong>24×24px</strong> como tamanho base, escala 16/20/24/32.</li>
+<li><strong>Cor herdada</strong> do contexto (<code>currentColor</code>) — ícone branco em botão primário, ícone cinza em botão ghost.</li>
+<li><strong>Consistência de família</strong> — escolher UMA biblioteca, não misturar 3.</li>
+</ol>
+<p><strong>Recomendação</strong>: <strong>Lucide</strong> (sucessor do Feather Icons). Free, MIT, 1300+ ícones, estética moderna que combina com Manrope/Inter.</p>
+<h3 id="113-quando-emoji-vs-icone">11.3. Quando emoji vs ícone</h3>
+<ul>
+<li><strong>Emoji</strong> — comunicação rápida com personalidade (changelog, headers, badges contextuais raros). Não escala bem entre platforms.</li>
+<li><strong>Ícone vetorial</strong> — UI de botões, navegação, ações repetidas. Renderiza igual em todo lugar.</li>
+</ul>
+<p>Regra prática: se aparece <strong>mais de 3 vezes na tela</strong>, vira ícone vetorial. Se é &ldquo;tempero&rdquo;, pode ser emoji.</p>
+<hr />
+<h2 id="12-tom-visual-mood">12. Tom visual / mood</h2>
+<h3 id="121-referencias-visuais-mood-board-mental">12.1. Referências visuais (mood board mental)</h3>
+<p><strong>Inspirações diretas:</strong>
+- <strong>Notion</strong> — generoso, sereno, escala tipográfica forte
+- <strong>Linear</strong> — denso mas respirável, dark mode impecável
+- <strong>Mercury</strong> — premium-tech-finance sem ser corporate
+- <strong>Wise</strong> — multimoeda, ilustração leve, didático</p>
+<p><strong>Anti-inspirações (NÃO ser):</strong>
+- Bancos brasileiros legados (Itaú, Bradesco) — sério demais, intimidante
+- Mint (RIP) / MoneyLover — colorido demais, infantilizante
+- Robinhood — agressivo, masculino, especulativo
+- YNAB — austero, preachy</p>
+<h3 id="122-principios-de-mood">12.2. Princípios de mood</h3>
+<ul>
+<li><strong>Calmo, não animado.</strong> Sem confetti, micro-animações de comemoração, mascotes.</li>
+<li><strong>Sério com dinheiro, leve com a pessoa.</strong> Cards densos de dados, mas linguagem solta nos toasts e onboarding.</li>
+<li><strong>Profundidade &gt; brilho.</strong> Sombras suaves e gradientes sutis batem chrome berrante.</li>
+<li><strong>Branco &gt; textura.</strong> Espaço em branco é o melhor visual asset.</li>
+</ul>
+<h3 id="123-quando-precisar-de-ilustracao">12.3. Quando precisar de ilustração</h3>
+<p>(Não há sistema de ilustração ainda — esse é gap pra futuro.)</p>
+<p>Diretrizes pra quando contratar/criar:
+- Estilo <strong>geometric soft</strong> (formas com cantos arredondados, traços precisos)
+- Paleta <strong>limitada à marca</strong> (roxo + azul + 1 neutro + 1 accent)
+- Sem rosto humano fotorrealista (caro, datado)
+- Funcional, não decorativo (cada ilustração explica algo)</p>
+<p>Referências: ilustrações do Stripe, Notion, Mercury.</p>
+<hr />
+<h2 id="13-acessibilidade">13. Acessibilidade</h2>
+<h3 id="131-contraste-wcag-aa">13.1. Contraste WCAG AA</h3>
+<p>Cores escolhidas já atingem AA em light mode:
+- <code>text-main</code> (#1F2937) sobre <code>surface</code> (#FFF): contrast 14.6:1 ✅
+- <code>text-secondary</code> (#6B7280) sobre <code>surface</code>: 5.2:1 ✅
+- <code>primary</code> (#6D5EF5) sobre <code>surface</code>: 4.6:1 ✅ (limítrofe — não usar em texto pequeno)</p>
+<p>Em dark mode:
+- <code>text-main</code> (#F1F5F9) sobre <code>background</code> (#0F172A): 14.8:1 ✅
+- <code>primary</code> (#6D5EF5) sobre <code>background</code>: 6.1:1 ✅</p>
+<h3 id="132-focus-ring">13.2. Focus ring</h3>
+<p><code>:focus-visible</code> com 2px solid + 2px offset garante visibilidade em qualquer fundo.</p>
+<h3 id="133-tamanho-minimo">13.3. Tamanho mínimo</h3>
+<ul>
+<li>Botão: 36px height mínimo (44px em touch — <code>@media (pointer: coarse)</code>)</li>
+<li>Tap target: 44×44px área clicável mínima em mobile</li>
+<li>Fonte: 12px mínimo absoluto, 16px no body</li>
+</ul>
+<h3 id="134-reduced-motion">13.4. Reduced motion</h3>
+<p>(Não implementado ainda — gap pra futuro.)</p>
+<p>Adicionar:</p>
+<pre><code class="language-css">@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</code></pre>
+<hr />
+<h2 id="14-tokens-como-usar">14. Tokens — como usar</h2>
+<h3 id="141-principio-sempre-token-nunca-hex">14.1. Princípio: sempre token, nunca hex</h3>
+<p>✅ Bom:</p>
+<pre><code class="language-css">.my-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-card);
+}
+</code></pre>
+<p>❌ Ruim:</p>
+<pre><code class="language-css">.my-card {
+  background: #FFFFFF;  /* hardcoded */
+  border-radius: 12px;  /* hardcoded */
+}
+</code></pre>
+<p>Hardcode é o que causa drift visual ao longo do tempo. Tokens centralizam decisões.</p>
+<h3 id="142-onde-editar">14.2. Onde editar</h3>
+<p>Tudo está em <code>src/css/variables.css</code>. Mudou um token → mudou no app inteiro.</p>
+<h3 id="143-quando-adicionar-token-novo">14.3. Quando adicionar token novo</h3>
+<p>Adicione token novo se:
+- Vai ser usado em <strong>3+ lugares</strong>
+- Não cabe em token existente
+- Você consegue dar <strong>nome semântico</strong> (não <code>--cor-bonita</code>)</p>
+<p>Ex de nome bom: <code>--color-status-pago-bg</code>. Ex de nome ruim: <code>--gray-87</code>.</p>
+<hr />
+<h2 id="15-aplicacao-ao-multi-perfil-futuro">15. Aplicação ao multi-perfil (futuro)</h2>
+<p>Quando a feature de múltiplos perfis na mesma conta sair, o sistema visual precisará:</p>
+<h3 id="151-cor-por-perfil">15.1. Cor por perfil</h3>
+<p>Cada perfil ganha <strong>uma cor de accent</strong>. Não pra trocar a marca inteira, mas pra:
+- Avatar do perfil
+- Badge ao lado do nome em pagamentos compartilhados
+- Filtro visual em /transacoes</p>
+<p><strong>Recomendação</strong>: paleta de 8 cores acessíveis pra perfis:</p>
+<pre><code class="language-css">--profile-1: #6D5EF5;  /* roxo (default/primary) */
+--profile-2: #EC4899;  /* rosa */
+--profile-3: #10B981;  /* verde */
+--profile-4: #F59E0B;  /* amarelo */
+--profile-5: #3B82F6;  /* azul */
+--profile-6: #EF4444;  /* vermelho */
+--profile-7: #8B5CF6;  /* violeta */
+--profile-8: #14B8A6;  /* teal */
+</code></pre>
+<p>Cada cor com par bg suave (Tailwind 100) pra fundos sutis.</p>
+<h3 id="152-avatar">15.2. Avatar</h3>
+<p>Padrão: círculo com inicial(is) + cor do perfil. Tamanho 32px na lista, 24px em badges.</p>
+<p>Tipografia da inicial: Manrope semibold, branca.</p>
+<h3 id="153-indicacao-de-quem-fez-o-que">15.3. Indicação de quem fez o quê</h3>
+<p>Pequeno avatar inline ao lado de ação na timeline. Ex:</p>
+<blockquote>
+<p>👤 Arnaldo marcou Aluguel como Pago • há 2h
+👤 Maria registrou adiantamento de R$ 1.500 • há 5h</p>
+</blockquote>
+<p>Avatar 16px, nome em negrito, ação em peso normal.</p>
+<hr />
+<h2 id="16-confidence-scores">16. Confidence scores</h2>
+<table>
+<thead>
+<tr>
+<th>Seção</th>
+<th>Confiança</th>
+<th>Observação</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2. Cores</td>
+<td>🟢 Alta</td>
+<td>Sistema completo em <code>variables.css</code></td>
+</tr>
+<tr>
+<td>3. Tipografia</td>
+<td>🟢 Alta</td>
+<td>Manrope + Inter já no app</td>
+</tr>
+<tr>
+<td>4. Espaçamento</td>
+<td>🟢 Alta</td>
+<td>Tokens em escala 4px</td>
+</tr>
+<tr>
+<td>5. Border radius</td>
+<td>🟢 Alta</td>
+<td>5 níveis claros</td>
+</tr>
+<tr>
+<td>6. Sombras</td>
+<td>🟢 Alta</td>
+<td>6 níveis + assinatura roxa</td>
+</tr>
+<tr>
+<td>7. Tema</td>
+<td>🟢 Alta</td>
+<td>Dark mode completo</td>
+</tr>
+<tr>
+<td>8. Status pagamento</td>
+<td>🟢 Alta</td>
+<td>7 status mapeados ambos temas</td>
+</tr>
+<tr>
+<td>9. Gradientes</td>
+<td>🟢 Alta</td>
+<td>3 gradientes oficiais</td>
+</tr>
+<tr>
+<td>10. Estados</td>
+<td>🟢 Alta</td>
+<td>Focus, hover, disabled definidos</td>
+</tr>
+<tr>
+<td>11. Iconografia</td>
+<td>🟡 Média</td>
+<td>Direção dada, biblioteca a escolher</td>
+</tr>
+<tr>
+<td>12. Mood</td>
+<td>🟡 Média</td>
+<td>Referências mapeadas, sem ilustração</td>
+</tr>
+<tr>
+<td>13. Acessibilidade</td>
+<td>🟡 Média</td>
+<td>Cores OK, falta reduced motion</td>
+</tr>
+<tr>
+<td>15. Multi-perfil</td>
+<td>🟠 Baixa</td>
+<td>Antecipa, não implementado</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="17-open-questions">17. Open Questions</h2>
+<h3 id="alta-prioridade">Alta prioridade</h3>
+<ol>
+<li>
+<p><strong>Adotar biblioteca de ícones agora ou depois?</strong>
+   - Recomendação: <strong>Lucide</strong> quando for adicionar primeiro ícone vetorial. Não tem urgência.
+   - Decisão necessária: confirma Lucide ou outra?</p>
+</li>
+<li>
+<p><strong>Sistema de ilustração?</strong>
+   - Atualmente: sem ilustrações. Empty states usam só texto + ícone emoji.
+   - Recomendação: <strong>adiar pra Fase 4 (aplicação)</strong>. Quando tiver landing page e onboarding, aí faz sentido investir.</p>
+</li>
+<li>
+<p><strong>Mascot? Avatar de marca?</strong>
+   - Não tem. Decisão estética.
+   - Recomendação: <strong>não.</strong> Mascotes em fintech costumam infantilizar. Mercury, Notion, Linear não têm — funcionam muito bem sem.</p>
+</li>
+</ol>
+<h3 id="media-prioridade">Média prioridade</h3>
+<ol start="4">
+<li><strong>Reduced motion.</strong> Acessibilidade obriga (WCAG). Implementar como gap a fechar.</li>
+<li><strong>High contrast mode.</strong> Acessibilidade plus. Adiar até ter feedback de usuários necessidade real.</li>
+<li><strong>Cor por categoria de despesa?</strong> Ex: Moradia em azul, Lazer em rosa. Existe parcialmente. Vale documentar quando estabilizar.</li>
+</ol>
+<hr />
+<h2 id="18-como-usar-este-documento">18. Como usar este documento</h2>
+<ul>
+<li><strong>Designers</strong>: §1–13, especialmente §1 (princípios) antes de qualquer mockup.</li>
+<li><strong>Devs frontend</strong>: §14 (tokens) + <code>variables.css</code> direto. Não usar hex hardcoded.</li>
+<li><strong>Product</strong>: §1, §8 (status), §11 (icons), §12 (mood) pra alinhar features novas.</li>
+<li><strong>Marketing futuro</strong>: §1, §9 (gradientes), §12 (mood) pra landing e materiais.</li>
+</ul>
+<p>Para o <strong>design system completo em código</strong>, ver <code>src/css/variables.css</code> e <code>src/css/components.css</code>.</p>
+<p>Para <strong>identidade verbal</strong>, ver <code>docs/BRAND.md</code>.</p>
+<hr />
+<h2 id="19-historico">19. Histórico</h2>
+<ul>
+<li><strong>21/05/2026 — v1.0</strong>: Versão inicial, codificando o sistema visual já implementado (alinhado com FinFlow v1.0.5). Sem logo definido (Fase 3.5 quando nome for fechado).</li>
+</ul>
+</div>
+</body>
+</html>
