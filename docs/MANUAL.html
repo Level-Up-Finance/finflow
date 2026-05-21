@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinFlow — Manual completo</title>
+<style>
+:root {
+  --color-text: #1a1a1a;
+  --color-text-muted: #6b7280;
+  --color-bg: #fafafa;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --color-accent: #2563eb;
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --color-code-bg: #f3f4f6;
+  --max-width: 780px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-text: #e5e7eb;
+    --color-text-muted: #9ca3af;
+    --color-bg: #111827;
+    --color-surface: #1f2937;
+    --color-border: #374151;
+    --color-accent: #60a5fa;
+    --color-code-bg: #1f2937;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.65;
+  color: var(--color-text);
+  background: var(--color-bg);
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 3rem 1.5rem 6rem;
+  background: var(--color-surface);
+  min-height: 100vh;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+@media (min-width: 1024px) {
+  .container {
+    margin: 2rem auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    min-height: auto;
+  }
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 2.5rem 0 1rem;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: 2.25rem;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: 0.75rem;
+}
+
+h2 {
+  font-size: 1.625rem;
+  margin-top: 3rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.5rem;
+}
+
+h3 {
+  font-size: 1.25rem;
+  color: var(--color-accent);
+}
+
+h4 {
+  font-size: 1.05rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+p {
+  margin: 0 0 1rem;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+a:hover { border-bottom-color: var(--color-accent); }
+
+strong {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+em {
+  font-style: italic;
+}
+
+code {
+  font-family: "SF Mono", Monaco, Menlo, Consolas, monospace;
+  font-size: 0.875em;
+  background: var(--color-code-bg);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  color: var(--color-danger);
+}
+
+pre {
+  background: var(--color-code-bg);
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid var(--color-border);
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+blockquote {
+  border-left: 4px solid var(--color-accent);
+  padding: 0.5rem 0 0.5rem 1.25rem;
+  margin: 1.5rem 0;
+  color: var(--color-text-muted);
+  background: var(--color-code-bg);
+  border-radius: 0 6px 6px 0;
+}
+
+blockquote p:last-child { margin-bottom: 0; }
+
+ul, ol {
+  margin: 0 0 1rem;
+  padding-left: 1.5rem;
+}
+
+li {
+  margin: 0.4rem 0;
+}
+
+li > ul, li > ol {
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin: 2.5rem 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  font-size: 0.95rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  display: block;
+  overflow-x: auto;
+  white-space: normal;
+}
+
+thead {
+  background: var(--color-code-bg);
+}
+
+th, td {
+  text-align: left;
+  padding: 0.7rem 0.95rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+th {
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+tbody tr:last-child td { border-bottom: none; }
+
+tbody tr:hover {
+  background: var(--color-code-bg);
+}
+
+/* Table of Contents (auto-gerado) */
+.toc {
+  background: var(--color-code-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin: 2rem 0;
+}
+
+.toc-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin: 0 0 0.5rem;
+  font-weight: 700;
+}
+
+.toc ol {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.toc a {
+  border-bottom: none;
+}
+
+.toc a:hover {
+  border-bottom-color: var(--color-accent);
+}
+
+/* Print */
+@media print {
+  body { background: white; color: black; }
+  .container { box-shadow: none; max-width: none; padding: 0; }
+  a { color: inherit; border: none; }
+  pre, blockquote, table { page-break-inside: avoid; }
+}
+
+/* Header com info */
+.meta-bar {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-bottom: 2rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-code-bg);
+  border-radius: 6px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>FinFlow — Manual completo</h1>
+<div class="meta-bar">Gerado a partir de <code>MANUAL.md</code></div>
+<nav class="toc"><div class="toc-title">Conteúdo</div><ol><li><a href="#índice">Índice</a></li><li><a href="#1-sobre-o-finflow">1. Sobre o FinFlow</a></li><li><a href="#2-como-começar-setup-inicial">2. Como começar — setup inicial</a></li><li><a href="#3-mapa-do-app">3. Mapa do app</a></li><li><a href="#4-páginas-do-app-uma-por-uma">4. Páginas do app, uma por uma</a></li><li><a href="#5-regras-transversais-do-sistema">5. Regras transversais do sistema</a></li><li><a href="#6-como-tudo-se-conecta-fluxos-completos">6. Como tudo se conecta — fluxos completos</a></li><li><a href="#7-glossário">7. Glossário</a></li><li><a href="#como-manter-este-documento-atualizado">Como manter este documento atualizado</a></li></ol></nav>
+
+<blockquote>
+<p>Versão deste documento: alinhada com v1.0.5 do app.
+Última atualização: 20/05/2026.</p>
+</blockquote>
+<hr />
+<h2 id="indice">Índice</h2>
+<ol>
+<li><a href="#1-sobre-o-finflow">Sobre o FinFlow</a></li>
+<li><a href="#2-como-começar--setup-inicial">Como começar — setup inicial</a></li>
+<li><a href="#3-mapa-do-app">Mapa do app</a></li>
+<li><a href="#4-páginas-do-app-uma-por-uma">Páginas do app, uma por uma</a></li>
+<li><a href="#5-regras-transversais-do-sistema">Regras transversais do sistema</a></li>
+<li><a href="#6-como-tudo-se-conecta--fluxos-completos">Como tudo se conecta — fluxos completos</a></li>
+<li><a href="#7-glossário">Glossário</a></li>
+</ol>
+<hr />
+<h2 id="1-sobre-o-finflow">1. Sobre o FinFlow</h2>
+<p>O FinFlow é um app de gestão financeira pessoal multimoeda que organiza dinheiro em três camadas:</p>
+<ol>
+<li><strong>Planejamento</strong> — o que você se comprometeu a pagar/receber, mês a mês.</li>
+<li><strong>Execução</strong> — o que de fato aconteceu (transações, pagamentos marcados, extrato importado).</li>
+<li><strong>Análise</strong> — como os dois bateram, e o que isso diz sobre sua saúde financeira.</li>
+</ol>
+<p>A filosofia é &ldquo;<strong>comprometido vs. executado</strong>&rdquo;. Em vez de cadastrar cada transação solta, você cadastra <strong>compromissos</strong> (aluguel, salário, parcela do carro) e o app gera os <strong>pagamentos</strong> futuros automaticamente. Depois você marca cada pagamento como feito, ou importa o extrato do banco e o app concilia tudo sozinho.</p>
+<h3 id="por-que-essa-abordagem">Por que essa abordagem?</h3>
+<ul>
+<li><strong>Antecipa o futuro</strong>: você vê os próximos 12 meses de saídas e entradas antes deles acontecerem.</li>
+<li><strong>Orçamento real</strong>: como cada compromisso tem valor e periodicidade, dá pra dizer &ldquo;cabe no orçamento ou não?&rdquo;.</li>
+<li><strong>Reconciliação automática</strong>: o extrato do banco bate com seus pagamentos sem trabalho manual.</li>
+<li><strong>Patrimônio vivo</strong>: contas + investimentos + ativos físicos − dívidas, calculado todo dia com câmbio do dia.</li>
+</ul>
+<h3 id="stack-tecnica-resumo">Stack técnica (resumo)</h3>
+<ul>
+<li><strong>Frontend</strong>: Vanilla JS + Vite (sem framework). Multi-page app: 26 HTMLs, cada um com seu JS em <code>src/js/pages/</code>.</li>
+<li><strong>Backend</strong>: Supabase (PostgreSQL + Auth + Storage).</li>
+<li><strong>Câmbio</strong>: Frankfurter API (BRL, USD, EUR, GBP), atualizada a cada 5 minutos.</li>
+<li><strong>Deploy</strong>: Vercel, deploy automático a cada push na <code>main</code>.</li>
+</ul>
+<hr />
+<h2 id="2-como-comecar-setup-inicial">2. Como começar — setup inicial</h2>
+<p>A ordem recomendada para configurar o app do zero:</p>
+<ol>
+<li><strong>Criar conta e fazer login</strong> (<code>/index.html</code> → <code>/dashboard</code>).</li>
+<li><strong>Completar o perfil</strong> (<code>/perfil</code>) — nome, foto, telefone, endereço.</li>
+<li><strong>Configurar o sistema</strong> (<code>/configuracoes</code>) — moedas que você usa, tema, frequência de importação default.</li>
+<li><strong>Cadastrar contatos</strong> (<code>/contatos</code>) — pessoas e empresas com quem você tem relação financeira.</li>
+<li><strong>Cadastrar contas bancárias</strong> (<code>/contas</code>) — corrente, poupança, cartão de crédito, cofrinho, investimento.</li>
+<li><strong>Cadastrar compromissos</strong> (<code>/compromissos</code>) — entrada (salário, freelas), saída (aluguel, mercado), transferências, investimentos.</li>
+<li><strong>Conferir orçamento</strong> (<code>/orcamento</code>) — entrar antes vs. sair antes, mês a mês.</li>
+<li><strong>Começar a marcar pagamentos</strong> (<code>/pagamentos</code>) ou <strong>importar extrato</strong> (<code>/transacoes</code> → aba Importar).</li>
+</ol>
+<p>Depois disso é rotina: marcar status, importar extratos, conferir relatórios.</p>
+<hr />
+<h2 id="3-mapa-do-app">3. Mapa do app</h2>
+<p>O FinFlow tem <strong>26 páginas</strong> organizadas em 6 grupos:</p>
+<h3 id="autenticacao-e-perfil">🔐 Autenticação e perfil</h3>
+<ul>
+<li><code>index.html</code> — Login</li>
+<li><code>perfil.html</code> — Dados pessoais</li>
+<li><code>configuracoes.html</code> — Preferências do sistema</li>
+</ul>
+<h3 id="cadastros">📒 Cadastros</h3>
+<ul>
+<li><code>contatos.html</code> — Pessoas e empresas</li>
+<li><code>contas.html</code> — Contas bancárias e cofrinhos</li>
+<li><code>compromissos.html</code> — Receitas, despesas, transferências recorrentes</li>
+</ul>
+<h3 id="planejamento">📅 Planejamento</h3>
+<ul>
+<li><code>orcamento.html</code> — Orçamento mensal e 12 meses</li>
+<li><code>dividas.html</code> — Empréstimos a pagar e a receber</li>
+<li><code>investimentos.html</code> — Carteira + projetos de investimento</li>
+</ul>
+<h3 id="execucao">⚡ Execução</h3>
+<ul>
+<li><code>pagamentos.html</code> — Marcar pagamentos como feitos</li>
+<li><code>transacoes.html</code> — Histórico real de transações + aba Importar extrato</li>
+<li><code>importar.html</code> — (legado, mesma rota agora vive como aba dentro de transacoes)</li>
+<li><code>tarefas.html</code> — To-dos auto-criados + manuais</li>
+</ul>
+<h3 id="analise">📊 Análise</h3>
+<ul>
+<li><code>dashboard.html</code> — Visão geral do dia</li>
+<li><code>relatorios.html</code> — 23 relatórios (Fluxo, Categorias, Patrimônio etc.)</li>
+<li><code>novidades.html</code> — Changelog visual com badge numérico</li>
+</ul>
+<h3 id="suporte-e-admin">🛠️ Suporte e admin</h3>
+<ul>
+<li><code>academia.html</code> — Documentação interna por tela</li>
+<li><code>feedback.html</code> — Enviar sugestão/bug</li>
+<li><code>feedback-publico.html</code> — Roadmap visível pra todos</li>
+<li><code>admin.html</code> — Painel admin (só admins)</li>
+<li><code>admin-usuarios.html</code> — Gerenciar usuários</li>
+<li><code>admin-feedback.html</code> — Triagem de feedbacks</li>
+<li><code>admin-i18n.html</code> — Tradução de strings</li>
+<li><code>desenvolvimento.html</code> — Tracker interno de tickets</li>
+</ul>
+<h3 id="legal">📜 Legal</h3>
+<ul>
+<li><code>termos.html</code> — Termos de uso</li>
+<li><code>privacidade.html</code> — Política de privacidade</li>
+</ul>
+<hr />
+<h2 id="4-paginas-do-app-uma-por-uma">4. Páginas do app, uma por uma</h2>
+<h3 id="login-indexhtml">🔐 <code>/</code> — Login (<code>index.html</code>)</h3>
+<p>Tela de entrada. Email + senha via Supabase Auth. Tem &ldquo;esqueci a senha&rdquo; e link pra criar conta. Após login, redireciona pro <code>/dashboard</code>.</p>
+<p><strong>Detalhes</strong>: rodapé customizado com versão do app puxada do <code>package.json</code>. Suporta passwordless (magic link) por email.</p>
+<hr />
+<h3 id="perfil-perfil">👤 <code>/perfil</code> — Perfil</h3>
+<p>Dados pessoais do usuário:
+- <strong>Foto</strong> com crop circular (Cropper.js).
+- <strong>Nome, sobrenome, apelido</strong>.
+- <strong>Telefone</strong> com seletor de país (DDI + bandeira).
+- <strong>Endereço estruturado</strong> (CEP → preenche cidade/estado via API de CEP).
+- <strong>Email</strong> (read-only, vem do Auth).</p>
+<p>Tudo gravado em <code>profiles</code> no Supabase. Aceita troca de senha aqui também.</p>
+<hr />
+<h3 id="configuracoes-configuracoes">⚙️ <code>/configuracoes</code> — Configurações</h3>
+<p>Painel de preferências dividido em abas:</p>
+<ul>
+<li><strong>Aparência</strong> — tema claro/escuro/sistema.</li>
+<li><strong>Idioma</strong> — pt-BR / en-US.</li>
+<li><strong>Sistema</strong> — moedas suportadas (BRL, USD, EUR, GBP). Cada moeda estrangeira aparece como card com cotações ao vivo: &ldquo;1 BRL = X&rdquo; e &ldquo;1 X = R$ Y&rdquo; (Frankfurter API, refresh a cada 5 min).</li>
+<li><strong>Frequência de importação</strong> — quantos dias entre importações (default: 7). Usado pra criar tarefas automáticas em <code>/tarefas</code>.</li>
+<li><strong>Categorias</strong> — gerenciar a árvore Categoria → Subcategoria (cada subcategoria vira potencial compromisso).</li>
+<li><strong>Dados</strong> — exportar JSON completo, importar de backup, resetar dados sensíveis.</li>
+</ul>
+<hr />
+<h3 id="contatos-contatos">🤝 <code>/contatos</code> — Contatos</h3>
+<p>Cadastro de pessoas e empresas. Cada contato tem:
+- Tipo: Pessoa Física ou Jurídica.
+- Nome / Razão social.
+- CPF/CNPJ.
+- Telefone, email.
+- Endereço estruturado.
+- <strong>Vínculos</strong>: lista todos os compromissos, dívidas, projetos e transações onde esse contato aparece.</p>
+<p>Usado em compromissos (de quem você recebe, pra quem você paga), em dívidas (credor/devedor) e em projetos.</p>
+<hr />
+<h3 id="contas-contas-bancarias">🏦 <code>/contas</code> — Contas bancárias</h3>
+<p>Tela mais visual do app. Cards de cada conta com:
+- <strong>Avatar do banco</strong> (logo via Brandfetch ou cor + iniciais como fallback).
+- <strong>Badge do tipo</strong>: Corrente, Poupança, Cartão de Crédito, Cofrinho, Investimento.
+- <strong>Saldo calculado</strong> pelo FinFlow (soma das transações).
+- <strong>Saldo do banco</strong> (último snapshot do OFX importado).
+- <strong>Indicador de bate/não bate</strong>: verde &ldquo;✓ Tudo bate&rdquo; ou amarelo &ldquo;Diferença: ±R$ X&rdquo;.
+- <strong>Indicador de importação atrasada</strong>: se passou da frequência configurada, aparece tarefa &ldquo;Importar extrato de X&rdquo;.
+- <strong>Caixinhas</strong> (sub-saldos): metas dentro da conta, com barra de progresso. Suporta resgate parcial/total.</p>
+<p><strong>Operações na conta</strong>: editar, arquivar, ver histórico de saldos, configurar frequência de importação.</p>
+<hr />
+<h3 id="compromissos-compromissos">📋 <code>/compromissos</code> — Compromissos</h3>
+<p>Coração do FinFlow. Lista todos os compromissos agrupados por categoria. Cada compromisso tem:</p>
+<ul>
+<li><strong>Categoria + Subcategoria</strong> (ex: Custo de Vida → Aluguel).</li>
+<li><strong>Tipo</strong>: Receita, Despesa, Transferência, Caixinha.</li>
+<li><strong>Valor + Moeda</strong>.</li>
+<li><strong>Periodicidade</strong>: única, mensal, trimestral, semestral, anual, customizada.</li>
+<li><strong>Data de início e fim</strong> (fim = NULL significa &ldquo;infinito&rdquo;).</li>
+<li><strong>Conta de origem</strong> (subcategorias.conta_id).</li>
+<li><strong>Conta de destino</strong> (só para Transferência; outra conta sua).</li>
+<li><strong>Contato</strong> (opcional).</li>
+<li><strong>Vínculo</strong> com Dívida, Projeto ou Investimento (auto-vinculação bidirecional).</li>
+</ul>
+<p><strong>Ao criar/editar um compromisso</strong>, o sistema regera os pagamentos futuros automaticamente em <code>/pagamentos</code>.</p>
+<p><strong>Status do compromisso</strong>: Ativo ou Arquivado. Arquivado some das listas mas mantém histórico.</p>
+<hr />
+<h3 id="orcamento-orcamento">💰 <code>/orcamento</code> — Orçamento</h3>
+<p>Mostra entradas vs. saídas previstas, com 3 abas:</p>
+<ol>
+<li><strong>Mensal</strong> — entradas - saídas do mês atual, com indicador &ldquo;Cabe no orçamento? ✓/✗&rdquo;.</li>
+<li><strong>12 meses</strong> — projeção dos próximos 12 meses, em grid.</li>
+<li><strong>Meses passados</strong> — execução real dos meses anteriores (previsto vs. realizado).</li>
+</ol>
+<p>Cada linha é uma subcategoria. Somatórias automáticas por categoria e total.</p>
+<hr />
+<h3 id="dividas-dividas">💸 <code>/dividas</code> — Dívidas</h3>
+<p>Cadastro de empréstimos. Cada dívida tem:
+- <strong>Tipo</strong>: a pagar (você deve) ou a receber (te devem).
+- <strong>Credor/Devedor</strong> (contato).
+- <strong>Valor original + saldo atual</strong>.
+- <strong>Taxa de juros</strong> (com modo SAC, Price ou Customizado).
+- <strong>Parcelas</strong>: quantidade, valor, primeira data, última data (auto-calculada).
+- <strong>Histórico de pagamentos</strong> — card grande com timeline.
+- <strong>Simulador</strong>: o que acontece se aumentar a parcela, antecipar, refinanciar.
+- <strong>Exportar PDF</strong> com cronograma completo.</p>
+<p>Ao criar uma dívida, o app <strong>automaticamente cria um compromisso vinculado</strong> com a parcela mensal. O compromisso aparece em <code>/pagamentos</code> e em <code>/orcamento</code>.</p>
+<p><strong>KPIs em cima</strong>: total a pagar, total a receber, taxa efetiva média. Tudo com câmbio do dia se houver dívidas em moeda estrangeira.</p>
+<hr />
+<h3 id="investimentos-investimentos">📈 <code>/investimentos</code> — Investimentos</h3>
+<p>Duas seções:</p>
+<ol>
+<li><strong>Carteira</strong> — lista de investimentos ativos (CDB, ações, cripto, FIIs, fundos). Cada um tem valor aplicado, saldo atual, rentabilidade.</li>
+<li><strong>Projetos</strong> — projetos de investimento futuros (ex: &ldquo;comprar apartamento até 2028&rdquo;). Cada projeto tem meta, prazo, aporte mensal e compromisso vinculado em <code>/compromissos</code>.</li>
+</ol>
+<p><strong>Simulador</strong>:
+- Modo &ldquo;Saldo final&rdquo;: dado aporte + tempo + taxa, quanto você terá no final.
+- Modo &ldquo;Aporte mensal&rdquo;: dada meta + tempo + taxa, quanto precisa aportar por mês.
+- Modo &ldquo;Tempo necessário&rdquo;: dada meta + aporte + taxa, em quantos meses chega.
+- Campo &ldquo;ou data alvo&rdquo; reverte o cálculo (descobre a taxa necessária).</p>
+<hr />
+<h3 id="pagamentos-pagamentos">✅ <code>/pagamentos</code> — Pagamentos</h3>
+<p>Onde a execução acontece. Lista os pagamentos do mês com:</p>
+<ul>
+<li><strong>Status</strong> (dropdown): A Pagar, Agendado, Pago, Cartão, Transferido, Cancelado.</li>
+<li><strong>Conta</strong> (com avatar + nome). Se a conta efetiva ≠ conta do compromisso, aparece ícone ↔.</li>
+<li><strong>Data de vencimento + dias até</strong> (&ldquo;15d atr.&rdquo;, &ldquo;3d falta&rdquo;).</li>
+<li><strong>Valor previsto + valor real</strong> (campos editáveis).</li>
+<li><strong>Indicador de adiantamento</strong> (badge ⏩ para receitas com adiantamento ativo).</li>
+</ul>
+<p><strong>Dois modos de visualização</strong>:
+- <strong>Blocos</strong> — agrupado por categoria, mês atual.
+- <strong>Próximos</strong> (lista plana) — todos os próximos pagamentos em ordem cronológica.</p>
+<p><strong>Quando você muda o status pra Pago/Cartão/Transferido</strong>:
+1. Aparece popover &ldquo;Quando foi pago?&rdquo; com data + seletor &ldquo;Saiu de qual conta?&rdquo;.
+2. Se trocou a conta, sistema pergunta &ldquo;aplicar à recorrência?&rdquo; com avatar do banco + Sim verde / Não vermelho.
+3. Se Sim, atualiza <code>subcategorias.conta_id</code> (próximos pagamentos saem dessa conta por padrão).
+4. Cria/atualiza a transação correspondente em <code>/transacoes</code>.</p>
+<p><strong>Quando você reverte</strong> (Pago → A Pagar): a transação correspondente é deletada e <code>conta_id_efetiva</code> é limpa.</p>
+<hr />
+<h3 id="transacoes-transacoes">📜 <code>/transacoes</code> — Transações</h3>
+<p>Histórico real de transações, com duas abas:</p>
+<ol>
+<li><strong>Lista</strong> — todas as transações: data, descrição, conta, categoria, valor, status de reconciliação (importado/manual/reconciliado).</li>
+<li><strong>Importar</strong> — upload de extrato (CSV, OFX). Mostra preview com badges:
+   - &ldquo;✓ Match automático&rdquo; — já bate com pagamento existente.
+   - &ldquo;🔄 Realocar de [Conta X]&rdquo; — pagamento já marcado em outra conta, vai realocar.
+   - &ldquo;Nova transação&rdquo; — não bate, vai criar do zero.</li>
+</ol>
+<p>Você marca os checkboxes do que quer importar e confirma. O sistema:
+   - Cria as transações.
+   - Marca pagamentos como Pago/Cartão.
+   - Salva snapshot do saldo final (<code>LEDGERBAL</code> do OFX).
+   - Realoca pagamentos cross-conta (seta <code>conta_id_efetiva</code> + deleta fantasma).</p>
+<p><strong>KPI no topo da lista</strong>: saldo total, total de entradas/saídas do período. Filtros: período, conta, categoria, status, valor.</p>
+<hr />
+<h3 id="tarefas-tarefas">📝 <code>/tarefas</code> — Tarefas</h3>
+<p>To-do list do FinFlow. Tarefas vêm de duas fontes:</p>
+<ol>
+<li><strong>Auto-criadas pelo sistema</strong>:
+   - &ldquo;Importar extrato de [Conta X]&rdquo; — quando passou da frequência configurada.
+   - &ldquo;Reconciliar transações importadas&rdquo; — quando há importações pendentes.
+   - &ldquo;Atualizar saldo de [Conta]&rdquo; — quando o snapshot tá muito velho.</li>
+<li><strong>Manuais</strong> — você adiciona qualquer tarefa avulsa.</li>
+</ol>
+<p>Cada tarefa tem: título, descrição opcional, conta vinculada opcional, status (aberta/concluída).</p>
+<p><strong>Auto-complete</strong>: quando você executa a ação relacionada (importar, reconciliar), a tarefa fecha sozinha.</p>
+<p>Tem um <strong>drawer flutuante</strong> acessível de qualquer página com a lista resumida + contador.</p>
+<hr />
+<h3 id="dashboard-dashboard">🏠 <code>/dashboard</code> — Dashboard</h3>
+<p>Visão geral do dia:</p>
+<ul>
+<li><strong>Saldo total</strong> (todas as contas, na moeda base) + variação no mês.</li>
+<li><strong>Próximos pagamentos</strong> (5 mais próximos).</li>
+<li><strong>Tarefas pendentes</strong> (top 3).</li>
+<li><strong>Snapshot do patrimônio</strong>: ativos − passivos.</li>
+<li><strong>Mini-gráfico</strong> de fluxo dos últimos 30 dias.</li>
+</ul>
+<p>É a tela inicial após login.</p>
+<hr />
+<h3 id="relatorios-relatorios">📊 <code>/relatorios</code> — Relatórios</h3>
+<p>23 relatórios organizados em 10 abas:</p>
+<ol>
+<li><strong>Fluxo</strong> — entradas vs. saídas por período.</li>
+<li><strong>Previsto vs. Real</strong> — variância entre compromisso e execução.</li>
+<li><strong>Categorias</strong> — gastos por categoria, treemap, top 10.</li>
+<li><strong>Compromissos</strong> (5 sub-abas) — análise por compromisso, recorrência, atrasados, próximos, arquivados.</li>
+<li><strong>Contas &amp; Saldos</strong> (3) — evolução de saldo, comparativo, reconciliação.</li>
+<li><strong>Dívidas</strong> (4) — total a pagar/receber, evolução, taxa efetiva, projeção.</li>
+<li><strong>Investimentos</strong> (3) — carteira, rentabilidade, alocação.</li>
+<li><strong>Saúde Financeira</strong> (3) — taxa de poupança, emergência (X meses cobertos), endividamento.</li>
+<li><strong>Patrimônio</strong> (3) — visão geral (ativos vs. passivos), composição (donut), evolução (line chart calculado on-the-fly).</li>
+<li><strong>Fiscal</strong> — base pra declaração de IR (em construção).</li>
+</ol>
+<p>Todos exportáveis em PDF com layout consistente.</p>
+<hr />
+<h3 id="novidades-novidades">📰 <code>/novidades</code> — Novidades</h3>
+<p>Changelog visual. Cada release vira um card com título, data, lista de mudanças coloridas por tipo (✨ novo, 🔧 fix, 📈 melhoria). Badge numérico na sidebar mostra quantos updates você ainda não viu (rastreado por ID em localStorage).</p>
+<hr />
+<h3 id="academia-academia-finflow">🎓 <code>/academia</code> — Academia FinFlow</h3>
+<p>Documentação interna do app, organizada por tela. Base para tutoriais em vídeo.</p>
+<hr />
+<h3 id="feedback-e-feedback-publico-feedback">💬 <code>/feedback</code> e <code>/feedback-publico</code> — Feedback</h3>
+<ul>
+<li><code>/feedback</code> — formulário pra enviar bug ou sugestão. Categoria, descrição, screenshot opcional.</li>
+<li><code>/feedback-publico</code> — roadmap visível: lista de feedbacks aprovados, com fase (Backlog, Em análise, Em desenvolvimento, Lançado).</li>
+</ul>
+<hr />
+<h3 id="admin-e-desenvolvimento-admin-so-admins">👮 <code>/admin*</code> e <code>/desenvolvimento</code> — Admin (só admins)</h3>
+<ul>
+<li><code>admin.html</code> — hub admin.</li>
+<li><code>admin-usuarios.html</code> — listagem + ban/unban + reset de senha.</li>
+<li><code>admin-feedback.html</code> — triagem dos feedbacks recebidos.</li>
+<li><code>admin-i18n.html</code> — edição de strings de tradução in-app.</li>
+<li><code>desenvolvimento.html</code> — tracker interno de tickets do projeto (com fases e label).</li>
+</ul>
+<hr />
+<h3 id="termos-e-privacidade-legal">📜 <code>/termos</code> e <code>/privacidade</code> — Legal</h3>
+<p>Páginas estáticas com termos de uso e política de privacidade.</p>
+<hr />
+<h2 id="5-regras-transversais-do-sistema">5. Regras transversais do sistema</h2>
+<p>Estas são as regras que valem em várias páginas ao mesmo tempo. Entender essas regras é a chave pra entender o FinFlow.</p>
+<h3 id="51-compromisso-pagamento-regra-de-ouro">5.1. Compromisso → Pagamento (regra de ouro)</h3>
+<p>Quando você cria um <strong>compromisso recorrente</strong>, o sistema gera automaticamente os <strong>pagamentos futuros</strong> correspondentes em <code>/pagamentos</code>. Regras:</p>
+<ul>
+<li>Cada pagamento vai herdar conta, valor, contato e moeda do compromisso.</li>
+<li>Se você editar o compromisso (mudar valor, mudar conta, mudar data), os pagamentos <strong>futuros não-pagos</strong> são regerados.</li>
+<li>Pagamentos <strong>já marcados como Pago/Cartão/Transferido</strong> ficam intocados (audit trail).</li>
+<li>Cancelar um compromisso arquiva ele e cancela os pagamentos futuros não-pagos.</li>
+</ul>
+<h3 id="52-status-unificado-dos-pagamentos">5.2. Status unificado dos pagamentos</h3>
+<p>Todo pagamento tem um dos 6 status:</p>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Significado</th>
+<th>Cor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A Pagar</strong></td>
+<td>Padrão. Ainda não chegou a hora ou não foi marcado.</td>
+<td>Cinza</td>
+</tr>
+<tr>
+<td><strong>Agendado</strong></td>
+<td>Marcado pra pagar automaticamente no banco.</td>
+<td>Azul</td>
+</tr>
+<tr>
+<td><strong>Pago</strong></td>
+<td>Já saiu do caixa. Gera transação.</td>
+<td>Verde</td>
+</tr>
+<tr>
+<td><strong>Cartão</strong></td>
+<td>Pago via cartão de crédito (ainda não saiu do caixa, mas vai na fatura).</td>
+<td>Roxo</td>
+</tr>
+<tr>
+<td><strong>Transferido</strong></td>
+<td>É uma transferência entre contas suas. Gera par de transações.</td>
+<td>Amarelo</td>
+</tr>
+<tr>
+<td><strong>Cancelado</strong></td>
+<td>Não vai acontecer.</td>
+<td>Vermelho</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Pago, Cartão e Transferido</strong> são considerados &ldquo;status efetivados&rdquo; — qualquer um deles dispara a criação de transações.</p>
+<h3 id="53-conta-efetiva-conta-configurada-conta_id_efetiva">5.3. Conta efetiva ≠ conta configurada (<code>conta_id_efetiva</code>)</h3>
+<p>Cenário: você cadastrou o compromisso &ldquo;Aluguel&rdquo; pra sair do Itaú, mas no dia pagou pelo Nubank.</p>
+<ul>
+<li>O FinFlow guarda <code>pagamentos.conta_id_efetiva = nubank_id</code> (NULL = usa o default da subcategoria).</li>
+<li>A transação gerada usa a conta efetiva, não a configurada.</li>
+<li>Aparece ícone ↔ em <code>/pagamentos</code> indicando o desvio.</li>
+<li>Sistema oferece atualizar o compromisso (&ldquo;próximos pagamentos saem do Nubank?&rdquo;).</li>
+<li>Se reverter o status (Pago → A Pagar), <code>conta_id_efetiva</code> é limpa.</li>
+</ul>
+<h3 id="54-sincronizacao-pagamento-transacao">5.4. Sincronização Pagamento ↔ Transação</h3>
+<p>Toda vez que um pagamento vai pra status &ldquo;efetivado&rdquo;, uma transação é criada em <code>/transacoes</code>. Vice-versa:</p>
+<ul>
+<li>Pagamento → transação: criada com tipo Receita/Despesa/Transferência, ligada via <code>transacoes.pagamento_id</code>.</li>
+<li>Reverter status: transação é deletada (cuidado: se for transferência, deleta o par).</li>
+<li>Importação de extrato pode <strong>vincular</strong> uma transação importada a um pagamento existente (faz o match).</li>
+<li>Se um pagamento tá vinculado a uma transação importada do banco, o status fica <strong>travado</strong> (não dá pra mudar pela página de Pagamentos — precisa desvincular em Transações primeiro).</li>
+</ul>
+<h3 id="55-adiantamento-de-receita">5.5. Adiantamento de Receita</h3>
+<p>Cenário: você vai receber salário dia 5, mas o cliente já adiantou dia 28 do mês anterior.</p>
+<ul>
+<li>Em <code>/compromissos</code>, no compromisso de Receita, tem botão &ldquo;Registrar adiantamento&rdquo;.</li>
+<li>Abre modal: valor, data, conta de destino.</li>
+<li>Sistema cria o lançamento na tabela <code>adiantamentos_receita</code> e aparece badge ⏩ no pagamento futuro.</li>
+<li>Quando o pagamento real chegar, o sistema deduz o adiantamento.</li>
+</ul>
+<h3 id="56-reconciliacao-bancaria-snapshots-ofx">5.6. Reconciliação bancária (snapshots OFX)</h3>
+<p>Quando você importa um extrato OFX, o app captura o <code>LEDGERBAL</code> (saldo final informado pelo banco) e salva em <code>saldos_bancarios</code>. Isso vira:</p>
+<ul>
+<li><strong>Cards de saldo em <code>/contas</code></strong>: comparam saldo calculado (soma de transações) vs. saldo informado pelo banco. Diferença vira alerta.</li>
+<li><strong>Frequência de importação</strong>: se passou X dias desde o último OFX, vira tarefa em <code>/tarefas</code>.</li>
+</ul>
+<h3 id="57-match-cross-conta-na-importacao">5.7. Match cross-conta na importação</h3>
+<p>Cenário avançado: você marcou um pagamento como &ldquo;Pago&rdquo; pela conta Itaú (por engano), mas na real ele saiu do Nubank. Aí você importa o OFX do Nubank.</p>
+<ul>
+<li>O sistema detecta: existe pagamento já marcado em OUTRA conta com valor exato + data ±3 dias.</li>
+<li>Mostra badge &ldquo;🔄 Realocar de Itaú&rdquo; no preview da importação.</li>
+<li>Se você confirmar:
+  1. Vincula a transação importada ao pagamento.
+  2. Seta <code>conta_id_efetiva = nubank_id</code>.
+  3. <strong>Deleta</strong> a transação fantasma que estava no Itaú.</li>
+</ul>
+<h3 id="58-caixa-livre-alocavel">5.8. Caixa Livre alocável</h3>
+<p>Receita não-comprometida (renda extra, freela inesperado, sobra) entra no <strong>Caixa Livre</strong> da conta. Aparece em <code>/contas</code> como linha separada no card.</p>
+<ul>
+<li>Pode ser alocada manualmente: &ldquo;mover R$ 500 do Caixa Livre pra Caixinha de Emergência&rdquo;.</li>
+<li>Faz <strong>carry-forward</strong>: sobra do mês passa pro mês seguinte automaticamente.</li>
+</ul>
+<h3 id="59-caixinhas-sub-saldos">5.9. Caixinhas (sub-saldos)</h3>
+<p>Dentro de uma conta, você cria caixinhas (sub-objetivos):</p>
+<ul>
+<li>Cada caixinha tem nome, meta, saldo atual, cor.</li>
+<li>Soma das caixinhas + Caixa Livre = saldo total da conta.</li>
+<li>Aportes mensais via compromisso do tipo &ldquo;Caixinha&rdquo;.</li>
+<li>Resgate: total (zera + arquiva) ou parcial (devolve ao Caixa Livre).</li>
+</ul>
+<h3 id="510-tarefas-automaticas">5.10. Tarefas automáticas</h3>
+<p>O sistema gera tarefas sozinho em alguns gatilhos:</p>
+<table>
+<thead>
+<tr>
+<th>Gatilho</th>
+<th>Tarefa criada</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Frequência de importação vencida</td>
+<td>&ldquo;Importar extrato de [Conta]&rdquo;</td>
+</tr>
+<tr>
+<td>Transação importada não-reconciliada &gt; 3 dias</td>
+<td>&ldquo;Reconciliar X transações&rdquo;</td>
+</tr>
+<tr>
+<td>Snapshot de saldo vencido</td>
+<td>&ldquo;Atualizar saldo de [Conta]&rdquo;</td>
+</tr>
+</tbody>
+</table>
+<p>Quando a ação correspondente é executada, a tarefa <strong>auto-completa</strong>.</p>
+<h3 id="511-cambio-multimoeda">5.11. Câmbio multimoeda</h3>
+<ul>
+<li>4 moedas suportadas: BRL, USD, EUR, GBP.</li>
+<li>Cotação ao vivo via Frankfurter, refresh a cada 5 min, cache em localStorage.</li>
+<li>Cada compromisso/transação/investimento tem <code>moeda</code> própria.</li>
+<li>Conversões: feitas no momento da exibição (KPIs, somatórias) usando câmbio do dia.</li>
+<li>Em relatórios, cotação histórica do dia da transação (não a atual).</li>
+</ul>
+<h3 id="512-dividas-e-projetos-como-fonte-da-verdade">5.12. Dívidas e Projetos como fonte da verdade</h3>
+<p>Dívidas e Projetos de Investimento <strong>criam e gerenciam compromissos automaticamente</strong>:</p>
+<ul>
+<li>Criar uma dívida cria 1 compromisso (parcela mensal).</li>
+<li>Editar a dívida (mudar valor, taxa, parcelas) <strong>regera</strong> o compromisso.</li>
+<li>Arquivar a dívida arquiva o compromisso.</li>
+<li>Compromissos vinculados a dívidas/projetos não podem ser editados diretamente (têm que ir pela origem).</li>
+</ul>
+<h3 id="513-auto-vinculacao-bidirecional">5.13. Auto-vinculação bidirecional</h3>
+<p>Quando você liga um compromisso a uma dívida (ou projeto), o vínculo é bidirecional:</p>
+<ul>
+<li>O compromisso mostra &ldquo;Vinculado à dívida X&rdquo; + botão pra abrir.</li>
+<li>A dívida mostra &ldquo;Compromisso Y&rdquo; nos vínculos.</li>
+<li>Excluir um lado oferece desfazer o vínculo do outro.</li>
+</ul>
+<h3 id="514-patrimonio">5.14. Patrimônio</h3>
+<p>Cálculo:</p>
+<pre><code>Patrimônio = Σ(saldo das contas)
+           + Σ(saldo dos investimentos)
+           + Σ(ativos físicos cadastrados em ativos_patrimonio)
+           − Σ(saldo das dívidas a pagar)
+           + Σ(saldo das dívidas a receber)
+</code></pre>
+<p>Tudo convertido pra moeda base (BRL por default) com câmbio do dia. Aparece em <code>/dashboard</code> (snapshot) e <code>/relatorios</code> aba Patrimônio (evolução histórica).</p>
+<hr />
+<h2 id="6-como-tudo-se-conecta-fluxos-completos">6. Como tudo se conecta — fluxos completos</h2>
+<h3 id="61-fluxo-receber-salario">6.1. Fluxo &ldquo;Receber salário&rdquo;</h3>
+<ol>
+<li><strong>Cadastro</strong> (uma vez): em <code>/compromissos</code> cria um compromisso do tipo Receita, subcategoria &ldquo;Salário&rdquo;, recorrência mensal, dia 5, valor R$ X, conta destino Itaú Corrente.</li>
+<li><strong>Aparece</strong> em <code>/orcamento</code> (entradas de cada mês) e em <code>/pagamentos</code> (próximos pagamentos).</li>
+<li><strong>No dia 5</strong>, você marca como Pago em <code>/pagamentos</code>. Popover confirma data. Se foi pra outra conta, seleciona.</li>
+<li><strong>Sistema cria</strong> uma transação tipo Receita em <code>/transacoes</code>, vinculada ao pagamento.</li>
+<li><strong>Saldo do Itaú aumenta</strong> em <code>/contas</code>.</li>
+<li><strong>Se houve adiantamento</strong> (botão &ldquo;Registrar adiantamento&rdquo; antes), sistema deduz e mostra valor líquido.</li>
+<li><strong>Em <code>/relatorios</code></strong> entra na aba Fluxo (entrada do mês) e Saúde Financeira (taxa de poupança).</li>
+</ol>
+<h3 id="62-fluxo-pagar-conta-de-luz">6.2. Fluxo &ldquo;Pagar conta de luz&rdquo;</h3>
+<ol>
+<li><strong>Cadastro</strong>: compromisso de Despesa, subcategoria &ldquo;Energia&rdquo;, recorrência mensal, dia 15, valor R$ Y, conta Nubank.</li>
+<li><strong>No dia 15</strong>, marca como Pago. Popover confirma. Se pagou pelo Itaú em vez do Nubank, seleciona Itaú. Sistema pergunta &ldquo;atualizar recorrência?&rdquo;.</li>
+<li><strong>Se sim</strong>: <code>subcategorias.conta_id = itau_id</code>. Próximos vão sair do Itaú.</li>
+<li><strong>Se não</strong>: só esse pagamento fica com <code>conta_id_efetiva = itau_id</code>, badge ↔ aparece. Próximos voltam pro Nubank.</li>
+<li><strong>Transação criada</strong> em <code>/transacoes</code>, débito no Itaú.</li>
+</ol>
+<h3 id="63-fluxo-importar-ofx-do-banco">6.3. Fluxo &ldquo;Importar OFX do banco&rdquo;</h3>
+<ol>
+<li>Em <code>/transacoes</code> → aba Importar, upload do arquivo.</li>
+<li>Sistema parseia, mostra preview de cada linha com badge:
+   - ✓ Match automático com pagamento existente.
+   - 🔄 Realocar de outra conta.
+   - Nova transação (sem match).</li>
+<li>Você confirma marcando checkboxes.</li>
+<li>Sistema:
+   - Cria transações com <code>reconciliacao_status = importado</code> ou <code>reconciliado</code>.
+   - Vincula a pagamentos (<code>pagamento_id</code>).
+   - Marca pagamentos como Pago.
+   - Salva <code>LEDGERBAL</code> em <code>saldos_bancarios</code>.
+   - Realoca cross-conta (deleta fantasmas).
+   - Fecha tarefa &ldquo;Importar extrato&rdquo; se existia.</li>
+<li><strong>Em <code>/contas</code></strong>: card da conta atualiza com novo saldo e indicador de &ldquo;bate/não bate&rdquo;.</li>
+<li><strong>Em <code>/tarefas</code></strong>: se há transações não-reconciliadas (sem match nenhum), pode criar tarefa &ldquo;Reconciliar X transações&rdquo;.</li>
+</ol>
+<h3 id="64-fluxo-cadastrar-uma-divida-nova">6.4. Fluxo &ldquo;Cadastrar uma dívida nova&rdquo;</h3>
+<ol>
+<li>Em <code>/dividas</code>, botão &ldquo;Nova dívida&rdquo;. Modal pede credor (contato), valor, taxa, número de parcelas, primeira data.</li>
+<li>Sistema calcula cronograma (SAC/Price) e cria a dívida.</li>
+<li><strong>Cria automaticamente um compromisso</strong> de Despesa em <code>/compromissos</code>, subcategoria &ldquo;Empréstimos&rdquo;, periodicidade mensal, com valor da parcela.</li>
+<li>Compromisso gera pagamentos futuros em <code>/pagamentos</code>.</li>
+<li>Cada parcela marcada como Paga atualiza o saldo da dívida.</li>
+<li><code>/dividas</code> mostra a dívida com card &ldquo;Histórico de pagamentos&rdquo; e barra de progresso.</li>
+</ol>
+<h3 id="65-fluxo-configurar-projeto-de-investimento">6.5. Fluxo &ldquo;Configurar projeto de investimento&rdquo;</h3>
+<ol>
+<li>Em <code>/investimentos</code> → aba Projetos → Novo. Define meta (ex: R$ 100k), prazo (ex: 3 anos), taxa esperada.</li>
+<li>Simulador calcula aporte mensal necessário.</li>
+<li>Sistema cria compromisso do tipo Investimento, periodicidade mensal, conta de destino = a conta de investimento.</li>
+<li>Conforme você marca os aportes mensais como Pagos, transação é criada (transferência da conta corrente pra conta de investimento).</li>
+<li><code>/relatorios</code> aba Investimentos rastreia o progresso.</li>
+</ol>
+<h3 id="66-fluxo-conferir-saude-financeira">6.6. Fluxo &ldquo;Conferir saúde financeira&rdquo;</h3>
+<ol>
+<li><code>/dashboard</code> mostra snapshot do dia (patrimônio + próximos + tarefas).</li>
+<li><code>/relatorios</code> → aba Saúde Financeira:
+   - Taxa de poupança = (Receita − Despesa) / Receita.
+   - Reserva de emergência = saldo livre / despesa média mensal.
+   - Endividamento = total a pagar / patrimônio.</li>
+<li>Aba Patrimônio mostra evolução histórica.</li>
+<li>Tudo exportável em PDF.</li>
+</ol>
+<hr />
+<h2 id="7-glossario">7. Glossário</h2>
+<ul>
+<li><strong>Compromisso</strong> — promessa de receita/despesa/transferência recorrente. Gera pagamentos automaticamente.</li>
+<li><strong>Pagamento</strong> — ocorrência específica de um compromisso (ex: aluguel de maio/2026). Tem status, data, valor.</li>
+<li><strong>Transação</strong> — registro real do dinheiro entrando/saindo de uma conta. Vinculada a um pagamento ou avulsa.</li>
+<li><strong>Subcategoria</strong> — folha da árvore de categorias. Cada compromisso pertence a uma subcategoria.</li>
+<li><strong>Caixinha</strong> — sub-saldo dentro de uma conta, com meta. Equivale a &ldquo;envelope&rdquo; em outros apps.</li>
+<li><strong>Caixa Livre</strong> — saldo não-alocado em caixinhas. Pode ser movido manualmente.</li>
+<li><strong>Snapshot de saldo</strong> — saldo final informado pelo banco no OFX (<code>LEDGERBAL</code>). Usado pra conciliar.</li>
+<li><strong>Conta efetiva</strong> — conta de onde o pagamento de fato saiu, quando difere da configurada no compromisso.</li>
+<li><strong>Match cross-conta</strong> — quando o sistema detecta na importação que um pagamento marcado em uma conta na verdade saiu de outra.</li>
+<li><strong>Frequência de importação</strong> — quantos dias o usuário se compromete a importar o extrato. Default 7.</li>
+<li><strong>Adiantamento de receita</strong> — receita recebida antes do previsto, registrada separadamente.</li>
+<li><strong>Reconciliação</strong> — processo de bater transações importadas com pagamentos planejados.</li>
+<li><strong>Patrimônio líquido</strong> — soma de ativos (contas + investimentos + bens) menos passivos (dívidas).</li>
+<li><strong>Status efetivado</strong> — status que dispara criação de transação: Pago, Cartão, Transferido.</li>
+</ul>
+<hr />
+<h2 id="como-manter-este-documento-atualizado">Como manter este documento atualizado</h2>
+<p>Toda vez que uma nova feature é lançada, atualize:</p>
+<ol>
+<li>A seção da <strong>página afetada</strong> (se mudou comportamento).</li>
+<li>A <strong>regra transversal</strong> correspondente (se mudou regra de negócio).</li>
+<li>O <strong>fluxo</strong> correspondente (se mudou jornada).</li>
+<li>O <strong>glossário</strong> (se introduziu termo novo).</li>
+</ol>
+<p>Releases grandes (muda regra de negócio) merecem update aqui. Releases pequenas (fix, cleanup) só no changelog.</p>
+</div>
+</body>
+</html>
