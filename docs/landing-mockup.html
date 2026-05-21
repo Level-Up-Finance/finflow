@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinFlow — Organize compromissos, não tickets de extrato</title>
+<meta name="description" content="App de finanças pessoais multimoeda pra PF e casal/família. Cadastre compromissos, marque o que rolou, veja seu patrimônio crescer.">
+
+<!-- Fontes (mesmas do app) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   Tokens — extraídos de src/css/variables.css
+   ============================================================ */
+:root {
+  --color-primary: #6D5EF5;
+  --color-primary-dark: #4B3FD6;
+  --color-primary-light: #8B7FF7;
+  --color-primary-50: #F1EFFE;
+  --color-secondary: #3B82F6;
+  --color-secondary-dark: #2563EB;
+
+  --color-text-main: #1F2937;
+  --color-text-secondary: #6B7280;
+  --color-text-muted: #9CA3AF;
+  --color-border: #E5E7EB;
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #F9FAFB;
+  --color-sidebar-bg: #1F2937;
+
+  --color-success: #10B981;
+  --color-success-bg: #D1FAE5;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+
+  --gradient-primary: linear-gradient(135deg, #6D5EF5 0%, #3B82F6 100%);
+  --gradient-primary-soft: linear-gradient(135deg, rgba(109,94,245,0.08) 0%, rgba(59,130,246,0.08) 100%);
+  --gradient-hero: linear-gradient(135deg, #6D5EF5 0%, #4B3FD6 50%, #3B82F6 100%);
+
+  --font-display: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(109,94,245,0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.04);
+
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+
+  --max-width: 1200px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-text-main);
+  background: var(--color-surface);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--color-text-main);
+}
+
+p { margin-bottom: 1rem; }
+a { color: var(--color-secondary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* ============================================================
+   Header / Nav
+   ============================================================ */
+.site-header {
+  position: sticky;
+  top: 0;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
+  z-index: 100;
+}
+.site-header .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+.logo {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: var(--color-text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.logo-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--gradient-primary);
+  display: inline-block;
+}
+.nav-cta {
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 0.95rem;
+  background: var(--color-text-main);
+  color: white !important;
+  text-decoration: none;
+}
+.nav-cta:hover { background: #111827; text-decoration: none; }
+
+/* ============================================================
+   Hero
+   ============================================================ */
+.hero {
+  padding: 5rem 0 6rem;
+  background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-background) 100%);
+  position: relative;
+  overflow: hidden;
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+@media (max-width: 900px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 3rem; }
+  .hero { padding: 3rem 0 4rem; }
+}
+
+.hero-tag {
+  display: inline-block;
+  background: var(--color-primary-50);
+  color: var(--color-primary-dark);
+  padding: 0.35rem 0.9rem;
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.03em;
+}
+.hero-sub {
+  font-size: 1.25rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 2rem;
+  line-height: 1.55;
+  max-width: 540px;
+}
+.hero-cta {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.btn-primary {
+  background: var(--color-text-main);
+  color: white;
+  padding: 0.85rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.btn-primary:hover { background: var(--color-primary); text-decoration: none; transform: translateY(-1px); }
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-main);
+  padding: 0.85rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  border: 1px solid var(--color-border);
+}
+.btn-ghost:hover { background: var(--color-surface-alt); text-decoration: none; }
+.hero-hint {
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.hero-visual {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: var(--gradient-primary-soft);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  text-align: center;
+  border: 1px solid var(--color-border);
+}
+.hero-visual::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(at top right, rgba(109,94,245,0.15), transparent 60%),
+    radial-gradient(at bottom left, rgba(59,130,246,0.1), transparent 60%);
+  pointer-events: none;
+}
+.hero-visual span { position: relative; padding: 1rem 2rem; background: rgba(255,255,255,0.7); border-radius: var(--radius-md); }
+
+/* ============================================================
+   Tagline alternatives (decisão a tomar)
+   ============================================================ */
+.tagline-options {
+  background: #FFFBEB;
+  border: 2px dashed var(--color-warning);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  margin: 4rem 0;
+}
+.tagline-options h3 {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #92400E;
+  margin-bottom: 1rem;
+}
+.tagline-options ol {
+  list-style: none;
+  counter-reset: tagline;
+  padding: 0;
+}
+.tagline-options li {
+  counter-increment: tagline;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(146, 64, 14, 0.15);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.tagline-options li::before {
+  content: counter(tagline) ". ";
+  color: var(--color-warning);
+  margin-right: 0.5rem;
+}
+.tagline-options li:last-child { border-bottom: none; }
+
+/* ============================================================
+   Section padrão
+   ============================================================ */
+section { padding: 5rem 0; }
+.section-tag {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-primary);
+  display: block;
+  margin-bottom: 0.75rem;
+}
+.section-title {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+}
+.section-sub {
+  font-size: 1.125rem;
+  color: var(--color-text-secondary);
+  max-width: 640px;
+  margin-bottom: 3rem;
+}
+
+/* ============================================================
+   Problema (com contraste)
+   ============================================================ */
+.problema {
+  background: var(--color-background);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+.problema-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+@media (max-width: 800px) { .problema-grid { grid-template-columns: 1fr; } }
+
+.problema-card {
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+.problema-card.danger {
+  border-left: 4px solid var(--color-danger);
+}
+.problema-card.success {
+  border-left: 4px solid var(--color-success);
+}
+.problema-card h3 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+}
+.problema-card ul {
+  list-style: none;
+  padding: 0;
+}
+.problema-card li {
+  padding: 0.5rem 0;
+  padding-left: 1.5rem;
+  position: relative;
+  color: var(--color-text-secondary);
+}
+.problema-card.danger li::before {
+  content: '✗';
+  color: var(--color-danger);
+  position: absolute;
+  left: 0;
+  font-weight: 700;
+}
+.problema-card.success li::before {
+  content: '✓';
+  color: var(--color-success);
+  position: absolute;
+  left: 0;
+  font-weight: 700;
+}
+
+/* ============================================================
+   Como funciona (steps)
+   ============================================================ */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+  margin-top: 3rem;
+}
+@media (max-width: 900px) { .steps { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .steps { grid-template-columns: 1fr; } }
+
+.step {
+  text-align: left;
+}
+.step-num {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 800;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+.step h4 {
+  font-size: 1.125rem;
+  margin-bottom: 0.5rem;
+}
+.step p {
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* ============================================================
+   Features (grid)
+   ============================================================ */
+.features {
+  background: var(--color-sidebar-bg);
+  color: white;
+}
+.features .section-title { color: white; }
+.features .section-sub { color: #D1D5DB; }
+.features .section-tag { color: var(--color-primary-light); }
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 3rem;
+}
+@media (max-width: 900px) { .features-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .features-grid { grid-template-columns: 1fr; } }
+
+.feature {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 1.75rem;
+  border-radius: var(--radius-md);
+}
+.feature h4 {
+  color: white;
+  font-size: 1.125rem;
+  margin-bottom: 0.5rem;
+}
+.feature p {
+  color: #D1D5DB;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ============================================================
+   Pra quem é (cards)
+   ============================================================ */
+.para-quem {
+  background: var(--color-surface-alt);
+}
+.personas {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 3rem;
+}
+@media (max-width: 900px) { .personas { grid-template-columns: 1fr; } }
+
+.persona {
+  background: var(--color-surface);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+.persona h4 {
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+.persona p {
+  color: var(--color-text-secondary);
+  margin-bottom: 0;
+}
+
+/* ============================================================
+   FAQ
+   ============================================================ */
+.faq {
+  max-width: 760px;
+  margin: 0 auto;
+}
+details {
+  border-bottom: 1px solid var(--color-border);
+  padding: 1.25rem 0;
+}
+details summary {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.125rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  list-style: none;
+}
+details summary::-webkit-details-marker { display: none; }
+details summary::after {
+  content: '+';
+  font-size: 1.5rem;
+  color: var(--color-primary);
+  font-weight: 400;
+  transition: transform 0.2s;
+}
+details[open] summary::after { content: '−'; }
+details p {
+  margin-top: 0.75rem;
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+}
+
+/* ============================================================
+   CTA final
+   ============================================================ */
+.cta-final {
+  background: var(--gradient-hero);
+  color: white;
+  padding: 6rem 0;
+  text-align: center;
+}
+.cta-final h2 {
+  color: white;
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  margin-bottom: 1rem;
+}
+.cta-final p {
+  color: rgba(255,255,255,0.85);
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  max-width: 540px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.cta-final .btn-primary {
+  background: white;
+  color: var(--color-text-main);
+}
+.cta-final .btn-primary:hover { background: var(--color-surface-alt); }
+
+/* ============================================================
+   Footer
+   ============================================================ */
+.site-footer {
+  background: var(--color-sidebar-bg);
+  color: #9CA3AF;
+  padding: 3rem 0 2rem;
+}
+.site-footer .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.site-footer a { color: #D1D5DB; }
+.site-footer a:hover { color: white; }
+.site-footer ul {
+  list-style: none;
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+}
+
+/* ============================================================
+   Reduced motion
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="site-header">
+  <div class="container">
+    <a href="#" class="logo">
+      <span class="logo-mark"></span>
+      FinFlow
+    </a>
+    <a href="#" class="nav-cta">Entrar</a>
+  </div>
+</header>
+
+<!-- Tagline alternatives (decisão a tomar antes de fechar landing) -->
+<div class="container">
+  <div class="tagline-options">
+    <h3>⚠️ Tagline — qual usar como h1 do hero?</h3>
+    <p style="color: #92400E; margin-bottom: 1rem; font-size: 0.95rem;">
+      8 candidatas derivadas do BRAND.md + MANUAL.md. Marca sua favorita comigo e eu fixo a escolhida.
+    </p>
+    <ol>
+      <li>Organize compromissos, não tickets de extrato.</li>
+      <li>Antecipa seu futuro financeiro.</li>
+      <li>O dinheiro como ele realmente flui na vida real.</li>
+      <li>Comprometido com o que importa. Executando o que rolou.</li>
+      <li>A diferença entre o que vocês quiseram e o que aconteceu.</li>
+      <li>A gente vê pra onde foi o dinheiro. E pra onde vai.</li>
+      <li>Planejou. Pagou. Conferiu. Tudo num só lugar.</li>
+      <li>Cada compromisso, cada conta, cada moeda — sob controle.</li>
+    </ol>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-grid">
+      <div>
+        <span class="hero-tag">Pra você e pra família</span>
+        <h1>Organize compromissos,<br>não tickets de extrato.</h1>
+        <p class="hero-sub">
+          A gente vê os próximos 12 meses antes deles chegarem. Você cadastra os compromissos —
+          aluguel, salário, parcelas — e o FinFlow gera os pagamentos futuros sozinho. No fim do mês,
+          é só confirmar o que rolou.
+        </p>
+        <div class="hero-cta">
+          <a href="#" class="btn-primary">Começar agora →</a>
+          <a href="#como-funciona" class="btn-ghost">Ver como funciona</a>
+        </div>
+        <p class="hero-hint">Grátis pra começar. Sem cartão de crédito.</p>
+      </div>
+      <div class="hero-visual">
+        <span>📱 Screenshot do app aqui</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEMA / SOLUÇÃO -->
+<section class="problema">
+  <div class="container">
+    <span class="section-tag">A diferença</span>
+    <h2 class="section-title">Apps de finanças tratam dinheiro como log de transações.</h2>
+    <p class="section-sub">
+      A gente acha que isso tá errado. Sua vida financeira não é um histórico — é um plano que rola.
+    </p>
+
+    <div class="problema-grid">
+      <div class="problema-card danger">
+        <h3>O jeito antigo</h3>
+        <ul>
+          <li>Cadastra cada transação manualmente</li>
+          <li>Categoriza no fim do mês (se lembrar)</li>
+          <li>Descobre tarde demais que não cabia no orçamento</li>
+          <li>Saldo bate? Maioria não confere com o banco</li>
+          <li>Multimoeda? Esquece</li>
+        </ul>
+      </div>
+      <div class="problema-card success">
+        <h3>O jeito FinFlow</h3>
+        <ul>
+          <li>Cadastra <strong>compromissos</strong> uma vez — o app gera os pagamentos</li>
+          <li>Vê o orçamento dos próximos 12 meses antes deles acontecerem</li>
+          <li>Importa o extrato OFX e o app concilia sozinho</li>
+          <li>Patrimônio (contas + investimentos + bens − dívidas) calculado todo dia</li>
+          <li>BRL, USD, EUR e GBP com câmbio ao vivo</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMO FUNCIONA -->
+<section id="como-funciona">
+  <div class="container">
+    <span class="section-tag">Como funciona</span>
+    <h2 class="section-title">4 passos. Depois é rotina.</h2>
+    <p class="section-sub">
+      Você configura uma vez. O FinFlow trabalha pra você no dia-a-dia.
+    </p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h4>Cadastra compromissos</h4>
+        <p>Aluguel, salário, parcela do carro, mercado. O que se repete, vocês cadastram uma vez.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h4>O app gera pagamentos</h4>
+        <p>Cada compromisso vira pagamentos mensais (ou semanais, anuais). Os próximos 12 meses já aparecem.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h4>Marca o que rolou</h4>
+        <p>No fim do mês, marca Pago / Transferido. Ou importa o extrato OFX e o app concilia tudo sozinho.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <h4>Vê o patrimônio</h4>
+        <p>Dashboard mostra ativos − passivos atualizados. 23 relatórios pra entender pra onde foi o dinheiro.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES (dark section) -->
+<section class="features">
+  <div class="container">
+    <span class="section-tag">Diferenciais</span>
+    <h2 class="section-title">Construído pra organizar de verdade.</h2>
+    <p class="section-sub">
+      Não é app fofo nem app sério-corporativo. É app pensado pra quem leva dinheiro a sério.
+    </p>
+
+    <div class="features-grid">
+      <div class="feature">
+        <h4>Multimoeda nativo</h4>
+        <p>BRL, USD, EUR e GBP com câmbio ao vivo. Cada conta, cada compromisso, cada investimento na moeda que faz sentido.</p>
+      </div>
+      <div class="feature">
+        <h4>Reconciliação OFX</h4>
+        <p>Importa o extrato do banco e a gente bate com seus pagamentos. Saldo do app sempre confere com saldo do banco.</p>
+      </div>
+      <div class="feature">
+        <h4>23 relatórios</h4>
+        <p>Fluxo, Categorias, Saúde Financeira, Patrimônio. Exportáveis em PDF pra apresentar pra contador ou pra você mesmo.</p>
+      </div>
+      <div class="feature">
+        <h4>Caixinhas com meta</h4>
+        <p>Sub-saldos dentro de cada conta. Reserva pra emergência, pra viagem, pra trocar de carro — tudo separado e visível.</p>
+      </div>
+      <div class="feature">
+        <h4>Match cross-conta</h4>
+        <p>Pagou pelo Itaú quando devia ser Nubank? O app detecta na importação e realoca sozinho, sem bagunçar histórico.</p>
+      </div>
+      <div class="feature">
+        <h4>Dívidas SAC/Price</h4>
+        <p>Cadastra empréstimos com simulador. Vê o impacto de antecipar parcelas, renegociar taxa, comparar cenários.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRA QUEM É -->
+<section class="para-quem">
+  <div class="container">
+    <span class="section-tag">Pra quem é</span>
+    <h2 class="section-title">Pra quem quer levar o dinheiro a sério.</h2>
+    <p class="section-sub">
+      Sem julgamento se você tá começando ou se já tem patrimônio. A gente trabalha com o que vocês têm.
+    </p>
+
+    <div class="personas">
+      <div class="persona">
+        <h4>Pessoa que se organiza</h4>
+        <p>
+          Você já tentou planilha, já tentou app fofo, e nenhum aguentou seis meses. Quer algo
+          sério, com profundidade, que não fica trocando de tela toda atualização.
+        </p>
+      </div>
+      <div class="persona">
+        <h4>Casal planejando junto</h4>
+        <p>
+          Vocês querem ver a vida financeira do casal sem precisar mandar planilha por WhatsApp.
+          Multi-perfil tá vindo — por enquanto, a gente já fala "vocês" desde a primeira tela.
+        </p>
+      </div>
+      <div class="persona">
+        <h4>Profissional liberal</h4>
+        <p>
+          Você mistura PF e PJ, recebe em moedas diferentes, viaja. Precisa de multimoeda real,
+          conciliação automática e relatório fiscal sério.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section>
+  <div class="container">
+    <span class="section-tag">Perguntas frequentes</span>
+    <h2 class="section-title">Antes de começar</h2>
+
+    <div class="faq">
+      <details>
+        <summary>É grátis?</summary>
+        <p>
+          Sim, dá pra usar sem pagar. Eventualmente vai ter um plano pago com features avançadas
+          (relatórios fiscais completos, mais moedas, multi-perfil ilimitado), mas a base sempre
+          vai funcionar gratuitamente.
+        </p>
+      </details>
+      <details>
+        <summary>Meus dados estão seguros?</summary>
+        <p>
+          Todos os dados ficam criptografados no banco (Supabase + PostgreSQL). A gente não vende
+          informação, não compartilha com terceiros, não roda análise comportamental.
+          Você pode exportar tudo em JSON a qualquer momento, ou deletar sua conta de forma
+          permanente em um clique.
+        </p>
+      </details>
+      <details>
+        <summary>Funciona offline?</summary>
+        <p>
+          O app precisa de internet pra sincronizar. Mas se você perder conexão temporariamente,
+          consegue continuar usando — a sincronização rola quando voltar.
+        </p>
+      </details>
+      <details>
+        <summary>Integra com banco?</summary>
+        <p>
+          Por enquanto, integração via importação de extrato OFX (formato que todo banco brasileiro
+          oferece). Integração direta via Open Finance tá no roadmap pra 2026/2027.
+        </p>
+      </details>
+      <details>
+        <summary>E se eu tiver dúvida?</summary>
+        <p>
+          Tem um botão de feedback dentro do app — sua sugestão chega direto no nosso tracker
+          de desenvolvimento. A gente costuma responder em 1–2 dias.
+        </p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta-final">
+  <div class="container">
+    <h2>Pronto pra organizar de verdade?</h2>
+    <p>A gente leva sua vida financeira a sério. Vocês veem o resultado em 5 minutos.</p>
+    <a href="#" class="btn-primary">Começar agora →</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="container">
+    <div>
+      <a href="#" class="logo" style="color: white;">
+        <span class="logo-mark"></span>
+        FinFlow
+      </a>
+      <p style="margin-top: 0.5rem; font-size: 0.875rem;">
+        © 2026 FinFlow. Todos os direitos reservados.
+      </p>
+    </div>
+    <ul>
+      <li><a href="#">Sobre</a></li>
+      <li><a href="#">Privacidade</a></li>
+      <li><a href="#">Termos</a></li>
+      <li><a href="#">Contato</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>
