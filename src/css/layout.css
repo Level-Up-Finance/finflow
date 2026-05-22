@@ -298,7 +298,7 @@
   font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   font-weight: var(--fw-semibold);
   margin-bottom: var(--space-2);
 }

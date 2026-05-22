@@ -36,10 +36,11 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             Texto & Tradução
           </button>
-          <button class="cfg-sidenav-item" type="button" onclick="location.href='/desenvolvimento.html'">
+          <a class="cfg-sidenav-item cfg-sidenav-item--link" href="/desenvolvimento.html">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
             Gerenciador de Sugestões
-          </button>
+            <svg class="cfg-sidenav-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
+          </a>
         </nav>
 
         <!-- Content area -->
@@ -233,7 +234,9 @@
 
             <div class="page-header">
               <div class="page-header-content">
-                <h1 class="page-title">Usuários <span class="adm-usr-count hidden" id="usr-count"></span></h1>
+                <p class="page-eyebrow">Administração</p>
+                <h2 class="page-title">Usuários <span class="adm-usr-count hidden" id="usr-count"></span></h2>
+                <p class="page-description">Visualize e gerencie os planos dos usuários cadastrados.</p>
               </div>
             </div>
 
@@ -274,7 +277,8 @@
 
             <div class="page-header">
               <div class="page-header-content">
-                <h1 class="page-title">Texto & Tradução <span class="adm-usr-count hidden" id="i18n-count"></span></h1>
+                <p class="page-eyebrow">Administração</p>
+                <h2 class="page-title">Texto & Tradução <span class="adm-usr-count hidden" id="i18n-count"></span></h2>
                 <p class="page-description">Gerencie as traduções da interface do FinFlow em PT-BR, EN, ES e FR.</p>
               </div>
               <div class="page-header-actions">
