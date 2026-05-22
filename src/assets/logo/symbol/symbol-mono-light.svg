@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="256" height="256">
+  <title>FinFlow symbol — mono light</title>
+  <line x1="14" y1="32" x2="86" y2="32" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"></line>
+  <path d="M14 68 L38 68 L44 50 L56 50 L62 68 L86 68" stroke="#FFFFFF" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>

@@ -183,7 +183,7 @@ const WIDGET_REGISTRY = [
     sizes: ['half', 'wide'],
     bodyHTML: () => `<section class="dash-shortcuts">
       <a href="/pagamentos.html" class="dash-shortcut">
-        <span class="dash-shortcut-icon" style="--shortcut-color: var(--color-primary);">
+        <span class="dash-shortcut-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
         </span>
         <div>
@@ -192,7 +192,7 @@ const WIDGET_REGISTRY = [
         </div>
       </a>
       <a href="/orcamento.html" class="dash-shortcut">
-        <span class="dash-shortcut-icon" style="--shortcut-color: var(--color-success);">
+        <span class="dash-shortcut-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
         </span>
         <div>
@@ -201,7 +201,7 @@ const WIDGET_REGISTRY = [
         </div>
       </a>
       <a href="/compromissos.html" class="dash-shortcut">
-        <span class="dash-shortcut-icon" style="--shortcut-color: var(--color-secondary);">
+        <span class="dash-shortcut-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
         </span>
         <div>
@@ -210,7 +210,7 @@ const WIDGET_REGISTRY = [
         </div>
       </a>
       <a href="/relatorios.html" class="dash-shortcut">
-        <span class="dash-shortcut-icon" style="--shortcut-color: var(--color-warning);">
+        <span class="dash-shortcut-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>
         </span>
         <div>
@@ -658,7 +658,7 @@ function renderKPIs() {
   if (!container) return;
 
   container.innerHTML = `
-    <div class="dash-kpi" style="--kpi-accent: var(--color-primary);">
+    <div class="dash-kpi">
       <div class="dash-kpi-label">Saldo realizado</div>
       <div class="dash-kpi-value ${saldoCls}">${formatCurrencyHTML(saldoReal, 'BRL')}</div>
       <div class="dash-kpi-sub">
@@ -671,13 +671,13 @@ function renderKPIs() {
       </div>
     </div>
 
-    <div class="dash-kpi" style="--kpi-accent: var(--color-success);">
+    <div class="dash-kpi">
       <div class="dash-kpi-label">Oportunidade de investimento</div>
       <div class="dash-kpi-value ${oportCls}">${formatCurrencyHTML(oportunidade, 'BRL')}</div>
       <div class="dash-kpi-sub">Sobra do bloco Contribuição</div>
     </div>
 
-    <div class="dash-kpi" style="--kpi-accent: var(--color-warning);">
+    <div class="dash-kpi">
       <div class="dash-kpi-label">Despesas pagas</div>
       <div class="dash-kpi-value">${pctPago.toFixed(0)}%</div>
       <div class="dash-kpi-progress">
@@ -686,7 +686,7 @@ function renderKPIs() {
       <div class="dash-kpi-sub">${formatCurrencyHTML(realPagoBRL, 'BRL')} de ${formatCurrencyHTML(totalPrevistoBRL, 'BRL')}</div>
     </div>
 
-    <div class="dash-kpi" style="--kpi-accent: var(--color-secondary);">
+    <div class="dash-kpi">
       <div class="dash-kpi-label">Compromissos ativos</div>
       <div class="dash-kpi-value">${subsAtivas.size}</div>
       <div class="dash-kpi-sub">com pagamento neste mês</div>

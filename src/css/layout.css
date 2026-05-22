@@ -51,23 +51,13 @@
   display: none;
 }
 
+/* Logo "Twin Track" — symbol-reverso (linha branca + curva lime) pra sidebar dark */
 .sidebar-logo-mark {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-md);
-  background: var(--gradient-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: url('/src/assets/logo/symbol/symbol-reverso.svg') center/contain no-repeat;
   flex-shrink: 0;
-  position: relative;
-}
-
-.sidebar-logo-mark::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 4 18 4 12 22'/></svg>") center/16px no-repeat;
+  /* Não usa background gradient nem border-radius — o próprio SVG é o logo */
 }
 
 .sidebar-logo-name {
@@ -315,9 +305,11 @@
 
 .page-title {
   font-family: var(--font-display);
-  font-size: var(--fs-2xl);
+  font-size: var(--fs-xl);  /* 24px — reduzido de fs-2xl pra ficar Mercury-style */
   font-weight: var(--fw-bold);
+  letter-spacing: -0.01em;
   color: var(--color-text-main);
+  line-height: 1.25;
 }
 
 .page-description {
@@ -367,19 +359,11 @@
   margin-bottom: var(--space-8);
 }
 
+/* Logo Twin Track — symbol-color (roxo + lime) pra tela de login (fundo claro) */
 .auth-logo-mark {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-md);
-  background: var(--gradient-primary);
-  position: relative;
-}
-
-.auth-logo-mark::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 4 18 4 12 22'/></svg>") center/24px no-repeat;
+  width: 56px;
+  height: 56px;
+  background: url('/src/assets/logo/symbol/symbol-color.svg') center/contain no-repeat;
 }
 
 .auth-logo-name {
