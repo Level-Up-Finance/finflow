@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="light">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <title>Administração · FinFlow</title>
+  <script>(function(){try{var t=localStorage.getItem("finflow.tema");if(t==="escuro"||(t!=="claro"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.setAttribute("data-theme","dark");}}catch(e){}})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=optional" rel="stylesheet">
@@ -23,7 +24,16 @@
       </div>
     </header>
 
-    <main class="app-main main cfg-main">
+    <main class="app-main main">
+
+      <div class="page-header">
+        <div class="page-header-content">
+          <p class="page-eyebrow">Sistema</p>
+          <h1 class="page-title">Administração</h1>
+          <p class="page-description">Gerencie usuários, traduções e configurações do sistema.</p>
+        </div>
+      </div>
+
       <div class="cfg-layout">
 
         <!-- Side nav -->
@@ -232,14 +242,6 @@
           <!-- Panel: Usuários -->
           <div class="cfg-panel" id="admin-panel-usuarios">
 
-            <div class="page-header">
-              <div class="page-header-content">
-                <p class="page-eyebrow">Administração</p>
-                <h2 class="page-title">Usuários <span class="adm-usr-count hidden" id="usr-count"></span></h2>
-                <p class="page-description">Visualize e gerencie os planos dos usuários cadastrados.</p>
-              </div>
-            </div>
-
             <!-- Toolbar -->
             <div class="adm-usr-toolbar">
               <input type="search" class="input adm-usr-search" id="usr-search"
@@ -274,18 +276,6 @@
 
           <!-- Panel: Texto & Tradução -->
           <div class="cfg-panel hidden" id="admin-panel-idiomas">
-
-            <div class="page-header">
-              <div class="page-header-content">
-                <p class="page-eyebrow">Administração</p>
-                <h2 class="page-title">Texto & Tradução <span class="adm-usr-count hidden" id="i18n-count"></span></h2>
-                <p class="page-description">Gerencie as traduções da interface do FinFlow em PT-BR, EN, ES e FR.</p>
-              </div>
-              <div class="page-header-actions">
-                <button type="button" class="btn btn-ghost" id="btn-importar-csv">Importar CSV</button>
-                <button type="button" class="btn btn-ghost" id="btn-exportar-csv">Exportar CSV</button>
-              </div>
-            </div>
 
             <!-- Toolbar de filtros -->
             <div class="i18n-toolbar">
@@ -329,6 +319,8 @@
                 <option value="pendente">pendente</option>
                 <option value="desatualizado">desatualizado</option>
               </select>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-importar-csv">Importar CSV</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-exportar-csv">Exportar CSV</button>
             </div>
 
             <!-- Tabela -->
