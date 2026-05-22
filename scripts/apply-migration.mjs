@@ -2,7 +2,6 @@
 // Aplica um arquivo SQL via service role.
 // Uso: node scripts/apply-migration.mjs <arquivo.sql>
 
-import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
