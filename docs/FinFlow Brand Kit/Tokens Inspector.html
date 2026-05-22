@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinFlow Design Tokens · Inspector</title>
+<link rel="icon" href="logo/favicon/favicon-auto-theme.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="src/css/variables.css">
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-font-smoothing: antialiased; }
+  body {
+    font-family: var(--font-body);
+    background: var(--color-canvas);
+    color: var(--color-ink-900);
+    line-height: var(--lh-normal);
+    transition: background var(--transition-fast), color var(--transition-fast);
+  }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 48px 32px 96px; }
+
+  header.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 48px;
+    flex-wrap: wrap;
+  }
+  header h1 {
+    font-family: var(--font-display);
+    font-size: var(--fs-3xl);
+    font-weight: var(--fw-extrabold);
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+  }
+  header h1 em {
+    color: var(--color-primary-500);
+    font-style: normal;
+  }
+  header p {
+    margin-top: 8px;
+    color: var(--color-ink-600);
+    font-size: 15px;
+    max-width: 560px;
+  }
+  header .meta {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-ink-500);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 32px;
+    padding: 12px 16px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+  }
+  .controls .lbl {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-ink-500);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-right: 12px;
+  }
+  .seg {
+    display: inline-flex;
+    background: var(--color-ink-100);
+    padding: 3px;
+    border-radius: var(--radius-sm);
+  }
+  .seg button {
+    background: transparent;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-ink-600);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+  .seg button.active {
+    background: var(--color-surface);
+    color: var(--color-ink-900);
+    box-shadow: var(--shadow-sm);
+  }
+
+  section { margin-top: 64px; }
+  section h2 {
+    font-family: var(--font-display);
+    font-size: var(--fs-xl);
+    font-weight: var(--fw-bold);
+    letter-spacing: -0.015em;
+    margin-bottom: 8px;
+  }
+  section h2 .num {
+    font-family: var(--font-mono);
+    color: var(--color-ink-400);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    margin-right: 12px;
+  }
+  section p.intro {
+    color: var(--color-ink-600);
+    font-size: 14px;
+    margin-bottom: 24px;
+    max-width: 780px;
+  }
+  section p.intro code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--color-ink-100);
+    color: var(--color-primary-700);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  /* Ramps */
+  .ramp {
+    display: grid;
+    grid-template-columns: repeat(11, 1fr);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+  }
+  .ramp .stop {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 8px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.3;
+  }
+  .ramp .stop .lvl { font-weight: 600; }
+  .ramp .stop .hex { opacity: 0.7; }
+
+  /* Swatch cards */
+  .swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .swatch {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .swatch .chip {
+    height: 80px;
+    display: flex;
+    align-items: end;
+    padding: 10px;
+  }
+  .swatch .chip span {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.9);
+    color: var(--color-ink-900);
+  }
+  .swatch .meta {
+    padding: 10px 12px;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .swatch .name {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .swatch .var {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-ink-500);
+  }
+
+  /* Pairs (semantic + status) */
+  .pair-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .pair {
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+  }
+  .pair .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    margin-bottom: 14px;
+  }
+  .pair .pill::before {
+    content: "●";
+    font-size: 8px;
+  }
+  .pair .name {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    color: var(--color-ink-900);
+  }
+  .pair .uses {
+    font-size: 12px;
+    color: var(--color-ink-600);
+    margin-bottom: 10px;
+  }
+  .pair .vars {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-ink-500);
+    line-height: 1.6;
+  }
+
+  /* Typography sample */
+  .type-grid {
+    display: grid;
+    grid-template-columns: 100px 80px 1fr 200px;
+    gap: 16px;
+    align-items: baseline;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 16px 24px;
+  }
+  .type-row {
+    display: contents;
+  }
+  .type-row > * { padding: 12px 0; border-bottom: 1px solid var(--color-ink-100); }
+  .type-row:last-child > * { border-bottom: none; }
+  .type-row .token { font-family: var(--font-mono); font-size: 11px; color: var(--color-ink-500); }
+  .type-row .size { font-family: var(--font-mono); font-size: 11px; color: var(--color-ink-700); }
+  .type-row .preview { font-family: var(--font-display); color: var(--color-ink-900); }
+  .type-row .use { font-family: var(--font-mono); font-size: 11px; color: var(--color-ink-400); text-align: right; }
+
+  /* Spacing scale */
+  .spacing-grid {
+    display: grid;
+    grid-template-columns: 80px 80px 1fr;
+    gap: 8px 16px;
+    align-items: center;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 16px 24px;
+  }
+  .space-row { display: contents; }
+  .space-row > * { padding: 8px 0; }
+  .space-row .token { font-family: var(--font-mono); font-size: 11px; color: var(--color-ink-500); }
+  .space-row .px { font-family: var(--font-mono); font-size: 11px; color: var(--color-ink-700); font-variant-numeric: tabular-nums; }
+  .space-row .bar { background: var(--color-primary-200); height: 16px; border-radius: 4px; }
+
+  /* Shadows */
+  .shadow-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 24px;
+    padding: 24px 0;
+  }
+  .shadow-card {
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    padding: 24px 20px;
+    text-align: center;
+  }
+  .shadow-card .name {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-ink-700);
+    margin-bottom: 4px;
+  }
+  .shadow-card .var {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--color-ink-500);
+  }
+  .ss-sm { box-shadow: var(--shadow-sm); }
+  .ss-card { box-shadow: var(--shadow-card); }
+  .ss-md { box-shadow: var(--shadow-md); }
+  .ss-lg { box-shadow: var(--shadow-lg); }
+  .ss-xl { box-shadow: var(--shadow-xl); }
+  .ss-modal { box-shadow: var(--shadow-modal); }
+
+  /* Gradients */
+  .gradient-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .gradient-card {
+    height: 180px;
+    border-radius: var(--radius-md);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    color: var(--fixed-white);
+    font-family: var(--font-mono);
+  }
+  .gradient-card .name { font-size: 13px; font-weight: 600; }
+  .gradient-card .var { font-size: 10px; opacity: 0.8; margin-top: 2px; }
+  .gp { background: var(--gradient-primary); }
+  .gps { background: var(--gradient-primary-soft); color: var(--color-ink-900); }
+  .gh { background: var(--gradient-hero); }
+  .gn { background: var(--gradient-night); }
+
+  /* Code block */
+  pre.code {
+    background: var(--color-ink-900);
+    color: var(--color-ink-100);
+    padding: 16px 20px;
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.65;
+  }
+  [data-theme="dark"] pre.code {
+    background: #000;
+  }
+  pre.code .k { color: var(--color-accent-300); }
+  pre.code .c { color: var(--color-ink-500); }
+
+  footer {
+    margin-top: 96px;
+    padding-top: 24px;
+    border-top: 1px solid var(--color-border);
+    font-size: 12px;
+    color: var(--color-ink-500);
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>Design Tokens <em>·</em> v2.0</h1>
+      <p>Inspector ao vivo do <code style="font-family:var(--font-mono);font-size:13px;background:var(--color-ink-100);color:var(--color-primary-700);padding:2px 6px;border-radius:4px;">src/css/variables.css</code>. Toda decisão visual passa por aqui. Toggle abaixo pra ver light vs dark.</p>
+    </div>
+    <div class="meta">
+      Passo 4 · v2.0<br>
+      Roxo Tech + Lime
+    </div>
+  </header>
+
+  <div class="controls">
+    <span class="lbl">Modo</span>
+    <div class="seg" id="theme-seg">
+      <button data-theme="light" class="active">☀ Light</button>
+      <button data-theme="dark">☾ Dark</button>
+    </div>
+    <span style="flex:1"></span>
+    <span class="lbl" style="margin-right: 0">Tokens carregados de</span>
+    <code style="font-family:var(--font-mono);font-size:11px;color:var(--color-primary-700)">src/css/variables.css</code>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       1. PALETA PRIMÁRIA
+       ════════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">01</span>Paleta primária · Roxo Tech</h2>
+    <p class="intro">Ações primárias, links, focus ring. <code>--color-primary-500</code> é o roxo principal. Rampa completa 50 → 900.</p>
+    <div class="ramp">
+      <div class="stop" style="background:var(--color-primary-50);color:var(--color-primary-900)"><span class="lvl">50</span><span class="hex">#F1EFFE</span></div>
+      <div class="stop" style="background:var(--color-primary-100);color:var(--color-primary-900)"><span class="lvl">100</span><span class="hex">#E5E1FD</span></div>
+      <div class="stop" style="background:var(--color-primary-200);color:var(--color-primary-900)"><span class="lvl">200</span><span class="hex">#D2CCFB</span></div>
+      <div class="stop" style="background:var(--color-primary-300);color:var(--color-primary-900)"><span class="lvl">300</span><span class="hex">#B5ACF8</span></div>
+      <div class="stop" style="background:var(--color-primary-400);color:white"><span class="lvl">400</span><span class="hex">#8B7FF7</span></div>
+      <div class="stop" style="background:var(--color-primary-500);color:white"><span class="lvl">500 ★</span><span class="hex">#6D5EF5</span></div>
+      <div class="stop" style="background:var(--color-primary-600);color:white"><span class="lvl">600</span><span class="hex">#5B4FE0</span></div>
+      <div class="stop" style="background:var(--color-primary-700);color:white"><span class="lvl">700</span><span class="hex">#4B3FD6</span></div>
+      <div class="stop" style="background:var(--color-primary-800);color:white"><span class="lvl">800</span><span class="hex">#3A30B0</span></div>
+      <div class="stop" style="background:var(--color-primary-900);color:white"><span class="lvl">900</span><span class="hex">#2A2384</span></div>
+      <div class="stop" style="background:var(--color-ink-950);color:white"><span class="lvl">night</span><span class="hex">#08090C</span></div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       2. PALETA ACENTO
+       ════════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">02</span>Paleta acento · Lime</h2>
+    <p class="intro">Statement, destaque, accent em CTAs. Em texto sobre fundo claro, usar <code>--color-accent-600</code> (mais escuro) pra acessibilidade.</p>
+    <div class="ramp">
+      <div class="stop" style="background:var(--color-accent-50);color:#2E460B"><span class="lvl">50</span><span class="hex">#F7FEE7</span></div>
+      <div class="stop" style="background:var(--color-accent-100);color:#2E460B"><span class="lvl">100</span><span class="hex">#ECFCCB</span></div>
+      <div class="stop" style="background:var(--color-accent-200);color:#2E460B"><span class="lvl">200</span><span class="hex">#DFFBA5</span></div>
+      <div class="stop" style="background:var(--color-accent-300);color:#2E460B"><span class="lvl">300</span><span class="hex">#D2F873</span></div>
+      <div class="stop" style="background:var(--color-accent-400);color:#2E460B"><span class="lvl">400 ★</span><span class="hex">#C2F542</span></div>
+      <div class="stop" style="background:var(--color-accent-500);color:white"><span class="lvl">500</span><span class="hex">#A3D331</span></div>
+      <div class="stop" style="background:var(--color-accent-600);color:white"><span class="lvl">600</span><span class="hex">#84B121</span></div>
+      <div class="stop" style="background:var(--color-accent-700);color:white"><span class="lvl">700</span><span class="hex">#65880F</span></div>
+      <div class="stop" style="background:var(--color-accent-800);color:white"><span class="lvl">800</span><span class="hex">#4D6A0E</span></div>
+      <div class="stop" style="background:var(--color-accent-900);color:white"><span class="lvl">900</span><span class="hex">#2E460B</span></div>
+      <div class="stop" style="background:var(--color-ink-950);color:white"><span class="lvl">night</span><span class="hex">#08090C</span></div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       3. NEUTROS — INK + SURFACE
+       ════════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">03</span>Neutros · Ink + Surface</h2>
+    <p class="intro">Texto, bordas, fundos. <strong>No dark mode a rampa inteira inverte</strong>: 50 vira quase-preto, 900 vira quase-branco.</p>
+    <div class="ramp">
+      <div class="stop" style="background:var(--color-canvas);color:var(--color-ink-700);border-right:1px solid var(--color-border)"><span class="lvl">canvas</span><span class="hex">--color-canvas</span></div>
+      <div class="stop" style="background:var(--color-surface);color:var(--color-ink-700);border-right:1px solid var(--color-border)"><span class="lvl">surface</span><span class="hex">--color-paper</span></div>
+      <div class="stop" style="background:var(--color-ink-50);color:var(--color-ink-700)"><span class="lvl">50</span><span class="hex">ink-50</span></div>
+      <div class="stop" style="background:var(--color-ink-100);color:var(--color-ink-700)"><span class="lvl">100</span><span class="hex">ink-100</span></div>
+      <div class="stop" style="background:var(--color-ink-200);color:var(--color-ink-700)"><span class="lvl">200</span><span class="hex">ink-200</span></div>
+      <div class="stop" style="background:var(--color-ink-300);color:var(--color-ink-700)"><span class="lvl">300</span><span class="hex">ink-300</span></div>
+      <div class="stop" style="background:var(--color-ink-500);color:white"><span class="lvl">500</span><span class="hex">ink-500</span></div>
+      <div class="stop" style="background:var(--color-ink-700);color:white"><span class="lvl">700</span><span class="hex">ink-700</span></div>
+      <div class="stop" style="background:var(--color-ink-800);color:white"><span class="lvl">800</span><span class="hex">ink-800</span></div>
+      <div class="stop" style="background:var(--color-ink-900);color:var(--color-ink-100)"><span class="lvl">900</span><span class="hex">ink-900</span></div>
+      <div class="stop" style="background:var(--color-ink-950);color:var(--color-ink-100)"><span class="lvl">950</span><span class="hex">ink-950</span></div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       4. SIDEBAR
+       ════════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">04</span>Sidebar · sempre dark</h2>
+    <p class="intro">Decisão de marca: sidebar fica escura nos dois modos. Light mode usa <code>#0F172A</code>, dark mode tem leve tom roxo (<code>#14172A</code>) pra distinguir do canvas.</p>
+    <div class="swatch-grid">
+      <div class="swatch">
+        <div class="chip" style="background: var(--color-sidebar-bg)"><span>sidebar bg</span></div>
+        <div class="meta"><span class="name">Background</span><span class="var">--color-sidebar-bg</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--color-sidebar-bg-active)"><span>active item</span></div>
+        <div class="meta"><span class="name">Active item</span><span class="var">--color-sidebar-bg-active</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--color-sidebar-bg); display:flex; align-items:center; padding:14px"><span style="background:transparent;color:var(--color-sidebar-text)">Texto padrão</span></div>
+        <div class="meta"><span class="name">Text padrão</span><span class="var">--color-sidebar-text</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--color-sidebar-bg); display:flex; align-items:center; padding:14px"><span style="background:transparent;color:var(--color-sidebar-text-muted)">Section label</span></div>
+        <div class="meta"><span class="name">Text muted</span><span class="var">--color-sidebar-text-muted</span></div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       5. SEMÂNTICAS
+       ════════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">05</span>Cores semânticas</h2>
+    <p class="intro">Sucesso, atenção, erro, info. Cada uma com par bg + text. <strong>No dark mode bg e text invertem juntos</strong> mantendo contraste.</p>
+    <div class="pair-grid">
+      <div class="pair">
+        <span class="pill" style="background:var(--color-success-bg);color:var(--color-success-text)">Sucesso</span>
+        <div class="name">Pago · OK</div>
+        <div class="uses">Operação concluída</div>
+        <div class="vars">--color-success-bg<br>--color-success-text</div>
+      </div>
+      <div class="pair">
+        <span class="pill" style="background:var(--color-warning-bg);color:var(--color-warning-text)">Atenção</span>
+        <div class="name">Agendado</div>
+        <div class="uses">Aguardando ação</div>
+        <div class="vars">--color-warning-bg<br>--color-warning-text</div>
+      </div>
+      <div class="pair">
+        <span class="pill" style="background:var(--color-danger-bg);color:var(--color-danger-text)">Erro</span>
+        <div class="name">Atrasado</div>
+        <div class="uses">Falha ou destrutivo</div>
+        <div class="vars">--color-danger-bg<br>--color-danger-text</div>
+      </div>
+      <div class="pair">
+        <span class="pill" style="background:var(--color-info-bg);color:var(--color-info-text)">Info</span>
+        <div class="name">Neutro</div>
+        <div class="uses">Dica · link</div>
+        <div class="vars">--color-info-bg<br>--color-info-text</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       6. STATUS DE PAGAMENTO
+       ════════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">06</span>Status de pagamento · 4 + default</h2>
+    <p class="intro">Sistema especializado do FinFlow. Cada status com uma "vibe" cromática única. Acessar via <code>--color-status-{nome}-bg/text</code>.</p>
+    <div class="pair-grid">
+      <div class="pair">
+        <span class="pill" style="background:var(--color-status-pago-bg); color: var(--color-status-pago-text)">Pago</span>
+        <div class="name">Saiu do caixa</div>
+        <div class="uses">Pagamento concluído</div>
+        <div class="vars">--color-status-pago-{bg,text}</div>
+      </div>
+      <div class="pair">
+        <span class="pill" style="background:var(--color-status-transferido-bg); color: var(--color-status-transferido-text)">Transferido</span>
+        <div class="name">Entre contas suas</div>
+        <div class="uses">Transferência executada</div>
+        <div class="vars">--color-status-transferido-{bg,text}</div>
+      </div>
+      <div class="pair">
+        <span class="pill" style="background:var(--color-status-transferir-bg); color: var(--color-status-transferir-text)">A Transferir</span>
+        <div class="name">Pendente</div>
+        <div class="uses">Transferência marcada, não executada</div>
+        <div class="vars">--color-status-transferir-{bg,text}</div>
+      </div>
+      <div class="pair">
+        <span class="pill" style="background:var(--color-status-cancelado-bg); color: var(--color-status-cancelado-text)">Cancelado</span>
+        <div class="name">Não vai acontecer</div>
+        <div class="uses">Compromisso desativado</div>
+        <div class="vars">--color-status-cancelado-{bg,text}</div>
+      </div>
+      <div class="pair">
+        <span class="pill" style="background:var(--color-status-apagar-bg); color: var(--color-status-apagar-text)">A Pagar</span>
+        <div class="name">Default</div>
+        <div class="uses">Estado inicial de todo pagamento</div>
+        <div class="vars">--color-status-apagar-{bg,text}</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       7. TIPOGRAFIA
+       ════════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">07</span>Tipografia · escala</h2>
+    <p class="intro">Manrope (display) + Inter (body) + Geist Mono (números, código). Escala de 10 níveis. Mínimo 12px, padrão body 16px.</p>
+    <div class="type-grid">
+      <div class="type-row">
+        <span class="token">--fs-5xl</span>
+        <span class="size">60px</span>
+        <span class="preview" style="font-size:60px;font-weight:800;letter-spacing:-0.03em">Display</span>
+        <span class="use">hero, KPI dashboard</span>
+      </div>
+      <div class="type-row">
+        <span class="token">--fs-4xl</span>
+        <span class="size">48px</span>
+        <span class="preview" style="font-size:48px;font-weight:800;letter-spacing:-0.025em">Hero secundário</span>
+        <span class="use">landing sub-hero</span>
+      </div>
+      <div class="type-row">
+        <span class="token">--fs-3xl</span>
+        <span class="size">36px</span>
+        <span class="preview" style="font-size:36px;font-weight:700;letter-spacing:-0.02em">H1 · página</span>
+        <span class="use">h1</span>
+      </div>
+      <div class="type-row">
+        <span class="token">--fs-2xl</span>
+        <span class="size">30px</span>
+        <span class="preview" style="font-size:30px;font-weight:700;letter-spacing:-0.015em">H2 · seção</span>
+        <span class="use">h2, KPI</span>
+      </div>
+      <div class="type-row">
+        <span class="token">--fs-xl</span>
+        <span class="size">24px</span>
+        <span class="preview" style="font-size:24px;font-weight:700;letter-spacing:-0.01em">H3 · sub-seção</span>
+        <span class="use">h3</span>
+      </div>
+      <div class="type-row">
+        <span class="token">--fs-lg</span>
+        <span class="size">20px</span>
+        <span class="preview" style="font-size:20px;font-weight:700">H4</span>
+        <span class="use">h4</span>
+      </div>
+      <div class="type-row">
+        <span class="token">--fs-md</span>
+        <span class="size">18px</span>
+        <span class="preview" style="font-size:18px;font-weight:600;font-family:var(--font-body)">Card title</span>
+        <span class="use">h5, card titles</span>
+      </div>
+      <div class="type-row">
+        <span class="token">--fs-base</span>
+        <span class="size">16px</span>
+        <span class="preview" style="font-size:16px;font-family:var(--font-body)">Body padrão · Inter 400</span>
+        <span class="use">p, body</span>
+      </div>
+      <div class="type-row">
+        <span class="token">--fs-sm</span>
+        <span class="size">14px</span>
+        <span class="preview" style="font-size:14px;font-family:var(--font-body);color:var(--color-ink-600)">Tabela e secundário · Inter</span>
+        <span class="use">td, label</span>
+      </div>
+      <div class="type-row">
+        <span class="token">--fs-xs</span>
+        <span class="size">12px</span>
+        <span class="preview" style="font-size:12px;font-family:var(--font-body);text-transform:uppercase;letter-spacing:0.1em;color:var(--color-ink-500)">Eyebrow · Inter 500</span>
+        <span class="use">badges, hints</span>
+      </div>
+      <div class="type-row">
+        <span class="token">tabular</span>
+        <span class="size">~</span>
+        <span class="preview" style="font-family:var(--font-mono);font-size:18px;font-variant-numeric:tabular-nums">R$ 1.234,56 → R$ 9.999,99</span>
+        <span class="use">Geist Mono · números, datas</span>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       8. ESPAÇAMENTO
+       ════════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">08</span>Espaçamento · grid 4px</h2>
+    <p class="intro">Escala 4 px baseada em <code>--space-N</code>. Use sempre tokens — nunca <code>padding: 17px</code>.</p>
+    <div class="spacing-grid">
+      <div class="space-row"><span class="token">--space-1</span><span class="px">4 px</span><div class="bar" style="width:4px"></div></div>
+      <div class="space-row"><span class="token">--space-2</span><span class="px">8 px</span><div class="bar" style="width:8px"></div></div>
+      <div class="space-row"><span class="token">--space-3</span><span class="px">12 px</span><div class="bar" style="width:12px"></div></div>
+      <div class="space-row"><span class="token">--space-4 ★</span><span class="px">16 px</span><div class="bar" style="width:16px"></div></div>
+      <div class="space-row"><span class="token">--space-5</span><span class="px">20 px</span><div class="bar" style="width:20px"></div></div>
+      <div class="space-row"><span class="token">--space-6</span><span class="px">24 px</span><div class="bar" style="width:24px"></div></div>
+      <div class="space-row"><span class="token">--space-8</span><span class="px">32 px</span><div class="bar" style="width:32px"></div></div>
+      <div class="space-row"><span class="token">--space-10</span><span class="px">40 px</span><div class="bar" style="width:40px"></div></div>
+      <div class="space-row"><span class="token">--space-12</span><span class="px">48 px</span><div class="bar" style="width:48px"></div></div>
+      <div class="space-row"><span class="token">--space-16</span><span class="px">64 px</span><div class="bar" style="width:64px"></div></div>
+      <div class="space-row"><span class="token">--space-20</span><span class="px">80 px</span><div class="bar" style="width:80px"></div></div>
+      <div class="space-row"><span class="token">--space-24</span><span class="px">96 px</span><div class="bar" style="width:96px"></div></div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       9. RADIUS + SHADOWS + GRADIENTS
+       ════════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">09</span>Radius, sombras, gradientes</h2>
+    <p class="intro">Curvas médias a generosas (12px padrão). Sombras com leve tom roxo (assinatura). 3 gradientes oficiais.</p>
+
+    <h3 style="font-family:var(--font-display);font-size:14px;font-weight:600;margin:24px 0 12px;color:var(--color-ink-600);text-transform:uppercase;letter-spacing:0.08em">Radius</h3>
+    <div class="swatch-grid">
+      <div class="swatch">
+        <div class="chip" style="background: var(--color-primary-500); border-radius: var(--radius-sm)"><span>6px</span></div>
+        <div class="meta"><span class="name">Small</span><span class="var">--radius-sm</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--color-primary-500); border-radius: var(--radius-md)"><span>12px ★</span></div>
+        <div class="meta"><span class="name">Medium</span><span class="var">--radius-md</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--color-primary-500); border-radius: var(--radius-lg)"><span>20px</span></div>
+        <div class="meta"><span class="name">Large</span><span class="var">--radius-lg</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--color-primary-500); border-radius: var(--radius-xl)"><span>28px</span></div>
+        <div class="meta"><span class="name">Extra</span><span class="var">--radius-xl</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--color-primary-500); border-radius: var(--radius-full)"><span>pill</span></div>
+        <div class="meta"><span class="name">Full</span><span class="var">--radius-full</span></div>
+      </div>
+    </div>
+
+    <h3 style="font-family:var(--font-display);font-size:14px;font-weight:600;margin:32px 0 12px;color:var(--color-ink-600);text-transform:uppercase;letter-spacing:0.08em">Sombras</h3>
+    <div class="shadow-grid">
+      <div class="shadow-card ss-sm"><div class="name">sm</div><div class="var">--shadow-sm</div></div>
+      <div class="shadow-card ss-card"><div class="name">card ★</div><div class="var">--shadow-card</div></div>
+      <div class="shadow-card ss-md"><div class="name">md (hover)</div><div class="var">--shadow-md</div></div>
+      <div class="shadow-card ss-lg"><div class="name">lg (popover)</div><div class="var">--shadow-lg</div></div>
+      <div class="shadow-card ss-xl"><div class="name">xl (drawer)</div><div class="var">--shadow-xl</div></div>
+      <div class="shadow-card ss-modal"><div class="name">modal</div><div class="var">--shadow-modal</div></div>
+    </div>
+
+    <h3 style="font-family:var(--font-display);font-size:14px;font-weight:600;margin:32px 0 12px;color:var(--color-ink-600);text-transform:uppercase;letter-spacing:0.08em">Gradientes</h3>
+    <div class="gradient-grid">
+      <div class="gradient-card gp">
+        <div class="name">Primary</div>
+        <div class="var">--gradient-primary</div>
+      </div>
+      <div class="gradient-card gps">
+        <div class="name">Primary soft</div>
+        <div class="var">--gradient-primary-soft</div>
+      </div>
+      <div class="gradient-card gh">
+        <div class="name">Hero</div>
+        <div class="var">--gradient-hero</div>
+      </div>
+      <div class="gradient-card gn">
+        <div class="name">Night</div>
+        <div class="var">--gradient-night</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       10. COMO USAR
+       ════════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">10</span>Como usar</h2>
+    <p class="intro">Importa o <code>variables.css</code> no topo da árvore de estilos e usa <code>var(--token)</code> em qualquer lugar. Light/dark alterna no <code>data-theme</code> do <code>&lt;html&gt;</code>.</p>
+
+<pre class="code"><span class="c">/* HTML root */</span>
+&lt;html data-theme=<span class="k">"light"</span>&gt;   <span class="c">/* ou "dark" */</span>
+
+<span class="c">/* CSS — sempre via var() */</span>
+.my-card {
+  background: <span class="k">var(--color-paper)</span>;
+  border: 1px solid <span class="k">var(--color-border)</span>;
+  border-radius: <span class="k">var(--radius-md)</span>;
+  padding: <span class="k">var(--space-5)</span>;
+  box-shadow: <span class="k">var(--shadow-card)</span>;
+  color: <span class="k">var(--color-text-main)</span>;
+}
+
+<span class="c">/* JS — toggle entre modos */</span>
+const root = document.documentElement;
+const theme = localStorage.getItem(<span class="k">'finflow-theme'</span>) || <span class="k">'light'</span>;
+root.setAttribute(<span class="k">'data-theme'</span>, theme);
+</pre>
+  </section>
+
+
+  <footer>
+    <span>FinFlow tokens · v2.0 · src/css/variables.css</span>
+    <span>Mai 2026 · Roxo Tech + Lime</span>
+  </footer>
+
+</div>
+
+<script>
+  const seg = document.getElementById('theme-seg');
+  const root = document.documentElement;
+  seg.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    seg.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+    root.setAttribute('data-theme', btn.dataset.theme);
+  });
+</script>
+
+</body>
+</html>

@@ -1,380 +1,379 @@
-# Visual Identity Guidelines — FinFlow
+# Visual Identity Guidelines · FinFlow
 
-> Versão deste documento: 1.0
-> Data: 21/05/2026
-> Fonte primária: `src/css/variables.css`, `src/css/global.css`, `src/css/layout.css`
-> Alinhado com: `docs/BRAND.md` (identidade verbal) e v1.0.5 do produto.
-> **Sem logo ainda** — esse capítulo entra na Fase 3.5 quando o nome for definido.
+> Versão deste documento: **2.0**
+> Data: 22/05/2026
+> Substitui: VISUAL.md v1.0 (Indigo + Salmão).
+> Fonte primária dos tokens: `src/css/variables.css`.
+> Alinhado com: `docs/BRAND.md` v1.2 (identidade verbal) e v1.0.5 do produto.
+> **Logo definido nesta versão**: Twin Track (símbolo + wordmark).
+> **Paleta atualizada**: Roxo Tech (#6D5EF5) + Lime (#C2F542).
 
 ---
 
 ## Índice
 
 1. Princípios visuais
-2. Sistema de cores
-3. Tipografia
-4. Espaçamento
-5. Border radius e curvas
-6. Sombras e profundidade
-7. Tema claro vs. escuro
-8. Status de pagamento (sistema especializado)
-9. Gradientes
-10. Estados de interação (focus, hover, disabled)
-11. Iconografia
-12. Tom visual / mood
-13. Acessibilidade
-14. Tokens — como usar
-15. Aplicação ao multi-perfil (futuro)
+2. Logo · Twin Track
+3. Sistema de cores
+4. Tipografia
+5. Espaçamento
+6. Border radius
+7. Sombras e profundidade
+8. Tema claro vs. escuro
+9. Status de pagamento
+10. Gradientes
+11. Estados de interação
+12. Iconografia
+13. Pattern gráfico
+14. Sistema de ilustração
+15. Tom visual e mood
+16. Acessibilidade
+17. Tokens, como usar
+18. Aplicação ao multi-perfil
+19. Confidence scores
+20. Histórico de versões
 
 ---
 
 ## 1. Princípios visuais
 
-Cinco princípios que orientam toda decisão visual. Derivados da personalidade aprovada em `BRAND.md` (Amigável + Inteligente + Opinativo) e do que já existe no código.
+Cinco princípios que orientam toda decisão visual.
 
-### 1.1. Moderno premium (não bancário-formal, não infantil)
+### 1.1. Moderno premium
 
-O FinFlow está no território **Notion + Mercury + Linear** — premium tech, não fintech tradicional. Visual sóbrio com toques de personalidade.
+Território **Notion + Mercury + Linear**. Visual sóbrio com personalidade. Sem fintech tradicional, sem app infantilizado.
 
-Tradução prática:
-- Cores: roxo profundo + azul vivo, neutros generosos. **Sem** dourado (vira premium velho), **sem** verde-floresta (vira app de eco), **sem** vermelho-Coca (vira corporate).
-- Tipografia: sans-serif geometric (Manrope + Inter), pesos médio-bold pra hierarquia, sem serifa antiquada.
-- Curvas: medias a generosas (12px–28px). Nada de 2px ou 4px (severo demais) nem 50%+ (infantil).
+### 1.2. Densidade alta, respiração estratégica
 
-### 1.2. Densidade alta, mas respirável
+Finanças têm muitos números. Não tem como escapar de densidade. O truque é respiro estratégico: margens generosas entre seções, mas dentro da seção pode ser denso.
 
-Finanças têm muitos números, muitas tabelas. Não dá pra escapar de densidade. O truque é **respiro estratégico**: margens generosas entre seções, mas dentro da seção pode ser denso.
+### 1.3. Cores funcionais > decorativas
 
-### 1.3. Cores funcionais > cores decorativas
-
-Toda cor tem trabalho. Roxo = ação primária. Verde = sucesso/recebido. Vermelho = erro/atrasado. Amarelo = atenção/agendado. Nenhuma cor é "só pra ficar bonito".
+Toda cor tem trabalho. Roxo = ação primária. Lime = acento e statement. Verde = sucesso. Âmbar = pendente. Nenhuma cor "só pra ficar bonito".
 
 ### 1.4. Números são primeiro-cidadãos
 
-Números monetários e datas merecem tratamento tipográfico especial. Tabular-nums (largura consistente), peso semibold pra valores importantes, alinhamento à direita em colunas.
+Valores monetários e datas merecem tratamento tipográfico especial. **Geist Mono** com **tabular-nums** (largura consistente), peso semibold, alinhamento à direita em colunas.
 
-### 1.5. Dark mode é first-class, não afterthought
+### 1.5. Dark mode first-class
 
-O app foi desenhado pra funcionar em ambos os temas com qualidade equivalente. Não é "dark mode adaptado" — é "dark mode pensado".
+O app foi desenhado pra funcionar nos dois temas com qualidade equivalente. Não é "dark mode adaptado". Os tokens invertem automaticamente via `data-theme="dark"`.
 
 ---
 
-## 2. Sistema de cores
+## 2. Logo · Twin Track
 
-### 2.1. Primárias (a cor da marca)
+**Conceito**: duas trilhas paralelas representam a filosofia "comprometido vs. executado". A linha de cima (roxa) é o planejado. A de baixo (lime, com um pico de variação no centro) é o real.
+
+### 2.1. Variações canônicas (20 arquivos em `logo/`)
+
+- **Símbolo** isolado, color · mono dark · mono light · reverso
+- **Wordmark** (Manrope ExtraBold), color · mono dark · mono light
+- **Lockup horizontal**, color · mono dark · mono light · reverso · **primário**
+- **Lockup empilhado**, color · mono dark · mono light · secundário
+- **App icon**, dark bg · roxo bg · light bg
+- **Favicon**, padrão · auto-theme
+
+### 2.2. Construção canônica
+
+```
+stroke-width      = W
+extensão horiz    = 6W  (linha de x até x+6W)
+espaçamento ↕     = 3W  (centro a centro entre as duas linhas)
+visual width      = 7W
+visual height     = 4W
+bump tip          = midpoint entre linhas
+```
+
+Aplicar em qualquer tamanho mantém as proporções. A variação "stacked" usa W menor pra equilibrar com o wordmark.
+
+### 2.3. Tamanho mínimo
+
+- Símbolo isolado: **16 × 16 px** digital, **8 mm** impresso
+- Wordmark / lockup: **72 px** de altura digital, **24 mm** impresso
+
+### 2.4. Clear space
+
+Mínimo **1x** (espessura da linha) de espaço livre em todos os lados. No lockup com wordmark, **1.5x** entre símbolo e tipo.
+
+### 2.5. O que não fazer
+
+- Não rotacionar
+- Não esticar (sempre escalar uniforme)
+- Não trocar cores fora das aprovadas
+- Não aplicar sombras decorativas ou outlines extras
+- Não usar gradientes inventados
+- Não trocar a fonte do wordmark (sempre Manrope ExtraBold)
+
+Detalhes visuais em `FinFlow Brand Book - Roxo Lime.html` slide 07.
+
+### 2.6. Wordmark
+
+Tipo "FinFlow" em **Manrope ExtraBold** com letter-spacing **-0.045em**. Para export em PDF, Figma ou Illustrator, **outline o texto** antes (Type → Create Outlines) porque os SVGs referenciam Manrope via Google Fonts `@import`.
+
+---
+
+## 3. Sistema de cores
+
+### 3.1. Primária · Roxo Tech
 
 | Token | Hex | Uso |
-|-------|-----|-----|
-| `--color-primary` | `#6D5EF5` | **Roxo principal**. Botões primários, links de destaque, ações importantes, focus ring |
-| `--color-primary-dark` | `#4B3FD6` | Hover de botão primário, gradient escuro |
-| `--color-primary-light` | `#8B7FF7` | Estados ativos sutis, badges premium |
-| `--color-primary-50` | `#F1EFFE` | Background de seleção, hover muito sutil |
-| `--color-primary-100` | `#E5E1FD` | Background de elemento "selecionado" |
+|---|---|---|
+| `--color-primary-500` | `#6D5EF5` | ★ Roxo principal. CTAs, links, focus ring |
+| `--color-primary-600` | `#5B4FE0` | Hover de botões |
+| `--color-primary-700` | `#4B3FD6` | Texto sobre claro |
+| `--color-primary-50` | `#F1EFFE` | Background sutil, badge "A Pagar" |
+| `--color-primary-900` | `#2A2384` | Texto sobre primary-50 |
 
-**Quando usar primário:**
-- ✅ CTA principal da tela ("Marcar como pago", "Salvar")
-- ✅ Link mais importante (logo, menu ativo)
-- ✅ Focus ring (acessibilidade)
-- ✅ Gradient de hero/destaque
-- ❌ Estados de erro (use danger)
-- ❌ Mais que 1 CTA primário por tela
+Rampa completa 50, 100, 200, 300, 400, 500, 600, 700, 800, 900 em `variables.css`.
 
-### 2.2. Secundárias (ação secundária)
+### 3.2. Acento · Lime
 
 | Token | Hex | Uso |
-|-------|-----|-----|
-| `--color-secondary` | `#3B82F6` | **Azul**. Links inline, botões secundários, navegação |
-| `--color-secondary-dark` | `#2563EB` | Hover de links, ações azuis |
-| `--color-secondary-light` | `#93C5FD` | Estados sutis |
-| `--color-secondary-50` | `#EFF6FF` | Background de informação |
+|---|---|---|
+| `--color-accent-400` | `#C2F542` | ★ Lime principal, statement, CTAs finais |
+| `--color-accent-500` | `#A3D331` | Hover de botões lime |
+| `--color-accent-600` | `#84B121` | Texto sobre fundo claro (mais escuro pra contraste) |
 
-### 2.3. Neutros (texto e superfícies)
+⚠️ Em **fundo claro**, lime não tem contraste suficiente para texto. Use `accent-600` ou `accent-700`. Em fundo escuro o `accent-400` brilha.
 
-| Token | Hex (light) | Uso |
-|-------|------------|-----|
-| `--color-text-main` | `#1F2937` | Texto principal, títulos |
-| `--color-text-secondary` | `#6B7280` | Texto secundário, labels |
-| `--color-text-muted` | `#9CA3AF` | Hints, placeholders, info menor |
-| `--color-border` | `#E5E7EB` | Bordas padrão (cards, inputs) |
-| `--color-border-strong` | `#D1D5DB` | Bordas com mais contraste |
-| `--color-background` | `#F8FAFC` | Fundo da página (off-white) |
-| `--color-surface` | `#FFFFFF` | Cards, modais, áreas elevadas |
-| `--color-surface-alt` | `#F9FAFB` | Áreas sutilmente diferenciadas |
+### 3.3. Neutros · Ink
 
-### 2.4. Sidebar (sempre escuro)
+11 níveis de ink (50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950).
 
-A sidebar **mantém tema escuro mesmo no light mode** — decisão deliberada que dá personalidade ao app.
+| Token | Hex (light) | Hex (dark) | Uso |
+|---|---|---|---|
+| `--color-ink-900` | `#0F172A` | `#F8FAFC` | Texto principal |
+| `--color-ink-500` | `#64748B` | `#94A3B8` | Texto secundário |
+| `--color-ink-200` | `#E2E8F0` | `#2A2F39` | Bordas |
+| `--color-ink-950` | `#08090C` | `#08090C` | Always-dark (não inverte) |
+
+### 3.4. Surfaces
 
 | Token | Hex (light) | Hex (dark) |
-|-------|-------------|------------|
-| `--color-sidebar-bg` | `#1F2937` | `#0B1220` |
-| `--color-sidebar-text` | `#D1D5DB` | `#94A3B8` |
-| `--color-sidebar-text-active` | `#FFFFFF` | `#F1F5F9` |
-| `--color-sidebar-border` | `#374151` | `#1E293B` |
+|---|---|---|
+| `--color-paper` | `#FFFFFF` | `#15181F` |
+| `--color-canvas` | `#FAFAF7` | `#0B0D12` |
+| `--color-surface-alt` | `#F9FAFB` | `#1A1D24` |
 
-### 2.5. Semânticas (sucesso, erro, atenção, info)
+### 3.5. Sidebar · sempre dark
 
-| Conceito | Token text | Hex | Token bg | Hex |
-|----------|-----------|-----|----------|-----|
-| **Sucesso** (pago, recebido, OK) | `--color-success` | `#10B981` | `--color-success-bg` | `#D1FAE5` |
-| **Atenção** (agendado, atrasado leve) | `--color-warning` | `#F59E0B` | `--color-warning-bg` | `#FEF3C7` |
-| **Erro** (falha, atrasado crítico, excluir) | `--color-danger` | `#EF4444` | `--color-danger-bg` | `#FEE2E2` |
-| **Info** (neutro, dica, link) | `--color-info` | `#3B82F6` | `--color-info-bg` | `#DBEAFE` |
+Decisão de marca: a sidebar fica escura nos dois modos. Dá personalidade ao app e enquadramento visual consistente.
 
-**Regra anti-confusão**:
-- Verde = saída boa (recebimento, pagamento concluído, tarefa fechada).
-- Vermelho = saída ruim (erro do sistema, exclusão destrutiva, dado faltando).
-- **Nunca use** vermelho pra "despesa" só por ser saída. Despesa pode ser bem-sucedida.
+| Token | Hex (light) | Hex (dark) |
+|---|---|---|
+| `--color-sidebar-bg` | `#0F172A` | `#14172A` |
+| `--color-sidebar-bg-active` | `#5B4FE0` | `#5B4FE0` |
+| `--color-sidebar-text` | `#CBD5E1` | `#94A3B8` |
+| `--color-sidebar-text-active` | `#FFFFFF` | `#FFFFFF` |
 
-### 2.6. Paleta visualizada
+No dark mode a sidebar ganha leve tom roxo para diferenciar do canvas escuro.
 
-```
-🟣 #6D5EF5  Primary (roxo)
-🟪 #4B3FD6  Primary dark
-🔵 #3B82F6  Secondary (azul)
-🔷 #2563EB  Secondary dark
-⚫ #1F2937  Text main / Sidebar bg
-⚪ #FFFFFF  Surface
-🟢 #10B981  Success
-🟡 #F59E0B  Warning
-🔴 #EF4444  Danger
-```
+### 3.6. Semânticas
+
+| Conceito | bg (light) | text (light) | bg (dark) | text (dark) |
+|---|---|---|---|---|
+| **Sucesso** | `#D1FAE5` | `#065F46` | `#064E3B` | `#6EE7B7` |
+| **Atenção** | `#FEF3C7` | `#92400E` | `#78350F` | `#FCD34D` |
+| **Erro** | `#FEE2E2` | `#991B1B` | `#7F1D1D` | `#FCA5A5` |
+| **Info** | `#DBEAFE` | `#1E40AF` | `#1E3A8A` | `#93C5FD` |
+
+### 3.7. Fixed tokens
+
+Não invertem no dark mode. Usar quando o fundo está travado em uma cor de marca (hero ink-950, final CTA lime, sidebar).
+
+| Token | Hex (fixo) | Uso |
+|---|---|---|
+| `--fixed-white` | `#FFFFFF` | Texto sobre fundos escuros sempre |
+| `--fixed-dark` | `#0F172A` | Texto sobre lime sempre |
+| `--fixed-ink-soft` | `rgba(255,255,255,0.75)` | Body soft sobre dark |
+| `--fixed-ink-muted` | `rgba(255,255,255,0.55)` | Labels sobre dark |
+| `--fixed-ink-faint` | `rgba(255,255,255,0.40)` | Hints sobre dark |
 
 ---
 
-## 3. Tipografia
+## 4. Tipografia
 
-### 3.1. Famílias
+### 4.1. Famílias
 
 | Token | Família | Uso |
-|-------|---------|-----|
-| `--font-display` | **Manrope**, system fallback | Títulos (h1–h6), elementos de hierarquia, números grandes em destaque |
-| `--font-body` | **Inter**, system fallback | Tudo mais — body, labels, inputs, tabelas |
+|---|---|---|
+| `--font-display` | **Manrope** | h1 a h5, KPIs, headlines, wordmark |
+| `--font-body` | **Inter** | Body, labels, inputs, tabelas |
+| `--font-mono` | **Geist Mono** | Números monetários, datas, código |
 
-**Por que duas fontes?**
+### 4.2. Escala (12px a 60px)
 
-- **Manrope** é geometric/humanist — boa pra títulos, números grandes (KPIs do dashboard) e display. Tem personalidade discreta sem chamar atenção.
-- **Inter** é otimizada pra UI — corpo de texto, tabelas, formulários. Excelente leitura em qualquer tamanho.
+| Token | px | Uso |
+|---|---|---|
+| `--fs-xs` | 12 | Badges, hints |
+| `--fs-sm` | 14 | Tabela, secundário |
+| `--fs-base` | 16 | ★ Body padrão (mínimo) |
+| `--fs-md` | 18 | Card titles |
+| `--fs-lg` | 20 | h4 |
+| `--fs-xl` | 24 | h3 |
+| `--fs-2xl` | 30 | h2, KPI |
+| `--fs-3xl` | 36 | h1 |
+| `--fs-4xl` | 48 | Hero secundário |
+| `--fs-5xl` | 60 | Hero principal |
 
-Ambas são Google Fonts gratuitas. Carregadas no `<head>` do HTML.
+### 4.3. Pesos
 
-### 3.2. Escala de tamanhos
+400 normal, 500 medium, 600 semibold, 700 bold, **800 extrabold** (display).
 
-| Token | Valor | px | Uso |
-|-------|-------|----|----|
-| `--fs-xs` | 0.75rem | 12 | Badges, labels minúsculos, hints |
-| `--fs-sm` | 0.875rem | 14 | Texto secundário, dados de tabela |
-| `--fs-base` | 1rem | 16 | **Body padrão** (nunca menor) |
-| `--fs-md` | 1.125rem | 18 | Texto destacado em cards |
-| `--fs-lg` | 1.25rem | 20 | h4 |
-| `--fs-xl` | 1.5rem | 24 | h3 |
-| `--fs-2xl` | 1.875rem | 30 | h2, KPI principal |
-| `--fs-3xl` | 2.25rem | 36 | h1, hero de landing |
-
-**Regra**: nunca abaixo de 12px. Mobile precisa 16px+ no body pra evitar zoom automático no iOS.
-
-### 3.3. Pesos
-
-| Token | Valor | Uso |
-|-------|-------|-----|
-| `--fw-normal` | 400 | Body padrão |
-| `--fw-medium` | 500 | Botões, labels |
-| `--fw-semibold` | 600 | Valores monetários importantes, dados destacados |
-| `--fw-bold` | 700 | **Títulos (h1–h6)**, alertas críticos |
-| `--fw-extrabold` | 800 | Display gigante, números do dashboard |
-
-### 3.4. Tabular nums — feature crítica pra finanças
-
-Use a classe `.tabular` (ou `font-variant-numeric: tabular-nums`) em **toda coluna de valores monetários**:
+### 4.4. Tabular nums (crítico)
 
 ```css
-.tabular { font-variant-numeric: tabular-nums; }
+.tabular { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 ```
 
-Sem isso, "1.234,56" e "9.999,99" não alinham na vertical (porque 1 é mais estreito que 9). Com tabular-nums, todos os dígitos ocupam a mesma largura. **Essencial pra tabelas financeiras.**
-
-### 3.5. Hierarquia padrão
-
-| Elemento | Tag | Font-size | Weight | Cor |
-|----------|-----|-----------|--------|-----|
-| Hero principal | h1 | 36px | 700 | text-main |
-| Página | h2 | 30px | 700 | text-main |
-| Seção | h3 | 24px | 700 | text-main |
-| Sub-seção | h4 | 20px | 700 | text-main |
-| Card title | h5 | 18px | 700 | text-main |
-| Label form | — | 14px | 500 | text-secondary |
-| Body | p | 16px | 400 | text-main |
-| Tabela cell | td | 14px | 400 | text-main |
-| Valor monetário | — | 16px | 600 | text-main + tabular |
-| Hint/help | small | 12px | 400 | text-muted |
-
-### 3.6. Line height
-
-- Headings: 1.2 (apertado, dramático)
-- Body: 1.5 (padrão browser, confortável)
-- Parágrafos longos: 1.6 (respiro extra)
+Use em **toda coluna de valores monetários e datas**. Sem isso "1.234,56" e "9.999,99" não alinham na vertical.
 
 ---
 
-## 4. Espaçamento
+## 5. Espaçamento
 
-Grid de **4px** (escala 0.25rem base).
+Grid de 4px. Tokens `--space-0` a `--space-24` (de 0 até 96px).
 
-| Token | Valor | px | Uso típico |
-|-------|-------|----|------------|
-| `--space-1` | 0.25rem | 4 | Padding super-apertado, gap mínimo |
-| `--space-2` | 0.5rem | 8 | Padding de badge, gap pequeno |
-| `--space-3` | 0.75rem | 12 | Padding de botão, item de lista |
-| `--space-4` | 1rem | 16 | **Padding padrão**, margem entre elementos |
-| `--space-5` | 1.25rem | 20 | Padding de card médio |
-| `--space-6` | 1.5rem | 24 | Margem entre seções |
-| `--space-8` | 2rem | 32 | Margem entre grupos |
-| `--space-10` | 2.5rem | 40 | Margem grande |
-| `--space-12` | 3rem | 48 | Topo/base de hero |
-| `--space-16` | 4rem | 64 | Hero generoso |
-
-**Regra**: prefira a escala. Não invente `padding: 17px`. Se 16px é apertado, use 20px. Manter os tokens evita drift visual ao longo do tempo.
+Regra: prefira a escala. Não invente `padding: 17px`. Se 16 está apertado, use 20. Tokens evitam drift visual.
 
 ---
 
-## 5. Border radius e curvas
+## 6. Border radius
 
-| Token | Valor | Uso |
-|-------|-------|-----|
-| `--radius-sm` | 6px | Inputs, badges, ícones pequenos |
-| `--radius-md` | 12px | **Botões, cards padrão** (curva preferida) |
-| `--radius-lg` | 20px | Cards grandes (KPI, hero) |
-| `--radius-xl` | 28px | Hero, modal de destaque |
-| `--radius-full` | 9999px | Avatares, pílulas, scrollbar thumb |
-
-**Princípio**: curvas são **médias a generosas**. Nunca quadrado (severo demais), nunca radius enorme em elementos não circulares (infantil).
+| Token | px | Uso |
+|---|---|---|
+| `--radius-sm` | 6 | Inputs, badges, ícones pequenos |
+| `--radius-md` | 12 | ★ Botões, cards padrão |
+| `--radius-lg` | 20 | Cards grandes (KPI, hero) |
+| `--radius-xl` | 28 | Hero, modal de destaque |
+| `--radius-full` | 9999 | Avatares, pílulas |
 
 ---
 
-## 6. Sombras e profundidade
+## 7. Sombras e profundidade
 
-Sistema de elevação em 6 níveis.
-
-| Token | Quando usar |
-|-------|------------|
-| `--shadow-sm` | Bordas sutis (não usa muito) |
-| `--shadow-card` | **Cards padrão** — sombra com toque roxo (assinatura visual) |
-| `--shadow-md` | Cards em hover |
-| `--shadow-lg` | Dropdowns, popovers |
-| `--shadow-xl` | Elementos flutuantes (drawer, sidebar overlay) |
-| `--shadow-modal` | Modais grandes |
-
-### Detalhe importante: shadow-card tem cor
+Seis níveis. **Assinatura visual**: a segunda camada de `--shadow-card` usa roxo translúcido em vez de cinza, criando uma "aura" sutil que conecta com a cor primária.
 
 ```css
---shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(109,94,245,0.06);
+--shadow-card: 0 1px 3px rgba(15,23,42,0.06),
+               0 6px 24px rgba(109,94,245,0.07);
 ```
 
-A segunda camada de sombra usa **roxo translúcido**, não cinza. Isso dá uma assinatura sutil — cards ganham aura roxa muito leve, conectando com a cor primária. **Não usar shadow-md em cards** — só em hover.
+No dark mode as sombras reduzem opacidade (o fundo já tem contraste alto sem precisar).
 
 ---
 
-## 7. Tema claro vs. escuro
+## 8. Tema claro vs. escuro
 
-### 7.1. Filosofia
+### 8.1. Filosofia
 
-Os dois temas são tratados como **first-class** — não é "dark mode bolt-on". Ambos têm:
-- Hierarquia visual equivalente
-- Contraste WCAG AA
-- Cores semânticas adaptadas (success-bg verde-claro vs verde-escuro)
-- Sombras ajustadas pra cada tema
+Ambos os modos são first-class. Sem afterthought.
 
-### 7.2. Como ativar
+### 8.2. Como ativar
 
 ```js
 document.documentElement.setAttribute('data-theme', 'dark');
 // ou 'light'
 ```
 
-Persistido em `localStorage` via `lib/theme.js`. Detecta preferência do sistema na primeira visita.
+Persistir em `localStorage`. Detectar `prefers-color-scheme` na primeira visita.
 
-### 7.3. Sidebar
+### 8.3. Que invertem
 
-A sidebar mantém escura em ambos os modos. Isso dá personalidade ao app e cria **enquadramento visual** consistente. No dark mode ela fica ainda mais escura (`#0B1220` vs `#1F2937`).
+- Surfaces (paper, canvas)
+- Ink ramp inteira (50 a 900)
+- Bgs sutis de marca (primary-50, primary-100, accent-50)
+- Semânticas (bg + text invertem juntos)
+- Status de pagamento (bg + text invertem juntos)
 
-### 7.4. Pares de cores
+### 8.4. Que não invertem
 
-Sempre que define cor, considere os dois temas. Ex:
-- `--color-success-bg`: verde claro (light) vs verde escuro (dark)
-- `--color-text-main`: cinza-quase-preto (light) vs cinza-quase-branco (dark)
-
-Veja `variables.css` linhas 138–195 pro pacote dark completo.
+- Sidebar (sempre dark, com tom diferente em cada modo)
+- Hero / sections always-dark (mantêm ink-950)
+- Final CTA em lime (sempre lime)
+- Footer (sempre dark)
+- Fixed tokens (`--fixed-white`, `--fixed-dark`)
+- Logo principal (lime continua lime, roxo continua roxo)
 
 ---
 
-## 8. Status de pagamento (sistema especializado)
+## 9. Status de pagamento
 
-O FinFlow tem **7 status de pagamento**, cada um com par bg+text dedicado. Sistema único do domínio.
+O FinFlow tem **5 status**: 4 estados + default. Sistema único do domínio.
 
-| Status | bg light | text light | bg dark | text dark | Quando |
-|--------|---------|-----------|---------|-----------|--------|
+| Status | bg (light) | text (light) | bg (dark) | text (dark) | Quando |
+|---|---|---|---|---|---|
 | **Pago** | `#D1FAE5` | `#065F46` | `#064E3B` | `#6EE7B7` | Pagamento concluído |
-| **Transferido** | `#DBEAFE` | `#1E40AF` | `#1E3A8A` | `#93C5FD` | Transferência entre contas |
-| **Agendado** | `#FEF3C7` | `#92400E` | `#78350F` | `#FCD34D` | Pagamento agendado no banco |
-| **Cancelado** | `#F3F4F6` | `#4B5563` | `#1F2937` | `#9CA3AF` | Pagamento cancelado |
-| **A Transferir** | `#E0F2FE` | `#0369A1` | `#0C4A6E` | `#7DD3FC` | Transferência pendente |
-| **Cartão** | `#EDE9FE` | `#5B21B6` | `#4C1D95` | `#C4B5FD` | Pago via cartão de crédito |
-| **Parcial** | `#FFEDD5` | `#9A3412` | `#7C2D12` | `#FDBA74` | Pagamento parcial |
+| **Transferido** | `#DBEAFE` | `#1E40AF` | `#1E3A8A` | `#93C5FD` | Transferência executada |
+| **A Transferir** | `#FCE7F3` | `#9D174D` | `#831843` | `#FBCFE8` | Pendente, vai executar |
+| **Cancelado** | `#F3F4F6` | `#4B5563` | `#1F2937` | `#9CA3AF` | Não vai acontecer |
+| **A Pagar** | `#FEF3C7` | `#92400E` | `#78350F` | `#FCD34D` | Default, precisa ação |
 
-**Princípio**: cada status tem uma "vibe" cromática:
-- 🟢 Pago = verde (sucesso, concluído)
-- 🔵 Transferido = azul (movimento, fluxo)
-- 🟡 Agendado = amarelo (atenção, em espera)
-- ⚪ Cancelado = cinza (neutralizado)
-- 🟪 Cartão = roxo (premium, virtual)
-- 🟠 Parcial = laranja (atenção média)
+### Vibe cromática
 
-A consistência dessas associações é o que faz o usuário **ler a tabela de pagamentos rapidamente** sem precisar interpretar texto.
+- 🟢 Pago, verde, sucesso
+- 🔵 Transferido, azul, fluxo
+- 🌸 A Transferir, rose, distinto de azul
+- ⚫ Cancelado, cinza, neutralizado
+- 🟡 A Pagar, âmbar, atenção, default
+
+Cada status ocupa uma família cromática diferente, o usuário lê a tabela sem ler.
+
+### Removidos na v2.0
+
+Cartão, Parcial e Agendado foram removidos do sistema. Não usar mais.
 
 ---
 
-## 9. Gradientes
+## 10. Gradientes
 
-Três gradientes oficiais.
+Quatro gradientes oficiais.
 
 ```css
---gradient-primary: linear-gradient(135deg, #6D5EF5 0%, #3B82F6 100%);
---gradient-primary-soft: linear-gradient(135deg, rgba(109,94,245,0.08) 0%, rgba(59,130,246,0.08) 100%);
---gradient-hero: linear-gradient(135deg, #6D5EF5 0%, #4B3FD6 50%, #3B82F6 100%);
+--gradient-primary:      linear-gradient(135deg, #6D5EF5 0%, #4B3FD6 100%);
+--gradient-primary-soft: linear-gradient(135deg,
+                            rgba(109,94,245,0.08) 0%,
+                            rgba(194,245,66,0.08) 100%);
+--gradient-hero:         linear-gradient(135deg,
+                            #6D5EF5 0%, #4B3FD6 50%, #C2F542 100%);
+--gradient-night:        linear-gradient(135deg,
+                            #0F172A 0%, #1E1B45 50%, #0F172A 100%);
 ```
 
 **Quando usar:**
-- `--gradient-primary`: botões hero, CTAs muito grandes, ilustrações de destaque. **Não usar em texto** (perde legibilidade).
-- `--gradient-primary-soft`: backgrounds sutis de card de destaque. Ex: card de KPI mais importante.
-- `--gradient-hero`: landing pages, telas de boas-vindas, splash screens.
+- `gradient-primary`, botões hero, CTAs muito grandes
+- `gradient-primary-soft`, backgrounds sutis de cards de destaque
+- `gradient-hero`, landing pages, splash screens, finalizações
+- `gradient-night`, seções dramáticas em dark, hero do app
 
 **Não inventar gradientes novos.** Manter consistência.
 
 ---
 
-## 10. Estados de interação
+## 11. Estados de interação
 
-### 10.1. Focus (acessibilidade-crítico)
+### 11.1. Focus
 
 ```css
 :focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-primary-500);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
 ```
 
-**Importante**: usa `:focus-visible` (não `:focus`). Isso mostra o ring **apenas quando o usuário navega por teclado**, não quando clica com mouse. Comportamento moderno padrão.
+No dark mode, focus usa lime em vez de roxo (contraste com fundos roxos).
 
-### 10.2. Hover
+### 11.2. Hover
 
-- Botões: escurecem o fundo levemente
-- Cards: ganham `shadow-md` (sutil aumento de elevação)
-- Links: mudam pra `secondary-dark`
-- Linhas de tabela: ganham `surface-alt`
-- Transição: `--transition-fast` (150ms)
+- Botões, escurecem o fundo levemente
+- Cards, ganham `shadow-md` (sutil aumento de elevação)
+- Links, mudam para `secondary-dark`
+- Linhas de tabela, ganham `surface-alt`
+- Transição, `--transition-fast` (150ms)
 
-### 10.3. Disabled
+### 11.3. Disabled
 
 ```css
 button:disabled {
@@ -383,179 +382,140 @@ button:disabled {
 }
 ```
 
-Padrão: opacity 0.6 + cursor `not-allowed`. **Não esconda** disabled (precisa ser visível mas não interativo).
+Não esconda, mantenha visível mas não interativo.
 
-### 10.4. Active (durante clique)
+### 11.4. Active
 
-Botões: dim mais 5%, sem movimento (não usar `transform: scale`).
-
----
-
-## 11. Iconografia
-
-### 11.1. Direção atual
-
-O app usa **emojis funcionais** em headers de docs e badges contextuais no UI:
-
-| Emoji | Significado | Onde aparece |
-|-------|------------|--------------|
-| 🔐 | Autenticação | Header de doc, página de login |
-| 📒 | Cadastros | Header de doc |
-| 📅 | Planejamento | Header de doc |
-| ⚡ | Execução | Header de doc |
-| 📊 | Análise | Header de doc |
-| ↔️ | Conta efetiva ≠ config | Badge em /pagamentos |
-| ⏩ | Adiantamento de receita | Badge em pagamento |
-| 🔄 | Realocar de outra conta | Badge na importação |
-| ✓ | Match automático | Importação |
-| 🏦 | Banco/saldo | KPIs (legado) |
-
-### 11.2. Princípios pra iconografia futura
-
-Quando for adotar biblioteca de ícones (Lucide, Phosphor, Heroicons), seguir:
-
-1. **Stroke 1.5px–2px** (não preenchidos por padrão).
-2. **24×24px** como tamanho base, escala 16/20/24/32.
-3. **Cor herdada** do contexto (`currentColor`) — ícone branco em botão primário, ícone cinza em botão ghost.
-4. **Consistência de família** — escolher UMA biblioteca, não misturar 3.
-
-**Recomendação aprovada**: **Lucide** (sucessor do Feather Icons). Free, MIT, 1300+ ícones, estética moderna que combina com Manrope/Inter.
-
-#### Como instalar (quando for adotar)
-
-```bash
-npm install lucide
-```
-
-Uso típico em vanilla JS (sem framework):
-
-```js
-import { createElement, Wallet, ArrowDownUp, Calendar } from 'lucide';
-
-// Em qualquer elemento:
-const icon = createElement(Wallet, {
-  'stroke-width': 1.5,
-  'class': 'icon-md'
-});
-document.querySelector('.button').prepend(icon);
-```
-
-CSS de tamanhos sugerido:
-```css
-.icon-sm { width: 16px; height: 16px; }
-.icon-md { width: 20px; height: 20px; }
-.icon-lg { width: 24px; height: 24px; }
-.icon-xl { width: 32px; height: 32px; }
-
-/* Herda cor do contexto */
-.lucide { color: currentColor; }
-```
-
-#### Mapeamento — emojis atuais → ícones Lucide (quando substituir)
-
-| Emoji atual | Lucide equivalente | Contexto |
-|-------------|-------------------|----------|
-| 🏦 | `Landmark` | Banco/conta |
-| 💰 | `Wallet` ou `Banknote` | Dinheiro/saldo |
-| 📅 | `Calendar` | Datas, agendamento |
-| ⚡ | `Zap` | Execução, ações rápidas |
-| 📊 | `BarChart3` ou `PieChart` | Análises, relatórios |
-| 🔐 | `Lock` ou `Shield` | Auth, privacidade |
-| ↔️ | `ArrowLeftRight` | Conta efetiva ≠ config |
-| 🔄 | `RefreshCcw` ou `Repeat` | Recorrência, realocação |
-| ⏩ | `FastForward` ou `Skip` | Adiantamento |
-| ✓ | `Check` | Sucesso, match |
-
-A substituição não precisa ser big-bang — substitua emoji por Lucide à medida que tocar cada componente.
-
-### 11.3. Quando emoji vs ícone
-
-- **Emoji** — comunicação rápida com personalidade (changelog, headers, badges contextuais raros). Não escala bem entre platforms.
-- **Ícone vetorial** — UI de botões, navegação, ações repetidas. Renderiza igual em todo lugar.
-
-Regra prática: se aparece **mais de 3 vezes na tela**, vira ícone vetorial. Se é "tempero", pode ser emoji.
+Botões, dim mais 5%, sem `transform: scale`.
 
 ---
 
-## 12. Tom visual / mood
+## 12. Iconografia
 
-### 12.1. Referências visuais (mood board mental)
+### 12.1. Biblioteca aprovada
 
-**Inspirações diretas:**
-- **Notion** — generoso, sereno, escala tipográfica forte
-- **Linear** — denso mas respirável, dark mode impecável
-- **Mercury** — premium-tech-finance sem ser corporate
-- **Wise** — multimoeda, ilustração leve, didático
+**Lucide** (sucessor do Feather Icons). Free, MIT, 1300+ ícones. Combina com Manrope + Inter.
 
-**Anti-inspirações (NÃO ser):**
-- Bancos brasileiros legados (Itaú, Bradesco) — sério demais, intimidante
-- Mint (RIP) / MoneyLover — colorido demais, infantilizante
-- Robinhood — agressivo, masculino, especulativo
-- YNAB — austero, preachy
+### 12.2. Princípios
 
-### 12.2. Princípios de mood
+1. **Stroke 1.8px** (não preenchidos por padrão)
+2. **Escala**: 16, 20, 24, 32 px
+3. **Cor herdada** (`currentColor`), nunca cor fixa
+4. **Uma única biblioteca**, não misturar
 
-- **Calmo, não animado.** Sem confetti, micro-animações de comemoração, mascotes.
-- **Sério com dinheiro, leve com a pessoa.** Cards densos de dados, mas linguagem solta nos toasts e onboarding.
-- **Profundidade > brilho.** Sombras suaves e gradientes sutis batem chrome berrante.
-- **Branco > textura.** Espaço em branco é o melhor visual asset.
+### 12.3. Quando emoji vs. ícone
 
-### 12.3. Quando precisar de ilustração
+- Emoji, comunicação rápida com personalidade. Changelog, headers internos
+- Ícone vetorial, UI de botões, navegação, ações repetidas
 
-(Não há sistema de ilustração ainda — esse é gap pra futuro.)
+Regra prática: se aparece mais de 3 vezes na tela, vira ícone vetorial.
 
-Diretrizes pra quando contratar/criar:
-- Estilo **geometric soft** (formas com cantos arredondados, traços precisos)
-- Paleta **limitada à marca** (roxo + azul + 1 neutro + 1 accent)
-- Sem rosto humano fotorrealista (caro, datado)
-- Funcional, não decorativo (cada ilustração explica algo)
+---
+
+## 13. Pattern gráfico
+
+**Twin Tracks Pattern**: o símbolo se repete em grid 120 × 80px formando trilhas paralelas que correm horizontalmente.
+
+**Onde usar**:
+- Hero sections de landing
+- Headers de email
+- Embalagem de mídia (slides, exportação PDF)
+- Cover de social media
+- **Não usar** em interface ativa (distrai)
+
+**Variantes oficiais**:
+- Roxo + lime sobre ink-950 (default)
+- Lime sutil + roxo sobre lime-50 (variant claro)
+
+---
+
+## 14. Sistema de ilustração
+
+### 14.1. Estilo
+
+**Geometric soft**, formas com cantos arredondados, traços precisos, paleta restrita à marca.
+
+### 14.2. Diretrizes
+
+- Paleta limitada a roxo + lime + 1 neutro
+- Sem rosto humano fotorrealista
+- Funcional, não decorativo. Cada ilustração explica algo
+- Stroke consistente com iconografia (1.8 a 2.4)
+
+### 14.3. Casos canônicos
+
+1. **Pagamento marcado**, calendário com moeda caindo na data
+2. **Previsto vs. real**, duas linhas paralelas formando gráfico
+3. **Contas conectadas**, stack de cards com moedas convergindo
 
 Referências: ilustrações do Stripe, Notion, Mercury.
 
 ---
 
-## 13. Acessibilidade
+## 15. Tom visual e mood
 
-### 13.1. Contraste WCAG AA
+### 15.1. Inspirações
 
-Cores escolhidas já atingem AA em light mode:
-- `text-main` (#1F2937) sobre `surface` (#FFF): contrast 14.6:1 ✅
-- `text-secondary` (#6B7280) sobre `surface`: 5.2:1 ✅
-- `primary` (#6D5EF5) sobre `surface`: 4.6:1 ✅ (limítrofe — não usar em texto pequeno)
+- **Notion**, generoso, sereno, escala tipográfica forte
+- **Linear**, denso mas respirável, dark mode impecável
+- **Mercury**, premium-tech-finance sem ser corporate
+- **Wise**, multimoeda, didático
 
-Em dark mode:
-- `text-main` (#F1F5F9) sobre `background` (#0F172A): 14.8:1 ✅
-- `primary` (#6D5EF5) sobre `background`: 6.1:1 ✅
+### 15.2. Anti-inspirações
 
-### 13.2. Focus ring
+- Bancos brasileiros (Itaú, Bradesco), sério demais
+- Mint, MoneyLover, colorido demais
+- Robinhood, agressivo, especulativo
+- YNAB, austero, preachy
 
-`:focus-visible` com 2px solid + 2px offset garante visibilidade em qualquer fundo.
+### 15.3. Princípios de mood
 
-### 13.3. Tamanho mínimo
-
-- Botão: 36px height mínimo (44px em touch — `@media (pointer: coarse)`)
-- Tap target: 44×44px área clicável mínima em mobile
-- Fonte: 12px mínimo absoluto, 16px no body
-
-### 13.4. Reduced motion
-
-(Não implementado ainda — gap pra futuro.)
-
-Adicionar:
-```css
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-```
+- **Calmo, não animado.** Sem confetti, sem mascotes
+- **Sério com dinheiro, leve com a pessoa.** Cards densos, linguagem solta
+- **Profundidade > brilho.** Sombras suaves, gradientes sutis batem chrome berrante
+- **Branco > textura.** Espaço em branco é o melhor visual asset
 
 ---
 
-## 14. Tokens — como usar
+## 16. Acessibilidade
 
-### 14.1. Princípio: sempre token, nunca hex
+### 16.1. Contraste WCAG AA
+
+Cores escolhidas atingem AA em ambos os modos.
+
+- `ink-900` sobre `paper` (light), 14.6:1 ✅
+- `primary-500` sobre `paper`, 4.6:1 ✅ (limítrofe, não usar em texto pequeno; use `primary-700`)
+- Lime sobre paper, **insuficiente para texto**. Use `accent-600` ou `accent-700`
+
+### 16.2. Focus ring
+
+`:focus-visible` com 2px solid + 2px offset garante visibilidade em qualquer fundo.
+
+### 16.3. Tamanho mínimo
+
+- Botão, 36px height (44px em touch)
+- Tap target, 44 × 44px área mínima em mobile
+- Fonte, 12px mínimo absoluto, 16px no body
+
+### 16.4. Reduced motion
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  --transition-fast:   0.01ms;
+  --transition-normal: 0.01ms;
+  --transition-slow:   0.01ms;
+}
+```
+
+Já incluído em `variables.css` v2.0.
+
+---
+
+## 17. Tokens, como usar
+
+### 17.1. Princípio
+
+Sempre `var(--token)`, nunca hex hardcoded.
 
 ✅ Bom:
 ```css
@@ -563,7 +523,7 @@ Adicionar:
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: var(--space-4);
+  padding: var(--space-5);
   box-shadow: var(--shadow-card);
 }
 ```
@@ -571,128 +531,100 @@ Adicionar:
 ❌ Ruim:
 ```css
 .my-card {
-  background: #FFFFFF;  /* hardcoded */
-  border-radius: 12px;  /* hardcoded */
+  background: #FFFFFF;
+  border-radius: 12px;
 }
 ```
 
-Hardcode é o que causa drift visual ao longo do tempo. Tokens centralizam decisões.
+Hex hardcode causa drift visual ao longo do tempo. Tokens centralizam decisões.
 
-### 14.2. Onde editar
+### 17.2. Onde editar
 
-Tudo está em `src/css/variables.css`. Mudou um token → mudou no app inteiro.
+Tudo em `src/css/variables.css`. Muda um token, muda no app inteiro.
 
-### 14.3. Quando adicionar token novo
+### 17.3. Quando criar token novo
 
 Adicione token novo se:
-- Vai ser usado em **3+ lugares**
+- Vai ser usado em **3 ou mais lugares**
 - Não cabe em token existente
-- Você consegue dar **nome semântico** (não `--cor-bonita`)
+- Você consegue dar nome semântico (não `--cor-bonita`)
 
-Ex de nome bom: `--color-status-pago-bg`. Ex de nome ruim: `--gray-87`.
+Exemplo bom: `--color-status-pago-bg`. Exemplo ruim: `--gray-87`.
+
+### 17.4. Backwards compatibility
+
+`variables.css` v2.0 mantém aliases para os nomes antigos (v1 Indigo+Salmão) na seção final. Permite código legado continuar funcionando enquanto a migração acontece.
 
 ---
 
-## 15. Aplicação ao multi-perfil (futuro)
+## 18. Aplicação ao multi-perfil
 
-Quando a feature de múltiplos perfis na mesma conta sair, o sistema visual precisará:
+Quando a feature de múltiplos perfis sair, o sistema visual precisará:
 
-### 15.1. Cor por perfil
+### 18.1. Cor por perfil
 
-Cada perfil ganha **uma cor de accent**. Não pra trocar a marca inteira, mas pra:
-- Avatar do perfil
-- Badge ao lado do nome em pagamentos compartilhados
-- Filtro visual em /transacoes
-
-**Recomendação**: paleta de 8 cores acessíveis pra perfis:
+Cada perfil ganha uma cor de accent. Paleta de 8 cores acessíveis:
 
 ```css
---profile-1: #6D5EF5;  /* roxo (default/primary) */
+--profile-1: #6D5EF5;  /* roxo, default */
 --profile-2: #EC4899;  /* rosa */
 --profile-3: #10B981;  /* verde */
---profile-4: #F59E0B;  /* amarelo */
+--profile-4: #F59E0B;  /* âmbar */
 --profile-5: #3B82F6;  /* azul */
 --profile-6: #EF4444;  /* vermelho */
 --profile-7: #8B5CF6;  /* violeta */
 --profile-8: #14B8A6;  /* teal */
 ```
 
-Cada cor com par bg suave (Tailwind 100) pra fundos sutis.
+### 18.2. Avatar
 
-### 15.2. Avatar
+Círculo com inicial em Manrope semibold branca. 32px na lista, 24px em badges.
 
-Padrão: círculo com inicial(is) + cor do perfil. Tamanho 32px na lista, 24px em badges.
+### 18.3. Quem fez o quê
 
-Tipografia da inicial: Manrope semibold, branca.
-
-### 15.3. Indicação de quem fez o quê
-
-Pequeno avatar inline ao lado de ação na timeline. Ex:
-
-> 👤 Arnaldo marcou Aluguel como Pago • há 2h
-> 👤 Maria registrou adiantamento de R$ 1.500 • há 5h
-
-Avatar 16px, nome em negrito, ação em peso normal.
+Avatar 16px inline ao lado da ação na timeline.
 
 ---
 
-## 16. Confidence scores
+## 19. Confidence scores
 
 | Seção | Confiança | Observação |
-|-------|-----------|------------|
-| 2. Cores | 🟢 Alta | Sistema completo em `variables.css` |
-| 3. Tipografia | 🟢 Alta | Manrope + Inter já no app |
-| 4. Espaçamento | 🟢 Alta | Tokens em escala 4px |
-| 5. Border radius | 🟢 Alta | 5 níveis claros |
-| 6. Sombras | 🟢 Alta | 6 níveis + assinatura roxa |
-| 7. Tema | 🟢 Alta | Dark mode completo |
-| 8. Status pagamento | 🟢 Alta | 7 status mapeados ambos temas |
-| 9. Gradientes | 🟢 Alta | 3 gradientes oficiais |
-| 10. Estados | 🟢 Alta | Focus, hover, disabled definidos |
-| 11. Iconografia | 🟡 Média | Direção dada, biblioteca a escolher |
-| 12. Mood | 🟡 Média | Referências mapeadas, sem ilustração |
-| 13. Acessibilidade | 🟡 Média | Cores OK, falta reduced motion |
-| 15. Multi-perfil | 🟠 Baixa | Antecipa, não implementado |
+|---|---|---|
+| 1. Princípios | 🟢 Alta | Decisões fechadas |
+| 2. Logo | 🟢 Alta | Twin Track aprovado, 20 SVGs canônicos |
+| 3. Cores | 🟢 Alta | Sistema completo em `variables.css` v2.0 |
+| 4. Tipografia | 🟢 Alta | Manrope + Inter + Geist Mono no app |
+| 5. Espaçamento | 🟢 Alta | Tokens em escala 4px |
+| 6. Border radius | 🟢 Alta | 5 níveis claros |
+| 7. Sombras | 🟢 Alta | 6 níveis com assinatura roxa |
+| 8. Tema | 🟢 Alta | Dark mode completo e testado na landing |
+| 9. Status | 🟢 Alta | 5 status com famílias cromáticas distintas |
+| 10. Gradientes | 🟢 Alta | 4 gradientes oficiais |
+| 11. Estados | 🟢 Alta | Focus, hover, disabled definidos |
+| 12. Iconografia | 🟢 Alta | Lucide aprovado |
+| 13. Pattern | 🟢 Alta | Twin Tracks Pattern definido |
+| 14. Ilustração | 🟡 Média | Estilo definido, 3 exemplos canônicos |
+| 16. Acessibilidade | 🟢 Alta | Cores AA, reduced motion incluído |
+| 18. Multi-perfil | 🟠 Baixa | Antecipa, não implementado |
 
 ---
 
-## 17. Open Questions
+## 20. Histórico de versões
 
-### Alta prioridade
-
-1. **Adotar biblioteca de ícones agora ou depois?**
-   - Recomendação: **Lucide** quando for adicionar primeiro ícone vetorial. Não tem urgência.
-   - Decisão necessária: confirma Lucide ou outra?
-
-2. **Sistema de ilustração?**
-   - Atualmente: sem ilustrações. Empty states usam só texto + ícone emoji.
-   - Recomendação: **adiar pra Fase 4 (aplicação)**. Quando tiver landing page e onboarding, aí faz sentido investir.
-
-3. **Mascot? Avatar de marca?**
-   - Não tem. Decisão estética.
-   - Recomendação: **não.** Mascotes em fintech costumam infantilizar. Mercury, Notion, Linear não têm — funcionam muito bem sem.
-
-### Média prioridade
-
-4. **Reduced motion.** Acessibilidade obriga (WCAG). Implementar como gap a fechar.
-5. **High contrast mode.** Acessibilidade plus. Adiar até ter feedback de usuários necessidade real.
-6. **Cor por categoria de despesa?** Ex: Moradia em azul, Lazer em rosa. Existe parcialmente. Vale documentar quando estabilizar.
+- **2.0 · 22/05/2026**, refatoração completa com Roxo + Lime, logo Twin Track definido, dark mode polido, status reduzidos a 5, sem Cartão/Parcial/Agendado, gradientes atualizados, fixed tokens para always-dark e lime, sidebar com tom dark dual-mode. Substitui v1.0 (Indigo + Salmão).
+- **1.0 · 21/05/2026**, versão inicial codificando o sistema visual implementado em FinFlow v1.0.5 (Indigo + Salmão). Sem logo definido (Fase 3.5).
 
 ---
 
-## 18. Como usar este documento
+## Como usar este documento
 
-- **Designers**: §1–13, especialmente §1 (princípios) antes de qualquer mockup.
-- **Devs frontend**: §14 (tokens) + `variables.css` direto. Não usar hex hardcoded.
-- **Product**: §1, §8 (status), §11 (icons), §12 (mood) pra alinhar features novas.
-- **Marketing futuro**: §1, §9 (gradientes), §12 (mood) pra landing e materiais.
+- **Designers**, seções 1 a 16, especialmente 1 (princípios) antes de qualquer mockup
+- **Devs frontend**, seção 17 (tokens) + `variables.css` direto. Não usar hex hardcoded
+- **Product**, seções 1, 9 (status), 12 (icons), 15 (mood) pra alinhar features novas
+- **Marketing**, seções 1, 10 (gradientes), 15 (mood) pra landing e materiais
 
-Para o **design system completo em código**, ver `src/css/variables.css` e `src/css/components.css`.
+Para o **design system completo em código**, ver `src/css/variables.css`.
 
-Para **identidade verbal**, ver `docs/BRAND.md`.
+Para **identidade verbal**, ver `docs/BRAND.md` v1.2.
 
----
-
-## 19. Histórico
-
-- **21/05/2026 — v1.0**: Versão inicial, codificando o sistema visual já implementado (alinhado com FinFlow v1.0.5). Sem logo definido (Fase 3.5 quando nome for fechado).
+Para **assets do logo**, ver `logo/README.md`.

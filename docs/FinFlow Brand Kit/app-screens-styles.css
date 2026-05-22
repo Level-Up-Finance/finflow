@@ -1,0 +1,477 @@
+/* ============================================================
+   FinFlow App Screens — shared styles for design canvas artboards.
+   Each artboard is 1440 × 900 (desktop app size).
+   Uses tokens from src/css/variables.css.
+   ============================================================ */
+
+.scr {
+  width: 1440px;
+  height: 900px;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  background: var(--color-canvas);
+  color: var(--color-ink-900);
+  font-family: var(--font-body);
+  font-size: 14px;
+  overflow: hidden;
+}
+.scr[data-theme="dark"] { color: var(--color-ink-900); }
+
+/* ============= Sidebar ============= */
+.scr-sidebar {
+  background: var(--color-sidebar-bg);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+}
+.scr-sidebar .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 28px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  color: var(--color-sidebar-text-active);
+}
+.scr-sidebar .brand svg { width: 24px; height: 24px; }
+.scr-sidebar .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--color-sidebar-text);
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 2px;
+  cursor: pointer;
+}
+.scr-sidebar .nav-item.active {
+  background: var(--color-sidebar-bg-active);
+  color: var(--color-sidebar-text-active);
+}
+.scr-sidebar .nav-item svg { width: 16px; height: 16px; }
+.scr-sidebar .nav-section {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-sidebar-text-muted);
+  padding: 16px 12px 6px;
+  font-weight: 600;
+}
+.scr-sidebar .footer {
+  margin-top: auto;
+  padding: 16px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid var(--color-sidebar-border);
+}
+.scr-sidebar .avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-accent-400);
+  color: var(--color-ink-900);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+}
+.scr-sidebar .footer-info { display: flex; flex-direction: column; }
+.scr-sidebar .footer-info strong {
+  color: var(--color-sidebar-text-active);
+  font-size: 13px;
+  font-weight: 600;
+}
+.scr-sidebar .footer-info span {
+  color: var(--color-sidebar-text-muted);
+  font-size: 11px;
+}
+
+/* ============= Main ============= */
+.scr-main {
+  background: var(--color-canvas);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.scr-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-paper);
+}
+.scr-topbar h1 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.scr-topbar .sub {
+  font-size: 13px;
+  color: var(--color-ink-500);
+  margin-top: 2px;
+}
+.scr-topbar .actions {
+  display: flex;
+  gap: 8px;
+}
+
+.scr-content {
+  padding: 24px 32px;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ============= Buttons ============= */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 9px 16px;
+  border-radius: var(--radius-md);
+}
+.btn-primary { background: var(--color-primary-500); color: var(--fixed-white); }
+.btn-ghost {
+  background: transparent;
+  color: var(--color-ink-700);
+  border: 1px solid var(--color-border);
+}
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--color-ink-700);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+.btn-icon svg { width: 16px; height: 16px; }
+
+/* ============= KPIs ============= */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.kpi-card {
+  background: var(--color-paper);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-card);
+}
+.kpi-card .label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-500);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.kpi-card .value {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.018em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink-900);
+}
+.kpi-card .trend {
+  font-size: 11px;
+  font-weight: 500;
+  margin-top: 4px;
+  color: var(--color-ink-500);
+}
+.kpi-card .trend.up { color: var(--color-success); }
+.kpi-card .trend.down { color: var(--color-danger); }
+.kpi-card.accent {
+  background: linear-gradient(135deg, var(--color-primary-50), var(--color-accent-50));
+  border-color: var(--color-primary-200);
+}
+.kpi-card.accent .label { color: var(--color-primary-700); }
+
+/* ============= Card ============= */
+.card {
+  background: var(--color-paper);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+}
+.card-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-title .meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-ink-500);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============= List rows ============= */
+.row {
+  display: grid;
+  grid-template-columns: 36px 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-ink-100);
+}
+.row:last-child { border-bottom: none; }
+.row .av {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: white;
+}
+.row .info { min-width: 0; }
+.row .info strong { display: block; font-size: 14px; font-weight: 600; color: var(--color-ink-900); }
+.row .info span { font-size: 12px; color: var(--color-ink-500); }
+.row .val {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink-900);
+  white-space: nowrap;
+}
+
+/* ============= Status badges ============= */
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.b-pago { background: var(--color-status-pago-bg); color: var(--color-status-pago-text); }
+.b-trans { background: var(--color-status-transferido-bg); color: var(--color-status-transferido-text); }
+.b-transferir { background: var(--color-status-transferir-bg); color: var(--color-status-transferir-text); }
+.b-cancel { background: var(--color-status-cancelado-bg); color: var(--color-status-cancelado-text); }
+.b-pagar { background: var(--color-status-apagar-bg); color: var(--color-status-apagar-text); }
+
+/* ============= Category cards (Compromissos) ============= */
+.cat-card {
+  background: var(--color-paper);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 10px;
+}
+.cat-header {
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-ink-100);
+}
+.cat-header .left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cat-header .left svg { width: 18px; height: 18px; }
+.cat-header h3 {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+}
+.cat-header .summary {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.cat-rows { padding: 4px 20px; }
+
+/* Category color variants */
+.cat-card.cat-custo .cat-header { background: var(--color-primary-50); }
+.cat-card.cat-custo .cat-header h3,
+.cat-card.cat-custo .cat-header svg,
+.cat-card.cat-custo .cat-header .summary { color: var(--color-primary-700); }
+
+.cat-card.cat-alim .cat-header { background: #FFE0D4; }
+.cat-card.cat-alim .cat-header h3,
+.cat-card.cat-alim .cat-header svg,
+.cat-card.cat-alim .cat-header .summary { color: #9A3412; }
+
+.cat-card.cat-rec .cat-header { background: var(--color-status-pago-bg); }
+.cat-card.cat-rec .cat-header h3,
+.cat-card.cat-rec .cat-header svg,
+.cat-card.cat-rec .cat-header .summary { color: var(--color-status-pago-text); }
+
+.cat-card.cat-inv .cat-header { background: var(--color-accent-100); }
+.cat-card.cat-inv .cat-header h3,
+.cat-card.cat-inv .cat-header svg,
+.cat-card.cat-inv .cat-header .summary { color: var(--color-accent-700); }
+
+/* ============= Account cards (Contas) ============= */
+.acc-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.acc-card {
+  background: var(--color-paper);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.acc-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.acc-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 18px;
+  color: white;
+}
+.acc-head .info { flex: 1; min-width: 0; }
+.acc-head strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.acc-head .tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-ink-500);
+  margin-top: 2px;
+}
+.acc-saldo-row { display: flex; flex-direction: column; gap: 2px; }
+.acc-saldo-lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-500);
+  font-weight: 600;
+}
+.acc-saldo-val {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -0.018em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink-900);
+}
+.acc-recon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-success);
+  margin-top: 4px;
+}
+.acc-recon.warn { color: var(--color-warning); }
+.acc-recon svg { width: 12px; height: 12px; }
+
+.caixinhas { display: flex; flex-direction: column; gap: 8px; }
+.caixinha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.caixinha .nm { flex: 1; color: var(--color-ink-700); font-weight: 500; }
+.caixinha .vl {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink-900);
+}
+.caixinha .bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-ink-100);
+  overflow: hidden;
+  margin-top: 4px;
+}
+.caixinha .bar-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+/* ============= Tabs ============= */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+.tab {
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink-500);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+}
+.tab.active {
+  color: var(--color-primary-600);
+  border-bottom-color: var(--color-primary-500);
+}
+
+/* ============= Misc ============= */
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.gap-2 { gap: 8px; } .gap-3 { gap: 12px; } .gap-4 { gap: 16px; }
+.mb-2 { margin-bottom: 8px; } .mb-3 { margin-bottom: 12px; } .mb-4 { margin-bottom: 16px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }

@@ -1,0 +1,1733 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinFlow · Organize compromissos, não tickets de extrato</title>
+<meta name="description" content="App de gestão financeira pessoal multimoeda. Você cadastra compromissos, a gente projeta o ano inteiro. Antes de dezembro chegar.">
+<link rel="icon" href="logo/favicon/favicon-auto-theme.svg" type="image/svg+xml">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --indigo-50:   #F1EFFE;
+  --indigo-100:  #E5E1FD;
+  --indigo-200:  #D2CCFB;
+  --indigo-300:  #B5ACF8;
+  --indigo-400:  #8B7FF7;
+  --indigo-500:  #6D5EF5;
+  --indigo-600:  #5B4FE0;
+  --indigo-700:  #4B3FD6;
+  --indigo-900:  #2A2384;
+
+  --lime:        #C2F542;
+  --lime-200:    #DFFBA5;
+  --lime-300:    #D2F873;
+  --lime-500:    #A3D331;
+  --lime-700:    #65880F;
+  --lime-50:     #F7FEE7;
+
+  --ink-950: #08090C;
+  --ink-900: #0F172A;
+  --ink-800: #1E293B;
+  --ink-700: #334155;
+  --ink-600: #475569;
+  --ink-500: #64748B;
+  --ink-400: #94A3B8;
+  --ink-300: #CBD5E1;
+  --ink-200: #E2E8F0;
+  --ink-100: #F1F5F9;
+  --ink-50:  #F8FAFC;
+
+  --paper:   #FFFFFF;
+  --canvas:  #FAFAF7;
+
+  --success: #10B981;
+  --success-bg: #D1FAE5;
+  --success-text: #065F46;
+  --warning: #F59E0B;
+  --warning-bg: #FEF3C7;
+  --warning-text: #92400E;
+  --danger:  #EF4444;
+  --danger-bg: #FEE2E2;
+  --danger-text: #991B1B;
+  --cartao: #8B5CF6;
+  --cartao-bg: #EDE9FE;
+  --cartao-text: #5B21B6;
+
+  /* always-dark surface: use this for hero, howit, showcase, footer */
+  --night: #08090C;
+  --night-elev: #14161B;
+
+  /* Sidebar tokens — always dark, but slightly different tone per mode */
+  --sidebar-bg: #0F172A;
+  --sidebar-bg-active: #5B4FE0;
+  --sidebar-text: #CBD5E1;
+  --sidebar-text-active: #FFFFFF;
+  --sidebar-text-muted: #64748B;
+  --sidebar-border: rgba(255,255,255,0.06);
+
+  /* FIXED tokens — do NOT invert in dark mode. Use these on elements
+     whose background is locked to a brand color (always-dark sections,
+     final-cta on lime, etc) so the text contrast stays correct. */
+  --fixed-white: #FFFFFF;
+  --fixed-dark:  #0F172A;
+  --fixed-ink-soft: rgba(255,255,255,0.75);
+  --fixed-ink-muted: rgba(255,255,255,0.55);
+  --fixed-ink-faint: rgba(255,255,255,0.4);
+
+  --font-display: 'Manrope', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+
+  --max-w: 1280px;
+}
+
+/* ===========================================================================
+   DARK MODE — invert surfaces + ink ramp, brighten subtle indigo/lime bgs,
+   flip semantic badge text/bg pairs. Always-dark surfaces (--night, --ink-950)
+   stay the same so hero/howit/showcase/footer keep their identity.
+   =========================================================================== */
+:root[data-theme="dark"] {
+  --canvas: #0B0D12;
+  --paper:  #15181F;
+
+  /* Ink ramp inverted (light text on dark bg) */
+  --ink-50:  #1A1D24;
+  --ink-100: #1F232B;
+  --ink-200: #2A2F39;
+  --ink-300: #3B4151;
+  --ink-400: #6B7280;
+  --ink-500: #94A3B8;
+  --ink-600: #CBD5E1;
+  --ink-700: #E2E8F0;
+  --ink-800: #F1F5F9;
+  --ink-900: #F8FAFC;
+
+  /* Subtle bgs of the brand colors invert dark-tint */
+  --indigo-50:  #1E1B45;
+  --indigo-100: #2A2384;
+  --lime-50:    #2E460B;
+
+  /* Semantic pills invert bg + text */
+  --success-bg: #064E3B;
+  --success-text: #6EE7B7;
+  --warning-bg: #78350F;
+  --warning-text: #FCD34D;
+  --danger-bg: #7F1D1D;
+  --danger-text: #FCA5A5;
+  --cartao-bg: #4C1D95;
+  --cartao-text: #C4B5FD;
+
+  /* Sidebar gets a slight indigo tint in dark mode so it doesn't blend
+     into the canvas, while staying clearly part of the night palette */
+  --sidebar-bg: #14172A;
+  --sidebar-text: #94A3B8;
+  --sidebar-text-muted: #475569;
+  --sidebar-border: rgba(255,255,255,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  color: var(--ink-900);
+  background: var(--canvas);
+  line-height: 1.55;
+  overflow-x: hidden;
+}
+
+.tabular { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+img, svg { display: block; }
+
+a { color: inherit; text-decoration: none; }
+
+/* ===========================================================================
+   NAV
+   =========================================================================== */
+.nav-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--canvas) 85%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--ink-200);
+}
+.nav {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+}
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  color: var(--ink-900);
+}
+.nav-brand svg { width: 24px; height: 24px; }
+.nav-links {
+  display: flex;
+  gap: 28px;
+  font-size: 14px;
+  color: var(--ink-700);
+  font-weight: 500;
+}
+.nav-links a { transition: color 0.15s; }
+.nav-links a:hover { color: var(--indigo-500); }
+.nav-cta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Theme toggle */
+.theme-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--ink-200);
+  background: transparent;
+  color: var(--ink-700);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.theme-toggle:hover {
+  background: var(--ink-100);
+  color: var(--ink-900);
+}
+.theme-toggle svg { width: 16px; height: 16px; }
+.theme-toggle .sun { display: block; }
+.theme-toggle .moon { display: none; }
+[data-theme="dark"] .theme-toggle .sun { display: none; }
+[data-theme="dark"] .theme-toggle .moon { display: block; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  transition: all 0.15s;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn-primary {
+  background: var(--ink-900);
+  color: var(--paper);
+}
+.btn-primary:hover { background: var(--indigo-500); }
+.btn-lime {
+  background: var(--lime);
+  color: var(--ink-900);
+}
+.btn-lime:hover { background: var(--lime-500); color: var(--paper); }
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-700);
+}
+.btn-ghost:hover { color: var(--ink-900); }
+.btn-ghost-light {
+  background: transparent;
+  color: var(--paper);
+  border: 1px solid rgba(255,255,255,0.25);
+}
+.btn-ghost-light:hover { border-color: rgba(255,255,255,0.5); }
+
+.btn-lg {
+  font-size: 15px;
+  padding: 14px 24px;
+  border-radius: 12px;
+}
+
+/* ===========================================================================
+   HERO
+   =========================================================================== */
+.hero {
+  background: var(--ink-950);
+  color: var(--paper);
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(800px 600px at 12% 20%, rgba(109,94,245,0.35), transparent 70%),
+    radial-gradient(700px 500px at 92% 95%, rgba(194,245,66,0.12), transparent 70%);
+  pointer-events: none;
+}
+.hero-pattern {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 160'%3E%3Cline x1='0' y1='60' x2='240' y2='60' stroke='%23ffffff' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M0 110 L80 110 L96 80 L120 80 L136 110 L240 110' stroke='%23C2F542' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: 240px 160px;
+}
+.hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 96px 32px 64px;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 64px;
+  align-items: center;
+}
+@media (max-width: 900px) {
+  .hero-inner { grid-template-columns: 1fr; padding: 64px 24px; gap: 48px; }
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--lime);
+  font-weight: 600;
+  padding: 6px 14px;
+  border: 1px solid rgba(194,245,66,0.3);
+  border-radius: 999px;
+  background: rgba(194,245,66,0.06);
+  margin-bottom: 24px;
+}
+.hero-eyebrow .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lime);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(40px, 6vw, 80px);
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  color: var(--fixed-white);
+}
+.hero h1 em {
+  color: var(--lime);
+  font-style: normal;
+}
+.hero p.lede {
+  margin-top: 24px;
+  font-size: 19px;
+  color: var(--fixed-ink-soft);
+  max-width: 520px;
+  line-height: 1.55;
+}
+.hero p.lede strong { color: var(--fixed-white); font-weight: 600; }
+.hero-cta {
+  margin-top: 32px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.hero-cta .btn-primary { background: var(--lime); color: var(--fixed-dark); }
+.hero-cta .btn-primary:hover { background: var(--fixed-white); color: var(--fixed-dark); }
+
+.hero-stats {
+  margin-top: 48px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  max-width: 500px;
+}
+.hero-stat .num {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  color: var(--fixed-white);
+}
+.hero-stat .lbl {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--fixed-ink-muted);
+  margin-top: 4px;
+}
+
+/* Hero visual, mini dashboard preview */
+.hero-visual {
+  position: relative;
+}
+.app-preview {
+  background: var(--paper);
+  color: var(--ink-900);
+  border-radius: 16px;
+  box-shadow:
+    0 50px 100px rgba(0,0,0,0.4),
+    0 1px 0 rgba(255,255,255,0.08) inset;
+  overflow: hidden;
+  border: 1px solid var(--ink-200);
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  transform: perspective(1600px) rotateY(-4deg) rotateX(1deg);
+}
+.app-preview-sidebar {
+  background: var(--sidebar-bg);
+  padding: 12px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.app-preview-sidebar .logo-mini {
+  background: var(--lime);
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+}
+.app-preview-sidebar .icon-mini {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  color: var(--sidebar-text-muted);
+}
+.app-preview-sidebar .icon-mini.active {
+  background: var(--sidebar-bg-active);
+  color: var(--sidebar-text-active);
+}
+.app-preview-sidebar .icon-mini svg { width: 16px; height: 16px; }
+
+.app-preview-main {
+  padding: 18px 20px;
+  background: var(--paper);
+}
+.app-preview-main h3 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  color: var(--ink-900);
+}
+.app-preview-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.app-kpi {
+  background: var(--ink-50);
+  border-radius: 8px;
+  padding: 10px 8px;
+  min-width: 0;
+}
+.app-kpi .lbl {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.app-kpi .val {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+  margin-top: 4px;
+  color: var(--ink-900);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.app-kpi.accent { background: var(--lime-50); }
+.app-kpi.accent .lbl { color: var(--lime-700); }
+.app-preview-rows {
+  background: var(--ink-50);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.app-preview-rows .row {
+  display: grid;
+  grid-template-columns: 22px 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--ink-200);
+}
+.app-preview-rows .row:last-child { border-bottom: none; }
+.app-preview-rows .row .av {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.app-preview-rows .row .info { min-width: 0; }
+.app-preview-rows .row .info strong { display: block; font-size: 11px; font-weight: 600; color: var(--ink-900); line-height: 1.2; }
+.app-preview-rows .row .info span { font-size: 9px; color: var(--ink-500); }
+.app-preview-rows .row .val { font-family: var(--font-mono); font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink-900); white-space: nowrap; }
+.app-preview-rows .row .badge {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.bdg-pago { background: var(--success-bg); color: var(--success-text); }
+
+/* ===========================================================================
+   SECTION SHELLS
+   =========================================================================== */
+section.section {
+  padding: 112px 32px;
+  position: relative;
+}
+.section-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+}
+.section-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--indigo-500);
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.section h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(36px, 5vw, 56px);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--ink-900);
+  max-width: 900px;
+}
+.section h2 em {
+  color: var(--indigo-500);
+  font-style: normal;
+}
+.section p.section-lede {
+  margin-top: 16px;
+  font-size: 19px;
+  color: var(--ink-700);
+  max-width: 640px;
+  line-height: 1.55;
+}
+
+/* ===========================================================================
+   "ANTES DE DEZEMBRO CHEGAR" — projection section
+   =========================================================================== */
+.projection {
+  background: var(--paper);
+  position: relative;
+}
+.projection-inner {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 80px;
+  align-items: center;
+}
+@media (max-width: 900px) {
+  .projection-inner { grid-template-columns: 1fr; gap: 48px; }
+}
+
+.projection-chart {
+  background: var(--ink-50);
+  border-radius: 16px;
+  padding: 32px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--ink-200);
+}
+.projection-chart-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  margin-bottom: 24px;
+}
+.projection-chart-title h4 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink-900);
+}
+.projection-chart-title span {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-500);
+  letter-spacing: 0.05em;
+}
+.projection-chart svg { width: 100%; height: auto; }
+.projection-chart-legend {
+  display: flex;
+  gap: 24px;
+  margin-top: 24px;
+  font-size: 12px;
+  color: var(--ink-700);
+}
+.projection-chart-legend .li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.projection-chart-legend .li::before {
+  content: "";
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+}
+.projection-chart-legend .li.plan::before { background: var(--indigo-500); }
+.projection-chart-legend .li.real::before { background: var(--lime-500); }
+
+/* ===========================================================================
+   COMPROMETIDO VS EXECUTADO — how it works
+   =========================================================================== */
+.howit {
+  background: var(--ink-950);
+  color: var(--paper);
+}
+.howit h2 { color: var(--fixed-white); }
+.howit h2 em { color: var(--lime); }
+.howit p.section-lede { color: var(--fixed-ink-soft); }
+.howit-steps {
+  margin-top: 64px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+@media (max-width: 900px) {
+  .howit-steps { grid-template-columns: 1fr; }
+}
+.step {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 32px;
+  position: relative;
+}
+.step-num {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 56px;
+  line-height: 1;
+  color: var(--lime);
+  letter-spacing: -0.04em;
+  margin-bottom: 24px;
+}
+.step h3 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-bottom: 12px;
+  color: var(--fixed-white);
+}
+.step p {
+  font-size: 15px;
+  color: var(--fixed-ink-soft);
+  line-height: 1.55;
+}
+.step .vibe {
+  margin-top: 20px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fixed-ink-soft);
+  letter-spacing: 0.02em;
+}
+
+/* ===========================================================================
+   FEATURES grid
+   =========================================================================== */
+.features {
+  background: var(--canvas);
+}
+.features-grid {
+  margin-top: 64px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+@media (max-width: 900px) { .features-grid { grid-template-columns: 1fr; } }
+.feat {
+  background: var(--paper);
+  border: 1px solid var(--ink-200);
+  border-radius: 16px;
+  padding: 28px;
+  transition: all 0.15s;
+}
+.feat:hover {
+  border-color: var(--indigo-300);
+  box-shadow: 0 8px 24px rgba(79,70,229,0.08);
+}
+.feat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--indigo-50);
+  color: var(--indigo-700);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.feat-icon svg { width: 22px; height: 22px; }
+.feat-icon.lime { background: var(--lime-50); color: var(--lime-700); }
+.feat h3 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 6px;
+}
+.feat p {
+  font-size: 14px;
+  color: var(--ink-600);
+  line-height: 1.55;
+}
+
+/* ===========================================================================
+   STATUS section
+   =========================================================================== */
+.status-stripe {
+  background: var(--paper);
+  border-top: 1px solid var(--ink-200);
+  border-bottom: 1px solid var(--ink-200);
+  padding: 64px 32px;
+}
+.status-stripe-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 64px;
+  align-items: center;
+}
+@media (max-width: 900px) { .status-stripe-inner { grid-template-columns: 1fr; } }
+.status-stripe h3 {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.status-stripe p { margin-top: 12px; color: var(--ink-600); }
+.status-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.status-list span {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 999px;
+}
+.s-pago { background: var(--success-bg); color: var(--success-text); }
+.s-trans { background: #DBEAFE; color: #1E40AF; }
+.s-transferir { background: #FCE7F3; color: #9D174D; }
+.s-cancel { background: var(--ink-100); color: var(--ink-600); }
+.s-pagar { background: #FEF3C7; color: #92400E; }
+[data-theme="dark"] .s-trans { background: #1E3A8A; color: #93C5FD; }
+[data-theme="dark"] .s-transferir { background: #831843; color: #FBCFE8; }
+[data-theme="dark"] .s-pagar { background: #78350F; color: #FCD34D; }
+
+/* ===========================================================================
+   APP SHOWCASE
+   =========================================================================== */
+.showcase {
+  background: var(--ink-950);
+  color: var(--paper);
+  position: relative;
+  overflow: hidden;
+}
+.showcase::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(900px 600px at 50% -10%, rgba(109,94,245,0.25), transparent 70%);
+}
+.showcase h2 { color: var(--fixed-white); }
+.showcase h2 em { color: var(--lime); }
+.showcase p.section-lede { color: var(--fixed-ink-soft); }
+.showcase-frame {
+  margin-top: 64px;
+  background: var(--paper);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 80px 120px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.1);
+  position: relative;
+  z-index: 1;
+}
+.showcase-chrome {
+  background: var(--ink-100);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--ink-200);
+}
+.showcase-chrome .dots { display: flex; gap: 6px; }
+.showcase-chrome .dots span { width: 11px; height: 11px; border-radius: 50%; }
+.showcase-chrome .dots span:nth-child(1) { background: #FF5F57; }
+.showcase-chrome .dots span:nth-child(2) { background: #FEBC2E; }
+.showcase-chrome .dots span:nth-child(3) { background: #28C840; }
+.showcase-chrome .url {
+  flex: 1;
+  background: var(--paper);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-700);
+  border: 1px solid var(--ink-200);
+}
+.showcase-app {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 540px;
+  color: var(--ink-900);
+}
+.showcase-sidebar {
+  background: var(--sidebar-bg);
+  padding: 20px 14px;
+  color: var(--sidebar-text);
+}
+.showcase-sidebar .brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.015em;
+  padding: 6px 10px 24px;
+  color: var(--sidebar-text-active);
+}
+.showcase-sidebar .brand svg { width: 22px; height: 22px; }
+.nav-item-sc {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--sidebar-text);
+  margin-bottom: 2px;
+}
+.nav-item-sc.active { background: var(--sidebar-bg-active); color: var(--sidebar-text-active); }
+.nav-item-sc svg { width: 16px; height: 16px; }
+.nav-section-sc {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sidebar-text-muted);
+  padding: 12px 12px 4px;
+  margin-top: 8px;
+}
+.showcase-main {
+  padding: 24px 28px;
+  background: var(--paper);
+}
+.showcase-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.showcase-topbar h1 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+}
+.showcase-topbar p { font-size: 12px; color: var(--ink-500); margin-top: 2px; }
+.sc-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.sc-kpi {
+  background: var(--paper);
+  border: 1px solid var(--ink-200);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.sc-kpi .lbl {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  font-weight: 600;
+}
+.sc-kpi .val {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-900);
+  margin-top: 4px;
+}
+.sc-kpi .trend { font-size: 11px; margin-top: 4px; }
+.sc-kpi .trend.up { color: var(--success); }
+.sc-kpi.accent {
+  background: linear-gradient(135deg, var(--indigo-50), var(--lime-50));
+  border-color: var(--indigo-200);
+}
+.showcase-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 12px;
+}
+.sc-card {
+  background: var(--paper);
+  border: 1px solid var(--ink-200);
+  border-radius: 10px;
+  padding: 16px;
+}
+.sc-card h3 {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.sc-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ink-100);
+  font-size: 12px;
+}
+.sc-row:last-child { border-bottom: none; }
+.sc-row .av {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 11px;
+  color: white;
+}
+.sc-row .info strong { display: block; font-weight: 600; }
+.sc-row .info span { font-size: 10px; color: var(--ink-500); }
+.sc-row .val { font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+.sc-row .badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ===========================================================================
+   MULTIMOEDA — bonus
+   =========================================================================== */
+.moedas {
+  background: var(--canvas);
+}
+.moedas-grid {
+  margin-top: 64px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+@media (max-width: 900px) { .moedas-grid { grid-template-columns: repeat(2, 1fr); } }
+.moeda-card {
+  background: var(--paper);
+  border: 1px solid var(--ink-200);
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.moeda-flag {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 36px;
+  letter-spacing: -0.025em;
+  color: var(--indigo-500);
+}
+.moeda-name {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+.moeda-rate {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-600);
+  font-variant-numeric: tabular-nums;
+}
+.moeda-rate strong { color: var(--ink-900); }
+
+/* ===========================================================================
+   FINAL CTA
+   =========================================================================== */
+.final-cta {
+  background: var(--lime);
+  color: var(--fixed-dark);
+  position: relative;
+  overflow: hidden;
+}
+.final-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 160'%3E%3Cline x1='0' y1='60' x2='240' y2='60' stroke='%230F172A' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M0 110 L80 110 L96 80 L120 80 L136 110 L240 110' stroke='%236D5EF5' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: 240px 160px;
+  opacity: 0.06;
+}
+.final-cta-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 112px 32px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+.final-cta h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(48px, 7vw, 96px);
+  letter-spacing: -0.035em;
+  line-height: 1;
+  color: var(--fixed-dark);
+}
+.final-cta h2 em {
+  color: var(--indigo-700);
+  font-style: normal;
+}
+.final-cta p {
+  margin-top: 24px;
+  font-size: 19px;
+  color: var(--fixed-dark);
+  opacity: 0.8;
+  max-width: 560px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.final-cta-buttons {
+  margin-top: 40px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.final-cta .btn-primary {
+  background: var(--fixed-dark);
+  color: var(--fixed-white);
+}
+.final-cta .btn-ghost {
+  background: transparent;
+  color: var(--fixed-dark);
+  border: 1px solid rgba(15,23,42,0.25);
+}
+
+/* ===========================================================================
+   FOOTER
+   =========================================================================== */
+.footer {
+  background: var(--ink-950);
+  color: rgba(255,255,255,0.6);
+  padding: 64px 32px 40px;
+}
+.footer-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.4fr repeat(3, 1fr);
+  gap: 48px;
+  margin-bottom: 48px;
+}
+@media (max-width: 900px) { .footer-inner { grid-template-columns: 1fr 1fr; } }
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.footer-brand .mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  color: var(--paper);
+}
+.footer-brand .mark svg { width: 26px; height: 26px; }
+.footer-brand p {
+  font-size: 14px;
+  color: rgba(255,255,255,0.55);
+  max-width: 320px;
+  line-height: 1.55;
+}
+.footer-col h4 {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--paper);
+  margin-bottom: 16px;
+  letter-spacing: -0.005em;
+}
+.footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.footer-col ul a {
+  font-size: 14px;
+  color: rgba(255,255,255,0.55);
+  transition: color 0.15s;
+}
+.footer-col ul a:hover { color: var(--paper); }
+.footer-bottom {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding-top: 32px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+.footer-bottom .right {
+  display: flex;
+  gap: 24px;
+}
+
+/* SVG inline symbol helper class */
+.tt { stroke-linecap: round; stroke-linejoin: round; fill: none; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════════ NAV ═══ -->
+<div class="nav-wrap">
+  <nav class="nav">
+    <a href="#" class="nav-brand">
+      <svg viewBox="0 0 100 100">
+        <line x1="14" y1="32" x2="86" y2="32" stroke="var(--indigo-500)" stroke-width="12" stroke-linecap="round"/>
+        <path d="M14 68 L38 68 L41 50 L59 50 L62 68 L86 68" stroke="var(--lime-500)" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      FinFlow
+    </a>
+    <div class="nav-links">
+      <a href="#produto">Produto</a>
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#features">Recursos</a>
+      <a href="#preco">Preço</a>
+    </div>
+    <div class="nav-cta">
+      <button class="theme-toggle" id="themeToggle" aria-label="Alternar tema">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      </button>
+      <a href="#" class="btn btn-ghost">Entrar</a>
+      <a href="#" class="btn btn-primary">Começar grátis</a>
+    </div>
+  </nav>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ HERO ═══ -->
+<section class="hero" id="produto">
+  <div class="hero-pattern"></div>
+  <div class="hero-inner">
+    <div>
+      <span class="hero-eyebrow"><span class="dot"></span>Novo · v1.0.5</span>
+      <h1>Organize<br>compromissos,<br><em>não tickets de extrato.</em></h1>
+      <p class="lede">
+        Você cadastra <strong>compromissos</strong> (aluguel, salário, parcela) e a gente gera os pagamentos do ano inteiro automaticamente. Sem cadastrar transação por transação.
+      </p>
+      <div class="hero-cta">
+        <a href="#" class="btn btn-primary btn-lg">Começar grátis</a>
+        <a href="#como-funciona" class="btn btn-ghost-light btn-lg">Ver como funciona ↓</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="num">12 meses</div>
+          <div class="lbl">de projeção automática</div>
+        </div>
+        <div class="hero-stat">
+          <div class="num">4 moedas</div>
+          <div class="lbl">BRL · USD · EUR · GBP</div>
+        </div>
+        <div class="hero-stat">
+          <div class="num">23 relatórios</div>
+          <div class="lbl">exportáveis em PDF</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="app-preview">
+        <div class="app-preview-sidebar">
+          <div class="logo-mini">
+            <svg width="20" height="20" viewBox="0 0 100 100">
+              <line x1="14" y1="32" x2="86" y2="32" stroke="var(--ink-900)" stroke-width="12" stroke-linecap="round"/>
+              <path d="M14 68 L38 68 L41 50 L59 50 L62 68 L86 68" stroke="var(--ink-900)" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="icon-mini active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></div>
+          <div class="icon-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <div class="icon-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 18V8l9-5 9 5v10"/></svg></div>
+          <div class="icon-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+          <div class="icon-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h13l-4 4M21 18H8l4-4"/></svg></div>
+        </div>
+        <div class="app-preview-main">
+          <h3>Bom dia, Arnaldo</h3>
+          <div class="app-preview-kpis">
+            <div class="app-kpi"><div class="lbl">Saldo</div><div class="val">R$&nbsp;28k</div></div>
+            <div class="app-kpi"><div class="lbl">A pagar</div><div class="val">R$&nbsp;7,8k</div></div>
+            <div class="app-kpi accent"><div class="lbl">Patrimônio</div><div class="val">R$&nbsp;142k</div></div>
+          </div>
+          <div class="app-preview-rows">
+            <div class="row">
+              <div class="av" style="background:#EC7000">I</div>
+              <div class="info"><strong>Aluguel</strong><span>vence 05/05</span></div>
+              <span class="badge bdg-pago">Pago</span>
+              <span class="val">2.500</span>
+            </div>
+            <div class="row">
+              <div class="av" style="background:#8A05BE">N</div>
+              <div class="info"><strong>Luz</strong><span>vence 15/05</span></div>
+              <span class="badge bdg-pago">Pago</span>
+              <span class="val">380</span>
+            </div>
+            <div class="row">
+              <div class="av" style="background:var(--indigo-500)">B</div>
+              <div class="info"><strong>Internet</strong><span>vence 20/05</span></div>
+              <span class="badge" style="background:#FEF3C7;color:#92400E">A Pagar</span>
+              <span class="val">130</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════ ANTES DE DEZEMBRO CHEGAR ═══ TAGLINE 02 ═══ -->
+<section class="section projection">
+  <div class="section-inner">
+    <div class="projection-inner">
+      <div>
+        <div class="section-eyebrow">Antecipação</div>
+        <h2>Você sabe quanto pode sobrar em dezembro.<br><em>Antes de dezembro chegar.</em></h2>
+        <p class="section-lede">
+          Cadastra seus compromissos uma vez. O FinFlow projeta os próximos 12 meses: entradas, saídas, saldo no fim de cada mês. Quando dezembro chegar, você já vai saber. Pode planejar a viagem, a reserva, a antecipação do IPVA.
+        </p>
+        <div style="margin-top:32px;display:flex;gap:12px;flex-wrap:wrap">
+          <a href="#" class="btn btn-primary btn-lg">Ver minha projeção</a>
+          <a href="#features" class="btn btn-ghost btn-lg">Como cadastrar compromissos</a>
+        </div>
+      </div>
+
+      <div class="projection-chart">
+        <div class="projection-chart-title">
+          <h4>Saldo projetado · próximos 12 meses</h4>
+          <span>BRL</span>
+        </div>
+        <svg viewBox="0 0 600 280" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="planFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#6D5EF5" stop-opacity="0.18"/>
+              <stop offset="1" stop-color="#6D5EF5" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <!-- grid lines -->
+          <line x1="0" y1="60" x2="600" y2="60" stroke="#E2E8F0" stroke-dasharray="2 4"/>
+          <line x1="0" y1="130" x2="600" y2="130" stroke="#E2E8F0" stroke-dasharray="2 4"/>
+          <line x1="0" y1="200" x2="600" y2="200" stroke="#E2E8F0" stroke-dasharray="2 4"/>
+          <!-- "today" marker -->
+          <line x1="80" y1="20" x2="80" y2="220" stroke="#94A3B8" stroke-dasharray="3 3" opacity="0.6"/>
+          <text x="84" y="34" font-family="Geist Mono" font-size="10" fill="#475569" font-weight="500">HOJE</text>
+
+          <!-- past actual (lime) -->
+          <path d="M20 180 L40 165 L60 145 L80 140" stroke="#A3D331" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+          <!-- projected plan (indigo) -->
+          <path d="M80 140 L130 130 L180 125 L230 115 L280 110 L330 100 L380 90 L430 75 L480 60 L530 45 L580 30"
+                stroke="#6D5EF5" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+          <!-- fill area under plan -->
+          <path d="M80 140 L130 130 L180 125 L230 115 L280 110 L330 100 L380 90 L430 75 L480 60 L530 45 L580 30 L580 240 L80 240 Z"
+                fill="url(#planFill)"/>
+
+          <!-- December marker -->
+          <circle cx="530" cy="45" r="6" fill="#C2F542" stroke="#0F172A" stroke-width="2"/>
+          <line x1="530" y1="51" x2="530" y2="80" stroke="#0F172A" stroke-width="1"/>
+          <rect x="490" y="84" width="80" height="34" rx="6" fill="#0F172A"/>
+          <text x="530" y="98" font-family="Manrope" font-size="11" fill="white" font-weight="700" text-anchor="middle">Dezembro</text>
+          <text x="530" y="112" font-family="Geist Mono" font-size="9" fill="#C2F542" font-weight="600" text-anchor="middle" letter-spacing="0.05em">R$ 42.380</text>
+
+          <!-- x-axis labels -->
+          <g font-family="Geist Mono" font-size="9" fill="#94A3B8" font-weight="500">
+            <text x="20" y="260">Fev</text>
+            <text x="80" y="260">Mai</text>
+            <text x="180" y="260">Jul</text>
+            <text x="280" y="260">Ago</text>
+            <text x="380" y="260">Out</text>
+            <text x="530" y="260" text-anchor="middle">Dez</text>
+            <text x="580" y="260" text-anchor="end">Jan/27</text>
+          </g>
+        </svg>
+
+        <div class="projection-chart-legend">
+          <span class="li real">Realizado (passado)</span>
+          <span class="li plan">Projetado (próximos meses)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════ HOW IT WORKS — TAGLINE 03 ═══════════ -->
+<section class="section howit" id="como-funciona">
+  <div class="section-inner">
+    <div class="section-eyebrow" style="color:var(--lime)">Como funciona</div>
+    <h2>Comprometido <em>vs.</em> executado.</h2>
+    <p class="section-lede">
+      A filosofia do FinFlow em uma linha. Tudo que você prometeu pagar ou receber, do lado de tudo que de fato aconteceu. Em três passos.
+    </p>
+
+    <div class="howit-steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3>Cadastra os compromissos</h3>
+        <p>Aluguel, salário, parcela do carro, mercado da semana. Tudo que repete. Cadastra valor, conta e frequência.</p>
+        <div class="vibe">15 min · uma vez</div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3>A gente gera o ano inteiro</h3>
+        <p>O FinFlow projeta 12 meses de pagamentos automaticamente. Você já vê quanto vai entrar e sair em cada mês.</p>
+        <div class="vibe">automático · 12 meses à frente</div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3>Marca o que rolou</h3>
+        <p>No dia, marca como Pago, Cartão ou Agendado. Ou importa o extrato do banco, o FinFlow concilia sozinho.</p>
+        <div class="vibe">30 seg/dia · ou 5 min/semana com extrato</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════ FEATURES ═══ -->
+<section class="section features" id="features">
+  <div class="section-inner">
+    <div class="section-eyebrow">Recursos</div>
+    <h2>O que você consegue fazer no FinFlow.</h2>
+    <p class="section-lede">
+      Pensado pra quem leva finança pessoal a sério. Multimoeda, conciliação OFX, projetos de investimento, dívidas com SAC/Price, patrimônio vivo.
+    </p>
+
+    <div class="features-grid">
+
+      <div class="feat">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        </div>
+        <h3>Compromissos recorrentes</h3>
+        <p>Cadastra uma vez, gera 12 meses. Mensal, trimestral, anual ou customizado. Editar regenera os pagamentos futuros sem mexer no histórico.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-icon lime">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <h3>5 status de pagamento</h3>
+        <p>A Pagar, Pago, Transferido, A Transferir, Cancelado. Cada um com a sua cor, você lê a tabela sem ler.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h13l-4 4M21 18H8l4-4"/></svg>
+        </div>
+        <h3>Conciliação OFX automática</h3>
+        <p>Importa o extrato do banco e o FinFlow bate sozinho com seus pagamentos. Match automático, realocação cross-conta, alerta de diferença.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-icon lime">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/></svg>
+        </div>
+        <h3>4 moedas, câmbio do dia</h3>
+        <p>BRL, USD, EUR, GBP. Cada compromisso na sua moeda. KPIs e relatórios convertem na cotação do dia ou histórica.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s2-7 10-7 10 7 10 7-2 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <h3>Dívidas com simulador</h3>
+        <p>SAC, Price ou customizado. Histórico de pagamentos, projeção de quitação, "e se eu antecipar?". Exporta cronograma em PDF.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-icon lime">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 16l4-4 4 4 6-6"/></svg>
+        </div>
+        <h3>23 relatórios</h3>
+        <p>Fluxo, Categorias, Previsto×Real, Saúde Financeira, Patrimônio, Dívidas, Investimentos, Fiscal. Todos exportáveis em PDF.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        </div>
+        <h3>Caixinhas (sub-saldos)</h3>
+        <p>Dentro de cada conta, sub-saldos com meta e barra de progresso. Aportes mensais via compromisso. Resgate parcial ou total.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-icon lime">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-9-9 9 9 0 019 9z"/><path d="M3 12h6l3-9 3 18 3-9h3"/></svg>
+        </div>
+        <h3>Patrimônio vivo</h3>
+        <p>Ativos (contas + investimentos + bens) menos passivos (dívidas), calculado todo dia com câmbio do dia. Evolução histórica em chart.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <h3>Projetos de investimento</h3>
+        <p>"Comprar apartamento até 2028": define meta, prazo, taxa esperada. O FinFlow calcula o aporte mensal e gera o compromisso.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════ STATUS STRIPE ═══ -->
+<section class="status-stripe">
+  <div class="status-stripe-inner">
+    <div>
+      <h3>Cada pagamento, um status.<br>Cada status, uma cor.</h3>
+      <p>Você bate o olho na tabela e já sabe o que rolou no mês, sem precisar ler texto.</p>
+    </div>
+    <div class="status-list">
+      <span class="s-pago">● Pago</span>
+      <span class="s-trans">● Transferido</span>
+      <span class="s-transferir">● A Transferir</span>
+      <span class="s-cancel">● Cancelado</span>
+      <span class="s-pagar">● A Pagar</span>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═════════════════════════════════════════════════════════════ SHOWCASE ═══ -->
+<section class="section showcase">
+  <div class="section-inner">
+    <div class="section-eyebrow" style="color:var(--lime)">O app</div>
+    <h2>Denso de dados.<br><em>Calmo de usar.</em></h2>
+    <p class="section-lede">
+      Dashboard que mostra o dia + próximos pagamentos + tarefas + patrimônio. Tudo numa tela. Modo claro e escuro.
+    </p>
+
+    <div class="showcase-frame">
+      <div class="showcase-chrome">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <div class="url">finflow.app/dashboard</div>
+      </div>
+      <div class="showcase-app">
+        <aside class="showcase-sidebar">
+          <div class="brand">
+            <svg viewBox="0 0 100 100">
+              <line x1="14" y1="32" x2="86" y2="32" stroke="white" stroke-width="12" stroke-linecap="round"/>
+              <path d="M14 68 L38 68 L41 50 L59 50 L62 68 L86 68" stroke="var(--lime)" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            FinFlow
+          </div>
+          <div class="nav-item-sc active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+            Dashboard
+          </div>
+          <div class="nav-item-sc">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
+            Pagamentos
+          </div>
+          <div class="nav-item-sc">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 18V8l9-5 9 5v10"/></svg>
+            Contas
+          </div>
+          <div class="nav-item-sc">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            Compromissos
+          </div>
+          <div class="nav-item-sc">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h13l-4 4M21 18H8l4-4"/></svg>
+            Transações
+          </div>
+          <div class="nav-section-sc">Análise</div>
+          <div class="nav-item-sc">Relatórios</div>
+        </aside>
+
+        <main class="showcase-main">
+          <div class="showcase-topbar">
+            <div>
+              <h1>Bom dia, Arnaldo</h1>
+              <p>Quinta · 21 mai · maio/2026</p>
+            </div>
+            <a href="#" class="btn btn-primary" style="background:var(--indigo-500)">+ Novo compromisso</a>
+          </div>
+
+          <div class="sc-kpis">
+            <div class="sc-kpi">
+              <div class="lbl">Saldo total</div>
+              <div class="val">R$ 28.450,12</div>
+              <div class="trend up">↑ R$ 1.240 vs mês passado</div>
+            </div>
+            <div class="sc-kpi">
+              <div class="lbl">A pagar este mês</div>
+              <div class="val">R$ 7.850,00</div>
+              <div class="trend">12 compromissos</div>
+            </div>
+            <div class="sc-kpi accent">
+              <div class="lbl">Patrimônio</div>
+              <div class="val">R$ 142.300</div>
+              <div class="trend up">↑ 2,4% no mês</div>
+            </div>
+          </div>
+
+          <div class="showcase-grid">
+            <div class="sc-card">
+              <h3>Próximos pagamentos</h3>
+              <div class="sc-row">
+                <div class="av" style="background:#EC7000">I</div>
+                <div class="info"><strong>Aluguel</strong><span>vence 05/05</span></div>
+                <span class="badge bdg-pago">Pago</span>
+                <span class="val">R$ 2.500</span>
+              </div>
+              <div class="sc-row">
+                <div class="av" style="background:#8A05BE">N</div>
+                <div class="info"><strong>Luz</strong><span>vence 15/05</span></div>
+                <span class="badge bdg-pago">Pago</span>
+                <span class="val">R$ 380</span>
+              </div>
+              <div class="sc-row">
+                <div class="av" style="background:var(--indigo-500)">B</div>
+                <div class="info"><strong>Mercado da semana</strong><span>vence 18/05</span></div>
+                <span class="badge" style="background:var(--danger-bg);color:var(--danger)">Atrasado</span>
+                <span class="val">R$ 620</span>
+              </div>
+              <div class="sc-row">
+                <div class="av" style="background:#EC7000">I</div>
+                <div class="info"><strong>Internet</strong><span>vence 20/05</span></div>
+                <span class="badge" style="background:#FEF3C7;color:#92400E">A Pagar</span>
+                <span class="val">R$ 130</span>
+              </div>
+            </div>
+
+            <div class="sc-card">
+              <h3>Fluxo · 30 dias</h3>
+              <svg viewBox="0 0 240 120" style="width:100%">
+                <defs>
+                  <linearGradient id="flowFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#6D5EF5" stop-opacity="0.2"/>
+                    <stop offset="1" stop-color="#6D5EF5" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0 100 Q30 80 60 65 Q90 50 120 60 Q150 70 180 40 Q210 20 240 25"
+                      stroke="#6D5EF5" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M0 100 Q30 80 60 65 Q90 50 120 60 Q150 70 180 40 Q210 20 240 25 L240 120 L0 120 Z"
+                      fill="url(#flowFill)"/>
+                <circle cx="240" cy="25" r="4" fill="#C2F542" stroke="#0F172A" stroke-width="1.5"/>
+              </svg>
+              <div style="display:flex;justify-content:space-between;margin-top:6px;font-family:var(--font-mono);font-size:9px;color:var(--ink-500);letter-spacing:0.05em">
+                <span>21 ABR</span>
+                <span>21 MAI</span>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ MOEDAS ═══ -->
+<section class="section moedas">
+  <div class="section-inner">
+    <div class="section-eyebrow">Multimoeda nativo</div>
+    <h2>4 moedas, câmbio do dia.<br>Cada compromisso onde ele realmente nasce.</h2>
+    <p class="section-lede">
+      Salário em real, freela em dólar, assinatura em euro, viagem em libra. O FinFlow guarda cada um na sua moeda original e converte só quando você precisa ver o total.
+    </p>
+
+    <div class="moedas-grid">
+      <div class="moeda-card">
+        <div class="moeda-flag">BRL</div>
+        <div class="moeda-name">Real brasileiro</div>
+        <div class="moeda-rate">Moeda base padrão</div>
+      </div>
+      <div class="moeda-card">
+        <div class="moeda-flag">USD</div>
+        <div class="moeda-name">Dólar americano</div>
+        <div class="moeda-rate">1 USD = <strong>R$ 5,52</strong></div>
+      </div>
+      <div class="moeda-card">
+        <div class="moeda-flag">EUR</div>
+        <div class="moeda-name">Euro</div>
+        <div class="moeda-rate">1 EUR = <strong>R$ 5,98</strong></div>
+      </div>
+      <div class="moeda-card">
+        <div class="moeda-flag">GBP</div>
+        <div class="moeda-name">Libra esterlina</div>
+        <div class="moeda-rate">1 GBP = <strong>R$ 6,95</strong></div>
+      </div>
+    </div>
+    <p style="margin-top:24px;font-family:var(--font-mono);font-size:12px;color:var(--ink-500);letter-spacing:0.05em">Cotações via Frankfurter API · atualizadas a cada 5 minutos</p>
+  </div>
+</section>
+
+
+<!-- ═════════════════════════════════════════════════════════ FINAL CTA ═══ -->
+<section class="final-cta" id="preco">
+  <div class="final-cta-inner">
+    <h2>Antes de<br>dezembro<br><em>chegar.</em></h2>
+    <p>Começa em 15 minutos. Gratuito enquanto vocês estão entendendo se faz sentido. Sem cartão.</p>
+    <div class="final-cta-buttons">
+      <a href="#" class="btn btn-primary btn-lg">Começar grátis</a>
+      <a href="#" class="btn btn-ghost btn-lg">Falar com a gente</a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════ FOOTER ═══ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="mark">
+        <svg viewBox="0 0 100 100">
+          <line x1="14" y1="32" x2="86" y2="32" stroke="white" stroke-width="12" stroke-linecap="round"/>
+          <path d="M14 68 L38 68 L41 50 L59 50 L62 68 L86 68" stroke="var(--lime)" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        FinFlow
+      </div>
+      <p>Organize compromissos, não tickets de extrato. Gestão financeira pessoal multimoeda pra quem leva isso a sério.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Produto</h4>
+      <ul>
+        <li><a href="#">Como funciona</a></li>
+        <li><a href="#">Recursos</a></li>
+        <li><a href="#">Preço</a></li>
+        <li><a href="#">Novidades</a></li>
+        <li><a href="#">Roadmap</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Empresa</h4>
+      <ul>
+        <li><a href="#">Sobre</a></li>
+        <li><a href="#">Brand</a></li>
+        <li><a href="#">Imprensa</a></li>
+        <li><a href="#">Contato</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <ul>
+        <li><a href="#">Termos</a></li>
+        <li><a href="#">Privacidade</a></li>
+        <li><a href="#">LGPD</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>FINFLOW © 2026 · TODOS OS DIREITOS RESERVADOS</span>
+    <div class="right">
+      <span>v 1.0.5</span>
+      <span>FEITO NO BRASIL</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  const root = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+
+  // Initial theme: localStorage > system preference > light
+  const stored = localStorage.getItem('finflow-theme');
+  const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const initial = stored || (systemDark ? 'dark' : 'light');
+  root.setAttribute('data-theme', initial);
+
+  btn.addEventListener('click', () => {
+    const current = root.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('finflow-theme', next);
+  });
+})();
+</script>
+
+</body>
+</html>

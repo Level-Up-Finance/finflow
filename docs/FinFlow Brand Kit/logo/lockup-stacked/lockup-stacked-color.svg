@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 210" width="320" height="210">
+  <title>FinFlow stacked lockup — canonical Twin Track</title>
+  
+  <defs>
+    
+  </defs>
+  <line x1="115" y1="47.5" x2="205" y2="47.5" stroke="#6D5EF5" stroke-width="15" stroke-linecap="round"></line>
+  <path d="M115 92.5 L145 92.5 L152.5 70 L167.5 70 L175 92.5 L205 92.5" stroke="#C2F542" stroke-width="15" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+  <text x="160" y="180" text-anchor="middle" class="wm" font-size="68" fill="#0F172A">Fin<tspan fill="#6D5EF5">Flow</tspan></text>
+</svg>

@@ -1,0 +1,184 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2870
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 # FinFlow \'b7 Handoff para Claude Code\
+\
+> Como aplicar este design system no app existente sem reescrever nada que j\'e1 funciona.\
+> \'daltima atualiza\'e7\'e3o: 22/05/2026 \'b7 alinhado com v1.0.5 do app.\
+\
+---\
+\
+## Princ\'edpios (leia primeiro)\
+\
+1. **O design system aplica TOKENS em c\'f3digo existente, n\'e3o reescreve a UI.** Os mockups (`FinFlow App Screens.html`, `FinFlow Landing.html`, etc.) s\'e3o **refer\'eancia visual**, n\'e3o especifica\'e7\'e3o. A ordem das se\'e7\'f5es, hierarquia de componentes e arquitetura do c\'f3digo permanece como est\'e1.\
+\
+2. **Single source of truth: `src/css/variables.css` v2.0.** Toda decis\'e3o visual (cor, tipo, espa\'e7o, sombra) vive l\'e1. Se algo no app n\'e3o bate com a marca, \'e9 porque ele tem hex hardcoded ou usa um token antigo, n\'e3o porque a arquitetura est\'e1 errada.\
+\
+3. **Backwards compatibility j\'e1 est\'e1 inclu\'edda.** O variables.css v2.0 mant\'e9m aliases pros nomes antigos (`--color-primary`, `--color-secondary`, etc.) ent\'e3o c\'f3digo legado continua funcionando enquanto a migra\'e7\'e3o acontece.\
+\
+4. **N\'e3o tente recriar os mockups.** Eles foram desenhados em HTML/JSX standalone pra prototipar a apar\'eancia. O app de verdade tem state, routing, hooks, etc., que ele N\'c3O tem.\
+\
+---\
+\
+## Ordem de aplica\'e7\'e3o (sugerida)\
+\
+### Fase 1 \'97 Swap dos tokens (1 hora)\
+\
+1. Substituir `src/css/variables.css` antigo pelo novo (v2.0)\
+2. Carregar fontes novas no `<head>`:\
+```html\
+<link rel="preconnect" href="https://fonts.googleapis.com">\
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">\
+```\
+3. Adicionar `data-theme="light"` no `<html>` e implementar toggle de dark mode (ver `FinFlow Landing.html` linhas finais, JS de tema, 12 linhas)\
+4. **Sanity check**: rodar o app, ver se ele funciona. As cores devem mudar globalmente (Indigo+Salm\'e3o \uc0\u8594  Roxo+Lime) porque tudo que usa `var(--color-primary)` j\'e1 aponta pro novo roxo.\
+\
+### Fase 2 \'97 Substituir logo (30 min)\
+\
+1. Copiar pasta `logo/` para `src/assets/logo/`\
+2. Substituir refer\'eancias ao logo antigo:\
+   - **Sidebar**: usar `logo/lockup-horizontal/lockup-h-color.svg` (vers\'e3o branca pro fundo dark)\
+   - **Favicon**: usar `logo/favicon/favicon-auto-theme.svg` (alterna light/dark sozinho)\
+   - **App icon iOS/Android**: usar `logo/app-icon/app-icon-dark-bg.svg` como base, exportar PNG nos tamanhos necess\'e1rios\
+   - **Login splash**: usar `logo/lockup-stacked/lockup-stacked-color.svg`\
+\
+### Fase 3 \'97 Auditar hex hardcoded (2 a 4 horas)\
+\
+Procurar e substituir hex hardcoded por tokens:\
+\
+```bash\
+# Encontra arquivos com hex hardcoded\
+grep -r "#[0-9A-Fa-f]\\\{6\\\}" src/css/ --include="*.css"\
+```\
+\
+**Mapeamento essencial:**\
+| Hex antigo (v1) | Token novo |\
+|---|---|\
+| `#6D5EF5` | `var(--color-primary-500)` |\
+| `#FF8B6B` (salm\'e3o antigo) | `var(--color-accent-400)` se for acento, `var(--color-warning)` se for aten\'e7\'e3o |\
+| `#3B82F6` | era secondary, agora `var(--color-info)` |\
+| `#1F2937` | `var(--color-ink-900)` ou `var(--color-sidebar-bg)` |\
+| `#FAFAF7` | `var(--color-canvas)` |\
+| `#FFFFFF` | `var(--color-paper)` ou `var(--fixed-white)` (se for em fundo dark sempre) |\
+| Verdes (sucesso) | `var(--color-success)`, `var(--color-success-bg)`, `var(--color-success-text)` |\
+| Vermelhos (erro) | `var(--color-danger)`, `var(--color-danger-bg)`, `var(--color-danger-text)` |\
+\
+### Fase 4 \'97 Status de pagamento (1 hora)\
+\
+**Importante**: 3 status foram removidos: **Cart\'e3o**, **Parcial**, **Agendado**. Antes de aplicar os novos estilos, precisa:\
+\
+1. Verificar no banco se ainda existem pagamentos com status `cartao`, `parcial`, `agendado`\
+2. Migration sugerida:\
+   - `cartao` \uc0\u8594  `pago` (cart\'e3o de cr\'e9dito gera transa\'e7\'e3o, na pr\'e1tica \'e9 pago)\
+   - `parcial` \uc0\u8594  `pago` (com nota no hist\'f3rico)\
+   - `agendado` \uc0\u8594  `apagar` (volta pra default, usu\'e1rio marca de novo quando rolar)\
+3. Atualizar enum/constants no c\'f3digo\
+4. Aplicar os novos pares bg/text via `var(--color-status-\{nome\}-\{bg,text\})`\
+\
+Status oficiais agora: **pago, transferido, transferir, cancelado, apagar** (default).\
+\
+### Fase 5 \'97 Componentes base (4 a 8 horas)\
+\
+Por componente, garantir que:\
+\
+- **Bot\'f5es** \'97 usam `var(--color-primary-500)` no prim\'e1rio, `var(--color-accent-400)` em CTAs fortes, `var(--color-ink-900) / var(--color-paper)` em ghost. Border-radius `var(--radius-md)` (12px).\
+- **Inputs** \'97 bordas em `var(--color-border)`, focus ring `var(--focus-ring)`, padding `var(--space-3)`.\
+- **Cards** \'97 bg `var(--color-paper)`, border `var(--color-border)`, radius `var(--radius-md)`, sombra `var(--shadow-card)` (com a assinatura roxa sutil).\
+- **Sidebar** \'97 bg `var(--color-sidebar-bg)` (sempre dark nos dois modos), itens ativos em `var(--color-sidebar-bg-active)` (roxo).\
+- **Tabelas de valores** \'97 sempre `font-family: var(--font-mono)` com `font-variant-numeric: tabular-nums` na coluna de valores.\
+\
+### Fase 6 \'97 Page-by-page polish (incremental)\
+\
+Conforme tocar em cada p\'e1gina pra outra feature, alinhar visualmente com os mockups:\
+- Compromissos \uc0\u8594  ver `app-screens.jsx` \u8594  `ScreenCompromissos`\
+- Contas \uc0\u8594  `ScreenContas`\
+- Relat\'f3rios \uc0\u8594  `ScreenRelatorios` (abas Fluxo e Sa\'fade Financeira)\
+\
+**N\'e3o polir todas as 26 p\'e1ginas de uma vez.** Faz junto com features ou corre\'e7\'f5es normais.\
+\
+---\
+\
+## Tom de voz e copy\
+\
+Pra qualquer texto novo (toast, label, bot\'e3o, erro, microcopy), seguir `docs/BRAND.md` v1.2:\
+\
+- **Sem travess\'f5es** (\'97) em texto vis\'edvel\
+- **Vocabul\'e1rio can\'f4nico**: compromisso, pagamento, transa\'e7\'e3o, caixinha, etc. (ver \'a72.2 do BRAND.md)\
+- **"voc\'ea" / "voc\'eas"** em vez de "usu\'e1rio"\
+- **Frases curtas, voz ativa, verbo no in\'edcio de bot\'f5es**\
+- **Sem clich\'eas**: nada de "plataforma definitiva", "AI-powered", "ops, algo deu errado"\
+\
+Quando estiver em d\'favida sobre uma frase, consulte os exemplos lado a lado em `docs/BRAND.md` \'a76.\
+\
+---\
+\
+## Arquivos de refer\'eancia (ordem de prioridade)\
+\
+1. **`src/css/variables.css`** \uc0\u8592  source of truth dos tokens. Importar primeiro.\
+2. **`docs/VISUAL.md`** v2.0 \uc0\u8592  guia em markdown do sistema visual completo\
+3. **`docs/BRAND.md`** v1.2 \uc0\u8592  identidade verbal, voz, tom, vocabul\'e1rio\
+4. **`FinFlow Brand Guide.html`** \uc0\u8592  guia visual interativo (light + dark, export\'e1vel em PDF)\
+5. **`Tokens Inspector.html`** \uc0\u8592  visualizador de tokens ao vivo, \'fatil em design review\
+6. **`Logo Contact Sheet.html`** + **`logo/`** \uc0\u8592  assets de logo + instru\'e7\'f5es de uso\
+7. **`FinFlow App Screens.html`** \uc0\u8592  REFER\'caNCIA VISUAL apenas. N\'e3o recriar.\
+8. **`FinFlow Landing.html`** \uc0\u8592  landing page completa com a marca aplicada. Boa pra ver padr\'f5es em a\'e7\'e3o.\
+\
+---\
+\
+## O que N\'c3O fazer\
+\
+\uc0\u10060  **N\'e3o reescreva componentes que j\'e1 funcionam.** Aplique tokens em vez disso.\
+\
+\uc0\u10060  **N\'e3o copie HTML/JSX dos mockups direto.** Eles s\'e3o standalone, n\'e3o t\'eam hooks, state, routing, tradu\'e7\'f5es.\
+\
+\uc0\u10060  **N\'e3o invente cores novas.** Se uma cor n\'e3o existe em variables.css, ou tem um token equivalente, ou precisa ser proposta antes (e adicionada ao variables.css primeiro).\
+\
+\uc0\u10060  **N\'e3o pule a etapa de migra\'e7\'e3o de status** (Fase 4). Pode quebrar dados existentes.\
+\
+\uc0\u10060  **N\'e3o use hex hardcoded.** Sempre `var(--token)`. Se est\'e1 copiando c\'f3digo antigo, troca os hex no mesmo PR.\
+\
+---\
+\
+## Quando perguntar antes de mexer\
+\
+Se Claude Code se deparar com:\
+- Necessidade de criar um novo token (n\'e3o h\'e1 equivalente no variables.css)\
+- Comportamento de status que n\'e3o est\'e1 documentado\
+- Cor ou \'edcone que parece um caso novo de design\
+- Conflito entre o que o mockup mostra e o que o c\'f3digo atual faz\
+\
+\uc0\u8594  **Pare e pergunte ao usu\'e1rio antes de seguir.** N\'e3o decida sozinho.\
+\
+---\
+\
+## Checklist final de QA visual\
+\
+Depois de aplicar o design system, verificar:\
+\
+- [ ] Light mode funciona em todas as p\'e1ginas principais\
+- [ ] Dark mode funciona em todas as p\'e1ginas principais (toggle no header ou settings)\
+- [ ] Logo aparece corretamente no light e dark\
+- [ ] Sidebar fica dark nos dois modos\
+- [ ] Bot\'f5es prim\'e1rios usam roxo (#6D5EF5)\
+- [ ] CTAs de destaque (landing, splash) usam lime (#C2F542)\
+- [ ] Status pills usam as 5 cores corretas (verde, azul, rose, cinza, \'e2mbar)\
+- [ ] Valores monet\'e1rios usam Geist Mono + tabular-nums\
+- [ ] Headings usam Manrope\
+- [ ] Body usa Inter\
+- [ ] Sem hex hardcoded em CSS (s\'f3 em `:root[data-theme]` blocks)\
+- [ ] Focus ring vis\'edvel em todos os bot\'f5es/inputs\
+- [ ] Contraste WCAG AA em texto (cores sem\'e2nticas usam pares bg+text consistentes)\
+- [ ] `prefers-reduced-motion` desativa transi\'e7\'f5es (j\'e1 vem no variables.css v2.0)\
+- [ ] Favicon aparece correto (alterna autom\'e1tico light/dark)\
+\
+---\
+\
+## Hist\'f3rico\
+\
+- **22/05/2026 \'b7 v1.0** \'97 primeira vers\'e3o. Cobre Fase 1 (tokens), Fase 2 (logo), Fase 3 (audit), Fase 4 (status), Fase 5 (componentes), Fase 6 (page polish).\
+}

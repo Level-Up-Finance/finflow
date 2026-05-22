@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinFlow — Logo Contact Sheet</title>
+<link rel="icon" href="logo/favicon/favicon-auto-theme.svg?v=4" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --indigo-600: #6D5EF5;
+    --indigo-700: #4B3FD6;
+    --lime: #C2F542;
+    --ink-950: #08090C;
+    --ink-900: #0F172A;
+    --ink-700: #334155;
+    --ink-500: #64748B;
+    --ink-300: #CBD5E1;
+    --ink-200: #E2E8F0;
+    --ink-100: #F1F5F9;
+    --ink-50:  #F8FAFC;
+    --paper: #FFFFFF;
+    --canvas: #FAFAF7;
+    --font-display: 'Manrope', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'Geist Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-body);
+    background: var(--canvas);
+    color: var(--ink-900);
+    padding: 64px 48px 96px;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; }
+
+  /* Header */
+  header {
+    margin-bottom: 48px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--ink-200);
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 32px;
+  }
+  header h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 56px;
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+  }
+  header h1 em { color: var(--indigo-600); font-style: normal; }
+  header p {
+    font-size: 16px;
+    color: var(--ink-700);
+    margin-top: 8px;
+    max-width: 560px;
+  }
+  header .meta {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-500);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .download-btn {
+    margin-top: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--ink-900);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .download-btn:hover { background: var(--indigo-600); }
+
+  /* Sections */
+  section {
+    margin-top: 64px;
+  }
+  section .head {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  section h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: -0.015em;
+  }
+  section .count {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-500);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  section .lede {
+    color: var(--ink-700);
+    font-size: 15px;
+    max-width: 720px;
+    margin-bottom: 24px;
+  }
+
+  /* Grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .grid.icon-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+
+  /* Card */
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--ink-200);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(15,23,42,0.08);
+  }
+  .card .preview {
+    aspect-ratio: 16 / 9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow: hidden;
+  }
+  .card .preview.dark { background: var(--ink-900); }
+  .card .preview.roxo { background: var(--indigo-600); }
+  .card .preview.light { background: var(--canvas); }
+  .card .preview.paper { background: var(--paper); border-bottom: 1px dashed var(--ink-200); }
+  .card .preview.square { aspect-ratio: 1; }
+  .card .preview img { max-width: 80%; max-height: 80%; display: block; }
+
+  .card .meta-row {
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-top: 1px solid var(--ink-100);
+  }
+  .card .name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--ink-900);
+    letter-spacing: -0.005em;
+  }
+  .card .path {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-500);
+    letter-spacing: 0.02em;
+    word-break: break-all;
+  }
+  .card a.dl {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--indigo-700);
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .card a.dl:hover { color: var(--indigo-600); }
+
+  /* Specific previews */
+  .preview-applied {
+    aspect-ratio: 1;
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 40px;
+    color: white;
+    background: var(--ink-950);
+    position: relative;
+  }
+  .preview-applied.roxo { background: var(--indigo-600); }
+  .preview-applied.lime { background: var(--lime); color: var(--ink-900); }
+  .preview-applied .top { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 800; font-size: 22px; letter-spacing: -0.02em; }
+  .preview-applied .top svg { width: 28px; height: 28px; }
+  .preview-applied .copy { font-family: var(--font-display); font-weight: 800; font-size: 36px; line-height: 1.05; letter-spacing: -0.025em; }
+  .preview-applied .copy em { color: var(--lime); font-style: normal; }
+  .preview-applied.lime .copy em { color: var(--indigo-700); }
+  .preview-applied .tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.7; }
+
+  /* Footer note */
+  footer {
+    margin-top: 80px;
+    padding-top: 32px;
+    border-top: 1px solid var(--ink-200);
+    color: var(--ink-700);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  footer code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    background: var(--ink-100);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--ink-900);
+  }
+  footer strong { color: var(--ink-900); }
+
+  /* Favicon row */
+  .favicon-row {
+    display: flex;
+    gap: 32px;
+    align-items: end;
+    padding: 32px;
+    background: var(--paper);
+    border: 1px solid var(--ink-200);
+    border-radius: 14px;
+  }
+  .favicon-row .fv {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .favicon-row .fv img { display: block; }
+  .favicon-row .fv .size {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-500);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>FinFlow <em>—</em> Logo Pack</h1>
+      <p>20 arquivos SVG · 4 famílias · contact sheet. Clica em qualquer card pra abrir o SVG. Toda a pasta tá em <code style="font-family:var(--font-mono);background:var(--ink-100);padding:2px 6px;border-radius:4px;font-size:13px">logo/</code>.</p>
+    </div>
+    <div class="meta">
+      Twin Track · Roxo + Lime<br>
+      v 1.0 · Mai 2026<br>
+      <a class="download-btn" id="download-zip">↓ Baixar pasta logo/ (.zip)</a>
+    </div>
+  </header>
+
+  <!-- ==== SYMBOL ==== -->
+  <section>
+    <div class="head"><h2>1. Símbolo</h2><span class="count">4 variantes</span></div>
+    <p class="lede">A marca quando tem só o espaço pra ela — favicon, app icon, embossing. Use em qualquer fundo.</p>
+    <div class="grid">
+
+      <a class="card" href="logo/symbol/symbol-color.svg?v=4" target="_blank">
+        <div class="preview paper"><img src="logo/symbol/symbol-color.svg?v=4" alt=""></div>
+        <div class="meta-row">
+          <span class="name">Símbolo · color</span>
+          <span class="path">logo/symbol/symbol-color.svg</span>
+          <span class="dl">↗ Abrir SVG</span>
+        </div>
+      </a>
+
+      <a class="card" href="logo/symbol/symbol-mono-dark.svg?v=4" target="_blank">
+        <div class="preview light"><img src="logo/symbol/symbol-mono-dark.svg?v=4" alt=""></div>
+        <div class="meta-row">
+          <span class="name">Símbolo · mono dark</span>
+          <span class="path">logo/symbol/symbol-mono-dark.svg</span>
+          <span class="dl">↗ Abrir SVG</span>
+        </div>
+      </a>
+
+      <a class="card" href="logo/symbol/symbol-mono-light.svg?v=4" target="_blank">
+        <div class="preview dark"><img src="logo/symbol/symbol-mono-light.svg?v=4" alt=""></div>
+        <div class="meta-row">
+          <span class="name">Símbolo · mono light</span>
+          <span class="path">logo/symbol/symbol-mono-light.svg</span>
+          <span class="dl">↗ Abrir SVG</span>
+        </div>
+      </a>
+
+      <a class="card" href="logo/symbol/symbol-reverso.svg?v=4" target="_blank">
+        <div class="preview roxo"><img src="logo/symbol/symbol-reverso.svg?v=4" alt=""></div>
+        <div class="meta-row">
+          <span class="name">Símbolo · reverso</span>
+          <span class="path">logo/symbol/symbol-reverso.svg</span>
+          <span class="dl">↗ Abrir SVG</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ==== WORDMARK ==== -->
+  <section>
+    <div class="head"><h2>2. Wordmark</h2><span class="count">3 variantes</span></div>
+    <p class="lede">Só o tipo "FinFlow" em Manrope ExtraBold. Para texto corrido, headers, contextos onde o símbolo apareceria redundante.</p>
+    <div class="grid">
+
+      <a class="card" href="logo/wordmark/wordmark-color.svg?v=4" target="_blank">
+        <div class="preview paper"><img src="logo/wordmark/wordmark-color.svg?v=4" alt=""></div>
+        <div class="meta-row">
+          <span class="name">Wordmark · color</span>
+          <span class="path">logo/wordmark/wordmark-color.svg</span>
+          <span class="dl">↗ Abrir SVG</span>
+        </div>
+      </a>
+
+      <a class="card" href="logo/wordmark/wordmark-mono-dark.svg?v=4" target="_blank">
+        <div class="preview light"><img src="logo/wordmark/wordmark-mono-dark.svg?v=4" alt=""></div>
+        <div class="meta-row">
+          <span class="name">Wordmark · mono dark</span>
+          <span class="path">logo/wordmark/wordmark-mono-dark.svg</span>
+          <span class="dl">↗ Abrir SVG</span>
+        </div>
+      </a>
+
+      <a class="card" href="logo/wordmark/wordmark-mono-light.svg?v=4" target="_blank">
+        <div class="preview dark"><img src="logo/wordmark/wordmark-mono-light.svg?v=4" alt=""></div>
+        <div class="meta-row">
+          <span class="name">Wordmark · mono light</span>
+          <span class="path">logo/wordmark/wordmark-mono-light.svg</span>
+          <span class="dl">↗ Abrir SVG</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ==== LOCKUP HORIZONTAL ==== -->
+  <section>
+    <div class="head"><h2>3. Lockup horizontal</h2><span class="count">4 variantes · primário</span></div>
+    <p class="lede">Símbolo + wordmark lado a lado. <strong>É o lockup padrão.</strong> Use sempre que possível.</p>
+    <div class="grid">
+
+      <a class="card" href="logo/lockup-horizontal/lockup-h-color.svg?v=4" target="_blank">
+        <div class="preview paper"><img src="logo/lockup-horizontal/lockup-h-color.svg?v=4" alt=""></div>
+        <div class="meta-row">
+          <span class="name">Lockup H · color</span>
+          <span class="path">logo/lockup-horizontal/lockup-h-color.svg</span>
+          <span class="dl">↗ Abrir SVG</span>
+        </div>
+      </a>
+
+      <a class="card" href="logo/lockup-horizontal/lockup-h-mono-dark.svg?v=4" target="_blank">
+        <div class="preview light"><img src="logo/lockup-horizontal/lockup-h-mono-dark.svg?v=4" alt=""></div>
+        <div class="meta-row">
+          <span class="name">Lockup H · mono dark</span>
+          <span class="path">logo/lockup-horizontal/lockup-h-mono-dark.svg</span>
+          <span class="dl">↗ Abrir SVG</span>
+        </div>
+      </a>
+
+      <a class="card" href="logo/lockup-horizontal/lockup-h-mono-light.svg?v=4" target="_blank">
+        <div class="preview dark"><img src="logo/lockup-horizontal/lockup-h-mono-light.svg?v=4" alt=""></div>
+        <div class="meta-row">
+          <span class="name">Lockup H · mono light</span>
+          <span class="path">logo/lockup-horizontal/lockup-h-mono-light.svg</span>
+          <span class="dl">↗ Abrir SVG</span>
+        </div>
+      </a>
+
+      <a class="card" href="logo/lockup-horizontal/lockup-h-reverso.svg?v=4" target="_blank">
+        <div class="preview roxo"><img src="logo/lockup-horizontal/lockup-h-reverso.svg?v=4" alt=""></div>
+        <div class="meta-row">
+          <span class="name">Lockup H · reverso</span>
+          <span class="path">logo/lockup-horizontal/lockup-h-reverso.svg</span>
+          <span class="dl">↗ Abrir SVG</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ==== LOCKUP STACKED ==== -->
+  <section>
+    <div class="head"><h2>4. Lockup empilhado</h2><span class="count">3 variantes · secundário</span></div>
+    <p class="lede">Símbolo em cima, wordmark embaixo. Para espaços verticais (post quadrado de social, avatar grande, embalagem estreita).</p>
+    <div class="grid icon-grid">
+
+      <a class="card" href="logo/lockup-stacked/lockup-stacked-color.svg?v=4" target="_blank">
+        <div class="preview paper square"><img src="logo/lockup-stacked/lockup-stacked-color.svg?v=4" alt=""></div>
+        <div class="meta-row">
+          <span class="name">Stacked · color</span>
+          <span class="path">logo/lockup-stacked/lockup-stacked-color.svg</span>
+          <span class="dl">↗ Abrir SVG</span>
+        </div>
+      </a>
+
+      <a class="card" href="logo/lockup-stacked/lockup-stacked-mono-dark.svg?v=4" target="_blank">
+        <div class="preview light square"><img src="logo/lockup-stacked/lockup-stacked-mono-dark.svg?v=4" alt=""></div>
+        <div class="meta-row">
+          <span class="name">Stacked · mono dark</span>
+          <span class="path">logo/lockup-stacked/lockup-stacked-mono-dark.svg</span>
+          <span class="dl">↗ Abrir SVG</span>
+        </div>
+      </a>
+
+      <a class="card" href="logo/lockup-stacked/lockup-stacked-mono-light.svg?v=4" target="_blank">
+        <div class="preview dark square"><img src="logo/lockup-stacked/lockup-stacked-mono-light.svg?v=4" alt=""></div>
+        <div class="meta-row">
+          <span class="name">Stacked · mono light</span>
+          <span class="path">logo/lockup-stacked/lockup-stacked-mono-light.svg</span>
+          <span class="dl">↗ Abrir SVG</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ==== APP ICON ==== -->
+  <section>
+    <div class="head"><h2>5. App icon</h2><span class="count">3 variantes · iOS/Android</span></div>
+    <p class="lede">Quadrado com cantos arredondados (radius 225/1024 ≈ 22%, padrão iOS). Vetor 1024×1024 — converte pra qualquer raster necessário.</p>
+    <div class="grid icon-grid">
+
+      <a class="card" href="logo/app-icon/app-icon-dark-bg.svg?v=4" target="_blank">
+        <div class="preview light square"><img src="logo/app-icon/app-icon-dark-bg.svg?v=4" alt="" style="border-radius: 22%; box-shadow: 0 4px 16px rgba(0,0,0,0.15);"></div>
+        <div class="meta-row">
+          <span class="name">App icon · dark bg (padrão)</span>
+          <span class="path">logo/app-icon/app-icon-dark-bg.svg</span>
+          <span class="dl">↗ Abrir SVG</span>
+        </div>
+      </a>
+
+      <a class="card" href="logo/app-icon/app-icon-roxo-bg.svg?v=4" target="_blank">
+        <div class="preview light square"><img src="logo/app-icon/app-icon-roxo-bg.svg?v=4" alt="" style="border-radius: 22%; box-shadow: 0 4px 16px rgba(0,0,0,0.15);"></div>
+        <div class="meta-row">
+          <span class="name">App icon · roxo bg</span>
+          <span class="path">logo/app-icon/app-icon-roxo-bg.svg</span>
+          <span class="dl">↗ Abrir SVG</span>
+        </div>
+      </a>
+
+      <a class="card" href="logo/app-icon/app-icon-light-bg.svg?v=4" target="_blank">
+        <div class="preview light square"><img src="logo/app-icon/app-icon-light-bg.svg?v=4" alt="" style="border-radius: 22%; box-shadow: 0 4px 16px rgba(0,0,0,0.15);"></div>
+        <div class="meta-row">
+          <span class="name">App icon · light bg</span>
+          <span class="path">logo/app-icon/app-icon-light-bg.svg</span>
+          <span class="dl">↗ Abrir SVG</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ==== FAVICON ==== -->
+  <section>
+    <div class="head"><h2>6. Favicon</h2><span class="count">2 variantes</span></div>
+    <p class="lede">SVG vetorial — escala sozinho. A variante <code style="font-family:var(--font-mono);background:var(--ink-100);padding:1px 4px;border-radius:3px;font-size:12px">favicon-auto-theme.svg</code> alterna cor automaticamente entre light/dark mode do sistema.</p>
+    <div class="favicon-row">
+      <div class="fv">
+        <img src="logo/favicon/favicon.svg?v=4" width="16" height="16" alt="">
+        <span class="size">16</span>
+      </div>
+      <div class="fv">
+        <img src="logo/favicon/favicon.svg?v=4" width="24" height="24" alt="">
+        <span class="size">24</span>
+      </div>
+      <div class="fv">
+        <img src="logo/favicon/favicon.svg?v=4" width="32" height="32" alt="">
+        <span class="size">32</span>
+      </div>
+      <div class="fv">
+        <img src="logo/favicon/favicon.svg?v=4" width="48" height="48" alt="">
+        <span class="size">48</span>
+      </div>
+      <div class="fv">
+        <img src="logo/favicon/favicon.svg?v=4" width="64" height="64" alt="">
+        <span class="size">64</span>
+      </div>
+      <div class="fv" style="margin-left: 32px; padding-left: 32px; border-left: 1px solid var(--ink-200);">
+        <img src="logo/favicon/favicon-auto-theme.svg?v=4" width="64" height="64" alt="">
+        <span class="size">auto-theme</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==== IN-CONTEXT PREVIEW ==== -->
+  <section>
+    <div class="head"><h2>7. Marca aplicada — preview rápido</h2><span class="count">contexto real</span></div>
+    <p class="lede">A marca em fundo escuro, roxo e lime. Pra você ver como ela se comporta antes de ir pra produção.</p>
+    <div class="grid">
+
+      <div class="preview-applied">
+        <div class="top">
+          <svg viewBox="0 0 100 100"><line x1="14" y1="32" x2="86" y2="32" stroke="white" stroke-width="12" stroke-linecap="round"/><path d="M14 68 L38 68 L41 50 L59 50 L62 68 L86 68" stroke="#C2F542" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          FinFlow
+        </div>
+        <div class="copy">Organize<br>compromissos,<br><em>não tickets.</em></div>
+        <div class="tag">Fundo ink-950</div>
+      </div>
+
+      <div class="preview-applied roxo">
+        <div class="top">
+          <svg viewBox="0 0 100 100"><line x1="14" y1="32" x2="86" y2="32" stroke="white" stroke-width="12" stroke-linecap="round"/><path d="M14 68 L38 68 L41 50 L59 50 L62 68 L86 68" stroke="#C2F542" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          FinFlow
+        </div>
+        <div class="copy">Vocês sabem<br>quanto vai sobrar<br><em>em outubro.</em></div>
+        <div class="tag">Fundo roxo #6D5EF5</div>
+      </div>
+
+      <div class="preview-applied lime">
+        <div class="top">
+          <svg viewBox="0 0 100 100"><line x1="14" y1="32" x2="86" y2="32" stroke="#0F172A" stroke-width="12" stroke-linecap="round"/><path d="M14 68 L38 68 L41 50 L59 50 L62 68 L86 68" stroke="#0F172A" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          FinFlow
+        </div>
+        <div class="copy">Antes de<br>outubro<br><em>chegar.</em></div>
+        <div class="tag">Fundo lime #C2F542</div>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>
+    <p><strong>Limitações conhecidas.</strong> Os SVGs do wordmark referenciam <code>Manrope</code> via <code>@import</code> do Google Fonts. Funciona em browsers; em Figma/Illustrator/PDF é preciso <strong>outline o texto antes</strong> (Type → Create Outlines / <code>⌘⇧O</code>). Ver <code>logo/README.md</code> pra detalhes completos, mapeamento de uso, e instruções de export PNG/ICO.</p>
+  </footer>
+
+</div>
+
+<script>
+  document.getElementById('download-zip').addEventListener('click', (e) => {
+    e.preventDefault();
+    alert('Use o card de download que está aberto no chat para baixar o zip da pasta logo/. Se ele não estiver disponível, peça outro ao designer.');
+  });
+</script>
+
+</body>
+</html>

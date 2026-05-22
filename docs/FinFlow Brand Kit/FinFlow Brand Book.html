@@ -1,0 +1,1794 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinFlow — Brand Book (Roxo Tech + Lime)</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="brand-book-styles.css">
+
+<style>
+  deck-stage:not(:defined){visibility:hidden}
+  body { background: #000; }
+
+  /* ============================================================
+     ROXO TECH + LIME OVERRIDES
+     The Tweaks script swaps --indigo-600 and --salmon-400 globally.
+     But lime (#C2F542) is too light to use as text on white
+     backgrounds. Below we override the specific selectors where the
+     secondary color is used as foreground text on a light surface,
+     and re-route those uses to the primary (roxo) or ink.
+     ============================================================ */
+
+  /* Cover "Flow" wordmark on white — use roxo */
+  .cover .wordmark-big .flow { color: var(--indigo-600); }
+
+  /* Type slide "Mn" accent on white — use roxo */
+  .type-feature .left h2 .accent { color: var(--indigo-600); }
+
+  /* Closing "preenche." on white — use roxo */
+  .closing .close-title em { color: var(--indigo-600); }
+
+  /* Lime as full background — inherit dark text */
+  .salmon-bg, .ig-post-2, .var-card.salmon { color: var(--ink-950); }
+
+  /* Hero gradient: ink for headline contrast on lime end */
+  .li-banner h3 span,
+  .billboard .copy em,
+  .manifesto .quote em {
+    /* These sit on dark backgrounds — lime is OK here */
+    color: var(--salmon-400);
+  }
+
+  /* On the orange-ish ig-post-2 (now lime), text was ink-900 — keep */
+
+  /* Update gradient hero to play nicely with lime end:
+     in the JS, --grad-hero is recomputed. But for elements that
+     use --grad-hero directly with hard-coded text colors, ensure
+     the white text still reads. */
+  .splash-screen .ink-on-grad { color: var(--ink-950); }
+</style>
+
+<!-- React for the Tweaks panel only -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<deck-stage width="1920" height="1080">
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 01 — Cover                                                       -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="01 Cover" class="cover">
+    <div class="top-bar">
+      <span>FinFlow · Brand Book</span>
+      <span>v 1.0 · Mai 2026</span>
+    </div>
+
+    <div class="corner-mark">
+      <svg viewBox="0 0 100 100" data-symbol-slot>
+        <g data-symbol="A">
+          <line x1="14" y1="38" x2="78" y2="38" stroke="var(--indigo-600)" stroke-width="10" stroke-linecap="round"/>
+          <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62"
+                stroke="var(--salmon-400)" stroke-width="10" fill="none"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+        <g data-symbol="B" style="display:none">
+          <rect x="20" y="14" width="14" height="72" rx="3" fill="var(--indigo-600)"/>
+          <rect x="20" y="14" width="60" height="14" rx="3" fill="var(--indigo-600)"/>
+          <rect x="30" y="44" width="42" height="14" rx="3" fill="var(--salmon-400)"/>
+        </g>
+        <g data-symbol="C" style="display:none">
+          <path d="M14 50 Q50 14, 86 50" stroke="var(--indigo-600)" stroke-width="10" fill="none" stroke-linecap="round"/>
+          <path d="M14 50 Q50 86, 86 50" stroke="var(--salmon-400)" stroke-width="10" fill="none" stroke-linecap="round"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="center">
+      <h1 class="wordmark-big" data-wordmark>
+        <span class="ink">Fin</span><span class="flow">Flow</span>
+      </h1>
+      <p class="tagline">
+        Organize compromissos, não tickets de extrato.
+      </p>
+    </div>
+
+    <div class="bottom-bar">
+      <span>Brand Book completo · Identidade visual e verbal</span>
+      <span>01 / 22</span>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 02 — Manifesto                                                   -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="02 Manifesto" class="manifesto">
+    <div class="quote">
+      Você sabe quanto<br>
+      vai sobrar em outubro.<br>
+      <em>Antes de outubro chegar.</em>
+    </div>
+    <div class="attribution">Manifesto · A filosofia "comprometido vs. executado"</div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 03 — Sumário                                                     -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="03 Sumário" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <h1>Sumário</h1>
+        <span class="meta">22 slides · 6 seções</span>
+      </div>
+
+      <div class="toc-grid">
+        <div class="toc-item">
+          <span class="num">01</span><span class="name">Capa</span><span class="pages">p. 01</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">02</span><span class="name">Manifesto</span><span class="pages">p. 02</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">04</span><span class="name">Logo · três conceitos</span><span class="pages">p. 04</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">05</span><span class="name">Logo escolhido + construção</span><span class="pages">p. 05</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">06</span><span class="name">Variações & lockups</span><span class="pages">p. 06</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">07</span><span class="name">O que não fazer com a marca</span><span class="pages">p. 07</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">08</span><span class="name">Paleta — Indigo + Salmão</span><span class="pages">p. 08</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">09</span><span class="name">Neutros & cores semânticas</span><span class="pages">p. 09</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">10</span><span class="name">Status de pagamento</span><span class="pages">p. 10</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">11</span><span class="name">Tipografia — Manrope + Inter</span><span class="pages">p. 11</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">12</span><span class="name">Escala & números tabulares</span><span class="pages">p. 12</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">13</span><span class="name">Iconografia</span><span class="pages">p. 13</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">14</span><span class="name">Pattern gráfico</span><span class="pages">p. 14</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">15</span><span class="name">Sistema de ilustração</span><span class="pages">p. 15</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">16</span><span class="name">App icon · favicon · splash</span><span class="pages">p. 16</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">17</span><span class="name">Social media</span><span class="pages">p. 17</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">18</span><span class="name">Email & papelaria</span><span class="pages">p. 18</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">19</span><span class="name">Outdoor</span><span class="pages">p. 19</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">20</span><span class="name">Tela do app — Dashboard</span><span class="pages">p. 20</span>
+        </div>
+        <div class="toc-item">
+          <span class="num">21</span><span class="name">Tela do app — Pagamentos</span><span class="pages">p. 21</span>
+        </div>
+      </div>
+
+      <div class="slide-num">03 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 04 — Logo: três conceitos                                        -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="04 Logo · 3 conceitos" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <div>
+          <span class="eyebrow">Logo · exploração</span>
+          <h1>Três conceitos, uma ideia</h1>
+        </div>
+        <span class="meta">Compromisso vs. executado</span>
+      </div>
+
+      <div class="concept-row">
+
+        <!-- A: Twin Track (CHOSEN) -->
+        <div class="concept-card chosen">
+          <span class="badge-chosen">Escolhido</span>
+          <div class="preview">
+            <svg width="180" height="180" viewBox="0 0 100 100">
+              <line x1="14" y1="38" x2="78" y2="38" stroke="var(--indigo-600)" stroke-width="10" stroke-linecap="round"/>
+              <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62"
+                    stroke="var(--salmon-400)" stroke-width="10" fill="none"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="sub">Conceito A</span>
+          <h3>Twin Track</h3>
+          <p>Duas trilhas paralelas — a de cima é o plano, a de baixo é o real, com uma variação no meio. A própria filosofia do app desenhada.</p>
+          <div class="props">
+            <span>Geométrico</span>
+            <span>Legível em 16px</span>
+            <span>Narrativo</span>
+          </div>
+        </div>
+
+        <!-- B: Step F -->
+        <div class="concept-card">
+          <div class="preview">
+            <svg width="180" height="180" viewBox="0 0 100 100">
+              <rect x="20" y="14" width="14" height="72" rx="3" fill="var(--indigo-600)"/>
+              <rect x="20" y="14" width="60" height="14" rx="3" fill="var(--indigo-600)"/>
+              <rect x="30" y="44" width="42" height="14" rx="3" fill="var(--salmon-400)"/>
+            </svg>
+          </div>
+          <span class="sub">Conceito B</span>
+          <h3>Step F</h3>
+          <p>Monograma "F" geométrico onde a barra do meio é deslocada — sugere o desvio entre plano e execução. Mais marca-mãe.</p>
+          <div class="props">
+            <span>Monograma</span>
+            <span>Forte como ícone</span>
+            <span>Reconhecível</span>
+          </div>
+        </div>
+
+        <!-- C: Bridge -->
+        <div class="concept-card">
+          <div class="preview">
+            <svg width="180" height="180" viewBox="0 0 100 100">
+              <path d="M14 50 Q50 14, 86 50" stroke="var(--indigo-600)" stroke-width="10" fill="none" stroke-linecap="round"/>
+              <path d="M14 50 Q50 86, 86 50" stroke="var(--salmon-400)" stroke-width="10" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="sub">Conceito C</span>
+          <h3>Bridge</h3>
+          <p>Dois arcos opostos — convergem nas pontas, divergem no meio. O plano (acima) e o real (abaixo) saem do mesmo lugar e chegam ao mesmo lugar.</p>
+          <div class="props">
+            <span>Orgânico</span>
+            <span>Simétrico</span>
+            <span>Calmo</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="slide-num">04 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 05 — Logo: construção                                            -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="05 Construção" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <div>
+          <span class="eyebrow">Logo · construção</span>
+          <h1>Twin Track</h1>
+        </div>
+        <span class="meta">Grid 8 × 8 · clear space = x</span>
+      </div>
+
+      <div class="construct-layout">
+        <div class="construct-left">
+          <div class="construct-grid"></div>
+          <svg width="520" height="520" viewBox="0 0 100 100" style="position:relative;z-index:2">
+            <line x1="14" y1="38" x2="78" y2="38" stroke="var(--indigo-600)" stroke-width="10" stroke-linecap="round"/>
+            <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62"
+                  stroke="var(--salmon-400)" stroke-width="10" fill="none"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- construction annotations -->
+            <rect x="0" y="0" width="100" height="100" fill="none" stroke="var(--indigo-300)" stroke-width="0.3" stroke-dasharray="2 2"/>
+            <circle cx="14" cy="38" r="1" fill="var(--indigo-600)"/>
+            <circle cx="78" cy="38" r="1" fill="var(--indigo-600)"/>
+            <circle cx="50" cy="50" r="1" fill="var(--salmon-400)"/>
+          </svg>
+        </div>
+
+        <div class="construct-right">
+          <div class="construct-block">
+            <h4>Construção</h4>
+            <p>Duas linhas horizontais de espessura 10x, em grid 8×8. A linha inferior (execução) tem um pico de 12x no centro, deslocado simetricamente. Cantos arredondados — terminais e junções com raio cheio (linecap/linejoin round).</p>
+          </div>
+
+          <div class="construct-block">
+            <h4>Clear space</h4>
+            <p>Mínimo de <strong>1x</strong> de espaço livre em todos os lados do símbolo (x = espessura da linha). Em lockup com wordmark, 1.5x entre símbolo e tipo.</p>
+          </div>
+
+          <div class="construct-block">
+            <h4>Tamanho mínimo</h4>
+            <p>Símbolo isolado: <strong>16 × 16 px</strong> (favicon) digital, 8 mm impresso. Wordmark: <strong>72 px</strong> de altura mínima na tela, 24 mm na impressão. Abaixo disso, usar só símbolo.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-num">05 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 06 — Variações                                                   -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="06 Variações" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <div>
+          <span class="eyebrow">Logo · variações</span>
+          <h1>Família de marca</h1>
+        </div>
+        <span class="meta">6 variações canônicas</span>
+      </div>
+
+      <div class="var-grid">
+
+        <!-- Lockup horizontal -->
+        <div class="var-card">
+          <div class="preview">
+            <div style="display:flex;align-items:center;gap:24px">
+              <svg width="88" height="88" viewBox="0 0 100 100">
+                <line x1="14" y1="38" x2="78" y2="38" stroke="var(--indigo-600)" stroke-width="10" stroke-linecap="round"/>
+                <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62"
+                      stroke="var(--salmon-400)" stroke-width="10" fill="none"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span style="font-family:var(--font-display);font-weight:800;font-size:64px;letter-spacing:-0.03em;color:var(--ink-900)">FinFlow</span>
+            </div>
+          </div>
+          <div class="label">Lockup horizontal · primário</div>
+        </div>
+
+        <!-- Lockup empilhado -->
+        <div class="var-card">
+          <div class="preview">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:16px">
+              <svg width="112" height="112" viewBox="0 0 100 100">
+                <line x1="14" y1="38" x2="78" y2="38" stroke="var(--indigo-600)" stroke-width="10" stroke-linecap="round"/>
+                <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62"
+                      stroke="var(--salmon-400)" stroke-width="10" fill="none"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span style="font-family:var(--font-display);font-weight:800;font-size:44px;letter-spacing:-0.03em;color:var(--ink-900)">FinFlow</span>
+            </div>
+          </div>
+          <div class="label">Empilhado · secundário</div>
+        </div>
+
+        <!-- Wordmark only -->
+        <div class="var-card">
+          <div class="preview">
+            <span style="font-family:var(--font-display);font-weight:800;font-size:96px;letter-spacing:-0.035em;color:var(--ink-900)">FinFlow</span>
+          </div>
+          <div class="label">Wordmark isolado</div>
+        </div>
+
+        <!-- Symbol only -->
+        <div class="var-card dark">
+          <div class="preview">
+            <svg width="180" height="180" viewBox="0 0 100 100">
+              <line x1="14" y1="38" x2="78" y2="38" stroke="var(--indigo-400)" stroke-width="10" stroke-linecap="round"/>
+              <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62"
+                    stroke="var(--salmon-400)" stroke-width="10" fill="none"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="label">Símbolo · fundo escuro</div>
+        </div>
+
+        <!-- Mono preto -->
+        <div class="var-card">
+          <div class="preview">
+            <div style="display:flex;align-items:center;gap:24px">
+              <svg width="88" height="88" viewBox="0 0 100 100">
+                <line x1="14" y1="38" x2="78" y2="38" stroke="var(--ink-900)" stroke-width="10" stroke-linecap="round"/>
+                <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62"
+                      stroke="var(--ink-900)" stroke-width="10" fill="none"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span style="font-family:var(--font-display);font-weight:800;font-size:64px;letter-spacing:-0.03em;color:var(--ink-900)">FinFlow</span>
+            </div>
+          </div>
+          <div class="label">Mono · preto</div>
+        </div>
+
+        <!-- Mono salmão sobre indigo -->
+        <div class="var-card" style="background:var(--indigo-600)">
+          <div class="preview">
+            <div style="display:flex;align-items:center;gap:24px">
+              <svg width="88" height="88" viewBox="0 0 100 100">
+                <line x1="14" y1="38" x2="78" y2="38" stroke="white" stroke-width="10" stroke-linecap="round"/>
+                <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62"
+                      stroke="var(--salmon-300)" stroke-width="10" fill="none"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span style="font-family:var(--font-display);font-weight:800;font-size:64px;letter-spacing:-0.03em;color:white">FinFlow</span>
+            </div>
+          </div>
+          <div class="label" style="color:rgba(255,255,255,0.7)">Reverso · sobre indigo</div>
+        </div>
+
+      </div>
+
+      <div class="slide-num">06 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 07 — Don'ts                                                       -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="07 Don'ts" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <div>
+          <span class="eyebrow">Logo · usos proibidos</span>
+          <h1>O que não fazer com a marca</h1>
+        </div>
+        <span class="meta">6 violações comuns</span>
+      </div>
+
+      <div class="donts-grid" style="grid-template-rows: 1fr 1fr">
+
+        <div class="dont-card">
+          <span class="x-mark">×</span>
+          <div class="preview">
+            <svg width="120" height="120" viewBox="0 0 100 100" style="transform:rotate(20deg)">
+              <line x1="14" y1="38" x2="78" y2="38" stroke="var(--indigo-600)" stroke-width="10" stroke-linecap="round"/>
+              <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62"
+                    stroke="var(--salmon-400)" stroke-width="10" fill="none"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <p><strong>Não rotacione.</strong> A horizontalidade é parte do significado — sugere fluxo no tempo.</p>
+        </div>
+
+        <div class="dont-card">
+          <span class="x-mark">×</span>
+          <div class="preview">
+            <svg width="160" height="80" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <line x1="14" y1="38" x2="78" y2="38" stroke="var(--indigo-600)" stroke-width="10" stroke-linecap="round"/>
+              <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62"
+                    stroke="var(--salmon-400)" stroke-width="10" fill="none"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <p><strong>Não estique.</strong> Mantenha as proporções originais sempre.</p>
+        </div>
+
+        <div class="dont-card">
+          <span class="x-mark">×</span>
+          <div class="preview">
+            <svg width="120" height="120" viewBox="0 0 100 100">
+              <line x1="14" y1="38" x2="78" y2="38" stroke="#10B981" stroke-width="10" stroke-linecap="round"/>
+              <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62"
+                    stroke="#F59E0B" stroke-width="10" fill="none"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <p><strong>Não troque as cores.</strong> Roxo + Lime (ou as variações mono aprovadas).</p>
+        </div>
+
+        <div class="dont-card">
+          <span class="x-mark">×</span>
+          <div class="preview" style="background:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22><circle cx=%2220%22 cy=%2220%22 r=%2210%22 fill=%22%23ddd%22/></svg>')">
+            <div style="background:white;padding:8px 16px;border-radius:8px;display:flex;align-items:center;gap:12px">
+              <svg width="56" height="56" viewBox="0 0 100 100">
+                <line x1="14" y1="38" x2="78" y2="38" stroke="var(--indigo-600)" stroke-width="10" stroke-linecap="round"/>
+                <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62"
+                      stroke="var(--salmon-400)" stroke-width="10" fill="none"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span style="font-family:var(--font-display);font-weight:800;font-size:28px;color:var(--ink-900)">FinFlow</span>
+            </div>
+          </div>
+          <p><strong>Não coloque caixinha branca.</strong> Use a versão reversa em vez de "isolar" sobre fundo.</p>
+        </div>
+
+        <div class="dont-card">
+          <span class="x-mark">×</span>
+          <div class="preview">
+            <svg width="120" height="120" viewBox="0 0 100 100">
+              <defs>
+                <linearGradient id="bad1" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#FF00FF"/>
+                  <stop offset="1" stop-color="#00FFFF"/>
+                </linearGradient>
+              </defs>
+              <line x1="14" y1="38" x2="78" y2="38" stroke="url(#bad1)" stroke-width="10" stroke-linecap="round"/>
+              <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62"
+                    stroke="url(#bad1)" stroke-width="10" fill="none"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <p><strong>Sem gradientes inventados.</strong> Use só o gradiente hero oficial (Indigo → Salmão).</p>
+        </div>
+
+        <div class="dont-card">
+          <span class="x-mark">×</span>
+          <div class="preview">
+            <div style="display:flex;align-items:center;gap:8px">
+              <svg width="48" height="48" viewBox="0 0 100 100">
+                <line x1="14" y1="38" x2="78" y2="38" stroke="var(--indigo-600)" stroke-width="10" stroke-linecap="round"/>
+                <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62"
+                      stroke="var(--salmon-400)" stroke-width="10" fill="none"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span style="font-family:'Comic Sans MS', cursive;font-weight:700;font-size:36px;color:var(--ink-900)">FinFlow</span>
+            </div>
+          </div>
+          <p><strong>Não troque a fonte do wordmark.</strong> É sempre Manrope ExtraBold com kerning customizado.</p>
+        </div>
+
+      </div>
+
+      <div class="slide-num">07 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 08 — Paleta principal                                            -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="08 Paleta" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <div>
+          <span class="eyebrow">Cores · paleta principal</span>
+          <h1>Roxo Tech + Lime</h1>
+        </div>
+        <span class="meta">Statement Pop · Mix A + D</span>
+      </div>
+
+      <div class="palette-main">
+        <div class="palette-hero indigo">
+          <div>
+            <div class="role">Primária — ação · tech · confiança</div>
+            <h2>Roxo<br>500</h2>
+          </div>
+          <div>
+            <div class="values">
+              <span>HEX  #6D5EF5</span>
+              <span>RGB  109 94 245</span>
+              <span>HSL  246° 89% 67%</span>
+              <span>OKLCH 0.62 0.22 285</span>
+            </div>
+            <div class="ramp">
+              <div style="background:#F1EFFE;color:#2A2384">50</div>
+              <div style="background:#E5E1FD;color:#2A2384">100</div>
+              <div style="background:#D2CCFB;color:#2A2384">200</div>
+              <div style="background:#B5ACF8">300</div>
+              <div style="background:#8B7FF7">400</div>
+              <div style="background:#6D5EF5;color:white">500</div>
+              <div style="background:#5B4FE0;color:white">600</div>
+              <div style="background:#4B3FD6;color:white">700</div>
+              <div style="background:#3A30B0;color:white">800</div>
+              <div style="background:#2A2384;color:white">900</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="palette-hero salmon">
+          <div>
+            <div class="role">Acento — pop · destaque · contraste</div>
+            <h2>Lime<br>400</h2>
+          </div>
+          <div>
+            <div class="values">
+              <span>HEX  #C2F542</span>
+              <span>RGB  194 245 66</span>
+              <span>HSL  75° 89% 61%</span>
+              <span>OKLCH 0.93 0.22 123</span>
+            </div>
+            <div class="ramp">
+              <div style="background:#F7FEE7">50</div>
+              <div style="background:#ECFCCB">100</div>
+              <div style="background:#DFFBA5">200</div>
+              <div style="background:#D2F873">300</div>
+              <div style="background:#C2F542">400</div>
+              <div style="background:#A3D331;color:white">500</div>
+              <div style="background:#84B121;color:white">600</div>
+              <div style="background:#65880F;color:white">700</div>
+              <div style="background:#4D6A0E;color:white">800</div>
+              <div style="background:#2E460B;color:white">900</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-num">08 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 09 — Neutros + semânticas                                        -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="09 Neutros" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <div>
+          <span class="eyebrow">Cores · suporte</span>
+          <h1>Neutros & semânticas</h1>
+        </div>
+        <span class="meta">11 níveis de ink · 4 sinais</span>
+      </div>
+
+      <div class="neutrals-section">
+        <div>
+          <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);margin-bottom:12px">Escala de ink — texto + bordas + superfícies</div>
+          <div class="neutral-ramp">
+            <div class="step" style="background:#FFFFFF;color:var(--ink-900);border-right:1px solid var(--ink-100)">Paper<br><span style="color:var(--ink-500)">#FFF</span></div>
+            <div class="step" style="background:#FAFAF7;color:var(--ink-900)">Canvas<br><span style="color:var(--ink-500)">#FAFAF7</span></div>
+            <div class="step" style="background:#F8FAFC;color:var(--ink-900)">50<br><span style="color:var(--ink-500)">#F8FAFC</span></div>
+            <div class="step" style="background:#F1F5F9;color:var(--ink-900)">100<br><span style="color:var(--ink-500)">#F1F5F9</span></div>
+            <div class="step" style="background:#E2E8F0;color:var(--ink-900)">200<br><span style="color:var(--ink-500)">#E2E8F0</span></div>
+            <div class="step" style="background:#CBD5E1;color:var(--ink-900)">300<br><span style="color:var(--ink-500)">#CBD5E1</span></div>
+            <div class="step" style="background:#94A3B8;color:white">400<br><span style="color:#E2E8F0">#94A3B8</span></div>
+            <div class="step" style="background:#64748B;color:white">500<br><span style="color:#E2E8F0">#64748B</span></div>
+            <div class="step" style="background:#475569;color:white">600<br><span style="color:#CBD5E1">#475569</span></div>
+            <div class="step" style="background:#1E293B;color:white">800<br><span style="color:#94A3B8">#1E293B</span></div>
+            <div class="step" style="background:#0F172A;color:white">900<br><span style="color:#94A3B8">#0F172A</span></div>
+          </div>
+
+          <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);margin-bottom:12px;margin-top:32px">Aplicação · uso típico</div>
+          <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:16px;font-size:15px;color:var(--ink-700)">
+            <div><strong style="color:var(--ink-900)">Paper #FFF</strong> · cards, modais, áreas elevadas</div>
+            <div><strong style="color:var(--ink-900)">Canvas #FAFAF7</strong> · fundo de página principal</div>
+            <div><strong style="color:var(--ink-900)">Ink 200</strong> · bordas padrão de cards e inputs</div>
+            <div><strong style="color:var(--ink-900)">Ink 500</strong> · texto secundário, labels</div>
+            <div><strong style="color:var(--ink-900)">Ink 900</strong> · texto principal, sidebar</div>
+            <div><strong style="color:var(--ink-900)">Ink 950</strong> · sidebar dark mode</div>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);margin-bottom:12px">Semânticas</div>
+          <div class="semantic-stack">
+            <div class="semantic-row" style="background:#D1FAE5">
+              <div class="dot" style="background:#10B981"></div>
+              <div class="info">
+                <strong style="color:#065F46">Sucesso</strong>
+                <span style="color:#047857">Pago · recebido · tarefa fechada</span>
+              </div>
+              <span class="hex" style="color:#065F46">#10B981</span>
+            </div>
+            <div class="semantic-row" style="background:#FEF3C7">
+              <div class="dot" style="background:#F59E0B"></div>
+              <div class="info">
+                <strong style="color:#92400E">Atenção</strong>
+                <span style="color:#B45309">Agendado · atrasado leve</span>
+              </div>
+              <span class="hex" style="color:#92400E">#F59E0B</span>
+            </div>
+            <div class="semantic-row" style="background:#FEE2E2">
+              <div class="dot" style="background:#EF4444"></div>
+              <div class="info">
+                <strong style="color:#991B1B">Erro</strong>
+                <span style="color:#B91C1C">Falha · atrasado crítico · destrutivo</span>
+              </div>
+              <span class="hex" style="color:#991B1B">#EF4444</span>
+            </div>
+            <div class="semantic-row" style="background:#DBEAFE">
+              <div class="dot" style="background:#3B82F6"></div>
+              <div class="info">
+                <strong style="color:#1E40AF">Info</strong>
+                <span style="color:#1D4ED8">Neutro · dica · link</span>
+              </div>
+              <span class="hex" style="color:#1E40AF">#3B82F6</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-num">09 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 10 — Status pagamentos                                           -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="10 Status" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <div>
+          <span class="eyebrow">Sistema especializado</span>
+          <h1>Status de pagamento</h1>
+        </div>
+        <span class="meta">7 estados · vibe cromática própria</span>
+      </div>
+
+      <div class="status-grid" style="grid-template-rows: repeat(2, 1fr); gap: 24px">
+
+        <div class="status-card">
+          <span class="status-badge-big" style="background:#D1FAE5;color:#065F46">● Pago</span>
+          <h4>Saiu do caixa</h4>
+          <p>Pagamento concluído, transação gerada. Verde = concluído com sucesso.</p>
+          <span class="hex">#D1FAE5 / #065F46</span>
+        </div>
+
+        <div class="status-card">
+          <span class="status-badge-big" style="background:#DBEAFE;color:#1E40AF">● Transferido</span>
+          <h4>Entre contas suas</h4>
+          <p>Transferência registrada — gera par de transações. Azul = movimento.</p>
+          <span class="hex">#DBEAFE / #1E40AF</span>
+        </div>
+
+        <div class="status-card">
+          <span class="status-badge-big" style="background:#FEF3C7;color:#92400E">● Agendado</span>
+          <h4>Programado no banco</h4>
+          <p>Marcado pra rodar automático. Amarelo = atenção, em espera.</p>
+          <span class="hex">#FEF3C7 / #92400E</span>
+        </div>
+
+        <div class="status-card">
+          <span class="status-badge-big" style="background:#EDE9FE;color:#5B21B6">● Cartão</span>
+          <h4>Vai na fatura</h4>
+          <p>Pago via crédito — ainda não saiu do caixa. Roxo = virtual, premium.</p>
+          <span class="hex">#EDE9FE / #5B21B6</span>
+        </div>
+
+        <div class="status-card">
+          <span class="status-badge-big" style="background:#E0F2FE;color:#0369A1">● A transferir</span>
+          <h4>Pendente</h4>
+          <p>Transferência marcada mas ainda não executada. Azul claro = pré-fluxo.</p>
+          <span class="hex">#E0F2FE / #0369A1</span>
+        </div>
+
+        <div class="status-card">
+          <span class="status-badge-big" style="background:#FFEDD5;color:#9A3412">● Parcial</span>
+          <h4>Pagamento incompleto</h4>
+          <p>Valor parcial registrado, resto fica em aberto. Laranja = atenção média.</p>
+          <span class="hex">#FFEDD5 / #9A3412</span>
+        </div>
+
+        <div class="status-card">
+          <span class="status-badge-big" style="background:#F3F4F6;color:#4B5563">● Cancelado</span>
+          <h4>Não vai acontecer</h4>
+          <p>Compromisso cancelado, sem efeito no saldo. Cinza = neutralizado.</p>
+          <span class="hex">#F3F4F6 / #4B5563</span>
+        </div>
+
+        <div class="status-card" style="background:var(--indigo-50);border-color:var(--indigo-200)">
+          <span class="status-badge-big" style="background:var(--indigo-100);color:var(--indigo-700)">● A pagar</span>
+          <h4>Estado padrão</h4>
+          <p>Não chegou a hora ou ainda não foi marcado. Default da maioria dos pagamentos novos.</p>
+          <span class="hex">var(--indigo-100) / var(--indigo-700)</span>
+        </div>
+
+      </div>
+
+      <div class="slide-num">10 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 11 — Tipografia                                                  -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="11 Tipografia" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <div>
+          <span class="eyebrow">Tipografia</span>
+          <h1>Manrope + Inter + Geist Mono</h1>
+        </div>
+        <span class="meta">3 famílias · papéis distintos</span>
+      </div>
+
+      <div class="type-feature">
+        <div class="left">
+          <h2>Aa<br><span class="accent">Mn</span></h2>
+          <dl class="info">
+            <dt>Family</dt><dd>Manrope</dd>
+            <dt>Variable</dt><dd>400 · 500 · 600 · 700 · 800</dd>
+            <dt>Tracking</dt><dd>-0.02em em displays</dd>
+            <dt>Uso</dt><dd>H1–H5, KPIs, headlines</dd>
+            <dt>Origem</dt><dd>Google Fonts · open source</dd>
+          </dl>
+        </div>
+
+        <div class="right">
+          <div class="type-sample">
+            <div class="label">Display · Manrope ExtraBold 80px</div>
+            <div class="sample-text" style="font-weight:800;font-size:80px;line-height:0.95;letter-spacing:-0.035em">R$ 28.450,12</div>
+          </div>
+          <div class="type-sample">
+            <div class="label">H2 · Manrope Bold 48px</div>
+            <div class="sample-text" style="font-weight:700;font-size:48px;line-height:1.05;letter-spacing:-0.02em">Saldo total</div>
+          </div>
+          <div class="type-sample">
+            <div class="label">Body · Inter Regular 18px · 1.5 line-height</div>
+            <div style="font-family:var(--font-body);font-weight:400;font-size:18px;line-height:1.5;color:var(--ink-700)">O FinFlow funciona assim: você cadastra <strong style="color:var(--ink-900)">compromissos</strong> e a gente gera os pagamentos futuros sozinho. No fim do mês, você só confirma o que rolou.</div>
+          </div>
+          <div class="type-sample">
+            <div class="label">Mono · Geist Mono Medium · números tabulares</div>
+            <div class="tabular" style="font-weight:500;font-size:22px;color:var(--ink-900)">
+              <div>R$ 1.234,56 → R$ 9.999,99</div>
+              <div>05/05/2026 · 12:34:56</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-num">11 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 12 — Escala tipográfica                                          -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="12 Escala" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <div>
+          <span class="eyebrow">Escala tipográfica</span>
+          <h1>9 níveis · grid 4px</h1>
+        </div>
+        <span class="meta">Tokens —fs-*</span>
+      </div>
+
+      <div class="scale-table">
+        <div class="scale-row">
+          <span class="token">--fs-3xl</span>
+          <span class="size">36px</span>
+          <span class="preview" style="font-size:36px;font-weight:700;letter-spacing:-0.025em">Hero · Manrope 700</span>
+          <span class="use">h1, landing</span>
+        </div>
+        <div class="scale-row">
+          <span class="token">--fs-2xl</span>
+          <span class="size">30px</span>
+          <span class="preview" style="font-size:30px;font-weight:700;letter-spacing:-0.02em">Página · Manrope 700</span>
+          <span class="use">h2, KPI principal</span>
+        </div>
+        <div class="scale-row">
+          <span class="token">--fs-xl</span>
+          <span class="size">24px</span>
+          <span class="preview" style="font-size:24px;font-weight:700;letter-spacing:-0.015em">Seção · Manrope 700</span>
+          <span class="use">h3</span>
+        </div>
+        <div class="scale-row">
+          <span class="token">--fs-lg</span>
+          <span class="size">20px</span>
+          <span class="preview" style="font-size:20px;font-weight:700;letter-spacing:-0.01em">Sub-seção · Manrope 700</span>
+          <span class="use">h4</span>
+        </div>
+        <div class="scale-row">
+          <span class="token">--fs-md</span>
+          <span class="size">18px</span>
+          <span class="preview" style="font-size:18px;font-weight:600;font-family:var(--font-body)">Card title · Inter 600</span>
+          <span class="use">h5, cards</span>
+        </div>
+        <div class="scale-row">
+          <span class="token">--fs-base</span>
+          <span class="size">16px</span>
+          <span class="preview" style="font-size:16px;font-weight:400;font-family:var(--font-body)">Body padrão · Inter 400 — nunca menor que isso em mobile</span>
+          <span class="use">p, body</span>
+        </div>
+        <div class="scale-row">
+          <span class="token">--fs-sm</span>
+          <span class="size">14px</span>
+          <span class="preview" style="font-size:14px;font-weight:400;font-family:var(--font-body);color:var(--ink-600)">Tabela · Inter 400 — usado em dados, labels, secundário</span>
+          <span class="use">td, label</span>
+        </div>
+        <div class="scale-row">
+          <span class="token">--fs-xs</span>
+          <span class="size">12px</span>
+          <span class="preview" style="font-size:12px;font-weight:500;font-family:var(--font-body);color:var(--ink-500);text-transform:uppercase;letter-spacing:0.1em">Eyebrow · Inter 500 — badges, hints, micro labels</span>
+          <span class="use">eyebrow, badge</span>
+        </div>
+        <div class="scale-row" style="background:var(--ink-50)">
+          <span class="token">tabular</span>
+          <span class="size">~ </span>
+          <span class="preview tabular" style="font-size:20px;font-weight:500;color:var(--ink-900)">R$&nbsp;1.234,56  ·  R$&nbsp;9.999,99  ·  05/05/2026  →  Geist Mono</span>
+          <span class="use">números, datas</span>
+        </div>
+      </div>
+
+      <div class="slide-num">12 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 13 — Iconografia                                                 -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="13 Ícones" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <div>
+          <span class="eyebrow">Iconografia</span>
+          <h1>Lucide + customização FinFlow</h1>
+        </div>
+        <span class="meta">stroke 1.8 · 16 / 20 / 24 / 32 px</span>
+      </div>
+
+      <div style="flex:1;display:flex;flex-direction:column;gap:32px">
+
+        <div class="icon-grid">
+          <div class="icon-cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5L5 19M5 5l14 14"/></svg><span class="name">close</span></div>
+          <div class="icon-cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 18V8l9-5 9 5v10M9 22V12h6v10"/></svg><span class="name">landmark</span></div>
+          <div class="icon-cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg><span class="name">wallet</span></div>
+          <div class="icon-cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="name">calendar</span></div>
+          <div class="icon-cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 16l4-4 4 4 6-6"/></svg><span class="name">trending</span></div>
+          <div class="icon-cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg><span class="name">check</span></div>
+          <div class="icon-cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h13l-4 4M21 18H8l4-4"/></svg><span class="name">swap</span></div>
+          <div class="icon-cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-9-9 9 9 0 019 9z"/><path d="M3 12h6l3-9 3 18 3-9h3"/></svg><span class="name">pulse</span></div>
+        </div>
+
+        <div class="icon-grid" style="grid-template-columns:repeat(8, 1fr)">
+          <div class="icon-cell" style="background:var(--indigo-600);color:white"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 16l4-4 4 4 6-6"/></svg><span class="name" style="color:rgba(255,255,255,0.7)">on indigo</span></div>
+          <div class="icon-cell" style="background:var(--salmon-400);color:var(--ink-900)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg><span class="name" style="color:var(--ink-700)">on salmon</span></div>
+          <div class="icon-cell" style="background:var(--ink-900);color:var(--paper)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg><span class="name" style="color:var(--ink-400)">on dark</span></div>
+          <div class="icon-cell" style="background:var(--paper);color:var(--ink-900)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 16l4-4 4 4 6-6"/></svg><span class="name">on paper</span></div>
+
+          <div class="icon-cell" style="aspect-ratio:auto;justify-content:center">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+            <span class="name">16px</span>
+          </div>
+          <div class="icon-cell" style="aspect-ratio:auto;justify-content:center">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+            <span class="name">20px</span>
+          </div>
+          <div class="icon-cell" style="aspect-ratio:auto;justify-content:center">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+            <span class="name">24px</span>
+          </div>
+          <div class="icon-cell" style="aspect-ratio:auto;justify-content:center">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+            <span class="name">32px</span>
+          </div>
+        </div>
+
+        <div style="background:var(--indigo-50);border-radius:var(--r-md);padding:24px 32px;display:flex;gap:32px;align-items:center">
+          <div style="font-family:var(--font-display);font-weight:800;font-size:24px;color:var(--indigo-700)">★</div>
+          <div>
+            <strong style="font-family:var(--font-display);font-size:18px;color:var(--indigo-700);display:block;margin-bottom:4px">Princípios</strong>
+            <span style="font-size:15px;color:var(--ink-700);line-height:1.5">Stroke <strong>1.8px</strong> · cor herdada do contexto (<code>currentColor</code>) · escolher <strong>Lucide</strong> como família base · escala <strong>16 / 20 / 24 / 32</strong> · nunca misturar duas bibliotecas no mesmo lugar.</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="slide-num">13 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 14 — Pattern gráfico                                             -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="14 Pattern" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <div>
+          <span class="eyebrow">Padrão gráfico</span>
+          <h1>Twin Tracks — escala infinita</h1>
+        </div>
+        <span class="meta">Pattern oficial · headers, fundos, embalagem</span>
+      </div>
+
+      <div class="pattern-feature">
+        <div class="pattern-canvas" style="background:var(--ink-950)">
+          <svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="twinTrack" x="0" y="0" width="120" height="80" patternUnits="userSpaceOnUse">
+                <!-- planned line -->
+                <line x1="0" y1="30" x2="120" y2="30" stroke="#4F46E5" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+                <!-- executed line with bump -->
+                <path d="M0 55 L40 55 L48 47 L60 47 L68 55 L120 55" stroke="#FF8B6B" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+              </pattern>
+            </defs>
+            <rect width="800" height="600" fill="url(#twinTrack)"/>
+            <rect width="800" height="600" fill="url(#twinTrack)" transform="translate(60, 40)"/>
+          </svg>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <div style="background:var(--paper);border:1px solid var(--ink-200);border-radius:var(--r-md);padding:32px">
+            <h4 style="font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:12px">Repetição</h4>
+            <p style="font-size:15px;color:var(--ink-600);line-height:1.5">O símbolo Twin Track se repete em grid 120 × 80px formando trilhas paralelas que correm horizontalmente. Sempre o "pico de variação" alinhado no centro de cada repetição.</p>
+          </div>
+
+          <div style="background:var(--paper);border:1px solid var(--ink-200);border-radius:var(--r-md);padding:32px">
+            <h4 style="font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:12px">Onde usar</h4>
+            <p style="font-size:15px;color:var(--ink-600);line-height:1.5">Hero sections de landing · headers de email · embalagem de mídia (slides, exportação PDF) · cover de social media · não usar em interface ativa (distrai).</p>
+          </div>
+
+          <!-- Variant: salmon on cream -->
+          <div style="border-radius:var(--r-md);overflow:hidden;height:140px;background:var(--salmon-50)">
+            <svg viewBox="0 0 800 200" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block">
+              <pattern id="twinTrack2" x="0" y="0" width="120" height="80" patternUnits="userSpaceOnUse">
+                <line x1="0" y1="30" x2="120" y2="30" stroke="#E25237" stroke-width="3" stroke-linecap="round" opacity="0.4"/>
+                <path d="M0 55 L40 55 L48 47 L60 47 L68 55 L120 55" stroke="#4F46E5" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+              </pattern>
+              <rect width="800" height="200" fill="url(#twinTrack2)"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-num">14 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 15 — Ilustração                                                  -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="15 Ilustração" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <div>
+          <span class="eyebrow">Sistema de ilustração</span>
+          <h1>Geometric soft · funcional</h1>
+        </div>
+        <span class="meta">3 exemplos canônicos</span>
+      </div>
+
+      <div class="illust-grid">
+
+        <div class="illust-card">
+          <div class="canvas">
+            <svg width="280" height="260" viewBox="0 0 200 200">
+              <!-- Calendar grid w/ planned vs actual markers -->
+              <rect x="20" y="40" width="160" height="130" rx="12" fill="white" stroke="var(--indigo-300)" stroke-width="2"/>
+              <rect x="20" y="40" width="160" height="32" rx="12" fill="var(--indigo-600)"/>
+              <rect x="20" y="56" width="160" height="16" fill="var(--indigo-600)"/>
+              <!-- days dots -->
+              <g fill="var(--ink-300)">
+                <circle cx="48" cy="100" r="5"/>
+                <circle cx="80" cy="100" r="5"/>
+                <circle cx="112" cy="100" r="5"/>
+                <circle cx="144" cy="100" r="5"/>
+                <circle cx="48" cy="130" r="5"/>
+                <circle cx="80" cy="130" r="5"/>
+                <circle cx="144" cy="130" r="5"/>
+              </g>
+              <circle cx="112" cy="130" r="9" fill="var(--salmon-400)"/>
+              <!-- coin landing -->
+              <circle cx="112" cy="20" r="14" fill="var(--salmon-400)" stroke="var(--salmon-600)" stroke-width="2"/>
+              <text x="112" y="25" font-family="Manrope" font-size="14" font-weight="800" text-anchor="middle" fill="white">$</text>
+              <!-- trace -->
+              <path d="M112 32 L112 116" stroke="var(--salmon-400)" stroke-width="2" stroke-dasharray="3 3" opacity="0.6"/>
+            </svg>
+          </div>
+          <h4>Pagamento marcado</h4>
+          <p>Calendário + moeda caindo na data. Para empty states de /pagamentos.</p>
+        </div>
+
+        <div class="illust-card">
+          <div class="canvas">
+            <svg width="280" height="260" viewBox="0 0 200 200">
+              <!-- Two parallel lines becoming chart -->
+              <line x1="20" y1="80" x2="180" y2="80" stroke="var(--indigo-600)" stroke-width="4" stroke-linecap="round"/>
+              <path d="M20 130 L60 130 L70 110 L100 110 L110 130 L150 130 L160 100 L180 100"
+                    stroke="var(--salmon-400)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- end markers -->
+              <circle cx="20" cy="80" r="6" fill="var(--indigo-600)"/>
+              <circle cx="180" cy="80" r="6" fill="var(--indigo-600)"/>
+              <circle cx="20" cy="130" r="6" fill="var(--salmon-400)"/>
+              <circle cx="180" cy="100" r="6" fill="var(--salmon-400)"/>
+              <!-- variance label -->
+              <line x1="180" y1="80" x2="180" y2="100" stroke="var(--ink-400)" stroke-width="1.5" stroke-dasharray="2 2"/>
+              <text x="186" y="93" font-family="Geist Mono" font-size="10" fill="var(--ink-600)">Δ 20</text>
+            </svg>
+          </div>
+          <h4>Previsto vs. real</h4>
+          <p>O conceito da marca em forma de gráfico. Para relatórios e onboarding.</p>
+        </div>
+
+        <div class="illust-card">
+          <div class="canvas">
+            <svg width="280" height="260" viewBox="0 0 200 200">
+              <!-- Account cards stack -->
+              <rect x="40" y="120" width="120" height="48" rx="10" fill="white" stroke="var(--ink-300)" stroke-width="2"/>
+              <rect x="32" y="100" width="120" height="48" rx="10" fill="white" stroke="var(--ink-300)" stroke-width="2"/>
+              <rect x="40" y="80" width="120" height="48" rx="10" fill="var(--indigo-600)"/>
+              <circle cx="60" cy="104" r="12" fill="var(--salmon-400)"/>
+              <rect x="80" y="96" width="60" height="6" rx="3" fill="white" opacity="0.95"/>
+              <rect x="80" y="106" width="40" height="6" rx="3" fill="white" opacity="0.6"/>
+              <!-- coins floating -->
+              <circle cx="50" cy="40" r="10" fill="var(--salmon-400)" stroke="var(--salmon-600)" stroke-width="2"/>
+              <circle cx="80" cy="30" r="8" fill="var(--indigo-300)"/>
+              <circle cx="160" cy="50" r="10" fill="var(--salmon-300)" stroke="var(--salmon-500)" stroke-width="2"/>
+              <circle cx="130" cy="30" r="6" fill="var(--indigo-400)"/>
+            </svg>
+          </div>
+          <h4>Contas conectadas</h4>
+          <p>Stack de cards de contas com moedas convergindo. Para onboarding de bancos.</p>
+        </div>
+
+      </div>
+
+      <div class="slide-num">15 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 16 — App icon + favicon + splash                                 -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="16 App icons" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <div>
+          <span class="eyebrow">Aplicação · digital</span>
+          <h1>App icon · favicon · splash</h1>
+        </div>
+        <span class="meta">iOS / Android · web · loading</span>
+      </div>
+
+      <div class="app-row">
+
+        <!-- iOS grid mock -->
+        <div class="app-icon-large">
+          <div class="ios-grid-mock">
+            <div class="ios-app" data-name="Messages" style="background:linear-gradient(135deg,#34d399,#10b981)"></div>
+            <div class="ios-app" data-name="Photos" style="background:linear-gradient(135deg,#fde047,#f43f5e)"></div>
+            <div class="ios-app" data-name="Maps" style="background:linear-gradient(135deg,#a3e635,#3b82f6)"></div>
+            <div class="ios-app" data-name="Notes" style="background:linear-gradient(135deg,#fcd34d,#f59e0b)"></div>
+            <div class="ios-app" data-name="Music" style="background:linear-gradient(135deg,#ec4899,#ef4444)"></div>
+            <div class="ios-app" data-name="Calendar" style="background:white;color:#ef4444;font-family:var(--font-display);font-weight:800;font-size:28px;display:flex;align-items:center;justify-content:center">31</div>
+            <!-- FinFlow icon -->
+            <div class="ios-app" data-name="FinFlow" style="background:#0F172A;display:flex;align-items:center;justify-content:center">
+              <svg width="62" height="62" viewBox="0 0 100 100">
+                <line x1="14" y1="38" x2="78" y2="38" stroke="white" stroke-width="11" stroke-linecap="round"/>
+                <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62"
+                      stroke="var(--salmon-400)" stroke-width="11" fill="none"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="ios-app" data-name="Settings" style="background:linear-gradient(135deg,#cbd5e1,#64748b)"></div>
+          </div>
+          <div style="margin-top:48px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500)">App icon · iOS home screen</div>
+        </div>
+
+        <!-- Splash -->
+        <div class="splash-mock">
+          <div class="splash-screen">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:20px">
+              <svg width="120" height="120" viewBox="0 0 100 100">
+                <line x1="14" y1="38" x2="78" y2="38" stroke="white" stroke-width="10" stroke-linecap="round"/>
+                <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62"
+                      stroke="white" stroke-width="10" fill="none"
+                      stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+              </svg>
+              <div style="font-family:var(--font-display);font-weight:800;font-size:40px;letter-spacing:-0.03em;color:white">FinFlow</div>
+              <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-top:8px">v 1.0.5</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Favicon row + browser tab -->
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <div style="background:var(--paper);border:1px solid var(--ink-200);border-radius:var(--r-lg);overflow:hidden">
+            <!-- browser chrome -->
+            <div style="background:var(--ink-100);padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--ink-200)">
+              <div style="display:flex;gap:6px"><span style="width:12px;height:12px;border-radius:50%;background:#FF5F57"></span><span style="width:12px;height:12px;border-radius:50%;background:#FEBC2E"></span><span style="width:12px;height:12px;border-radius:50%;background:#28C840"></span></div>
+              <div style="background:white;border-radius:6px;padding:6px 12px;display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:11px;color:var(--ink-700);flex:1;border:1px solid var(--ink-200)">
+                <svg width="14" height="14" viewBox="0 0 100 100">
+                  <line x1="14" y1="38" x2="78" y2="38" stroke="var(--indigo-600)" stroke-width="12" stroke-linecap="round"/>
+                  <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62"
+                        stroke="var(--salmon-400)" stroke-width="12" fill="none"
+                        stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                finflow.app
+              </div>
+            </div>
+            <div style="padding:32px;display:flex;flex-direction:column;gap:8px">
+              <div style="font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--ink-900)">Dashboard · FinFlow</div>
+              <div style="font-family:var(--font-mono);font-size:11px;color:var(--ink-500)">Browser tab + favicon</div>
+            </div>
+          </div>
+
+          <div class="favicon-row">
+            <div class="fv">
+              <div style="background:var(--paper);border:1px solid var(--ink-200);padding:4px;border-radius:4px">
+                <svg width="16" height="16" viewBox="0 0 100 100">
+                  <line x1="14" y1="38" x2="78" y2="38" stroke="var(--indigo-600)" stroke-width="12" stroke-linecap="round"/>
+                  <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62" stroke="var(--salmon-400)" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <span class="size">16</span>
+            </div>
+            <div class="fv">
+              <div style="background:var(--paper);border:1px solid var(--ink-200);padding:6px;border-radius:6px">
+                <svg width="24" height="24" viewBox="0 0 100 100">
+                  <line x1="14" y1="38" x2="78" y2="38" stroke="var(--indigo-600)" stroke-width="10" stroke-linecap="round"/>
+                  <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62" stroke="var(--salmon-400)" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <span class="size">24</span>
+            </div>
+            <div class="fv">
+              <div style="background:var(--paper);border:1px solid var(--ink-200);padding:8px;border-radius:8px">
+                <svg width="32" height="32" viewBox="0 0 100 100">
+                  <line x1="14" y1="38" x2="78" y2="38" stroke="var(--indigo-600)" stroke-width="10" stroke-linecap="round"/>
+                  <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62" stroke="var(--salmon-400)" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <span class="size">32</span>
+            </div>
+            <div class="fv">
+              <div style="background:var(--ink-900);padding:12px;border-radius:10px">
+                <svg width="48" height="48" viewBox="0 0 100 100">
+                  <line x1="14" y1="38" x2="78" y2="38" stroke="white" stroke-width="10" stroke-linecap="round"/>
+                  <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62" stroke="var(--salmon-400)" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <span class="size">48 dark</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-num">16 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 17 — Social media                                                -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="17 Social" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <div>
+          <span class="eyebrow">Aplicação · social</span>
+          <h1>Instagram · LinkedIn</h1>
+        </div>
+        <span class="meta">3 posts 1:1 + 1 banner</span>
+      </div>
+
+      <div class="social-grid" style="grid-template-rows: auto auto">
+
+        <div class="ig-post ig-post-1">
+          <div style="display:flex;align-items:center;gap:10px">
+            <svg width="28" height="28" viewBox="0 0 100 100">
+              <line x1="14" y1="38" x2="78" y2="38" stroke="white" stroke-width="11" stroke-linecap="round"/>
+              <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62" stroke="var(--salmon-400)" stroke-width="11" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="ig-mark">FinFlow</span>
+          </div>
+          <div class="ig-headline">
+            Organize <em style="font-style:normal;color:var(--salmon-300)">compromissos</em>,<br>
+            não tickets de extrato.
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:end">
+            <span class="ig-tag">Manifesto · 01</span>
+            <span class="ig-tag" style="font-family:var(--font-mono)">→ finflow.app</span>
+          </div>
+        </div>
+
+        <div class="ig-post ig-post-2">
+          <div style="display:flex;align-items:center;gap:10px">
+            <svg width="28" height="28" viewBox="0 0 100 100">
+              <line x1="14" y1="38" x2="78" y2="38" stroke="var(--ink-900)" stroke-width="11" stroke-linecap="round"/>
+              <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62" stroke="var(--ink-900)" stroke-width="11" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="ig-mark" style="color:var(--ink-900)">FinFlow</span>
+          </div>
+          <div class="ig-headline" style="color:var(--ink-900)">
+            Vocês sabem<br>
+            quanto vai sobrar<br>
+            em outubro.
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:end;color:var(--ink-900);opacity:0.7">
+            <span class="ig-tag" style="color:var(--ink-900);opacity:0.6">Manifesto · 02</span>
+            <span class="ig-tag" style="font-family:var(--font-mono);color:var(--ink-900);opacity:0.6">→ finflow.app</span>
+          </div>
+        </div>
+
+        <div class="ig-post ig-post-3">
+          <div style="display:flex;align-items:center;gap:10px">
+            <svg width="28" height="28" viewBox="0 0 100 100">
+              <line x1="14" y1="38" x2="78" y2="38" stroke="white" stroke-width="11" stroke-linecap="round"/>
+              <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62" stroke="white" stroke-width="11" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+            </svg>
+            <span class="ig-mark">FinFlow</span>
+          </div>
+          <div style="font-family:var(--font-display);font-size:80px;font-weight:800;line-height:1;letter-spacing:-0.04em;font-variant-numeric:tabular-nums">
+            R$ 28k
+            <div style="font-size:24px;font-weight:500;color:rgba(255,255,255,0.7);margin-top:12px;letter-spacing:-0.005em">saldo total · maio/2026</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:end">
+            <span class="ig-tag">Recap · maio</span>
+            <span class="ig-tag" style="font-family:var(--font-mono)">→ finflow.app</span>
+          </div>
+        </div>
+
+        <div class="li-banner">
+          <h3>Pare de cadastrar<br>transação por transação.<br><span style="color:var(--salmon-300)">Cadastre compromissos.</span></h3>
+          <div style="display:flex;flex-direction:column;align-items:end;gap:12px">
+            <svg width="64" height="64" viewBox="0 0 100 100">
+              <line x1="14" y1="38" x2="78" y2="38" stroke="white" stroke-width="10" stroke-linecap="round"/>
+              <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62" stroke="var(--salmon-300)" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span style="font-family:var(--font-mono);font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.7)">LinkedIn cover · 1584 × 396</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="slide-num">17 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 18 — Email + papelaria                                           -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="18 Email & Papelaria" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <div>
+          <span class="eyebrow">Aplicação · papel & email</span>
+          <h1>Email transacional, cartão & fatura</h1>
+        </div>
+        <span class="meta">Templates oficiais</span>
+      </div>
+
+      <div class="papel-grid">
+
+        <div class="email-mock">
+          <div class="email-header">
+            <div style="display:flex;align-items:center;gap:12px">
+              <svg width="32" height="32" viewBox="0 0 100 100">
+                <line x1="14" y1="38" x2="78" y2="38" stroke="var(--indigo-600)" stroke-width="10" stroke-linecap="round"/>
+                <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62" stroke="var(--salmon-400)" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span style="font-family:var(--font-display);font-weight:800;font-size:22px;letter-spacing:-0.02em;color:var(--ink-900)">FinFlow</span>
+            </div>
+            <span style="font-family:var(--font-mono);font-size:11px;color:var(--ink-500);letter-spacing:0.05em">21 mai · 2026</span>
+          </div>
+          <div class="email-body">
+            <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--salmon-600)">Resumo da semana</span>
+            <h3>Sua semana em 1 número</h3>
+            <p>Oi Arnaldo, você marcou <strong>7 pagamentos</strong> como pagos essa semana e sobrou <strong>R$ 1.240</strong> a mais que o esperado. Bom mês.</p>
+            <p>Quer ver onde foi cada real? A gente preparou um resumo curto.</p>
+            <a href="#" class="cta">Ver resumo da semana</a>
+          </div>
+          <div class="email-meta">
+            FinFlow · Pra ajustar quando você recebe, vai em <strong style="color:var(--ink-700)">/configuracoes</strong>. Cancelar a qualquer momento.
+          </div>
+        </div>
+
+        <div class="papelaria-side">
+          <!-- Cartão de visita -->
+          <div class="card-visita">
+            <div>
+              <div style="font-family:var(--font-display);font-weight:800;font-size:18px;color:var(--indigo-600);letter-spacing:-0.01em">FinFlow</div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--ink-500);letter-spacing:0.1em;margin-top:2px">finflow.app</div>
+            </div>
+            <div>
+              <div class="name">Arnaldo Cesco</div>
+              <div class="role">Co-founder · Product</div>
+            </div>
+            <div class="contact">
+              <span>arnaldo@finflow.app</span>
+              <span>+55 11 9 9876 5432</span>
+            </div>
+          </div>
+
+          <!-- Cartão dark verso -->
+          <div class="card-visita dark">
+            <div style="display:flex;justify-content:space-between;align-items:start">
+              <svg width="56" height="56" viewBox="0 0 100 100">
+                <line x1="14" y1="38" x2="78" y2="38" stroke="white" stroke-width="10" stroke-linecap="round"/>
+                <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62" stroke="var(--salmon-400)" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span style="font-family:var(--font-mono);font-size:10px;color:var(--ink-400);letter-spacing:0.15em;text-transform:uppercase">Verso</span>
+            </div>
+            <div style="font-family:var(--font-display);font-size:32px;font-weight:700;line-height:1.15;letter-spacing:-0.02em;color:white">
+              Organize<br>compromissos,<br><span style="color:var(--salmon-300)">não tickets.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="slide-num">18 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 19 — Outdoor                                                     -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="19 Outdoor" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <div>
+          <span class="eyebrow">Aplicação · OOH</span>
+          <h1>Outdoor · ad billboard</h1>
+        </div>
+        <span class="meta">Hero copy · contraste máximo</span>
+      </div>
+
+      <div class="outdoor-stage">
+        <div class="billboard">
+          <div class="copy">
+            Antes de<br>
+            outubro<br>
+            <em>chegar.</em>
+          </div>
+          <div class="foot">
+            <div style="display:flex;align-items:center;gap:16px">
+              <svg width="64" height="64" viewBox="0 0 100 100">
+                <line x1="14" y1="38" x2="78" y2="38" stroke="white" stroke-width="10" stroke-linecap="round"/>
+                <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62" stroke="var(--salmon-300)" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="mark">FinFlow</span>
+            </div>
+            <span class="tag">finflow.app</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-num">19 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 20 — App real: Dashboard                                         -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="20 App · Dashboard" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <div>
+          <span class="eyebrow">Aplicação · produto</span>
+          <h1>Dashboard com a nova marca</h1>
+        </div>
+        <span class="meta">/dashboard · light mode</span>
+      </div>
+
+      <div class="app-screen">
+        <div class="app-sidebar">
+          <div class="logo">
+            <svg width="28" height="28" viewBox="0 0 100 100">
+              <line x1="14" y1="38" x2="78" y2="38" stroke="white" stroke-width="11" stroke-linecap="round"/>
+              <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62" stroke="var(--salmon-400)" stroke-width="11" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            FinFlow
+          </div>
+          <div class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+            Dashboard
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
+            Pagamentos
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 18V8l9-5 9 5v10M9 22V12h6v10"/></svg>
+            Contas
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            Compromissos
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h13l-4 4M21 18H8l4-4"/></svg>
+            Transações
+          </div>
+          <div class="nav-section">Planejamento</div>
+          <div class="nav-item">Dívidas</div>
+          <div class="nav-item">Investimentos</div>
+          <div class="nav-item">Orçamento</div>
+          <div class="nav-section">Análise</div>
+          <div class="nav-item">Relatórios</div>
+        </div>
+
+        <div class="app-main">
+          <div class="app-topbar">
+            <div>
+              <h1>Bom dia, Arnaldo</h1>
+              <div class="sub">Quinta · 21 mai · maio/2026</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="app-btn ghost">Importar extrato</button>
+              <button class="app-btn">+ Novo compromisso</button>
+            </div>
+          </div>
+
+          <div class="kpi-row">
+            <div class="kpi-card">
+              <div class="label">Saldo total</div>
+              <div class="value">R$ 28.450,12</div>
+              <div class="trend up">↑ R$ 1.240 vs mês passado</div>
+            </div>
+            <div class="kpi-card">
+              <div class="label">A pagar este mês</div>
+              <div class="value">R$ 7.850,00</div>
+              <div class="trend">12 compromissos</div>
+            </div>
+            <div class="kpi-card" style="background:linear-gradient(135deg, var(--indigo-50), var(--salmon-50));border-color:var(--indigo-100)">
+              <div class="label" style="color:var(--indigo-700)">Patrimônio</div>
+              <div class="value">R$ 142.300,50</div>
+              <div class="trend up">↑ 2,4% no mês</div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px">
+            <div class="list-card">
+              <h3>Próximos pagamentos</h3>
+              <div class="list-row">
+                <div class="avatar" style="background:#EC7000">I</div>
+                <div class="info"><strong>Aluguel</strong><span>Custo de Vida · vence 05/05</span></div>
+                <span class="badge-mini badge-pago">Pago</span>
+                <span class="value">R$ 2.500,00</span>
+              </div>
+              <div class="list-row">
+                <div class="avatar" style="background:#8A05BE">N</div>
+                <div class="info"><strong>Luz</strong><span>Custo de Vida · vence 15/05</span></div>
+                <span class="badge-mini badge-agendado">Agendado</span>
+                <span class="value">R$ 380,45</span>
+              </div>
+              <div class="list-row">
+                <div class="avatar" style="background:var(--indigo-600)">B</div>
+                <div class="info"><strong>Mercado da semana</strong><span>Alimentação · vence 18/05</span></div>
+                <span class="badge-mini" style="background:var(--danger-bg);color:var(--danger)">Atrasado 2d</span>
+                <span class="value">R$ 620,00</span>
+              </div>
+              <div class="list-row">
+                <div class="avatar" style="background:#EC7000">I</div>
+                <div class="info"><strong>Internet</strong><span>Custo de Vida · vence 20/05</span></div>
+                <span class="badge-mini badge-cartao">Cartão</span>
+                <span class="value">R$ 129,90</span>
+              </div>
+            </div>
+
+            <div class="list-card">
+              <h3>Fluxo dos últimos 30 dias</h3>
+              <svg viewBox="0 0 300 160" style="width:100%;height:auto">
+                <path d="M0 130 L0 130 Q15 110, 30 90 Q60 60, 90 75 Q120 90, 150 70 Q180 50, 210 60 Q240 70, 270 40 L300 30"
+                      stroke="var(--indigo-600)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <path d="M0 130 L0 130 Q15 110, 30 90 Q60 60, 90 75 Q120 90, 150 70 Q180 50, 210 60 Q240 70, 270 40 L300 30 L300 160 L0 160 Z"
+                      fill="url(#chartFill)" opacity="0.15"/>
+                <defs>
+                  <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#4F46E5"/>
+                    <stop offset="1" stop-color="#4F46E5" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <!-- markers -->
+                <circle cx="270" cy="40" r="4" fill="var(--salmon-400)"/>
+                <line x1="0" y1="130" x2="300" y2="130" stroke="var(--ink-200)" stroke-width="1" stroke-dasharray="2 4"/>
+              </svg>
+              <div style="display:flex;justify-content:space-between;margin-top:12px;font-family:var(--font-mono);font-size:10px;color:var(--ink-500);letter-spacing:0.05em">
+                <span>21 ABR</span>
+                <span>21 MAI</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-num">20 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 21 — App real: Pagamentos                                        -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="21 App · Pagamentos" class="paper-bg">
+    <div class="slide-pad">
+      <div class="slide-title-bar">
+        <div>
+          <span class="eyebrow">Aplicação · produto</span>
+          <h1>Pagamentos — execução</h1>
+        </div>
+        <span class="meta">/pagamentos · onde a marca trabalha</span>
+      </div>
+
+      <div class="app-screen">
+        <div class="app-sidebar">
+          <div class="logo">
+            <svg width="28" height="28" viewBox="0 0 100 100">
+              <line x1="14" y1="38" x2="78" y2="38" stroke="white" stroke-width="11" stroke-linecap="round"/>
+              <path d="M14 62 L38 62 L44 50 L56 50 L62 62 L78 62" stroke="var(--salmon-400)" stroke-width="11" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            FinFlow
+          </div>
+          <div class="nav-item">Dashboard</div>
+          <div class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
+            Pagamentos
+          </div>
+          <div class="nav-item">Contas</div>
+          <div class="nav-item">Compromissos</div>
+          <div class="nav-item">Transações</div>
+          <div class="nav-section">Planejamento</div>
+          <div class="nav-item">Dívidas</div>
+          <div class="nav-item">Investimentos</div>
+          <div class="nav-item">Orçamento</div>
+          <div class="nav-section">Análise</div>
+          <div class="nav-item">Relatórios</div>
+        </div>
+
+        <div class="app-main">
+          <div class="app-topbar">
+            <div>
+              <h1>Pagamentos · maio/2026</h1>
+              <div class="sub">12 compromissos · 4 pagos · 1 atrasado</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="app-btn ghost">Blocos</button>
+              <button class="app-btn">+ Novo compromisso</button>
+            </div>
+          </div>
+
+          <!-- Categoria 1: Custo de Vida -->
+          <div style="background:var(--paper);border:1px solid var(--ink-200);border-radius:var(--r-md);overflow:hidden;margin-bottom:12px;box-shadow:var(--shadow-card)">
+            <div style="padding:16px 20px;background:var(--indigo-50);display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;align-items:center;gap:10px">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--indigo-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 18V8l9-5 9 5v10"/></svg>
+                <strong style="font-family:var(--font-display);font-size:15px;color:var(--indigo-700)">Custo de Vida</strong>
+              </div>
+              <span class="tabular" style="font-size:13px;font-weight:600;color:var(--indigo-700)">R$ 3.130,35 / R$ 3.510,35</span>
+            </div>
+            <div style="padding:8px 20px">
+              <div class="list-row">
+                <div class="avatar" style="background:#EC7000">I</div>
+                <div class="info"><strong>Aluguel</strong><span>vence 05/05 · 16d atr.</span></div>
+                <span class="badge-mini badge-pago">Pago</span>
+                <span class="value">R$ 2.500,00</span>
+              </div>
+              <div class="list-row">
+                <div class="avatar" style="background:#8A05BE">N</div>
+                <div class="info"><strong>Luz</strong><span>vence 15/05 · 6d atr.</span></div>
+                <span class="badge-mini badge-agendado">Agendado</span>
+                <span class="value">R$ 380,45</span>
+              </div>
+              <div class="list-row">
+                <div class="avatar" style="background:#EC7000">I</div>
+                <div class="info"><strong>Internet</strong><span>vence 20/05 · 1d atr.</span></div>
+                <span class="badge-mini badge-cartao">Cartão</span>
+                <span class="value">R$ 129,90</span>
+              </div>
+              <div class="list-row">
+                <div class="avatar" style="background:var(--indigo-600)">B</div>
+                <div class="info"><strong>Condomínio</strong><span>vence 25/05 · 4d falta</span></div>
+                <span class="badge-mini" style="background:var(--indigo-50);color:var(--indigo-700)">A Pagar</span>
+                <span class="value">R$ 500,00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Categoria 2: Alimentação + Receita -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div style="background:var(--paper);border:1px solid var(--ink-200);border-radius:var(--r-md);overflow:hidden;box-shadow:var(--shadow-card)">
+              <div style="padding:16px 20px;background:var(--salmon-50);display:flex;justify-content:space-between;align-items:center">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--salmon-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="0.5"/><circle cx="15" cy="9" r="0.5"/></svg>
+                  <strong style="font-family:var(--font-display);font-size:15px;color:var(--salmon-700)">Alimentação</strong>
+                </div>
+                <span class="tabular" style="font-size:13px;font-weight:600;color:var(--salmon-700)">R$ 620 / R$ 1.400</span>
+              </div>
+              <div style="padding:8px 20px">
+                <div class="list-row">
+                  <div class="avatar" style="background:var(--indigo-600)">B</div>
+                  <div class="info"><strong>Mercado da semana</strong><span>vence 18/05 · 3d atr.</span></div>
+                  <span class="badge-mini" style="background:var(--danger-bg);color:var(--danger)">Atrasado</span>
+                  <span class="value">R$ 620,00</span>
+                </div>
+                <div class="list-row">
+                  <div class="avatar" style="background:#EC7000">I</div>
+                  <div class="info"><strong>Restaurantes</strong><span>recorrente · semanal</span></div>
+                  <span class="badge-mini" style="background:var(--indigo-50);color:var(--indigo-700)">A Pagar</span>
+                  <span class="value">R$ 380,00</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="background:var(--paper);border:1px solid var(--ink-200);border-radius:var(--r-md);overflow:hidden;box-shadow:var(--shadow-card)">
+              <div style="padding:16px 20px;background:#D1FAE5;display:flex;justify-content:space-between;align-items:center">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#065F46" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/></svg>
+                  <strong style="font-family:var(--font-display);font-size:15px;color:#065F46">Receitas</strong>
+                </div>
+                <span class="tabular" style="font-size:13px;font-weight:600;color:#065F46">R$ 12.000 / R$ 12.000</span>
+              </div>
+              <div style="padding:8px 20px">
+                <div class="list-row">
+                  <div class="avatar" style="background:#EC7000">I</div>
+                  <div class="info"><strong>Salário</strong><span>vence 05/05 · recebido</span></div>
+                  <span class="badge-mini badge-pago">Recebido</span>
+                  <span class="value">R$ 8.500,00</span>
+                </div>
+                <div class="list-row">
+                  <div class="avatar" style="background:var(--salmon-400);color:var(--ink-900)">F</div>
+                  <div class="info"><strong>Freela Outubro</strong><span>⏩ adiantado · 28/04</span></div>
+                  <span class="badge-mini badge-pago">Recebido</span>
+                  <span class="value">R$ 3.500,00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-num">21 / 22</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 22 — Closing                                                     -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section data-screen-label="22 Closing" class="closing">
+    <div style="position:absolute;bottom:48px;left:120px;font-family:var(--font-mono);font-size:14px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ink-500);z-index:2">Fim · v1.0 · Mai 2026</div>
+
+    <h1 class="close-title">
+      O resto<br>
+      a gente <em>preenche.</em>
+    </h1>
+
+    <dl class="close-grid">
+      <div>
+        <dt>Identidade verbal</dt>
+        <dd>docs/BRAND.md</dd>
+      </div>
+      <div>
+        <dt>Identidade visual</dt>
+        <dd>docs/VISUAL.md</dd>
+      </div>
+      <div>
+        <dt>Tokens CSS</dt>
+        <dd>src/css/variables.css</dd>
+      </div>
+      <div>
+        <dt>Manual do produto</dt>
+        <dd>docs/MANUAL.md</dd>
+      </div>
+    </dl>
+
+    <!-- pattern overlay -->
+    <svg style="position:absolute;bottom:0;right:0;width:600px;height:400px;opacity:0.4;z-index:1" viewBox="0 0 600 400">
+      <pattern id="patternBg" x="0" y="0" width="120" height="80" patternUnits="userSpaceOnUse">
+        <line x1="0" y1="30" x2="120" y2="30" stroke="var(--indigo-300)" stroke-width="2" stroke-linecap="round"/>
+        <path d="M0 55 L40 55 L48 47 L60 47 L68 55 L120 55" stroke="var(--salmon-300)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </pattern>
+      <rect width="600" height="400" fill="url(#patternBg)"/>
+    </svg>
+
+    <div class="slide-num" style="z-index:2">22 / 22</div>
+  </section>
+
+</deck-stage>
+
+<div id="tweaks-root"></div>
+
+<script src="deck-stage.js"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="brand-tweaks-roxo.jsx"></script>
+
+</body>
+</html>

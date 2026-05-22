@@ -1,0 +1,1481 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinFlow · Brand &amp; Visual Guide v1.0</title>
+<meta name="description" content="Guia completo da identidade FinFlow: marca, logo, cores, tipografia, voz e aplicações. Para designers, devs e marketing.">
+<link rel="icon" href="logo/favicon/favicon-auto-theme.svg" type="image/svg+xml">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="src/css/variables.css">
+
+<!-- Thumbnail for bundler -->
+<template id="__bundler_thumbnail">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="22" fill="#0F172A"/>
+  <line x1="14" y1="32" x2="86" y2="32" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/>
+  <path d="M14 68 L38 68 L41 50 L59 50 L62 68 L86 68" stroke="#C2F542" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+</template>
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-body);
+    color: var(--color-ink-900);
+    background: var(--color-canvas);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+
+  /* ========================================================================
+     LAYOUT: sidebar TOC + main content
+     ======================================================================== */
+  .app {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 100vh;
+  }
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    .toc { display: none; }
+  }
+
+  /* ========================================================================
+     TOC SIDEBAR
+     ======================================================================== */
+  .toc {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    padding: 32px 24px 32px 32px;
+    border-right: 1px solid var(--color-border);
+    background: var(--color-canvas);
+    overflow-y: auto;
+  }
+  .toc-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.02em;
+    color: var(--color-ink-900);
+    margin-bottom: 4px;
+  }
+  .toc-brand svg { width: 22px; height: 22px; }
+  .toc-meta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-ink-500);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+  .toc-section {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-ink-400);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 16px 8px 6px;
+  }
+  .toc a {
+    display: block;
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: var(--color-ink-700);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    transition: all 150ms;
+  }
+  .toc a:hover {
+    background: var(--color-primary-50);
+    color: var(--color-primary-700);
+  }
+  .toc a.active {
+    background: var(--color-primary-50);
+    color: var(--color-primary-700);
+    font-weight: 600;
+  }
+  .toc a .num {
+    display: inline-block;
+    font-family: var(--font-mono);
+    color: var(--color-ink-400);
+    font-size: 11px;
+    margin-right: 8px;
+    min-width: 20px;
+  }
+  .toc-tools {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border);
+  }
+  .toc-tools button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-ink-700);
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 6px;
+    text-align: left;
+    transition: all 150ms;
+  }
+  .toc-tools button:hover {
+    border-color: var(--color-primary-300);
+    color: var(--color-primary-700);
+  }
+  .toc-tools button svg { width: 14px; height: 14px; opacity: 0.7; }
+
+  /* ========================================================================
+     MAIN CONTENT
+     ======================================================================== */
+  main {
+    max-width: 920px;
+    padding: 64px 64px 128px;
+  }
+  @media (max-width: 900px) { main { padding: 32px 24px 64px; } }
+
+  /* ========================================================================
+     COVER
+     ======================================================================== */
+  .cover {
+    background: var(--color-ink-950);
+    color: var(--fixed-white);
+    border-radius: 20px;
+    padding: 72px 64px;
+    margin-bottom: 64px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(600px 400px at 10% 20%, rgba(109,94,245,0.4), transparent 70%),
+      radial-gradient(500px 350px at 95% 95%, rgba(194,245,66,0.15), transparent 70%);
+  }
+  .cover > * { position: relative; z-index: 1; }
+  .cover .label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-accent-400);
+    margin-bottom: 24px;
+  }
+  .cover h1 {
+    font-family: var(--font-display);
+    font-size: 64px;
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1;
+    margin-bottom: 24px;
+  }
+  .cover h1 em { color: var(--color-accent-400); font-style: normal; }
+  .cover p.intro {
+    font-size: 18px;
+    color: var(--fixed-ink-soft);
+    max-width: 600px;
+    line-height: 1.55;
+  }
+  .cover .meta-row {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    gap: 48px;
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  .cover .meta-row dt {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--fixed-ink-muted);
+    margin-bottom: 4px;
+  }
+  .cover .meta-row dd {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--fixed-white);
+  }
+
+  /* ========================================================================
+     AUDIENCE CARDS (quick start)
+     ======================================================================== */
+  .audiences {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 80px;
+  }
+  @media (max-width: 700px) { .audiences { grid-template-columns: 1fr; } }
+  .aud {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    padding: 28px 24px;
+    transition: all 150ms;
+    text-decoration: none;
+    color: inherit;
+  }
+  .aud:hover {
+    border-color: var(--color-primary-300);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  .aud .ico {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--color-primary-50);
+    color: var(--color-primary-700);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+  .aud .ico svg { width: 22px; height: 22px; }
+  .aud h3 {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+  .aud p {
+    font-size: 13px;
+    color: var(--color-ink-600);
+    line-height: 1.55;
+    margin-bottom: 16px;
+  }
+  .aud .links {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .aud .links span {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-primary-700);
+  }
+
+  /* ========================================================================
+     SECTIONS
+     ======================================================================== */
+  section.s {
+    margin-bottom: 96px;
+    scroll-margin-top: 32px;
+  }
+  section.s.major {
+    padding-top: 40px;
+    border-top: 2px solid var(--color-ink-200);
+    margin-top: 80px;
+  }
+  .s-head { margin-bottom: 32px; }
+  .s-head .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--color-primary-500);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .s-head h2 {
+    font-family: var(--font-display);
+    font-size: 40px;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    color: var(--color-ink-900);
+  }
+  .s-head h2 .num {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--color-ink-400);
+    letter-spacing: 0.05em;
+    margin-right: 16px;
+    vertical-align: middle;
+  }
+  .s-head p.lede {
+    margin-top: 12px;
+    font-size: 17px;
+    color: var(--color-ink-600);
+    max-width: 640px;
+    line-height: 1.55;
+  }
+
+  h3.sub {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    margin: 32px 0 16px;
+    color: var(--color-ink-900);
+  }
+  h4.sub {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    margin: 24px 0 12px;
+    color: var(--color-ink-700);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  p, ul, ol { margin-bottom: 12px; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin-bottom: 4px; }
+  strong { color: var(--color-ink-900); font-weight: 600; }
+  em { font-style: italic; }
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--color-ink-100);
+    color: var(--color-primary-700);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  /* Note callouts */
+  .note {
+    background: var(--color-primary-50);
+    border-left: 3px solid var(--color-primary-500);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    color: var(--color-ink-700);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  .note strong { color: var(--color-primary-700); }
+  .note.warning {
+    background: var(--color-warning-bg);
+    border-left-color: var(--color-warning);
+    color: var(--color-warning-text);
+  }
+  .note.warning strong { color: var(--color-warning-text); }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 13px;
+  }
+  th, td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: top;
+  }
+  th {
+    background: var(--color-ink-50);
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-ink-700);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  tr:last-child td { border-bottom: none; }
+  td code { font-size: 11px; }
+
+  /* Color ramp */
+  .ramp {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    margin: 16px 0;
+  }
+  .ramp .stop {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 8px 10px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  /* Swatch grid (small color cards) */
+  .swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .swatch {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .swatch .chip {
+    height: 64px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .swatch .info {
+    padding: 10px 12px;
+  }
+  .swatch .name {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .swatch .var {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-ink-500);
+    margin-top: 2px;
+  }
+
+  /* Status badges live */
+  .status-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0;
+  }
+  .status-badges span {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .status-badges span::before {
+    content: "●";
+    font-size: 8px;
+  }
+  .b-pago { background: var(--color-status-pago-bg); color: var(--color-status-pago-text); }
+  .b-trans { background: var(--color-status-transferido-bg); color: var(--color-status-transferido-text); }
+  .b-transferir { background: var(--color-status-transferir-bg); color: var(--color-status-transferir-text); }
+  .b-cancel { background: var(--color-status-cancelado-bg); color: var(--color-status-cancelado-text); }
+  .b-pagar { background: var(--color-status-apagar-bg); color: var(--color-status-apagar-text); }
+
+  /* Logo preview */
+  .logo-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .logo-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .logo-card .preview {
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .logo-card .preview img { max-width: 80%; max-height: 80%; }
+  .logo-card .preview.dark { background: var(--color-ink-950); }
+  .logo-card .preview.light { background: var(--color-canvas); }
+  .logo-card .preview.roxo { background: var(--color-primary-500); }
+  .logo-card .info {
+    padding: 10px 12px;
+    border-top: 1px solid var(--color-border);
+  }
+  .logo-card .name { font-family: var(--font-display); font-size: 12px; font-weight: 600; }
+  .logo-card .path { font-family: var(--font-mono); font-size: 10px; color: var(--color-ink-500); margin-top: 2px; }
+
+  /* Buttons demo */
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 16px 0;
+    padding: 24px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+  }
+  .btn-row.dark { background: var(--color-ink-950); }
+  .demo-btn {
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 20px;
+    border-radius: var(--radius-md);
+  }
+  .demo-btn-primary { background: var(--color-primary-500); color: white; }
+  .demo-btn-lime { background: var(--color-accent-400); color: var(--color-ink-900); }
+  .demo-btn-ghost { background: transparent; color: var(--color-ink-900); border: 1px solid var(--color-border); }
+  .demo-btn-danger { background: var(--color-danger); color: white; }
+
+  /* Type sample */
+  .type-table {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 16px 0;
+  }
+  .type-row {
+    display: grid;
+    grid-template-columns: 110px 80px 1fr;
+    gap: 16px;
+    align-items: baseline;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--color-ink-100);
+  }
+  .type-row:last-child { border-bottom: none; }
+  .type-row .tok { font-family: var(--font-mono); font-size: 11px; color: var(--color-ink-500); }
+  .type-row .px { font-family: var(--font-mono); font-size: 11px; color: var(--color-ink-700); }
+  .type-row .sample { font-family: var(--font-display); }
+
+  /* Quote-style for taglines */
+  .tagline {
+    background: var(--color-ink-950);
+    color: var(--fixed-white);
+    border-radius: 14px;
+    padding: 40px 44px;
+    margin: 16px 0;
+    position: relative;
+  }
+  .tagline.lime { background: var(--color-accent-400); color: var(--color-ink-900); }
+  .tagline .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--color-accent-400);
+    margin-bottom: 12px;
+  }
+  .tagline.lime .label { color: var(--color-primary-700); }
+  .tagline .copy {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 32px;
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+  }
+  .tagline .copy em {
+    color: var(--color-accent-400);
+    font-style: normal;
+  }
+  .tagline.lime .copy em { color: var(--color-primary-700); }
+  .tagline .usage {
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--fixed-ink-soft);
+    line-height: 1.5;
+  }
+  .tagline.lime .usage { color: var(--color-ink-900); opacity: 0.75; }
+
+  /* Do / Don't */
+  .do-dont {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0;
+  }
+  @media (max-width: 700px) { .do-dont { grid-template-columns: 1fr; } }
+  .do-dont .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .do-dont .card.no { border-left: 3px solid var(--color-danger); }
+  .do-dont .card.yes { border-left: 3px solid var(--color-success); }
+  .do-dont .card .lbl {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .do-dont .card.no .lbl { color: var(--color-danger); }
+  .do-dont .card.yes .lbl { color: var(--color-success); }
+
+  /* Footer */
+  .doc-footer {
+    margin-top: 96px;
+    padding-top: 24px;
+    border-top: 1px solid var(--color-border);
+    color: var(--color-ink-500);
+    font-size: 12px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.05em;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* ========================================================================
+     PRINT
+     ======================================================================== */
+  @media print {
+    @page {
+      size: A4;
+      margin: 18mm 16mm;
+    }
+
+    body { background: white; font-size: 11pt; line-height: 1.45; }
+    .app { display: block; }
+    .toc { display: none; }
+    main { max-width: none; padding: 0; }
+    .toc-tools, .theme-toggle { display: none; }
+
+    .cover { padding: 32px 28px; margin-bottom: 24px; border-radius: 12px; page-break-after: always; }
+    .cover h1 { font-size: 42px; }
+    .cover p.intro { font-size: 13pt; }
+
+    section.s { margin-bottom: 24px; page-break-inside: avoid; }
+    section.s.major { page-break-before: always; padding-top: 0; border-top: none; margin-top: 0; }
+
+    .s-head h2 { font-size: 24pt; }
+    h3.sub { font-size: 14pt; page-break-after: avoid; }
+    p, table, .swatches, .ramp, .logo-row, .status-badges, .btn-row { page-break-inside: avoid; }
+
+    table { font-size: 9.5pt; box-shadow: none; }
+    a { color: inherit; text-decoration: none; }
+
+    .audiences { page-break-after: always; }
+    .doc-footer { page-break-before: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ════════════════════════════════════════════════════════════════ TOC ═══ -->
+  <aside class="toc">
+    <div class="toc-brand">
+      <svg viewBox="0 0 100 100">
+        <line x1="14" y1="32" x2="86" y2="32" stroke="var(--color-primary-500)" stroke-width="12" stroke-linecap="round"/>
+        <path d="M14 68 L38 68 L41 50 L59 50 L62 68 L86 68" stroke="var(--color-accent-600)" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      FinFlow
+    </div>
+    <div class="toc-meta">Brand &amp; Visual Guide · v1.0</div>
+
+    <div class="toc-section">Introdução</div>
+    <a href="#para-quem"><span class="num">01</span>Para quem é este guia</a>
+
+    <div class="toc-section">Identidade da marca</div>
+    <a href="#quem-somos"><span class="num">02</span>Quem somos</a>
+    <a href="#taglines"><span class="num">03</span>Taglines</a>
+    <a href="#voz-tom"><span class="num">04</span>Voz e tom</a>
+    <a href="#vocabulario"><span class="num">05</span>Vocabulário</a>
+
+    <div class="toc-section">Logo</div>
+    <a href="#logo-conceito"><span class="num">06</span>Conceito Twin Track</a>
+    <a href="#logo-variacoes"><span class="num">07</span>Variações</a>
+    <a href="#logo-dont"><span class="num">08</span>O que não fazer</a>
+
+    <div class="toc-section">Sistema visual</div>
+    <a href="#cores"><span class="num">09</span>Cores</a>
+    <a href="#status"><span class="num">10</span>Status de pagamento</a>
+    <a href="#tipografia"><span class="num">11</span>Tipografia</a>
+    <a href="#espacamento"><span class="num">12</span>Espaçamento e radius</a>
+    <a href="#sombras"><span class="num">13</span>Sombras e gradientes</a>
+    <a href="#tema"><span class="num">14</span>Light e dark mode</a>
+
+    <div class="toc-section">Para desenvolvedores</div>
+    <a href="#tokens"><span class="num">15</span>Tokens CSS</a>
+    <a href="#componentes"><span class="num">16</span>Componentes base</a>
+    <a href="#acessibilidade"><span class="num">17</span>Acessibilidade</a>
+
+    <div class="toc-section">Para marketing</div>
+    <a href="#aplicacoes"><span class="num">18</span>Aplicações</a>
+    <a href="#do-dont-copy"><span class="num">19</span>Do/Don't de copy</a>
+
+    <div class="toc-section">Recursos</div>
+    <a href="#arquivos"><span class="num">20</span>Arquivos e links</a>
+
+    <div class="toc-tools">
+      <button onclick="window.print()" title="Exporta como PDF (Cmd+P)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/></svg>
+        Exportar como PDF
+      </button>
+      <button onclick="toggleTheme()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        Alternar light/dark
+      </button>
+    </div>
+  </aside>
+
+
+  <!-- ════════════════════════════════════════════════════════════ MAIN ═══ -->
+  <main>
+
+    <!-- ─────────────────────────────────── COVER ─── -->
+    <div class="cover">
+      <div class="label">Brand &amp; Visual Guide · v1.0</div>
+      <h1>FinFlow,<br>como ela se <em>parece</em>.<br>E como ela <em>fala</em>.</h1>
+      <p class="intro">Tudo que você precisa pra desenhar, codar ou comunicar com a identidade da FinFlow no lugar certo. Para designers, devs e marketing.</p>
+      <dl class="meta-row">
+        <div>
+          <dt>Versão</dt>
+          <dd>1.0 · Mai 2026</dd>
+        </div>
+        <div>
+          <dt>Logo</dt>
+          <dd>Twin Track</dd>
+        </div>
+        <div>
+          <dt>Paleta</dt>
+          <dd>Roxo Tech + Lime</dd>
+        </div>
+      </dl>
+    </div>
+
+
+    <!-- ─────────────────────────────────────────── 01 PARA QUEM ─── -->
+    <section class="s" id="para-quem">
+      <div class="s-head">
+        <div class="eyebrow">Introdução</div>
+        <h2><span class="num">01</span>Para quem é este guia</h2>
+        <p class="lede">Três audiências, três entradas. Tudo neste documento, mas você pode pular pro que importa pra você.</p>
+      </div>
+
+      <div class="audiences">
+        <a class="aud" href="#cores">
+          <div class="ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="12" r="9"/><circle cx="7" cy="10" r="1.5" fill="currentColor"/><circle cx="11" cy="6" r="1.5" fill="currentColor"/><circle cx="17" cy="8" r="1.5" fill="currentColor"/><circle cx="19" cy="14" r="1.5" fill="currentColor"/></svg>
+          </div>
+          <h3>Designer</h3>
+          <p>Crie mockups com paleta, type, logo e componentes que combinam com a marca. Use as cores semânticas e status corretos.</p>
+          <div class="links">
+            <span>↳ Cores · Tipografia · Logo · Componentes</span>
+          </div>
+        </a>
+
+        <a class="aud" href="#tokens">
+          <div class="ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <h3>Developer</h3>
+          <p>Use os tokens CSS em vez de hex hardcoded. Dark mode automático. Acessibilidade já configurada.</p>
+          <div class="links">
+            <span>↳ variables.css · Componentes · A11y</span>
+          </div>
+        </a>
+
+        <a class="aud" href="#do-dont-copy">
+          <div class="ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18M3 12h18M3 19h12"/></svg>
+          </div>
+          <h3>Marketing</h3>
+          <p>Taglines aprovadas, tom de voz, vocabulário canônico, exemplos de copy. Sem travessões, sem clichês.</p>
+          <div class="links">
+            <span>↳ Voz · Taglines · Do/Don't · Aplicações</span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+
+    <!-- ════════════════════════════════════════════════ IDENTIDADE ════ -->
+
+
+    <!-- 02 QUEM SOMOS -->
+    <section class="s major" id="quem-somos">
+      <div class="s-head">
+        <div class="eyebrow">Identidade da marca</div>
+        <h2><span class="num">02</span>Quem somos. E quem não somos.</h2>
+        <p class="lede">A âncora da marca. Toda decisão de copy, naming, design e tom de voz deriva dessa tabela. Personalidade aprovada, Amigável + Inteligente + Opinativo.</p>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>We Are</th><th>We Are Not</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Próximos.</strong> Falamos "você", "vocês", contrações ("pra", "dá pra"), explicamos sem condescender</td><td><strong>Íntimos demais.</strong> Não somos "amigão de boteco" nem usamos gírias datadas</td></tr>
+          <tr><td><strong>Inteligentes.</strong> Profundidade real (4 moedas, OFX, 23 relatórios, SAC/Price)</td><td><strong>Pedantes.</strong> Não exibimos complexidade. Sempre explicamos o "porquê"</td></tr>
+          <tr><td><strong>Opinativos.</strong> Defendemos uma filosofia, guiamos o usuário ativamente</td><td><strong>Mandões.</strong> Sem bronca, sem coach moralista</td></tr>
+          <tr><td><strong>Detalhistas.</strong> Rastreamos coisas que outros apps ignoram</td><td><strong>Burocráticos.</strong> Sem checklist infinita</td></tr>
+          <tr><td><strong>Realistas.</strong> A vida financeira é bagunçada e tudo bem</td><td><strong>Cínicos.</strong> Sem julgamento. Oferecemos correção</td></tr>
+          <tr><td><strong>Brasileiros sem provincianismo.</strong> pt-BR base, EN onde fizer sentido</td><td><strong>Anglo-aspiracionais.</strong> Sem inglês de enfeite</td></tr>
+          <tr><td><strong>Calmos.</strong> Finança é tema sensível, sem urgência fabricada</td><td><strong>Indiferentes.</strong> Avisamos atrasos, sugerimos ações</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+
+    <!-- 03 TAGLINES -->
+    <section class="s" id="taglines">
+      <div class="s-head">
+        <div class="eyebrow">Identidade da marca</div>
+        <h2><span class="num">03</span>Taglines oficiais</h2>
+        <p class="lede">Três taglines com papéis diferentes. Use cada uma no contexto certo, juntas formam um sistema coerente.</p>
+      </div>
+
+      <div class="tagline">
+        <div class="label">01 · Principal · Positioning</div>
+        <div class="copy">Organize compromissos,<br><em>não tickets de extrato.</em></div>
+        <div class="usage">Hero da homepage, materiais formais, footer, cartão de visita, embalagens, deck institucional. Posiciona contra apps que cadastram transação a transação.</div>
+      </div>
+
+      <div class="tagline">
+        <div class="label">02 · Hook de campanha</div>
+        <div class="copy">Você sabe quanto pode sobrar em dezembro.<br><em>Antes de dezembro chegar.</em></div>
+        <div class="usage">Ads, billboards, social posts de campanha, email marketing. Versão curta: <strong style="color:var(--color-accent-400)">"Antes de dezembro chegar."</strong> Promete antecipação, sticky.</div>
+      </div>
+
+      <div class="tagline lime">
+        <div class="label">03 · Explicação do modelo</div>
+        <div class="copy">Comprometido <em>vs.</em> executado.</div>
+        <div class="usage">Página "Sobre", seção "Como funciona", onboarding, docs internas. É a tagline desenhada no símbolo Twin Track (linha de cima = comprometido, linha de baixo = executado).</div>
+      </div>
+    </section>
+
+
+    <!-- 04 VOZ E TOM -->
+    <section class="s" id="voz-tom">
+      <div class="s-head">
+        <div class="eyebrow">Identidade da marca</div>
+        <h2><span class="num">04</span>Voz e tom</h2>
+        <p class="lede">A <strong>voz</strong> é constante (personalidade). O <strong>tom</strong> flexa por contexto (formalidade, energia, densidade técnica).</p>
+      </div>
+
+      <h3 class="sub">Princípios de voz</h3>
+      <ol>
+        <li>Trate o usuário como adulto inteligente</li>
+        <li>Tenha opinião</li>
+        <li>Mostre o trabalho (quando o app fizer algo automaticamente, explique)</li>
+        <li>Fale plural quando fizer sentido ("vocês", "a gente")</li>
+        <li>Português de verdade, não traduzido</li>
+        <li><strong>Sem travessões (—) em texto visível.</strong> Use vírgula, dois pontos ou ponto</li>
+      </ol>
+
+      <h3 class="sub">Tom por contexto</h3>
+      <table>
+        <thead><tr><th style="width:24%">Onde</th><th style="width:38%">Exemplo (escrever assim)</th><th>Anti-padrão</th></tr></thead>
+        <tbody>
+          <tr><td>Microcopy (botão, label)</td><td>"Marcar como pago", "Saiu de qual conta?"</td><td>"Confirmar Status do Pagamento"</td></tr>
+          <tr><td>Toast de sucesso</td><td>"Pagamento marcado. Saldo atualizado."</td><td>"Operação realizada com sucesso!"</td></tr>
+          <tr><td>Toast de erro</td><td>"Câmbio USD indisponível agora, tenta de novo em alguns minutos."</td><td>"Ops! Algo deu errado"</td></tr>
+          <tr><td>Empty state</td><td>"Nenhum compromisso ainda. Comece cadastrando seu salário, o resto a gente preenche."</td><td>"Lista vazia"</td></tr>
+          <tr><td>Email transacional</td><td>"Pra trocar sua senha, clica aqui. O link vale por 1 hora."</td><td>"Prezado usuário, segue link"</td></tr>
+          <tr><td>Landing hero</td><td>"Organize compromissos, não tickets de extrato."</td><td>"A melhor plataforma de gestão"</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+
+    <!-- 05 VOCABULÁRIO -->
+    <section class="s" id="vocabulario">
+      <div class="s-head">
+        <div class="eyebrow">Identidade da marca</div>
+        <h2><span class="num">05</span>Vocabulário canônico</h2>
+        <p class="lede">Termos do produto têm tradução fixa. Não invente sinônimos. Isso é um contrato entre design, copy e engenharia.</p>
+      </div>
+
+      <table>
+        <thead><tr><th>Conceito</th><th>Termo correto</th><th>Não usar</th></tr></thead>
+        <tbody>
+          <tr><td>Promessa recorrente</td><td><strong>Compromisso</strong></td><td>"Despesa fixa", "lançamento"</td></tr>
+          <tr><td>Ocorrência mensal de um compromisso</td><td><strong>Pagamento</strong></td><td>"Conta", "boleto"</td></tr>
+          <tr><td>Dinheiro saindo/entrando</td><td><strong>Transação</strong></td><td>"Movimentação", "operação"</td></tr>
+          <tr><td>Sub-saldo numa conta</td><td><strong>Caixinha</strong></td><td>"Envelope", "Pote"</td></tr>
+          <tr><td>Saldo livre não alocado</td><td><strong>Caixa Livre</strong></td><td>"Saldo disponível"</td></tr>
+          <tr><td>Conta de onde saiu de fato</td><td><strong>Conta efetiva</strong></td><td>"Origem real"</td></tr>
+          <tr><td>Bater pagamentos com extrato</td><td><strong>Conciliação</strong></td><td>"Match", "verificação"</td></tr>
+          <tr><td>Receita antes do previsto</td><td><strong>Adiantamento de receita</strong></td><td>"Antecipação"</td></tr>
+          <tr><td>Ativos menos passivos</td><td><strong>Patrimônio</strong></td><td>"Net worth", "fortuna"</td></tr>
+        </tbody>
+      </table>
+
+      <h3 class="sub">Vocabulário banido</h3>
+      <ul>
+        <li>❌ <strong>"Investidor"</strong> para pessoa comum. Use "você"</li>
+        <li>❌ <strong>"Cliente"</strong>. São usuários ou "você"</li>
+        <li>❌ <strong>"Robô", "IA", "inteligência artificial".</strong> Somos um app determinístico bem projetado</li>
+        <li>❌ <strong>"Plataforma"</strong> quando dá pra dizer "app" ou "FinFlow"</li>
+        <li>❌ <strong>"Solução", "Empoderar".</strong> Vendedor demais</li>
+        <li>❌ <strong>Anglicismos desnecessários</strong>, "insights", "tracking", "report"</li>
+      </ul>
+    </section>
+
+
+    <!-- ════════════════════════════════════════════════ LOGO ════ -->
+
+
+    <!-- 06 CONCEITO TWIN TRACK -->
+    <section class="s major" id="logo-conceito">
+      <div class="s-head">
+        <div class="eyebrow">Logo</div>
+        <h2><span class="num">06</span>Twin Track. O conceito.</h2>
+        <p class="lede">Duas trilhas paralelas. A linha de cima (roxa) é o <strong>planejado</strong>. A linha de baixo (lime, com pico de variação) é o <strong>real</strong>. O símbolo é a filosofia "comprometido vs. executado" desenhada.</p>
+      </div>
+
+      <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:48px;display:flex;align-items:center;justify-content:center;margin-bottom:24px">
+        <svg viewBox="0 0 100 100" width="280" height="280">
+          <line x1="14" y1="32" x2="86" y2="32" stroke="var(--color-primary-500)" stroke-width="12" stroke-linecap="round"/>
+          <path d="M14 68 L38 68 L41 50 L59 50 L62 68 L86 68" stroke="var(--color-accent-600)" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <h3 class="sub">Construção canônica</h3>
+      <table>
+        <tbody>
+          <tr><td><code>stroke-width</code></td><td>W (variável)</td></tr>
+          <tr><td>Extensão horizontal</td><td>6W (linha de x até x + 6W)</td></tr>
+          <tr><td>Espaçamento ↕</td><td>3W (centro a centro entre as duas linhas)</td></tr>
+          <tr><td>Visual width</td><td>7W</td></tr>
+          <tr><td>Visual height</td><td>4W</td></tr>
+          <tr><td>Bump tip</td><td>Midpoint entre as duas linhas</td></tr>
+        </tbody>
+      </table>
+      <p>Aplicar em qualquer tamanho mantém as proporções. A variação stacked usa W menor pra equilibrar com o wordmark.</p>
+
+      <h3 class="sub">Tamanho mínimo</h3>
+      <ul>
+        <li>Símbolo isolado: <strong>16 × 16 px</strong> digital, <strong>8 mm</strong> impresso</li>
+        <li>Wordmark / lockup: <strong>72 px</strong> de altura digital, <strong>24 mm</strong> impresso</li>
+      </ul>
+
+      <h3 class="sub">Clear space</h3>
+      <p>Mínimo <strong>1x</strong> (espessura da linha) de espaço livre em todos os lados. No lockup com wordmark, <strong>1.5x</strong> entre símbolo e tipo.</p>
+    </section>
+
+
+    <!-- 07 VARIAÇÕES -->
+    <section class="s" id="logo-variacoes">
+      <div class="s-head">
+        <div class="eyebrow">Logo</div>
+        <h2><span class="num">07</span>Variações canônicas</h2>
+        <p class="lede">20 arquivos em <code>logo/</code>. Os 6 lockups mais usados estão abaixo.</p>
+      </div>
+
+      <div class="logo-row">
+        <div class="logo-card">
+          <div class="preview light"><img src="logo/lockup-horizontal/lockup-h-color.svg?v=4" alt=""></div>
+          <div class="info"><div class="name">Lockup H · color</div><div class="path">★ Uso primário</div></div>
+        </div>
+        <div class="logo-card">
+          <div class="preview dark"><img src="logo/lockup-horizontal/lockup-h-reverso.svg?v=4" alt=""></div>
+          <div class="info"><div class="name">Lockup H · reverso</div><div class="path">Sobre dark</div></div>
+        </div>
+        <div class="logo-card">
+          <div class="preview roxo"><img src="logo/lockup-horizontal/lockup-h-mono-light.svg?v=4" alt=""></div>
+          <div class="info"><div class="name">Lockup H · mono light</div><div class="path">Sobre roxo</div></div>
+        </div>
+        <div class="logo-card">
+          <div class="preview light"><img src="logo/symbol/symbol-color.svg?v=4" alt=""></div>
+          <div class="info"><div class="name">Símbolo · color</div><div class="path">Avatar quadrado</div></div>
+        </div>
+        <div class="logo-card">
+          <div class="preview light"><img src="logo/app-icon/app-icon-dark-bg.svg?v=4" alt="" style="border-radius:18%"></div>
+          <div class="info"><div class="name">App icon · dark bg</div><div class="path">iOS / Android</div></div>
+        </div>
+        <div class="logo-card">
+          <div class="preview light" style="background:white"><img src="logo/wordmark/wordmark-color.svg?v=4" alt=""></div>
+          <div class="info"><div class="name">Wordmark · color</div><div class="path">Sem símbolo</div></div>
+        </div>
+      </div>
+
+      <p style="font-size:13px;color:var(--color-ink-600);margin-top:16px">
+        <strong>Família completa em <code>logo/</code></strong>: símbolo (4 versões), wordmark (3), lockup horizontal (4), lockup empilhado (3), app icon (3), favicon (2). Detalhes em <code>logo/README.md</code>.
+      </p>
+    </section>
+
+
+    <!-- 08 O QUE NÃO FAZER -->
+    <section class="s" id="logo-dont">
+      <div class="s-head">
+        <div class="eyebrow">Logo</div>
+        <h2><span class="num">08</span>O que não fazer</h2>
+      </div>
+
+      <div class="do-dont">
+        <div class="card no"><div class="lbl">❌ Não</div>Rotacionar a marca. A horizontalidade é parte do significado.</div>
+        <div class="card no"><div class="lbl">❌ Não</div>Esticar ou distorcer. Sempre escalar uniforme.</div>
+        <div class="card no"><div class="lbl">❌ Não</div>Trocar as cores fora das aprovadas (roxo, lime, mono).</div>
+        <div class="card no"><div class="lbl">❌ Não</div>Aplicar sombras decorativas ou outlines extras.</div>
+        <div class="card no"><div class="lbl">❌ Não</div>Usar gradientes inventados. Só o oficial (roxo → lime).</div>
+        <div class="card no"><div class="lbl">❌ Não</div>Trocar a fonte do wordmark. É sempre Manrope ExtraBold.</div>
+      </div>
+    </section>
+
+
+    <!-- ════════════════════════════════════════════════ SISTEMA VISUAL ════ -->
+
+
+    <!-- 09 CORES -->
+    <section class="s major" id="cores">
+      <div class="s-head">
+        <div class="eyebrow">Sistema visual</div>
+        <h2><span class="num">09</span>Cores</h2>
+        <p class="lede">Toda cor tem trabalho. Roxo = ação primária. Lime = acento. Verde = sucesso. Âmbar = pendente. Nenhuma cor "só pra ficar bonito".</p>
+      </div>
+
+      <h3 class="sub">Primária · Roxo Tech</h3>
+      <div class="ramp">
+        <div class="stop" style="background:var(--color-primary-50);color:var(--color-primary-900)">50<br>#F1EFFE</div>
+        <div class="stop" style="background:var(--color-primary-100);color:var(--color-primary-900)">100<br>#E5E1FD</div>
+        <div class="stop" style="background:var(--color-primary-200);color:var(--color-primary-900)">200<br>#D2CCFB</div>
+        <div class="stop" style="background:var(--color-primary-300);color:var(--color-primary-900)">300<br>#B5ACF8</div>
+        <div class="stop" style="background:var(--color-primary-400);color:white">400<br>#8B7FF7</div>
+        <div class="stop" style="background:var(--color-primary-500);color:white">★ 500<br>#6D5EF5</div>
+        <div class="stop" style="background:var(--color-primary-600);color:white">600<br>#5B4FE0</div>
+        <div class="stop" style="background:var(--color-primary-700);color:white">700<br>#4B3FD6</div>
+        <div class="stop" style="background:var(--color-primary-800);color:white">800<br>#3A30B0</div>
+        <div class="stop" style="background:var(--color-primary-900);color:white">900<br>#2A2384</div>
+      </div>
+
+      <h3 class="sub">Acento · Lime</h3>
+      <div class="ramp">
+        <div class="stop" style="background:var(--color-accent-50);color:#2E460B">50<br>#F7FEE7</div>
+        <div class="stop" style="background:var(--color-accent-100);color:#2E460B">100<br>#ECFCCB</div>
+        <div class="stop" style="background:var(--color-accent-200);color:#2E460B">200<br>#DFFBA5</div>
+        <div class="stop" style="background:var(--color-accent-300);color:#2E460B">300<br>#D2F873</div>
+        <div class="stop" style="background:var(--color-accent-400);color:#2E460B">★ 400<br>#C2F542</div>
+        <div class="stop" style="background:var(--color-accent-500);color:white">500<br>#A3D331</div>
+        <div class="stop" style="background:var(--color-accent-600);color:white">600<br>#84B121</div>
+        <div class="stop" style="background:var(--color-accent-700);color:white">700<br>#65880F</div>
+        <div class="stop" style="background:var(--color-accent-800);color:white">800<br>#4D6A0E</div>
+        <div class="stop" style="background:var(--color-accent-900);color:white">900<br>#2E460B</div>
+      </div>
+
+      <div class="note warning">
+        <strong>Cuidado:</strong> em fundo claro, lime não tem contraste suficiente para texto. Use <code>accent-600</code> ou <code>accent-700</code>. Em fundo escuro, o <code>accent-400</code> brilha.
+      </div>
+
+      <h3 class="sub">Semânticas</h3>
+      <div class="status-badges">
+        <span style="background:var(--color-success-bg);color:var(--color-success-text)">Sucesso</span>
+        <span style="background:var(--color-warning-bg);color:var(--color-warning-text)">Atenção</span>
+        <span style="background:var(--color-danger-bg);color:var(--color-danger-text)">Erro</span>
+        <span style="background:var(--color-info-bg);color:var(--color-info-text)">Info</span>
+      </div>
+
+      <h3 class="sub">Sidebar (sempre dark)</h3>
+      <p>Decisão de marca, a sidebar fica escura nos dois modos. Light usa <code>#0F172A</code>, dark usa <code>#14172A</code> (leve tom roxo).</p>
+    </section>
+
+
+    <!-- 10 STATUS -->
+    <section class="s" id="status">
+      <div class="s-head">
+        <div class="eyebrow">Sistema visual</div>
+        <h2><span class="num">10</span>Status de pagamento</h2>
+        <p class="lede">5 status, cada um numa família cromática distinta. O usuário lê a tabela sem ler.</p>
+      </div>
+
+      <div class="status-badges" style="margin:24px 0">
+        <span class="b-pago">Pago</span>
+        <span class="b-trans">Transferido</span>
+        <span class="b-transferir">A Transferir</span>
+        <span class="b-cancel">Cancelado</span>
+        <span class="b-pagar">A Pagar</span>
+      </div>
+
+      <table>
+        <thead><tr><th>Status</th><th>Vibe</th><th>Quando</th><th>Token</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Pago</strong></td><td>🟢 Verde · sucesso</td><td>Pagamento concluído</td><td><code>status-pago</code></td></tr>
+          <tr><td><strong>Transferido</strong></td><td>🔵 Azul · fluxo</td><td>Transferência executada</td><td><code>status-transferido</code></td></tr>
+          <tr><td><strong>A Transferir</strong></td><td>🌸 Rose · pendente</td><td>Marcada mas não executada</td><td><code>status-transferir</code></td></tr>
+          <tr><td><strong>Cancelado</strong></td><td>⚫ Cinza · neutralizado</td><td>Não vai acontecer</td><td><code>status-cancelado</code></td></tr>
+          <tr><td><strong>A Pagar</strong></td><td>🟡 Âmbar · atenção</td><td>Default, precisa ação</td><td><code>status-apagar</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="note">
+        <strong>Removidos na v2.0:</strong> Cartão, Parcial e Agendado não existem mais no sistema.
+      </div>
+    </section>
+
+
+    <!-- 11 TIPOGRAFIA -->
+    <section class="s" id="tipografia">
+      <div class="s-head">
+        <div class="eyebrow">Sistema visual</div>
+        <h2><span class="num">11</span>Tipografia</h2>
+        <p class="lede">Manrope (display) + Inter (body) + Geist Mono (tabular). Cada uma com papel claro.</p>
+      </div>
+
+      <h3 class="sub">Três famílias</h3>
+      <table>
+        <thead><tr><th>Token</th><th>Família</th><th>Uso</th></tr></thead>
+        <tbody>
+          <tr><td><code>--font-display</code></td><td><strong>Manrope</strong></td><td>h1 a h5, KPIs, headlines, wordmark</td></tr>
+          <tr><td><code>--font-body</code></td><td><strong>Inter</strong></td><td>Body, labels, inputs, tabelas</td></tr>
+          <tr><td><code>--font-mono</code></td><td><strong>Geist Mono</strong></td><td>Valores monetários, datas, código</td></tr>
+        </tbody>
+      </table>
+
+      <h3 class="sub">Escala</h3>
+      <div class="type-table">
+        <div class="type-row"><span class="tok">--fs-5xl</span><span class="px">60px</span><span class="sample" style="font-size:48px;font-weight:800;letter-spacing:-0.03em">Display</span></div>
+        <div class="type-row"><span class="tok">--fs-3xl</span><span class="px">36px</span><span class="sample" style="font-size:32px;font-weight:700;letter-spacing:-0.02em">H1 · página</span></div>
+        <div class="type-row"><span class="tok">--fs-2xl</span><span class="px">30px</span><span class="sample" style="font-size:26px;font-weight:700;letter-spacing:-0.015em">H2 · seção</span></div>
+        <div class="type-row"><span class="tok">--fs-xl</span><span class="px">24px</span><span class="sample" style="font-size:22px;font-weight:700">H3 · sub-seção</span></div>
+        <div class="type-row"><span class="tok">--fs-base</span><span class="px">16px ★</span><span class="sample" style="font-size:16px;font-family:var(--font-body)">Body padrão · Inter</span></div>
+        <div class="type-row"><span class="tok">--fs-sm</span><span class="px">14px</span><span class="sample" style="font-size:14px;font-family:var(--font-body);color:var(--color-ink-600)">Tabela, secundário</span></div>
+        <div class="type-row"><span class="tok">--fs-xs</span><span class="px">12px</span><span class="sample" style="font-size:12px;font-family:var(--font-body);text-transform:uppercase;letter-spacing:0.1em;color:var(--color-ink-500)">Eyebrow · badges</span></div>
+        <div class="type-row"><span class="tok">tabular</span><span class="px">~</span><span class="sample" style="font-family:var(--font-mono);font-size:18px;font-variant-numeric:tabular-nums">R$ 1.234,56 → R$ 9.999,99</span></div>
+      </div>
+
+      <div class="note">
+        <strong>Tabular nums é crítico para finanças.</strong> Use <code>font-variant-numeric: tabular-nums</code> em toda coluna de valores monetários. Sem isso "1.234,56" e "9.999,99" não alinham na vertical.
+      </div>
+    </section>
+
+
+    <!-- 12 ESPAÇAMENTO + RADIUS -->
+    <section class="s" id="espacamento">
+      <div class="s-head">
+        <div class="eyebrow">Sistema visual</div>
+        <h2><span class="num">12</span>Espaçamento e radius</h2>
+        <p class="lede">Escala de 4px (Tailwind-style). Curvas médias a generosas.</p>
+      </div>
+
+      <h3 class="sub">Espaçamento</h3>
+      <p>Tokens <code>--space-0</code> a <code>--space-24</code> (de 0 a 96px). Regra: prefira a escala. Não invente <code>padding: 17px</code>.</p>
+
+      <h3 class="sub">Border radius</h3>
+      <div class="swatches">
+        <div class="swatch"><div class="chip" style="background:var(--color-primary-500);border-radius:var(--radius-sm)"></div><div class="info"><div class="name">Small · 6px</div><div class="var">--radius-sm</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--color-primary-500);border-radius:var(--radius-md)"></div><div class="info"><div class="name">Medium ★ · 12px</div><div class="var">--radius-md</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--color-primary-500);border-radius:var(--radius-lg)"></div><div class="info"><div class="name">Large · 20px</div><div class="var">--radius-lg</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--color-primary-500);border-radius:var(--radius-xl)"></div><div class="info"><div class="name">Extra · 28px</div><div class="var">--radius-xl</div></div></div>
+      </div>
+    </section>
+
+
+    <!-- 13 SOMBRAS + GRADIENTES -->
+    <section class="s" id="sombras">
+      <div class="s-head">
+        <div class="eyebrow">Sistema visual</div>
+        <h2><span class="num">13</span>Sombras e gradientes</h2>
+        <p class="lede">6 níveis de sombra com assinatura roxa sutil. 4 gradientes oficiais.</p>
+      </div>
+
+      <h3 class="sub">Sombras</h3>
+      <p>A segunda camada do <code>--shadow-card</code> usa roxo translúcido em vez de cinza, dando uma aura sutil que conecta com a cor primária.</p>
+
+      <h3 class="sub">Gradientes</h3>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:16px 0">
+        <div style="background:var(--gradient-primary);height:120px;border-radius:10px;padding:20px;color:white;display:flex;align-items:end;font-family:var(--font-mono);font-size:11px">--gradient-primary</div>
+        <div style="background:var(--gradient-hero);height:120px;border-radius:10px;padding:20px;color:white;display:flex;align-items:end;font-family:var(--font-mono);font-size:11px">--gradient-hero</div>
+        <div style="background:var(--gradient-primary-soft);height:120px;border-radius:10px;padding:20px;color:var(--color-ink-900);display:flex;align-items:end;font-family:var(--font-mono);font-size:11px">--gradient-primary-soft</div>
+        <div style="background:var(--gradient-night);height:120px;border-radius:10px;padding:20px;color:white;display:flex;align-items:end;font-family:var(--font-mono);font-size:11px">--gradient-night</div>
+      </div>
+
+      <div class="note warning">
+        <strong>Não inventar gradientes novos.</strong> Mantenha consistência.
+      </div>
+    </section>
+
+
+    <!-- 14 TEMA -->
+    <section class="s" id="tema">
+      <div class="s-head">
+        <div class="eyebrow">Sistema visual</div>
+        <h2><span class="num">14</span>Light e dark mode</h2>
+        <p class="lede">Ambos os modos são first-class. Não tem "dark mode adaptado". Os tokens invertem automaticamente via <code>data-theme="dark"</code>.</p>
+      </div>
+
+      <h3 class="sub">Como ativar</h3>
+<pre style="background:var(--color-ink-900);color:var(--color-ink-100);padding:16px 20px;border-radius:10px;overflow-x:auto;font-family:var(--font-mono);font-size:12px;line-height:1.65"><code style="background:none;color:inherit;padding:0">document.documentElement.setAttribute('data-theme', 'dark');
+<span style="color:var(--color-ink-500)">// ou 'light'</span></code></pre>
+
+      <h3 class="sub">Que invertem</h3>
+      <ul>
+        <li>Surfaces (paper, canvas)</li>
+        <li>Ink ramp inteira (50 a 900)</li>
+        <li>Bgs sutis de marca (primary-50, accent-50)</li>
+        <li>Semânticas (bg + text juntos)</li>
+        <li>Status de pagamento (bg + text juntos)</li>
+      </ul>
+
+      <h3 class="sub">Que não invertem</h3>
+      <ul>
+        <li>Sidebar (sempre dark, com tom diferente em cada modo)</li>
+        <li>Hero / seções always-dark (mantêm ink-950)</li>
+        <li>Final CTA em lime (sempre lime)</li>
+        <li>Fixed tokens (<code>--fixed-white</code>, <code>--fixed-dark</code>)</li>
+        <li>Logo principal</li>
+      </ul>
+    </section>
+
+
+    <!-- ════════════════════════════════════════════ DEVELOPER ════ -->
+
+
+    <!-- 15 TOKENS -->
+    <section class="s major" id="tokens">
+      <div class="s-head">
+        <div class="eyebrow">Para desenvolvedores</div>
+        <h2><span class="num">15</span>Tokens CSS</h2>
+        <p class="lede">Importa <code>src/css/variables.css</code> e usa <code>var(--token)</code>. Nunca hex hardcoded.</p>
+      </div>
+
+      <h3 class="sub">Bom</h3>
+<pre style="background:var(--color-ink-900);color:var(--color-ink-100);padding:16px 20px;border-radius:10px;overflow-x:auto;font-family:var(--font-mono);font-size:12px;line-height:1.65"><code style="background:none;color:inherit;padding:0">.my-card {
+  background: <span style="color:var(--color-accent-300)">var(--color-surface)</span>;
+  border: 1px solid <span style="color:var(--color-accent-300)">var(--color-border)</span>;
+  border-radius: <span style="color:var(--color-accent-300)">var(--radius-md)</span>;
+  padding: <span style="color:var(--color-accent-300)">var(--space-5)</span>;
+  box-shadow: <span style="color:var(--color-accent-300)">var(--shadow-card)</span>;
+  color: <span style="color:var(--color-accent-300)">var(--color-text-main)</span>;
+}</code></pre>
+
+      <h3 class="sub">Ruim</h3>
+<pre style="background:var(--color-ink-900);color:var(--color-ink-100);padding:16px 20px;border-radius:10px;overflow-x:auto;font-family:var(--font-mono);font-size:12px;line-height:1.65"><code style="background:none;color:inherit;padding:0">.my-card {
+  background: <span style="color:#FCA5A5">#FFFFFF</span>;   <span style="color:var(--color-ink-500)">/* hardcoded */</span>
+  border-radius: <span style="color:#FCA5A5">12px</span>;     <span style="color:var(--color-ink-500)">/* hardcoded */</span>
+}</code></pre>
+
+      <h3 class="sub">Quando criar token novo</h3>
+      <ul>
+        <li>Vai ser usado em <strong>3 ou mais lugares</strong></li>
+        <li>Não cabe em token existente</li>
+        <li>Tem nome semântico (não <code>--cor-bonita</code>)</li>
+      </ul>
+    </section>
+
+
+    <!-- 16 COMPONENTES -->
+    <section class="s" id="componentes">
+      <div class="s-head">
+        <div class="eyebrow">Para desenvolvedores</div>
+        <h2><span class="num">16</span>Componentes base</h2>
+        <p class="lede">Exemplos prontos. Copia-cola pra prototipagem rápida.</p>
+      </div>
+
+      <h3 class="sub">Botões</h3>
+      <div class="btn-row">
+        <button class="demo-btn demo-btn-primary">Primário</button>
+        <button class="demo-btn demo-btn-lime">Lime · CTA forte</button>
+        <button class="demo-btn demo-btn-ghost">Ghost</button>
+        <button class="demo-btn demo-btn-danger">Destrutivo</button>
+      </div>
+
+      <h3 class="sub">Status badges</h3>
+      <div class="status-badges">
+        <span class="b-pago">Pago</span>
+        <span class="b-trans">Transferido</span>
+        <span class="b-transferir">A Transferir</span>
+        <span class="b-cancel">Cancelado</span>
+        <span class="b-pagar">A Pagar</span>
+      </div>
+
+      <h3 class="sub">Card padrão</h3>
+      <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:20px;box-shadow:var(--shadow-card);max-width:360px;margin:16px 0">
+        <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-ink-500);font-weight:600;margin-bottom:4px">Saldo total</div>
+        <div style="font-family:var(--font-display);font-weight:800;font-size:28px;font-variant-numeric:tabular-nums;letter-spacing:-0.02em">R$ 28.450,12</div>
+        <div style="font-size:12px;color:var(--color-success);margin-top:4px">↑ R$ 1.240 vs mês passado</div>
+      </div>
+    </section>
+
+
+    <!-- 17 ACESSIBILIDADE -->
+    <section class="s" id="acessibilidade">
+      <div class="s-head">
+        <div class="eyebrow">Para desenvolvedores</div>
+        <h2><span class="num">17</span>Acessibilidade</h2>
+        <p class="lede">WCAG AA é piso, não teto.</p>
+      </div>
+
+      <ul>
+        <li><strong>Contraste</strong>, todas cores atingem AA. Em texto pequeno, prefira tokens 700+ sobre fundos claros</li>
+        <li><strong>Focus ring</strong>, sempre <code>:focus-visible</code> com 2px solid + 2px offset</li>
+        <li><strong>Tamanhos mínimos</strong>, botão 36px height (44px em touch), tap target 44 × 44px, fonte mínima 12px (16px no body)</li>
+        <li><strong>Reduced motion</strong>, já incluído em <code>variables.css</code> v2.0</li>
+        <li><strong>Tabular nums</strong>, em toda coluna de números</li>
+      </ul>
+    </section>
+
+
+    <!-- ════════════════════════════════════════════ MARKETING ════ -->
+
+
+    <!-- 18 APLICAÇÕES -->
+    <section class="s major" id="aplicacoes">
+      <div class="s-head">
+        <div class="eyebrow">Para marketing</div>
+        <h2><span class="num">18</span>Aplicações da marca</h2>
+        <p class="lede">Onde a marca aparece e como ela se comporta em cada superfície.</p>
+      </div>
+
+      <h3 class="sub">Hierarquia de aplicação</h3>
+      <table>
+        <thead><tr><th>Superfície</th><th>Logo</th><th>Tagline</th><th>Emoji?</th></tr></thead>
+        <tbody>
+          <tr><td>Landing hero</td><td>Wordmark + símbolo</td><td>01 (Positioning)</td><td>❌</td></tr>
+          <tr><td>Billboard / OOH</td><td>Símbolo + nome</td><td>02 short ("Antes de dezembro chegar")</td><td>❌</td></tr>
+          <tr><td>Email transacional</td><td>Lockup color</td><td>nenhuma</td><td>1 funcional</td></tr>
+          <tr><td>Email marketing</td><td>Lockup color</td><td>02 ou contextual</td><td>até 2</td></tr>
+          <tr><td>Social (IG/LinkedIn)</td><td>Wordmark inline</td><td>02 ou contextual</td><td>contextual</td></tr>
+          <tr><td>App icon</td><td>app-icon-dark-bg</td><td>nenhuma</td><td>n/a</td></tr>
+          <tr><td>Splash screen</td><td>Símbolo + nome em gradient hero</td><td>nenhuma</td><td>n/a</td></tr>
+          <tr><td>Página "Sobre"</td><td>Lockup color</td><td>03 ("Comprometido vs. executado")</td><td>❌</td></tr>
+        </tbody>
+      </table>
+
+      <h3 class="sub">Combinações de fundo</h3>
+      <ul>
+        <li><strong>Fundo branco/cream</strong>, logo color (roxo + lime)</li>
+        <li><strong>Fundo ink-950 (dark)</strong>, logo reverso (branco + lime)</li>
+        <li><strong>Fundo roxo</strong>, logo mono light (branco)</li>
+        <li><strong>Fundo lime</strong>, logo mono dark (ink-900)</li>
+      </ul>
+    </section>
+
+
+    <!-- 19 DO / DON'T DE COPY -->
+    <section class="s" id="do-dont-copy">
+      <div class="s-head">
+        <div class="eyebrow">Para marketing</div>
+        <h2><span class="num">19</span>Do/Don't de copy</h2>
+        <p class="lede">Exemplos lado a lado. Use como referência rápida em revisão de copy.</p>
+      </div>
+
+      <h3 class="sub">Erros e problemas</h3>
+      <div class="do-dont">
+        <div class="card no"><div class="lbl">❌ Não escrever</div>"Ops! Algo deu errado."</div>
+        <div class="card yes"><div class="lbl">✅ Escrever</div>"Câmbio USD indisponível agora, tenta de novo em alguns minutos."</div>
+
+        <div class="card no"><div class="lbl">❌ Não escrever</div>"Sucesso!"</div>
+        <div class="card yes"><div class="lbl">✅ Escrever</div>"Pagamento marcado como Pago. Transação criada no Itaú."</div>
+      </div>
+
+      <h3 class="sub">Pedindo decisão</h3>
+      <div class="do-dont">
+        <div class="card no"><div class="lbl">❌ Não escrever</div>"Tem certeza?"</div>
+        <div class="card yes"><div class="lbl">✅ Escrever</div>"Excluir esse compromisso vai cancelar os 12 pagamentos futuros que ainda não rolaram. OK?"</div>
+
+        <div class="card no"><div class="lbl">❌ Não escrever</div>"Selecione uma opção:"</div>
+        <div class="card yes"><div class="lbl">✅ Escrever</div>"Saiu de qual conta?"</div>
+      </div>
+
+      <h3 class="sub">Marketing e landing</h3>
+      <div class="do-dont">
+        <div class="card no"><div class="lbl">❌ Não escrever</div>"A plataforma definitiva de gestão financeira."</div>
+        <div class="card yes"><div class="lbl">✅ Escrever</div>"Pare de cadastrar transação por transação. Cadastre compromissos."</div>
+
+        <div class="card no"><div class="lbl">❌ Não escrever</div>"AI-powered insights."</div>
+        <div class="card yes"><div class="lbl">✅ Escrever</div>"23 relatórios que mostram pra onde seu dinheiro foi, e pra onde vai."</div>
+
+        <div class="card no"><div class="lbl">❌ Não escrever</div>"Empoderamos sua vida financeira."</div>
+        <div class="card yes"><div class="lbl">✅ Escrever</div>"Você sabe quanto pode sobrar em dezembro. Antes de dezembro chegar."</div>
+      </div>
+    </section>
+
+
+    <!-- ════════════════════════════════════════════ RECURSOS ════ -->
+
+
+    <!-- 20 RECURSOS -->
+    <section class="s major" id="arquivos">
+      <div class="s-head">
+        <div class="eyebrow">Recursos</div>
+        <h2><span class="num">20</span>Arquivos, links e contatos</h2>
+      </div>
+
+      <table>
+        <thead><tr><th>Recurso</th><th>Local</th><th>Quando usar</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Logo pack completo</strong> (20 SVGs)</td><td><code>logo/</code></td><td>Sempre que precisar de logo/símbolo. Inclui README com instruções.</td></tr>
+          <tr><td><strong>Tokens CSS</strong></td><td><code>src/css/variables.css</code></td><td>Importar no produto. Light + dark mode automático.</td></tr>
+          <tr><td><strong>Tokens Inspector</strong></td><td><code>Tokens Inspector.html</code></td><td>Visualizar todos os tokens ao vivo. Útil em design review.</td></tr>
+          <tr><td><strong>Logo Contact Sheet</strong></td><td><code>Logo Contact Sheet.html</code></td><td>Folha de contato com todas as variações de logo.</td></tr>
+          <tr><td><strong>Landing page</strong></td><td><code>FinFlow Landing.html</code></td><td>Referência da marca aplicada em página completa.</td></tr>
+          <tr><td><strong>Brand Book (deck)</strong></td><td><code>FinFlow Brand Book - Roxo Lime.html</code></td><td>Apresentação formal de 22 slides.</td></tr>
+          <tr><td><strong>Tagline Lab</strong></td><td><code>Tagline Lab.html</code></td><td>4 candidatas iniciais aplicadas em contexto (histórico).</td></tr>
+          <tr><td><strong>Identidade verbal</strong></td><td><code>docs/BRAND.md</code> v1.2</td><td>Voz, tom, vocabulário, decisões fechadas.</td></tr>
+          <tr><td><strong>Identidade visual</strong></td><td><code>docs/VISUAL.md</code> v2.0</td><td>Sistema visual completo em markdown.</td></tr>
+        </tbody>
+      </table>
+
+      <h3 class="sub">Como exportar este guia</h3>
+      <ul>
+        <li><strong>PDF</strong>, clica em "Exportar como PDF" na sidebar (ou Cmd+P → Salvar como PDF)</li>
+        <li><strong>HTML standalone</strong>, pede pra eu rodar o bundler (gera arquivo único auto-contido pra enviar por email/Slack)</li>
+        <li><strong>Markdown</strong>, os arquivos em <code>docs/</code> são markdown editável</li>
+      </ul>
+    </section>
+
+
+    <!-- Footer -->
+    <div class="doc-footer">
+      <span>FinFlow · Brand &amp; Visual Guide · v1.0</span>
+      <span>22 mai 2026 · Roxo Tech + Lime</span>
+    </div>
+
+  </main>
+</div>
+
+<script>
+function toggleTheme() {
+  const root = document.documentElement;
+  const current = root.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('finflow-theme', next);
+}
+
+// Restore theme
+(function() {
+  const stored = localStorage.getItem('finflow-theme');
+  if (stored) document.documentElement.setAttribute('data-theme', stored);
+})();
+
+// Highlight active TOC link on scroll
+(function() {
+  const links = document.querySelectorAll('.toc a');
+  const sections = [...document.querySelectorAll('section.s')];
+  function update() {
+    let active = sections[0];
+    for (const s of sections) {
+      if (s.getBoundingClientRect().top < 100) active = s;
+    }
+    links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + active.id));
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
+
+</body>
+</html>

@@ -1,94 +1,105 @@
-q# Brand Voice Guidelines — FinFlow
+# Brand Voice Guidelines · FinFlow
 
-> Versão deste documento: 1.0
-> Data: 20/05/2026
+> Versão deste documento: **1.2**
+> Data: 22/05/2026
 > Fonte primária: `docs/MANUAL.md` (alinhado com v1.0.5 do produto)
-> Público-alvo: pessoa física + casal/família brasileira; futuro internacional
+> Identidade visual: `docs/VISUAL.md` v2.0 (Roxo Tech + Lime, logo Twin Track)
+> Público-alvo: pessoa física + casal/família brasileira, futuro internacional
 > Personalidade aprovada: **Amigável + Inteligente + Opinativo**
 
 ---
 
-## 1. Quem somos (e quem não somos)
+## Índice
+
+1. Quem somos e quem não somos
+2. Voz constante (não muda)
+3. Tom flexível (muda por contexto)
+4. Regras de escrita
+5. Padrões de copy por componente UI
+6. Exemplos lado a lado
+7. Multi-perfil (futuro)
+8. Taglines oficiais
+9. Filtros de naming
+10. Confidence scores
+11. Decisões fechadas
+12. Open questions
+13. Como usar este documento
+14. Histórico de versões
+
+---
+
+## 1. Quem somos e quem não somos
 
 A âncora da marca. Toda decisão de copy, naming, design e tom de voz deriva dessa tabela.
 
 | We Are | We Are Not |
-|--------|------------|
-| **Próximos** — falamos "você"/"vocês", usamos contrações ("pra", "dá pra"), explicamos sem condescender | **Íntimos demais** — não somos "amigão de boteco" nem usamos gírias datadas ("mano", "tipo") |
-| **Inteligentes** — temos profundidade real (4 moedas, conciliação OFX, 23 relatórios, matemática de SAC/Price) | **Pedantes** — não exibimos complexidade pra impressionar; explicamos sempre o "porquê" |
-| **Opinativos** — defendemos uma filosofia ("comprometido vs. executado"), guiamos o usuário ativamente | **Mandões** — não damos bronca, não envergonhamos quem gastou demais, não somos coach moralista |
-| **Detalhistas** — rastreamos coisas que outros apps ignoram (`conta_id_efetiva`, caixinhas, cross-conta) | **Burocráticos** — não enchemos o usuário de campos opcionais nem checklist infinita |
-| **Realistas** — assumimos que a vida financeira é bagunçada (pagou da outra conta, esqueceu de marcar, adiantou receita) | **Cínicos** — não tratamos o usuário como descuidado; oferecemos ferramenta de correção, não julgamento |
-| **Brasileiros sem provincianismo** — pt-BR como base, mas multimoeda e termos técnicos em inglês onde fazem sentido (OFX, ledger) | **Anglo-aspiracionais** — não usamos inglês de enfeite ("dashboard insights", "AI-powered"); só quando é mais preciso |
-| **Calmos** — finança é tema sensível, então não usamos urgência fabricada ("Última chance!", "Faltam 2 dias!") | **Indiferentes** — também não somos passivos: avisamos atrasos, criamos tarefas, sugerimos ações |
-
-**Confiança nessa tabela:** 🟢 **Alta** — 7 atributos derivados de padrões consistentes em 14 regras transversais + escolhas de naming de telas + microcopy presente no MANUAL.md.
+|---|---|
+| **Próximos**. Falamos "você", "vocês", usamos contrações ("pra", "dá pra"), explicamos sem condescender | **Íntimos demais**. Não somos "amigão de boteco" nem usamos gírias datadas ("mano", "tipo") |
+| **Inteligentes**. Temos profundidade real (4 moedas, conciliação OFX, 23 relatórios, SAC/Price) | **Pedantes**. Não exibimos complexidade pra impressionar. Explicamos sempre o "porquê" |
+| **Opinativos**. Defendemos uma filosofia ("comprometido vs. executado"), guiamos o usuário ativamente | **Mandões**. Não damos bronca, não envergonhamos quem gastou demais, sem coach moralista |
+| **Detalhistas**. Rastreamos coisas que outros apps ignoram (conta efetiva, caixinhas, cross-conta) | **Burocráticos**. Não enchemos o usuário de campos opcionais nem checklist infinita |
+| **Realistas**. Assumimos que a vida financeira é bagunçada (pagou de outra conta, esqueceu de marcar) | **Cínicos**. Não tratamos o usuário como descuidado. Oferecemos correção, não julgamento |
+| **Brasileiros sem provincianismo**. pt-BR como base, mas multimoeda e termos técnicos em EN onde fazem sentido (OFX, ledger) | **Anglo-aspiracionais**. Sem inglês de enfeite ("AI-powered", "dashboard insights"). Só quando é mais preciso |
+| **Calmos**. Finança é tema sensível, sem urgência fabricada ("Última chance!", "Faltam 2 dias!") | **Indiferentes**. Também não somos passivos. Avisamos atrasos, criamos tarefas, sugerimos ações |
 
 ---
 
 ## 2. Voz constante (não muda)
 
-A **voz** é a personalidade. Não flexa por contexto.
-
-### 2.1. Princípios de voz
+### 2.1. Princípios
 
 1. **Trate o usuário como adulto inteligente.** Explique conceitos novos uma vez, com clareza, e depois confie que ele entendeu.
 2. **Tenha opinião.** Defenda escolhas de design ("foi assim que pensamos") em vez de relativizar tudo.
-3. **Mostre o trabalho.** Quando o app fizer algo automaticamente (gerar pagamentos, sincronizar transações, realocar conta), explique o que aconteceu.
-4. **Fale plural quando fizer sentido.** "Vocês" e "a gente" pra casais/famílias; "você" pra individual. Nunca "o usuário", "a conta", "o cliente".
-5. **Português de verdade, não traduzido.** Usamos "compromisso" e "caixinha" porque são mais precisos que "transação recorrente" e "envelope". Mas aceitamos OFX, ledger, cashflow quando são o termo certo.
+3. **Mostre o trabalho.** Quando o app fizer algo automaticamente (gerar pagamentos, sincronizar, realocar conta), explique o que aconteceu.
+4. **Fale plural quando fizer sentido.** "Vocês" e "a gente" pra casais/famílias. "Você" pra individual. Nunca "o usuário", "a conta", "o cliente".
+5. **Português de verdade, não traduzido.** "Compromisso" e "Caixinha" porque são mais precisos que "transação recorrente" e "envelope". Mas aceitamos OFX, ledger, cashflow quando são o termo certo.
+6. **Sem travessões (—) em texto visível.** Use vírgula, dois pontos, parênteses ou ponto final. Travessão fica só em comentários de código.
 
-### 2.2. Vocabulário canônico (use sempre)
+### 2.2. Vocabulário canônico
 
-Termos do produto têm tradução fixa. Não invente sinônimos:
+Termos do produto têm tradução fixa.
 
 | Conceito | Termo correto | Não usar |
 |---|---|---|
 | Promessa de receita/despesa recorrente | **Compromisso** | "Despesa fixa", "lançamento recorrente" |
 | Ocorrência mensal de um compromisso | **Pagamento** | "Conta", "boleto", "lançamento" |
-| Registro real do dinheiro saindo/entrando | **Transação** | "Movimentação", "lançamento", "operação" |
+| Registro real do dinheiro saindo/entrando | **Transação** | "Movimentação", "operação" |
 | Sub-saldo dentro de uma conta | **Caixinha** | "Envelope", "Pote", "Meta" |
 | Saldo livre, não alocado em caixinhas | **Caixa Livre** | "Saldo disponível", "Livre" |
 | Conta de onde o dinheiro saiu de fato | **Conta efetiva** | "Conta real", "Origem real" |
-| Bater pagamentos com extrato do banco | **Conciliação** ou **reconciliação** | "Match", "verificação" |
+| Bater pagamentos com extrato | **Conciliação** ou **Reconciliação** | "Match", "verificação" |
 | Receita recebida antes do previsto | **Adiantamento de receita** | "Antecipação", "pagamento antecipado" |
-| Ativos (contas+investimentos+bens) − passivos (dívidas) | **Patrimônio** | "Net worth" (em português), "fortuna" |
+| Ativos menos passivos | **Patrimônio** | "Net worth" em português, "fortuna" |
 | Promessa de aporte com meta + prazo | **Projeto de investimento** | "Objetivo", "goal" |
-| Snapshot de saldo do banco via OFX | **Saldo do banco** | "Saldo real" (ambíguo), "snapshot" (técnico) |
+| Snapshot de saldo do banco via OFX | **Saldo do banco** | "Saldo real" (ambíguo), "snapshot" |
 
-### 2.3. Vocabulário banido (nunca use)
+### 2.3. Vocabulário banido
 
-- ❌ **"Investidor"** quando se trata de pessoa comum gerenciando finanças. Use "você".
-- ❌ **"Cliente"** — somos um app, eles são usuários ou simplesmente "você".
-- ❌ **"Robô" / "IA" / "inteligência artificial"** — não somos isso. Somos um app determinístico bem projetado.
-- ❌ **"Plataforma"** quando dá pra dizer "app" ou "FinFlow".
-- ❌ **"Solução"** — é vendedor demais. Diga o que faz.
-- ❌ **"Empoderar"** — palavra desgastada de marketing.
-- ❌ **Anglicismos desnecessários**: "insights", "dashboard" (em UI tudo bem, em copy de marketing não), "tracking", "report".
-
-**Confiança vocabulário:** 🟢 **Alta** — extraído diretamente do glossário do MANUAL.md (seção 7) e nomenclatura consistente em todas as páginas.
+- ❌ "Investidor" para pessoa comum. Use "você".
+- ❌ "Cliente". Somos um app, eles são usuários ou simplesmente "você".
+- ❌ "Robô", "IA", "inteligência artificial". Somos um app determinístico bem projetado.
+- ❌ "Plataforma" quando dá pra dizer "app" ou "FinFlow".
+- ❌ "Solução". É vendedor demais. Diga o que faz.
+- ❌ "Empoderar". Palavra desgastada de marketing.
+- ❌ Anglicismos desnecessários: "insights", "dashboard" (em UI tudo bem, em copy de marketing não), "tracking", "report".
 
 ---
 
 ## 3. Tom flexível (muda por contexto)
 
-O **tom** flexa formalidade, energia e profundidade técnica conforme onde a mensagem aparece.
-
-| Contexto | Formalidade | Energia | Densidade técnica | Exemplo (escrever assim) | Anti-padrão (não escrever) |
-|---|---|---|---|---|---|
-| **Microcopy no app (botão, label)** | Baixa | Baixa | Baixa | "Marcar como pago", "Quando foi pago?", "Saiu de qual conta?" | "Confirmar Status do Pagamento", "Inserir Dados de Quitação" |
-| **Toast/notificação de sucesso** | Baixa | Média | Baixa | "Pagamento marcado. Saldo atualizado.", "Compromisso atualizado: próximos pagamentos sairão de Nubank." | "Operação realizada com sucesso!" |
-| **Toast/notificação de erro** | Média | Baixa | Média | "Conta de origem e destino não podem ser a mesma.", "Câmbio USD indisponível agora — tenta de novo em alguns minutos." | "Erro 500: Internal Server Error", "Ops! Algo deu errado" |
-| **Dialog de confirmação** | Baixa | Baixa | Baixa | "Você mudou esse pagamento para a conta: [Banco]. Quer que os próximos pagamentos desse compromisso também saiam dessa conta?" | "Tem certeza? Esta ação não pode ser desfeita." |
-| **Vazio (empty state)** | Baixa | Média | Baixa | "Nenhum compromisso ainda. Comece cadastrando seu salário ou aluguel — o resto a gente preenche." | "Lista vazia" |
-| **Onboarding** | Baixa | Média | Média | "FinFlow funciona assim: você cadastra **compromissos** (aluguel, salário) e a gente gera os **pagamentos** futuros sozinho. No fim do mês, você só confirma o que rolou." | "Bem-vindo! Vamos começar sua jornada financeira!" |
-| **Email transacional (reset senha, etc.)** | Média | Baixa | Baixa | "Pra trocar sua senha, clica aqui. O link vale por 1 hora." | "Prezado usuário, segue link para redefinição de credenciais." |
-| **Email marketing / changelog** | Baixa | Média | Média | "Saiu a v1.0.5: agora você consegue marcar transferência por uma conta diferente sem bagunçar o histórico. Detalhes nas novidades." | "🚀 BIG UPDATE! Confira as novidades INCRÍVEIS!" |
-| **Landing page (hero)** | Média | Média | Baixa | "Organize compromissos, não tickets de extrato." | "A melhor plataforma de gestão financeira pessoal do Brasil" |
-| **Documentação técnica (developer-facing)** | Média | Baixa | Alta | "`conta_id_efetiva` rastreia a conta real quando difere da configurada no compromisso. NULL = usa o default da subcategoria." | "Esta coluna armazena dados sobre a conta efetiva." |
-| **Suporte ao usuário (resposta a bug)** | Média | Baixa | Média | "Boa! Reproduzi aqui. O problema é X, corrigimos na v1.0.6. Te aviso quando subir." | "Lamentamos o ocorrido. Estamos investigando." |
-
-**Confiança tom:** 🟡 **Média** — derivado parcialmente de copy existente no app (toasts, popovers) e parcialmente extrapolado pra contextos novos (landing, email marketing) que ainda não existem.
+| Contexto | Formalidade | Energia | Densidade técnica | Exemplo |
+|---|---|---|---|---|
+| Microcopy (botão, label) | Baixa | Baixa | Baixa | "Marcar como pago", "Saiu de qual conta?" |
+| Toast de sucesso | Baixa | Média | Baixa | "Pagamento marcado. Saldo atualizado." |
+| Toast de erro | Média | Baixa | Média | "Câmbio USD indisponível agora, tenta de novo em alguns minutos." |
+| Dialog de confirmação | Baixa | Baixa | Baixa | "Você mudou esse pagamento para a conta Nubank. Quer que os próximos saiam dessa conta?" |
+| Empty state | Baixa | Média | Baixa | "Nenhum compromisso ainda. Comece cadastrando seu salário ou aluguel, o resto a gente preenche." |
+| Onboarding | Baixa | Média | Média | "FinFlow funciona assim, você cadastra **compromissos** e a gente gera os **pagamentos** futuros sozinho." |
+| Email transacional | Média | Baixa | Baixa | "Pra trocar sua senha, clica aqui. O link vale por 1 hora." |
+| Email marketing / changelog | Baixa | Média | Média | "Saiu a v1.0.5, agora dá pra marcar transferência por outra conta sem bagunçar o histórico." |
+| Landing page (hero) | Média | Média | Baixa | "Organize compromissos, não tickets de extrato." |
+| Documentação técnica | Média | Baixa | Alta | "`conta_id_efetiva` rastreia a conta real quando difere da configurada." |
+| Suporte (resposta a bug) | Média | Baixa | Média | "Boa, reproduzi aqui. O problema é X, corrigimos na v1.0.6. Te aviso quando subir." |
 
 ---
 
@@ -99,31 +110,31 @@ O **tom** flexa formalidade, energia e profundidade técnica conforme onde a men
 - **Frases curtas.** Idealmente até 15 palavras. Se passar de 25, quebre.
 - **Voz ativa.** "O FinFlow gera os pagamentos" > "Os pagamentos são gerados pelo FinFlow".
 - **Sujeito explícito.** "Você marca como pago" > "Ao marcar como pago".
-- **Verbo de ação no início de botões.** "Marcar como pago", "Importar extrato", "Registrar adiantamento" — não "Pagamento" ou "Importação".
+- **Verbo de ação no início de botões.** "Marcar como pago", "Importar extrato", não "Pagamento" ou "Importação".
 
 ### 4.2. Pontuação e tipografia
 
-- **Travessão (—) sim, hífen (-) não pra interrupções.** "FinFlow funciona assim — você cadastra…" (não usar `--` nem `-`).
-- **Aspas duplas** ("") pra citações curtas; aspas simples ('') pra termos técnicos quando precisar destacar.
+- **Sem travessão (—) em texto visível.** Use vírgula, dois pontos, parênteses ou ponto. Travessão só em comentários de código.
+- **Aspas duplas** (" ") pra citações curtas; **aspas simples** (' ') pra termos técnicos.
 - **Negrito** só pra termos canônicos ou ações primárias. Nunca pra ênfase emocional.
-- **Itálico** evitar em copy de produto; aceitável em documentação pra metadados.
-- **Sem ALL CAPS** pra ênfase. Use bold ou exclamação (com parcimônia).
-- **Sem emoji excessivo.** Aceitável em headers de docs/changelog (🔐 📒 ✨) e em badges funcionais (↔️, ⏩) onde transmite info. Não em copy de marketing nem em CTAs.
+- **Itálico**, evitar em copy de produto.
+- **Sem ALL CAPS.** Use bold ou exclamação (com parcimônia).
+- **Sem emoji excessivo.** Aceitável em headers de docs e badges funcionais. Não em copy de marketing nem em CTAs.
 
 ### 4.3. Números, moeda, data
 
-- **Valores monetários**: sempre com símbolo (R$ 1.500,00) — não "1500 reais" em UI.
-- **Datas**: dd/mm/aaaa (formato BR) pra brasileiro; ISO (aaaa-mm-dd) em logs e documentação técnica.
-- **Porcentagem**: "15%", não "15 por cento".
-- **Grandes números**: separador de milhar com ponto, decimal com vírgula (R$ 100.000,00). Pra textos longos, abreviar é OK ("100k", "1,5M").
-- **Câmbio**: mostrar sempre par e direção ("1 BRL = 0,18 USD" e "1 USD = R$ 5,52").
+- **Valores monetários** sempre com símbolo (R$ 1.500,00), não "1500 reais" em UI.
+- **Datas** dd/mm/aaaa (formato BR), ISO em logs.
+- **Porcentagem** "15%", não "15 por cento".
+- **Grandes números** separador de milhar com ponto, decimal com vírgula. Em textos abreviar (100k, 1,5M) é OK.
+- **Câmbio** mostrar par e direção ("1 BRL = 0,18 USD" e "1 USD = R$ 5,52").
 
 ### 4.4. Inclusão e linguagem neutra
 
-- **"Você"** é gênero-neutro. Use livremente.
-- **"A gente"** vale como "nós" coloquial — não soa nem masculino nem feminino.
-- **Evite assumir estrutura familiar.** "Seu parceiro/parceira" é melhor que "seu marido"/"sua esposa". "Sua família" é melhor que "seus filhos" quando não sabemos.
-- **Não assumir relação com dinheiro.** Não diga "investidor experiente", "iniciante", "endividado". Trate cada usuário como capaz de aprender o necessário.
+- **"Você"** é gênero-neutro.
+- **"A gente"** vale como "nós" coloquial, sem soar masculino nem feminino.
+- **Evite assumir estrutura familiar.** "Seu parceiro/parceira" > "seu marido"/"sua esposa".
+- **Não assumir relação com dinheiro.** Não diga "investidor experiente", "iniciante", "endividado". Trate cada usuário como capaz de aprender.
 
 ---
 
@@ -133,17 +144,19 @@ O **tom** flexa formalidade, energia e profundidade técnica conforme onde a men
 
 | Tipo | Padrão | Exemplos |
 |---|---|---|
-| Ação primária | Verbo + objeto curto | "Marcar como pago", "Salvar alterações", "Importar extrato" |
+| Ação primária | Verbo + objeto curto | "Marcar como pago", "Salvar alterações" |
 | Ação secundária | Verbo ou substantivo neutro | "Cancelar", "Fechar", "Voltar" |
 | Confirmação positiva | "Sim, [verbo]" ou só "Sim" | "Sim, atualizar", "Sim" |
 | Confirmação negativa | "Não" ou "Não, [contexto]" | "Não", "Não, só este pagamento" |
-| Destrutiva | Verbo direto, sem eufemismo | "Excluir conta", "Cancelar compromisso", "Resetar dados" |
+| Destrutiva | Verbo direto, sem eufemismo | "Excluir conta", "Cancelar compromisso" |
 
-### 5.2. Empty states (estado vazio)
+### 5.2. Empty states
 
-Estrutura sugerida em 2 linhas:
-1. **O que está vazio + por quê** ("Nenhum compromisso ainda. Você precisa de pelo menos um pra começar.")
-2. **O que fazer agora + botão** ("Cadastre seu salário ou aluguel.") + botão "Novo compromisso"
+Estrutura em 2 linhas:
+1. **O que está vazio + por quê**
+2. **O que fazer agora + botão**
+
+Exemplo: "Nenhum compromisso ainda. Comece cadastrando seu salário ou aluguel, o resto a gente preenche." + botão "Novo compromisso".
 
 Evitar:
 - Frases motivacionais ("Vamos lá, sua jornada começa aqui!")
@@ -151,12 +164,12 @@ Evitar:
 
 ### 5.3. Toasts
 
-- **Sucesso**: confirma + estado novo. "Transferência registrada. Saldos atualizados em /contas."
-- **Erro**: causa + próximo passo. "Câmbio USD indisponível agora. Tenta de novo em alguns minutos."
-- **Aviso**: alerta + ação opcional. "Importação tem 3 transações sem categoria. Reconciliar agora?"
-- **Info**: estado novo apenas. "Compromisso arquivado."
+- **Sucesso**, confirma + estado novo. "Transferência registrada. Saldos atualizados em /contas."
+- **Erro**, causa + próximo passo. "Câmbio USD indisponível agora. Tenta de novo em alguns minutos."
+- **Aviso**, alerta + ação opcional. "Importação tem 3 transações sem categoria. Reconciliar agora?"
+- **Info**, estado novo apenas. "Compromisso arquivado."
 
-Duração: 3–5s pra sucesso, 6–8s pra erro/aviso (precisa ler).
+Duração: 3 a 5s pra sucesso, 6 a 8s pra erro/aviso.
 
 ### 5.4. Modais de confirmação
 
@@ -164,17 +177,17 @@ Estrutura em 4 partes:
 1. **Pergunta clara** no título ("Aplicar à recorrência?", "Excluir esta dívida?")
 2. **Contexto visual** (avatar do banco, ícone do tipo, valor)
 3. **Consequência explícita** ("Os próximos 24 pagamentos serão excluídos.")
-4. **Dois botões com verbo**: ação positiva primeiro (verde), negativa segundo (vermelho/ghost)
+4. **Dois botões com verbo**, ação positiva primeiro (verde), negativa segundo (vermelho/ghost)
 
 ---
 
-## 6. O que dizer / O que evitar — exemplos lado a lado
+## 6. Exemplos lado a lado
 
 ### 6.1. Erros e problemas
 
 | ❌ Não escrever | ✅ Escrever |
 |---|---|
-| "Ops! Algo deu errado." | "Câmbio USD indisponível agora — tenta de novo em alguns minutos." |
+| "Ops! Algo deu errado." | "Câmbio USD indisponível agora, tenta de novo em alguns minutos." |
 | "Erro de validação no campo." | "Conta de origem e destino precisam ser diferentes." |
 | "Operação não autorizada." | "Esse pagamento tá vinculado a uma transação importada do banco. Desvincule em Transações antes de mudar o status." |
 | "Sucesso!" | "Pagamento marcado como Pago. Transação criada no Itaú." |
@@ -191,29 +204,29 @@ Estrutura em 4 partes:
 
 | ❌ Não escrever | ✅ Escrever |
 |---|---|
-| "Bem-vindo ao FinFlow! Sua jornada financeira começa aqui!" | "Beleza — pra começar, cadastra seu salário e seus gastos fixos. A gente gera os pagamentos do ano inteiro automaticamente." |
-| "Categorias permitem organizar suas despesas." | "Categorias agrupam compromissos parecidos — Custo de Vida, Lazer, Investimentos. Você não precisa criar agora; já vem com as principais." |
+| "Bem-vindo ao FinFlow! Sua jornada financeira começa aqui!" | "Beleza, pra começar cadastra seu salário e seus gastos fixos. A gente gera os pagamentos do ano inteiro automaticamente." |
+| "Categorias permitem organizar suas despesas." | "Categorias agrupam compromissos parecidos: Custo de Vida, Lazer, Investimentos. Já vem com as principais, não precisa criar agora." |
 
 ### 6.4. Marketing e landing
 
 | ❌ Não escrever | ✅ Escrever |
 |---|---|
 | "A plataforma definitiva de gestão financeira." | "Pare de cadastrar transação por transação. Cadastre compromissos." |
-| "Empoderamos sua vida financeira." | "Você sabe quanto vai sobrar em outubro. Antes de outubro chegar." |
-| "AI-powered insights." | "23 relatórios que mostram pra onde seu dinheiro foi — e pra onde vai." |
+| "Empoderamos sua vida financeira." | "Você sabe quanto pode sobrar em dezembro. Antes de dezembro chegar." |
+| "AI-powered insights." | "23 relatórios que mostram pra onde seu dinheiro foi, e pra onde vai." |
 
 ---
 
-## 7. Personalidade aplicada ao multi-perfil (futuro)
+## 7. Multi-perfil (futuro)
 
-Quando a funcionalidade de múltiplos perfis na mesma conta sair, a voz precisa acomodar:
+Quando a funcionalidade de múltiplos perfis sair, a voz precisa acomodar:
 
-- **Padrão singular continua** quando a ação é individual ("Você cadastrou um compromisso.").
-- **Plural automático** quando a ação afeta o grupo ("Vocês têm 3 compromissos compartilhados em outubro.").
-- **Nomes próprios** quando há ambiguidade ("Arnaldo marcou o aluguel como pago.", "Maria registrou um adiantamento.").
-- **Evitar "usuário X" ou "membro Y"** — sempre o nome ou o pronome.
+- **Padrão singular continua** quando a ação é individual ("Você cadastrou um compromisso.")
+- **Plural automático** quando afeta o grupo ("Vocês têm 3 compromissos compartilhados em outubro.")
+- **Nomes próprios** quando há ambiguidade ("Arnaldo marcou o aluguel como pago.")
+- **Evitar "usuário X" ou "membro Y"**, sempre o nome ou o pronome
 
-Exemplos de copy multi-perfil:
+Exemplos:
 - ✅ "Vocês economizaram R$ 2.400 esse mês comparado ao mês passado."
 - ✅ "Maria atualizou a conta do aluguel."
 - ❌ "O usuário principal alterou as configurações."
@@ -221,114 +234,124 @@ Exemplos de copy multi-perfil:
 
 ---
 
-## 8. Aplicação ao naming (Fase 2)
+## 8. Taglines oficiais
 
-Quando a gente for buscar nome alternativo ao FinFlow, esses filtros vão guiar:
+Decididas em 22/05/2026. **Sistema de 3 taglines** com papéis diferentes:
+
+### 8.1. Tagline principal · positioning
+
+> **"Organize compromissos, não tickets de extrato."**
+
+Usar em: homepage hero, materiais formais, footer, cartão de visita, embalagens, deck institucional.
+
+**O que faz**: posiciona contra apps que cadastram transação a transação. Explica diferença em uma linha.
+
+### 8.2. Hook de campanha · curiosidade
+
+> **"Você sabe quanto pode sobrar em dezembro. Antes de dezembro chegar."**
+
+Versão curta para ads e billboards: **"Antes de dezembro chegar."**
+
+Usar em: ads, billboards, social posts de campanha, hero da seção de projeção, email marketing.
+
+**O que faz**: promete antecipação. Gancho que pede o "como?". Sticky.
+
+### 8.3. Explicação do modelo · filosofia técnica
+
+> **"Comprometido vs. executado."**
+
+Usar em: página "Sobre", seção "Como funciona", onboarding, docs internas, conceito do logo.
+
+**O que faz**: sintetiza o modelo mental do app. Carrega a filosofia que dá nome ao símbolo Twin Track.
+
+### 8.4. Distribuição visual no logo Twin Track
+
+A linha de cima do símbolo representa o **comprometido** (planejado, roxo). A linha de baixo representa o **executado** (real, lime, com pico de variação). O logo é a tagline 8.3 desenhada.
+
+---
+
+## 9. Filtros de naming (Fase 2)
+
+Quando for buscar nome alternativo ao FinFlow, esses filtros guiam:
 
 | Filtro | Critério |
 |---|---|
-| **Tom** | Deve soar amigável-inteligente. Não corporativo (Bradesco, Itaú), não fofo (Mobills, MoneyLover) |
+| **Tom** | Amigável-inteligente. Não corporativo, não fofo |
 | **Pronúncia** | Funciona em PT-BR e EN sem ajustar |
-| **Comprimento** | 1–3 sílabas (Linear, Notion, Stripe) |
+| **Comprimento** | 1 a 3 sílabas (Linear, Notion, Stripe) |
 | **Domínio** | .com disponível ou comprável (até R$ 5k razoável) |
-| **Tradução de "Flow"** | Manter sensação de movimento/leveza/continuidade — não cair em "gestão", "controle", "planner" |
-| **Substantivo concreto > abstração genérica** | "Notion" e "Stripe" funcionam; "FinanceManager" não |
+| **Tradução de "Flow"** | Manter sensação de movimento/leveza, não cair em "gestão", "controle", "planner" |
+| **Substantivo concreto > abstração genérica** | "Notion" e "Stripe" funcionam, "FinanceManager" não |
 
-Categorias de naming a explorar na Fase 2:
+Categorias a explorar:
 1. **Metáforas de fluxo** (Stream, Tide, Current, Drift)
 2. **Termos contábeis poéticos** (Ledger, Tally, Ream, Quill)
 3. **Palavras inventadas curtas** (Klop, Vena, Mire, Joon)
 4. **Palavras brasileiras universais** (Ipê, Voto, Mira, Lume)
-5. **Composições híbridas** (Penny+verbo, verbo+Money, etc.)
+5. **Composições híbridas** (Penny+verbo, verbo+Money)
 
 ---
 
-## 9. Confidence scores por seção
+## 10. Confidence scores
 
-| Seção | Confiança | Motivo |
-|---|---|---|
-| 1. We Are / We Are Not | 🟢 Alta | 7 atributos com evidência direta no MANUAL |
-| 2. Voz constante | 🟢 Alta | Padrões consistentes em microcopy + filosofia explícita |
-| 2.2 Vocabulário canônico | 🟢 Alta | Glossário do MANUAL + nomenclatura em 26 páginas |
-| 2.3 Vocabulário banido | 🟡 Média | Derivado por contraste; precisa validação em uso real |
-| 3. Tom por contexto | 🟡 Média | Confiante em microcopy in-app; especulativo em landing/email marketing |
-| 4. Regras de escrita | 🟢 Alta | Padrões observáveis no produto |
-| 5. Padrões UI | 🟢 Alta | Componentes já existem com esses padrões |
-| 6. Lado a lado | 🟡 Média | Exemplos sintéticos; precisa real A/B em alguns casos |
-| 7. Multi-perfil | 🟠 Baixa | Funcionalidade ainda não existe — antecipa direção |
-| 8. Filtros de naming | 🟢 Alta | Derivado direto da personalidade aprovada |
+| Seção | Confiança |
+|---|---|
+| 1. We Are / We Are Not | 🟢 Alta |
+| 2. Voz constante | 🟢 Alta |
+| 2.2 Vocabulário canônico | 🟢 Alta |
+| 2.3 Vocabulário banido | 🟢 Alta |
+| 3. Tom por contexto | 🟢 Alta |
+| 4. Regras de escrita | 🟢 Alta |
+| 5. Padrões UI | 🟢 Alta |
+| 6. Exemplos lado a lado | 🟢 Alta |
+| 7. Multi-perfil | 🟠 Baixa (feature não existe) |
+| 8. Taglines | 🟢 Alta (decididas e aplicadas) |
+| 9. Filtros de naming | 🟢 Alta |
 
 ---
 
-## 10. Decisões fechadas
+## 11. Decisões fechadas
 
-Estas questões eram open questions e foram fechadas em 21/05/2026.
+### 11.1. Plural genérico ("vocês"/"a gente") em marketing
+✅ **Usar plural genérico em marketing desde já** (landing, social, email). UI do app mantém "você" até multi-perfil existir.
 
-### 10.1. Plural genérico ("vocês"/"a gente") antes do multi-perfil existir
+### 11.2. Tagline
+✅ **Decidida em 22/05/2026.** Sistema de 3 taglines, ver seção 8.
 
-✅ **Decisão: USAR plural genérico em marketing desde já**.
+### 11.3. Emojis em comunicação externa
+✅ **Sutil e contextual, nunca abundante.** Hero da landing, comunicado oficial, página institucional, ZERO. Email transacional, até 1. Email marketing, até 2 com função. UI, badges funcionais.
 
-- **Onde aplica**: landing page, email marketing, social media, página pública.
-- **Onde NÃO aplica**: UI do app (continua "você" enquanto for mono-usuário). Microcopy interna mantém singular.
-- **Razão**: o público-alvo é PF + Casal/Família. Posicionar pra casal/família desde o primeiro contato prepara terreno pra feature de multi-perfil futura. Usuário solo se vê em "a gente" naturalmente — vira "eu e meu dinheiro" sem soar errado.
+### 11.4. Travessão (—) em texto
+✅ **Banido em texto visível.** Substituir por vírgula, dois pontos, parênteses ou ponto. Mantido em comentários de código (CSS, HTML, JS).
 
-**Exemplos**:
-- ✅ Landing hero: "Vocês veem onde tá indo cada real"
-- ✅ Email marketing: "A gente avisa quando rolar"
-- ✅ Social media: "Pra você e pra família"
-- ⚠️ UI do app: mantém "você" até multi-perfil existir, daí flexa pra "vocês" quando aplicável
+### 11.5. Status de pagamento
+✅ **5 status** apenas, decidido em 22/05/2026: Pago, Transferido, A Transferir, Cancelado, A Pagar (default). Cartão, Parcial e Agendado foram removidos.
 
-### 10.2. Tagline — quando definir
+---
 
-✅ **Decisão: AGORA, separadamente do naming**.
+## 12. Open questions
 
-- **Razão**: naming foi adiado pra pré-lançamento (a-lá Twitter→Burbn — ver `NAMING.md`), mas tagline serve pra marketing já. Tagline não depende de nome final — ela carrega filosofia, e a filosofia já existe.
-- **Quando**: brainstorm na primeira sessão de landing page (próximo passo de aplicação). Tagline nasce testando-se no contexto real.
-- **Candidatas iniciais** (a refinar): partir das formulações fortes do MANUAL — "comprometido vs. executado", "antecipa o futuro", "patrimônio vivo", "organize compromissos, não tickets de extrato".
+### Média prioridade
 
-### 10.3. Emojis em landing / email / social (não-UI)
-
-✅ **Decisão: SUTIL e contextual — nunca abundante**.
-
-Regra prática:
-
-| Contexto | Emoji OK? | Limite |
-|----------|-----------|--------|
-| Hero da landing | ❌ Não | Zero — soa Mint/MoneyLover |
-| Página institucional (sobre, termos) | ❌ Não | Zero — manter sóbrio |
-| Comunicado oficial / press | ❌ Não | Zero |
-| Email transacional (reset, confirmação) | ✅ Sim, leve | Máximo 1 por email |
-| Email marketing / changelog | ✅ Sim, contextual | Máximo 2 por email, **com função** |
-| Social media casual (LinkedIn/Twitter informal) | ✅ Sim | 1–2 por post |
-| **UI do app** (já existente) | ✅ Sim, **funcional** | Badges com significado (↔, ⏩, ✓) |
-
-**Comparação**:
-- ❌ "🎉 NOVIDADE INCRÍVEL! 🚀💰 v1.0.5 chegou! 🔥" (Mint-style)
-- ✅ "Saiu a v1.0.5. Agora dá pra marcar transferência por outra conta sem bagunçar o histórico."
-- ✅ "Pra trocar sua senha, clica aqui 🔒. Link vale 1h." (1 emoji funcional)
-
-## 11. Open Questions ainda em aberto
-
-### Média prioridade (afeta evolução)
-
-1. **Tutela de termos PT vs. EN.** "Cashflow" ou "Fluxo de caixa"? "Budget" ou "Orçamento"? Hoje o MANUAL usa PT (Orçamento, Fluxo). Manter assim em toda a marca?
+1. **Tutela de termos PT vs. EN.** "Cashflow" ou "Fluxo de caixa"? "Budget" ou "Orçamento"? Hoje o MANUAL usa PT. Manter assim em toda a marca?
 2. **Linguagem em estados de erro graves.** Quando o usuário perde dados / sincronização falha grave / dívida calcula errado, sobe o nível de seriedade?
 
 ---
 
-## 12. Como usar este documento
+## 13. Como usar este documento
 
-- **Designers de UI**: consulte §4 (regras de escrita), §5 (padrões UI), §6 (exemplos lado a lado).
-- **Copy de marketing**: consulte §3 (tom por contexto — linha "Landing page") e §6.4.
-- **Suporte**: consulte §3 (linha "Suporte") e §6.1.
-- **Engenharia**: consulte §2.2 (vocabulário canônico — `subcategorias`, `pagamentos`, não `transactions`/`bills`).
-- **Naming (Fase 2)**: consulte §8.
+- **Designers de UI**, seções 4 (regras), 5 (padrões UI), 6 (exemplos lado a lado)
+- **Copy de marketing**, seções 3 (tom) e 6.4, e taglines da seção 8
+- **Suporte**, seções 3 (linha "Suporte") e 6.1
+- **Engenharia**, seção 2.2 (vocabulário canônico)
+- **Naming**, seção 9
 
-Para validar qualquer copy contra essas guidelines, use o skill `/brand-voice:enforce-voice` — ele lê este arquivo automaticamente.
+Para a **identidade visual**, ver `docs/VISUAL.md` v2.0.
 
 ---
 
-## 13. Histórico de versões
+## 14. Histórico de versões
 
-- **1.0 — 20/05/2026**: versão inicial extraída de `docs/MANUAL.md` (v1.0.5). Aprovação de personalidade: Amigável + Inteligente + Opinativo. Aprovação de público: PF + Casal/Família PT-BR com futuro internacional.
-- **1.1 — 21/05/2026**: fechadas 3 open questions de alta prioridade. (1) Plural genérico em marketing desde já. (2) Tagline a definir AGORA, separado do naming. (3) Emojis sutil/contextual em comunicação externa, nunca abundante. Seção §10 renomeada de "Open Questions" pra "Decisões fechadas". Restantes vão pra §11.
+- **1.2 · 22/05/2026**, decidida hierarquia de 3 taglines (seção 8). Banido travessão (—) em texto visível (seção 11.4). Status reduzidos a 5 (seção 11.5). Aplicado em landing, deck, email mockups. Sincronizado com VISUAL.md v2.0.
+- **1.1 · 21/05/2026**, fechadas 3 open questions: plural genérico em marketing desde já, tagline a definir agora, emojis sutil/contextual.
+- **1.0 · 20/05/2026**, versão inicial extraída de MANUAL.md (v1.0.5). Personalidade: Amigável + Inteligente + Opinativo. Público: PF + Casal/Família PT-BR.

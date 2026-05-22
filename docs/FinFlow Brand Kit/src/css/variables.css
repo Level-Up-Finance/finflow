@@ -1,0 +1,369 @@
+/* ============================================================================
+   FinFlow · Design Tokens · v2.0
+   ----------------------------------------------------------------------------
+   Substitui o variables.css anterior (v1.0.5 com Indigo+Salmão).
+   Nova paleta: Roxo Tech + Lime (Mix A+D · aprovado).
+   Suporta dois modos: light (default) + dark (via [data-theme="dark"]).
+
+   Fonte da verdade pra toda decisão visual do produto.
+   Não usar hex hardcoded em components.css ou nas páginas — sempre var().
+   ============================================================================ */
+
+:root {
+
+  /* ────────────────────────────────────────────────────────────────────────
+     1. CORES PRIMÁRIAS — Roxo Tech
+     ──────────────────────────────────────────────────────────────────────── */
+  --color-primary-50:  #F1EFFE;
+  --color-primary-100: #E5E1FD;
+  --color-primary-200: #D2CCFB;
+  --color-primary-300: #B5ACF8;
+  --color-primary-400: #8B7FF7;
+  --color-primary-500: #6D5EF5;  /* ★ Roxo principal — ações primárias */
+  --color-primary-600: #5B4FE0;
+  --color-primary-700: #4B3FD6;
+  --color-primary-800: #3A30B0;
+  --color-primary-900: #2A2384;
+
+  /* Aliases legados (backward compat com variables.css v1) */
+  --color-primary:      var(--color-primary-500);
+  --color-primary-dark: var(--color-primary-700);
+  --color-primary-light:var(--color-primary-400);
+
+  /* ────────────────────────────────────────────────────────────────────────
+     2. CORES ACENTO — Lime
+     ──────────────────────────────────────────────────────────────────────── */
+  --color-accent-50:  #F7FEE7;
+  --color-accent-100: #ECFCCB;
+  --color-accent-200: #DFFBA5;
+  --color-accent-300: #D2F873;
+  --color-accent-400: #C2F542;   /* ★ Lime principal */
+  --color-accent-500: #A3D331;
+  --color-accent-600: #84B121;
+  --color-accent-700: #65880F;
+  --color-accent-800: #4D6A0E;
+  --color-accent-900: #2E460B;
+
+  --color-accent:      var(--color-accent-400);
+  --color-accent-dark: var(--color-accent-600);  /* usar pra texto sobre fundo claro */
+
+  /* Aliases legados */
+  --color-secondary:      var(--color-primary-500); /* o que era "secondary" no v1 agora é primary */
+  --color-secondary-dark: var(--color-primary-700);
+  --color-secondary-light:var(--color-primary-300);
+
+  /* ────────────────────────────────────────────────────────────────────────
+     3. NEUTROS — Slate inverte no dark mode
+     ──────────────────────────────────────────────────────────────────────── */
+  --color-ink-50:  #F8FAFC;
+  --color-ink-100: #F1F5F9;
+  --color-ink-200: #E2E8F0;
+  --color-ink-300: #CBD5E1;
+  --color-ink-400: #94A3B8;
+  --color-ink-500: #64748B;
+  --color-ink-600: #475569;
+  --color-ink-700: #334155;
+  --color-ink-800: #1E293B;
+  --color-ink-900: #0F172A;
+  --color-ink-950: #08090C;
+
+  /* Surfaces */
+  --color-paper:      #FFFFFF;   /* cards, modais */
+  --color-surface:    #FFFFFF;   /* alias canônico */
+  --color-surface-alt:#F9FAFB;
+  --color-canvas:     #FAFAF7;   /* fundo principal — cream */
+  --color-background: var(--color-canvas);
+
+  /* Aliases legados */
+  --color-text-main:      var(--color-ink-900);
+  --color-text-secondary: var(--color-ink-500);
+  --color-text-muted:     var(--color-ink-400);
+  --color-border:         var(--color-ink-200);
+  --color-border-strong:  var(--color-ink-300);
+
+  /* ────────────────────────────────────────────────────────────────────────
+     4. SIDEBAR — sempre dark, levemente diferente entre modos
+     ──────────────────────────────────────────────────────────────────────── */
+  --color-sidebar-bg:           #0F172A;
+  --color-sidebar-bg-active:    var(--color-primary-600);
+  --color-sidebar-text:         #CBD5E1;
+  --color-sidebar-text-active:  #FFFFFF;
+  --color-sidebar-text-muted:   #64748B;
+  --color-sidebar-border:       rgba(255, 255, 255, 0.06);
+
+  /* ────────────────────────────────────────────────────────────────────────
+     5. CORES SEMÂNTICAS — sucesso, atenção, erro, info
+     ──────────────────────────────────────────────────────────────────────── */
+  --color-success:      #10B981;
+  --color-success-bg:   #D1FAE5;
+  --color-success-text: #065F46;
+
+  --color-warning:      #F59E0B;
+  --color-warning-bg:   #FEF3C7;
+  --color-warning-text: #92400E;
+
+  --color-danger:       #EF4444;
+  --color-danger-bg:    #FEE2E2;
+  --color-danger-text:  #991B1B;
+
+  --color-info:         #3B82F6;
+  --color-info-bg:      #DBEAFE;
+  --color-info-text:    #1E40AF;
+
+  /* ────────────────────────────────────────────────────────────────────────
+     6. STATUS DE PAGAMENTO — 4 + default
+        bg / text pares por status. Usar var(--color-status-<x>-bg) etc.
+     ──────────────────────────────────────────────────────────────────────── */
+  --color-status-pago-bg:        #D1FAE5;
+  --color-status-pago-text:      #065F46;
+
+  --color-status-transferido-bg:   #DBEAFE;
+  --color-status-transferido-text: #1E40AF;
+
+  --color-status-transferir-bg:   #FCE7F3;
+  --color-status-transferir-text: #9D174D;
+
+  --color-status-cancelado-bg:   #F3F4F6;
+  --color-status-cancelado-text: #4B5563;
+
+  --color-status-apagar-bg:      #FEF3C7;
+  --color-status-apagar-text:    #92400E;
+
+  /* ────────────────────────────────────────────────────────────────────────
+     7. FIXED TOKENS — não invertem no dark mode
+        Usar quando o fundo está travado em uma cor de marca (hero ink-950,
+        final-cta lime, sidebar dark). Garante contraste estável.
+     ──────────────────────────────────────────────────────────────────────── */
+  --fixed-white:      #FFFFFF;
+  --fixed-dark:       #0F172A;
+  --fixed-ink-soft:   rgba(255, 255, 255, 0.75);
+  --fixed-ink-muted:  rgba(255, 255, 255, 0.55);
+  --fixed-ink-faint:  rgba(255, 255, 255, 0.40);
+
+  /* ────────────────────────────────────────────────────────────────────────
+     8. TIPOGRAFIA
+     ──────────────────────────────────────────────────────────────────────── */
+  --font-display: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body:    'Inter',   -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:    'Geist Mono', ui-monospace, 'SF Mono', Monaco, Consolas, monospace;
+
+  /* Escala (mantida do v1) */
+  --fs-xs:   0.75rem;   /* 12px */
+  --fs-sm:   0.875rem;  /* 14px */
+  --fs-base: 1rem;      /* 16px */
+  --fs-md:   1.125rem;  /* 18px */
+  --fs-lg:   1.25rem;   /* 20px */
+  --fs-xl:   1.5rem;    /* 24px */
+  --fs-2xl:  1.875rem;  /* 30px */
+  --fs-3xl:  2.25rem;   /* 36px */
+  --fs-4xl:  3rem;      /* 48px — adicionado v2 */
+  --fs-5xl:  3.75rem;   /* 60px — adicionado v2 */
+
+  --fw-normal:    400;
+  --fw-medium:    500;
+  --fw-semibold:  600;
+  --fw-bold:      700;
+  --fw-extrabold: 800;
+
+  --lh-tight:  1.2;
+  --lh-snug:   1.4;
+  --lh-normal: 1.5;
+  --lh-relaxed:1.6;
+
+  /* ────────────────────────────────────────────────────────────────────────
+     9. ESPAÇAMENTO — grid 4px
+     ──────────────────────────────────────────────────────────────────────── */
+  --space-0:  0;
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* ────────────────────────────────────────────────────────────────────────
+     10. BORDER RADIUS
+     ──────────────────────────────────────────────────────────────────────── */
+  --radius-sm:   6px;
+  --radius-md:   12px;   /* padrão pra cards e botões */
+  --radius-lg:   20px;
+  --radius-xl:   28px;
+  --radius-full: 9999px;
+
+  /* ────────────────────────────────────────────────────────────────────────
+     11. SHADOWS — assinatura com tom roxo
+     ──────────────────────────────────────────────────────────────────────── */
+  --shadow-sm:    0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-card:  0 1px 3px rgba(15, 23, 42, 0.06),
+                  0 6px 24px rgba(109, 94, 245, 0.07);
+  --shadow-md:    0 4px 8px rgba(15, 23, 42, 0.07),
+                  0 12px 32px rgba(109, 94, 245, 0.08);
+  --shadow-lg:    0 8px 16px rgba(15, 23, 42, 0.09),
+                  0 24px 48px rgba(109, 94, 245, 0.10);
+  --shadow-xl:    0 16px 32px rgba(15, 23, 42, 0.12),
+                  0 40px 80px rgba(109, 94, 245, 0.14);
+  --shadow-modal: 0 40px 80px rgba(15, 23, 42, 0.25);
+
+  /* ────────────────────────────────────────────────────────────────────────
+     12. GRADIENTES — 3 oficiais
+     ──────────────────────────────────────────────────────────────────────── */
+  --gradient-primary:      linear-gradient(135deg, #6D5EF5 0%, #4B3FD6 100%);
+  --gradient-primary-soft: linear-gradient(135deg,
+                              rgba(109, 94, 245, 0.08) 0%,
+                              rgba(194, 245, 66, 0.08) 100%);
+  --gradient-hero:         linear-gradient(135deg, #6D5EF5 0%, #4B3FD6 50%, #C2F542 100%);
+  --gradient-night:        linear-gradient(135deg, #0F172A 0%, #1E1B45 50%, #0F172A 100%);
+
+  /* ────────────────────────────────────────────────────────────────────────
+     13. FOCUS / TRANSITIONS
+     ──────────────────────────────────────────────────────────────────────── */
+  --focus-ring:     0 0 0 3px rgba(109, 94, 245, 0.18);
+  --focus-outline:  2px solid var(--color-primary-500);
+
+  --transition-fast:   150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow:   400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ────────────────────────────────────────────────────────────────────────
+     14. Z-INDEX
+     ──────────────────────────────────────────────────────────────────────── */
+  --z-sidebar:   40;
+  --z-nav:       50;
+  --z-dropdown:  100;
+  --z-modal:     200;
+  --z-toast:     300;
+  --z-tooltip:   400;
+}
+
+
+/* ============================================================================
+   DARK MODE
+   Aplica via <html data-theme="dark"> ou <body data-theme="dark">.
+   Inverte: neutros, surfaces, bgs sutis de marca, pares semânticos.
+   Mantém: lime/roxo principais (mesmas cores), sidebar tone (ajustado),
+   fixed tokens (sempre claros/escuros pra fundos travados).
+   ============================================================================ */
+:root[data-theme="dark"],
+[data-theme="dark"] {
+
+  /* Surfaces */
+  --color-paper:      #15181F;
+  --color-surface:    #15181F;
+  --color-surface-alt:#1A1D24;
+  --color-canvas:     #0B0D12;
+  --color-background: var(--color-canvas);
+
+  /* Ink ramp invertida */
+  --color-ink-50:  #1A1D24;
+  --color-ink-100: #1F232B;
+  --color-ink-200: #2A2F39;
+  --color-ink-300: #3B4151;
+  --color-ink-400: #6B7280;
+  --color-ink-500: #94A3B8;
+  --color-ink-600: #CBD5E1;
+  --color-ink-700: #E2E8F0;
+  --color-ink-800: #F1F5F9;
+  --color-ink-900: #F8FAFC;
+  /* ink-950 stays #08090C — usado por seções always-dark */
+
+  /* Aliases recalculam (são vars, recursão funciona) */
+  --color-text-main:      var(--color-ink-900);
+  --color-text-secondary: var(--color-ink-500);
+  --color-text-muted:     var(--color-ink-400);
+  --color-border:         var(--color-ink-200);
+  --color-border-strong:  var(--color-ink-300);
+
+  /* Sidebar — tom levemente roxo no dark, distingue do canvas */
+  --color-sidebar-bg:          #14172A;
+  --color-sidebar-text:        #94A3B8;
+  --color-sidebar-text-muted:  #475569;
+  --color-sidebar-border:      rgba(255, 255, 255, 0.04);
+
+  /* Bgs sutis dos brand colors viram dark-tint */
+  --color-primary-50:  #1E1B45;
+  --color-primary-100: #2A2384;
+  --color-accent-50:   #2E460B;
+  --color-accent-100:  #4D6A0E;
+
+  /* Semânticas — invertem bg + text */
+  --color-success-bg:   #064E3B;
+  --color-success-text: #6EE7B7;
+  --color-warning-bg:   #78350F;
+  --color-warning-text: #FCD34D;
+  --color-danger-bg:    #7F1D1D;
+  --color-danger-text:  #FCA5A5;
+  --color-info-bg:      #1E3A8A;
+  --color-info-text:    #93C5FD;
+
+  /* Status invertidos */
+  --color-status-pago-bg:          #064E3B;
+  --color-status-pago-text:        #6EE7B7;
+  --color-status-transferido-bg:   #1E3A8A;
+  --color-status-transferido-text: #93C5FD;
+  --color-status-transferir-bg:    #831843;
+  --color-status-transferir-text:  #FBCFE8;
+  --color-status-cancelado-bg:     #1F2937;
+  --color-status-cancelado-text:   #9CA3AF;
+  --color-status-apagar-bg:        #78350F;
+  --color-status-apagar-text:      #FCD34D;
+
+  /* Shadows reduzem opacidade (dark já tem contraste alto sem precisar) */
+  --shadow-card:  0 1px 3px rgba(0, 0, 0, 0.35),
+                  0 6px 24px rgba(0, 0, 0, 0.20);
+  --shadow-md:    0 4px 12px rgba(0, 0, 0, 0.40);
+  --shadow-lg:    0 12px 32px rgba(0, 0, 0, 0.50);
+  --shadow-xl:    0 20px 48px rgba(0, 0, 0, 0.60);
+  --shadow-modal: 0 40px 80px rgba(0, 0, 0, 0.70);
+
+  /* Focus ring usa lime no dark pra contraste com fundos roxos */
+  --focus-ring: 0 0 0 3px rgba(194, 245, 66, 0.30);
+}
+
+
+/* ============================================================================
+   PRINT — fixa light mode, remove sombras
+   ============================================================================ */
+@media print {
+  :root, [data-theme="dark"] {
+    --color-canvas: #FFFFFF;
+    --color-paper: #FFFFFF;
+    --color-ink-900: #000000;
+    --shadow-card: none;
+    --shadow-md: none;
+    --shadow-lg: none;
+  }
+}
+
+
+/* ============================================================================
+   REDUCED MOTION — acessibilidade
+   ============================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast:   0.01ms;
+    --transition-normal: 0.01ms;
+    --transition-slow:   0.01ms;
+  }
+}
+
+
+/* ============================================================================
+   BACKWARDS COMPATIBILITY
+   Aliases pros nomes antigos do variables.css v1 (Indigo+Salmão).
+   Permite que código legado continue funcionando enquanto vocês migram
+   pros nomes novos. Pode remover esta seção após migração completa.
+   ============================================================================ */
+:root {
+  /* v1 usava --color-primary como #6D5EF5 e --color-secondary como #3B82F6.
+     Mantemos --color-primary igual. --color-secondary agora aponta pro mesmo
+     roxo (não tem mais "azul secundário" no sistema v2). */
+  --color-bg:           var(--color-canvas);
+  --color-text:         var(--color-ink-900);
+  --color-code-bg:      var(--color-ink-100);
+}
