@@ -8,7 +8,7 @@
   <script>(function(){try{var t=localStorage.getItem("finflow.tema");if(t==="escuro"||(t!=="claro"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.setAttribute("data-theme","dark");}}catch(e){}})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=optional" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=optional" rel="stylesheet">
   <link rel="stylesheet" href="src/css/variables.css">
   <link rel="stylesheet" href="src/css/global.css">
   <link rel="stylesheet" href="src/css/components.css">
@@ -27,9 +27,7 @@
     <main class="app-main main">
       <div class="page-header">
         <div class="page-header-content">
-          <p class="page-eyebrow">Configurações</p>
-          <h1 class="page-title" data-i18n-key="perfil.titulo">Meu perfil</h1>
-          <p class="page-description" data-i18n-key="perfil.descricao">Foto, dados pessoais, redes sociais e plano de assinatura.</p>
+          <p class="page-eyebrow">Configurações</p>          <p class="page-description" data-i18n-key="perfil.descricao">Foto, dados pessoais, redes sociais e plano de assinatura.</p>
         </div>
       </div>
 
@@ -56,7 +54,7 @@
               </div>
             </div>
 
-            <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field-group">
               <div class="field">
                 <label class="field-label" for="perfil-nome">Nome</label>
                 <input type="text" id="perfil-nome" class="input" maxlength="80" placeholder="Seu nome completo">
@@ -67,7 +65,7 @@
               </div>
             </div>
 
-            <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field-group">
               <div class="field">
                 <label class="field-label" for="perfil-email">Email</label>
                 <input type="email" id="perfil-email" class="input" disabled>
@@ -83,7 +81,7 @@
               </div>
             </div>
 
-            <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field-group">
               <div class="field">
                 <label class="field-label" for="perfil-whatsapp">WhatsApp</label>
                 <input type="text" id="perfil-whatsapp" maxlength="40" placeholder="(11) 99999-9999">

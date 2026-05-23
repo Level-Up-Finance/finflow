@@ -8,7 +8,7 @@
   <script>(function(){try{var t=localStorage.getItem("finflow.tema");if(t==="escuro"||(t!=="claro"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.setAttribute("data-theme","dark");}}catch(e){}})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=optional" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=optional" rel="stylesheet">
   <link rel="stylesheet" href="src/css/variables.css">
   <link rel="stylesheet" href="src/css/global.css">
   <link rel="stylesheet" href="src/css/components.css">
@@ -27,9 +27,7 @@
     <main class="app-main main">
       <div class="page-header">
         <div class="page-header-content">
-          <p class="page-eyebrow">Sonhos</p>
-          <h1 class="page-title" data-i18n-key="investimentos.titulo">Projetos e Investimentos</h1>
-          <p class="page-description" data-i18n-key="investimentos.descricao">Cada projeto é uma meta. Compromissos do grupo Investimentos podem ser atrelados a um projeto.</p>
+          <p class="page-eyebrow">Sonhos</p>          <p class="page-description" data-i18n-key="investimentos.descricao">Cada projeto é uma meta. Compromissos do grupo Investimentos podem ser atrelados a um projeto.</p>
         </div>
         <div style="display:flex; gap: var(--space-2);">
           <button type="button" class="btn btn-secondary" id="btn-simular-invest">
@@ -125,7 +123,7 @@
             <input type="hidden" id="proj-cor" value="#6D5EF5">
           </div>
 
-          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+          <div class="field-group">
             <div class="field">
               <label class="field-label" for="proj-data-inicio">Data de início</label>
               <input type="date" id="proj-data-inicio" class="input">
@@ -167,7 +165,7 @@
             <p class="field-hint" id="proj-comp-hint"></p>
           </div>
           <div id="proj-compromisso-fields" class="hidden">
-            <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field-group">
               <div class="field">
                 <label class="field-label" for="proj-comp-periodo">Frequência <span class="required">*</span></label>
                 <select id="proj-comp-periodo" class="select" required></select>
@@ -182,7 +180,7 @@
               </div>
             </div>
             <div id="proj-comp-valor-row">
-              <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+              <div class="field-group">
                 <div class="field">
                   <label class="field-label" for="proj-comp-valor">Valor base <span class="required">*</span></label>
                   <input type="text" id="proj-comp-valor" class="input input-decimal" inputmode="decimal" placeholder="0,00" required>
@@ -255,13 +253,13 @@
       </div>
       <div class="modal-body">
         <div id="proj-details-resumo"></div>
-        <div id="proj-details-subs" style="margin-top: var(--space-5);"></div>
-        <div id="proj-details-historico" style="margin-top: var(--space-5);"></div>
+        <div id="proj-details-subs" class="mt-5"></div>
+        <div id="proj-details-historico" class="mt-5"></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-danger" id="btn-excluir-projeto">Excluir</button>
         <button type="button" class="btn btn-success hidden" id="btn-restaurar-projeto">Restaurar</button>
-        <div style="flex: 1;"></div>
+        <div class="flex-1"></div>
         <button type="button" class="btn btn-ghost" id="btn-historico-invest">Histórico passado</button>
         <button type="button" class="btn btn-ghost" data-close-modal="modal-projeto-details">Fechar</button>
         <button type="button" class="btn btn-primary" id="btn-editar-projeto">Editar</button>
@@ -300,7 +298,7 @@
         <button type="button" class="modal-close" data-close-modal="modal-historico-invest" aria-label="Fechar">×</button>
       </div>
       <div class="modal-body">
-        <p class="field-hint" style="margin-bottom: var(--space-4);">Registre aportes feitos antes de começar a usar o FinFlow. Esses valores somam ao "Realizado".</p>
+        <p class="field-hint mb-4">Registre aportes feitos antes de começar a usar o FinFlow. Esses valores somam ao "Realizado".</p>
         <div class="view-toggle view-toggle--text" id="hist-invest-seg" style="margin-bottom: var(--space-5); width: 100%;">
           <button type="button" class="view-toggle-btn active" data-hist-seg="saldo" style="flex:1;">Saldo inicial</button>
           <button type="button" class="view-toggle-btn" data-hist-seg="extrato" style="flex:1;">Extrato manual</button>
@@ -315,7 +313,7 @@
         </div>
 
         <div id="hist-invest-extrato-panel" class="hidden">
-          <p class="field-hint" style="margin-bottom: var(--space-3);">Registre transação por transação com data, valor e descrição. O conteúdo atual do extrato será substituído ao salvar.</p>
+          <p class="field-hint mb-3">Registre transação por transação com data, valor e descrição. O conteúdo atual do extrato será substituído ao salvar.</p>
           <div id="hist-invest-extrato-list"></div>
           <button type="button" class="btn btn-ghost btn-sm" id="btn-hist-invest-add-row" style="margin-top: var(--space-3);">+ Adicionar entrada</button>
         </div>
@@ -368,7 +366,7 @@
         <p class="field-hint" id="sim-modo-hint" style="margin-bottom: var(--space-4);"></p>
 
         <!-- Origem da taxa -->
-        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+        <div class="field-group">
           <div class="field">
             <label class="field-label" for="sim-juros-tipo">Origem da taxa</label>
             <select class="select" id="sim-juros-tipo">
@@ -391,7 +389,7 @@
 
         <!-- Modo: SALDO — pede aporte + período -->
         <div id="sim-fields-saldo">
-          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+          <div class="field-group">
             <div class="field">
               <label class="field-label" for="sim-pmt">Aporte mensal *</label>
               <input class="input input-decimal" id="sim-pmt" type="text" inputmode="decimal" placeholder="0,00">
@@ -401,7 +399,7 @@
               <input class="input input-decimal" id="sim-anos" type="text" inputmode="decimal" placeholder="Ex: 5" data-decimals="2">
             </div>
           </div>
-          <div class="field" style="margin-top: var(--space-3);">
+          <div class="field mt-3">
             <label class="field-label" for="sim-data-alvo-saldo">Ou data alvo</label>
             <input class="input" id="sim-data-alvo-saldo" type="date">
             <p class="field-hint">Preencher a data calcula o período automaticamente.</p>
@@ -410,7 +408,7 @@
 
         <!-- Modo: TEMPO — pede aporte + meta -->
         <div id="sim-fields-tempo" class="hidden">
-          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+          <div class="field-group">
             <div class="field">
               <label class="field-label" for="sim-pmt-tempo">Aporte mensal *</label>
               <input class="input input-decimal" id="sim-pmt-tempo" type="text" inputmode="decimal" placeholder="0,00">
@@ -424,7 +422,7 @@
 
         <!-- Modo: APORTE — pede meta + período (ou data alvo) -->
         <div id="sim-fields-aporte" class="hidden">
-          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+          <div class="field-group">
             <div class="field">
               <label class="field-label" for="sim-meta-aporte">Meta (R$) *</label>
               <input class="input input-decimal" id="sim-meta-aporte" type="text" inputmode="decimal" placeholder="0,00">
@@ -434,7 +432,7 @@
               <input class="input input-decimal" id="sim-anos-aporte" type="text" inputmode="decimal" placeholder="Ex: 10" data-decimals="2">
             </div>
           </div>
-          <div class="field" style="margin-top: var(--space-3);">
+          <div class="field mt-3">
             <label class="field-label" for="sim-data-alvo-aporte">Ou data alvo</label>
             <input class="input" id="sim-data-alvo-aporte" type="date">
             <p class="field-hint">Preencher a data calcula o período automaticamente.</p>

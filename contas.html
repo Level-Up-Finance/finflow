@@ -8,7 +8,7 @@
   <script>(function(){try{var t=localStorage.getItem("finflow.tema");if(t==="escuro"||(t!=="claro"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.setAttribute("data-theme","dark");}}catch(e){}})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=optional" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=optional" rel="stylesheet">
   <link rel="stylesheet" href="src/css/variables.css">
   <link rel="stylesheet" href="src/css/global.css">
   <link rel="stylesheet" href="src/css/components.css">
@@ -27,9 +27,7 @@
     <main class="app-main main">
       <div class="page-header">
         <div class="page-header-content">
-          <p class="page-eyebrow">Cadastro</p>
-          <h1 class="page-title" data-i18n-key="contas.titulo">Contas</h1>
-          <p class="page-description" data-i18n-key="contas.descricao">Bancos, cartões, carteiras e investimentos. Alimenta as demais telas.</p>
+          <p class="page-eyebrow">Cadastro</p>          <p class="page-description" data-i18n-key="contas.descricao">Bancos, cartões, carteiras e investimentos. Alimenta as demais telas.</p>
         </div>
         <button class="btn btn-primary" id="btn-nova-conta" type="button">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg> Nova conta
@@ -113,7 +111,7 @@
         <button type="button" class="modal-close" data-close-modal="modal-details" aria-label="Fechar" style="margin-left: auto;">×</button>
       </div>
 
-      <div class="details-header" style="padding-top: 0;">
+      <div class="details-header pt-0">
         <div id="details-avatar"></div>
         <div class="details-header-info">
           <h2 class="details-name" id="details-name">—</h2>
@@ -140,7 +138,7 @@
         </div>
       </div>
 
-      <div class="modal-footer" style="justify-content: space-between;">
+      <div class="modal-footer justify-between">
         <div style="display: flex; gap: var(--space-2);">
           <button type="button" class="btn btn-ghost hidden" id="btn-arquivar-conta">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
@@ -168,7 +166,7 @@
         <button type="button" class="modal-close" data-close-modal="modal-caixinha-details" aria-label="Fechar" style="margin-left: auto;">×</button>
       </div>
 
-      <div class="details-header" style="padding-top: 0;">
+      <div class="details-header pt-0">
         <div id="cx-details-avatar"></div>
         <div class="details-header-info">
           <h2 class="details-name" id="cx-details-name">—</h2>
@@ -188,7 +186,7 @@
         </div>
       </div>
 
-      <div class="modal-footer" style="justify-content: space-between;">
+      <div class="modal-footer justify-between">
         <button type="button" class="btn btn-ghost" id="btn-cx-arquivar">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
           Arquivar
@@ -304,7 +302,7 @@
               <input type="number" min="1" max="31" id="conta-vencimento" name="vencimento" class="input" placeholder="Dia 1–31">
             </div>
           </div>
-          <div class="field" style="margin-top: var(--space-4);">
+          <div class="field mt-4">
             <label class="field-label" for="conta-limite">Limite total</label>
             <input type="text" inputmode="decimal" id="conta-limite" name="limite" class="input input-decimal" placeholder="Ex: 5000,00">
             <p class="field-hint">Limite de crédito disponível neste cartão. Usado para calcular o comprometimento nos Compromissos.</p>

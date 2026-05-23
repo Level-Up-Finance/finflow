@@ -8,7 +8,7 @@
   <script>(function(){try{var t=localStorage.getItem("finflow.tema");if(t==="escuro"||(t!=="claro"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.setAttribute("data-theme","dark");}}catch(e){}})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=optional" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=optional" rel="stylesheet">
   <link rel="stylesheet" href="src/css/variables.css">
   <link rel="stylesheet" href="src/css/global.css">
   <link rel="stylesheet" href="src/css/components.css">
@@ -27,9 +27,7 @@
     <main class="app-main main">
       <div class="page-header">
         <div class="page-header-content">
-          <p class="page-eyebrow">Interno</p>
-          <h1 class="page-title">Gerenciador de Sugestões</h1>
-          <p class="page-description">FinFlow — Planejamento de desenvolvimento</p>
+          <p class="page-eyebrow">Interno</p>          <p class="page-description">FinFlow — Planejamento de desenvolvimento</p>
         </div>
         <div class="page-header-actions">
           <button type="button" class="btn btn-ghost btn-sm" id="btn-export-csv">
@@ -230,37 +228,37 @@
       </div>
       <div class="modal-body" style="gap:var(--space-4)">
         <div>
-          <p class="field-label" style="margin-bottom:var(--space-1)">Título</p>
+          <p class="field-label mb-1">Título</p>
           <p id="ddd-title" style="font-size:var(--fs-sm);font-weight:var(--fw-semibold);color:var(--color-text-main)"></p>
         </div>
         <div>
-          <p class="field-label" style="margin-bottom:var(--space-1)">Descrição</p>
+          <p class="field-label mb-1">Descrição</p>
           <p id="ddd-desc" style="font-size:var(--fs-sm);color:var(--color-text-secondary);white-space:pre-wrap;line-height:1.6"></p>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-3)">
           <div>
-            <p class="field-label" style="margin-bottom:var(--space-1)">Módulo</p>
+            <p class="field-label mb-1">Módulo</p>
             <span id="ddd-modulo"></span>
           </div>
           <div>
-            <p class="field-label" style="margin-bottom:var(--space-1)">Impacto</p>
+            <p class="field-label mb-1">Impacto</p>
             <span id="ddd-impacto"></span>
           </div>
           <div>
-            <p class="field-label" style="margin-bottom:var(--space-1)">Complexidade</p>
+            <p class="field-label mb-1">Complexidade</p>
             <span id="ddd-complex"></span>
           </div>
         </div>
         <div id="ddd-notas-wrap">
-          <p class="field-label" style="margin-bottom:var(--space-1)">Notas internas</p>
+          <p class="field-label mb-1">Notas internas</p>
           <p id="ddd-notas" style="font-size:var(--fs-sm);color:var(--color-text-secondary);white-space:pre-wrap;line-height:1.6"></p>
         </div>
         <div id="ddd-retorno-wrap" class="hidden">
-          <p class="field-label" style="margin-bottom:var(--space-1)">Retorno para o usuário</p>
+          <p class="field-label mb-1">Retorno para o usuário</p>
           <p id="ddd-retorno" style="font-size:var(--fs-sm);color:var(--color-text-secondary);white-space:pre-wrap;line-height:1.6"></p>
         </div>
         <div id="ddd-arquivos-wrap">
-          <p class="field-label" style="margin-bottom:var(--space-1)">Arquivos</p>
+          <p class="field-label mb-1">Arquivos</p>
           <div id="ddd-arquivos-list" class="dev-arquivos-list"></div>
         </div>
         <p id="ddd-date" style="font-size:var(--fs-xs);color:var(--color-text-tertiary)"></p>

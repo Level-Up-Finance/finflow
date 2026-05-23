@@ -8,7 +8,7 @@
   <script>(function(){try{var t=localStorage.getItem("finflow.tema");if(t==="escuro"||(t!=="claro"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.setAttribute("data-theme","dark");}}catch(e){}})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=optional" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=optional" rel="stylesheet">
   <link rel="stylesheet" href="src/css/variables.css">
   <link rel="stylesheet" href="src/css/global.css">
   <link rel="stylesheet" href="src/css/components.css">
@@ -27,9 +27,7 @@
     <main class="app-main main">
       <div class="page-header">
         <div class="page-header-content">
-          <p class="page-eyebrow">Cadastro</p>
-          <h1 class="page-title" data-i18n-key="contatos.titulo">Contatos</h1>
-          <p class="page-description" data-i18n-key="contatos.descricao">Clientes e fornecedores. Histórico de reconhecimento automático por extrato bancário.</p>
+          <p class="page-eyebrow">Cadastro</p>          <p class="page-description" data-i18n-key="contatos.descricao">Clientes e fornecedores. Histórico de reconhecimento automático por extrato bancário.</p>
         </div>
         <button class="btn btn-primary" id="btn-novo-contato" type="button">
           <span style="font-size: 1.25em; line-height: 0.8;">+</span> Novo contato
@@ -107,7 +105,7 @@
 
             <!-- Reconhecimento bancário -->
             <div class="ctp-tab-panel hidden" data-tab="banco">
-              <p class="field-hint" style="margin-bottom: var(--space-4);">Padrões de texto do extrato bancário aprendidos automaticamente. Usados para pré-preencher contato e subcategoria ao importar extratos.</p>
+              <p class="field-hint mb-4">Padrões de texto do extrato bancário aprendidos automaticamente. Usados para pré-preencher contato e subcategoria ao importar extratos.</p>
               <div id="ct-banco-content"></div>
             </div>
 
@@ -140,7 +138,7 @@
 
         <!-- Identificação -->
         <h3 class="field-section-title">Identificação</h3>
-        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+        <div class="field-group">
           <div class="field">
             <label class="field-label" for="ct-pessoa-tipo">Pessoa / Empresa</label>
             <select class="select" id="ct-pessoa-tipo">
@@ -162,7 +160,7 @@
           <input type="checkbox" id="ct-estrangeiro">
           Estrangeiro — não possui CPF / CNPJ
         </label>
-        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+        <div class="field-group">
           <div class="field">
             <label class="field-label" for="ct-nome">
               Nome <span class="required">*</span>
@@ -186,7 +184,7 @@
 
         <!-- Contato -->
         <h3 class="field-section-title">Contato</h3>
-        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+        <div class="field-group">
           <div class="field">
             <label class="field-label" for="ct-email">E-mail</label>
             <input type="email" class="input" id="ct-email" maxlength="200" placeholder="email@dominio.com">
@@ -196,7 +194,7 @@
             <input type="url" class="input" id="ct-website" maxlength="200" placeholder="https://…">
           </div>
         </div>
-        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+        <div class="field-group">
           <div class="field">
             <label class="field-label" for="ct-telefone">Telefone</label>
             <input type="text" id="ct-telefone" maxlength="40" placeholder="(11) 99999-9999">
@@ -213,7 +211,7 @@
 
         <!-- Redes sociais -->
         <h3 class="field-section-title">Redes sociais</h3>
-        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+        <div class="field-group">
           <div class="field">
             <label class="field-label" for="ct-linkedin">LinkedIn</label>
             <input type="text" class="input" id="ct-linkedin" maxlength="200" placeholder="URL ou usuário">
@@ -231,7 +229,7 @@
         <!-- Profissional (só PF) -->
         <div id="ct-profissional-section" class="hidden">
           <h3 class="field-section-title">Profissional</h3>
-          <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+          <div class="field-group">
             <div class="field">
               <label class="field-label" for="ct-empresa">Empresa</label>
               <input type="text" class="input" id="ct-empresa" maxlength="120">
@@ -265,7 +263,7 @@
 
         <!-- Outros -->
         <h3 class="field-section-title">Outros</h3>
-        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+        <div class="field-group">
           <div class="field">
             <label class="field-label" for="ct-aniversario">Aniversário</label>
             <input type="date" class="input" id="ct-aniversario">
@@ -277,7 +275,7 @@
           <textarea class="textarea" id="ct-bio" rows="3" maxlength="500"></textarea>
         </div>
       </div>
-      <div class="modal-footer" style="justify-content: space-between;">
+      <div class="modal-footer justify-between">
         <button type="button" class="btn btn-danger hidden" id="btn-deletar-contato">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           Excluir

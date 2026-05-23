@@ -8,7 +8,7 @@
   <script>(function(){try{var t=localStorage.getItem("finflow.tema");if(t==="escuro"||(t!=="claro"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.setAttribute("data-theme","dark");}}catch(e){}})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=optional" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=optional" rel="stylesheet">
   <link rel="stylesheet" href="src/css/variables.css">
   <link rel="stylesheet" href="src/css/global.css">
   <link rel="stylesheet" href="src/css/components.css">
@@ -27,9 +27,7 @@
     <main class="app-main main">
       <div class="page-header">
         <div class="page-header-content">
-          <p class="page-eyebrow">Diário</p>
-          <h1 class="page-title" data-i18n-key="transacoes.titulo">Transações</h1>
-          <p class="page-description" data-i18n-key="transacoes.descricao">Registro real do dinheiro que entrou e saiu — diferente do orçamento (planejado) e dos pagamentos (status mensal).</p>
+          <p class="page-eyebrow">Diário</p>          <p class="page-description" data-i18n-key="transacoes.descricao">Registro real do dinheiro que entrou e saiu — diferente do orçamento (planejado) e dos pagamentos (status mensal).</p>
         </div>
         <div class="page-header-actions">
           <button class="btn btn-ghost" id="btn-nova-importacao" type="button">
@@ -228,7 +226,7 @@
           <div class="trans-modal-section">
             <p class="trans-modal-section-label">Principal</p>
 
-            <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="field-group">
               <div class="field">
                 <label class="field-label" for="trans-data">Data <span class="required">*</span></label>
                 <input class="input" id="trans-data" type="date" required>
@@ -277,7 +275,7 @@
                   <input class="input" id="trans-taxa-oficial" type="number" step="0.000001" min="0" placeholder="Buscando…">
                   <p class="field-hint">Cotação Frankfurter. Ajuste manualmente se necessário.</p>
                 </div>
-                <div class="field-group" style="grid-template-columns: 1fr 1fr;">
+                <div class="field-group">
                   <div class="field">
                     <label class="field-label" for="trans-valor-previsto">Valor previsto (BRL)</label>
                     <input class="input transfer-input-readonly" id="trans-valor-previsto" type="text" readonly placeholder="—" tabindex="-1">
@@ -422,7 +420,7 @@
             </div>
           </div>
         </div>
-        <div class="modal-footer" style="justify-content: space-between;">
+        <div class="modal-footer justify-between">
           <button type="button" class="btn btn-danger hidden" id="btn-deletar-transacao">Excluir</button>
           <div style="display:flex; gap: var(--space-2);">
             <button type="button" class="btn btn-ghost" data-close-modal="modal-transacao">Cancelar</button>
@@ -446,7 +444,7 @@
         <p id="sync-message" style="color: var(--color-text-main); font-size: var(--fs-sm); line-height: 1.5; margin-bottom: var(--space-3);">—</p>
         <div id="sync-details" class="sync-details"></div>
       </div>
-      <div class="modal-footer" style="justify-content: space-between;">
+      <div class="modal-footer justify-between">
         <button type="button" class="btn btn-ghost" id="btn-sync-skip">Não vincular</button>
         <button type="button" class="btn btn-primary" id="btn-sync-confirm">Confirmar</button>
       </div>
@@ -466,7 +464,7 @@
         <p id="regra-message" style="color: var(--color-text-main); font-size: var(--fs-sm); line-height: 1.5; margin-bottom: var(--space-3);">—</p>
         <p style="color: var(--color-text-secondary); font-size: var(--fs-xs); line-height: 1.4;">A partir de agora, toda nova transação com esse contato vai ser automaticamente categorizada com essa subcategoria. Você pode mudar manualmente em qualquer transação.</p>
       </div>
-      <div class="modal-footer" style="justify-content: space-between;">
+      <div class="modal-footer justify-between">
         <button type="button" class="btn btn-ghost" id="btn-regra-skip">Não, manter manual</button>
         <button type="button" class="btn btn-primary" id="btn-regra-confirm">Sim, criar regra</button>
       </div>

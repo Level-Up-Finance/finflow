@@ -8,7 +8,7 @@
   <script>(function(){try{var t=localStorage.getItem("finflow.tema");if(t==="escuro"||(t!=="claro"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.setAttribute("data-theme","dark");}}catch(e){}})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=optional" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=optional" rel="stylesheet">
   <link rel="stylesheet" href="src/css/variables.css">
   <link rel="stylesheet" href="src/css/global.css">
   <link rel="stylesheet" href="src/css/components.css">
@@ -121,7 +121,7 @@
 
         <div class="cfg-sistema-section">
           <h3 class="cfg-section-heading">Moedas utilizadas</h3>
-          <p class="field-hint" style="margin-bottom: var(--space-4);">O Real (BRL) é a moeda base e está sempre incluído. Para cada moeda estrangeira, a cotação atualiza a cada 5 minutos. Use o seletor no card para incluir a moeda nos pickers (transações, compromissos, investimentos).</p>
+          <p class="field-hint mb-4">O Real (BRL) é a moeda base e está sempre incluído. Para cada moeda estrangeira, a cotação atualiza a cada 5 minutos. Use o seletor no card para incluir a moeda nos pickers (transações, compromissos, investimentos).</p>
           <div class="cfg-moedas-grid" id="cfg-moedas-grid"></div>
         </div>
 
@@ -136,7 +136,7 @@
 
         <div class="cfg-sistema-section">
           <h3 class="cfg-section-heading">Frequência de importação por conta</h3>
-          <p class="field-hint" style="margin-bottom: var(--space-4);">Cartões de crédito também aparecem aqui. Use "Não lembrar" pra desativar o lembrete de uma conta específica.</p>
+          <p class="field-hint mb-4">Cartões de crédito também aparecem aqui. Use "Não lembrar" pra desativar o lembrete de uma conta específica.</p>
           <div id="cfg-importacoes-table"></div>
         </div>
       </div>
