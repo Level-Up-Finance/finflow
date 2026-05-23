@@ -51,13 +51,23 @@
   display: none;
 }
 
-/* Logo "Twin Track" — symbol-reverso (linha branca + curva lime) pra sidebar dark */
 .sidebar-logo-mark {
-  width: 36px;
-  height: 36px;
-  background: url('/src/assets/logo/symbol/symbol-reverso.svg') center/contain no-repeat;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  /* Não usa background gradient nem border-radius — o próprio SVG é o logo */
+  position: relative;
+}
+
+.sidebar-logo-mark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><line x1='14' y1='32' x2='86' y2='32' stroke='%23FFFFFF' stroke-width='12' stroke-linecap='round'/><path d='M14 68 L38 68 L44 50 L56 50 L62 68 L86 68' stroke='%23C2F542' stroke-width='12' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>") center/22px no-repeat;
 }
 
 .sidebar-logo-name {
@@ -106,7 +116,7 @@
 
 .sidebar-link.active {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--fixed-white);
 }
 
 /* Span do label vira o próprio tooltip — mais robusto que attr() + ::after.
@@ -154,7 +164,7 @@
   height: 36px;
   border-radius: var(--radius-full);
   background: var(--gradient-primary);
-  color: #fff;
+  color: var(--fixed-white);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -285,7 +295,7 @@
 
 .page-header {
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-4);
   margin-bottom: var(--space-8);
@@ -298,18 +308,16 @@
   font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   font-weight: var(--fw-semibold);
   margin-bottom: var(--space-2);
 }
 
 .page-title {
   font-family: var(--font-display);
-  font-size: var(--fs-xl);  /* 24px — reduzido de fs-2xl pra ficar Mercury-style */
+  font-size: var(--fs-2xl);
   font-weight: var(--fw-bold);
-  letter-spacing: -0.01em;
   color: var(--color-text-main);
-  line-height: 1.25;
 }
 
 .page-description {
@@ -359,11 +367,19 @@
   margin-bottom: var(--space-8);
 }
 
-/* Logo Twin Track — symbol-color (roxo + lime) pra tela de login (fundo claro) */
 .auth-logo-mark {
-  width: 56px;
-  height: 56px;
-  background: url('/src/assets/logo/symbol/symbol-color.svg') center/contain no-repeat;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--gradient-primary);
+  position: relative;
+}
+
+.auth-logo-mark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><line x1='14' y1='32' x2='86' y2='32' stroke='%23FFFFFF' stroke-width='12' stroke-linecap='round'/><path d='M14 68 L38 68 L44 50 L56 50 L62 68 L86 68' stroke='%23C2F542' stroke-width='12' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>") center/32px no-repeat;
 }
 
 .auth-logo-name {

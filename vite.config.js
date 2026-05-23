@@ -32,7 +32,8 @@ const htmlPages = [
 
 export default defineConfig({
   server: {
-    port: 8000,
+    port: 8004,
+    strictPort: false, // se 8004 ocupada, Vite vai pra próxima livre
   },
   build: {
     outDir: 'dist',

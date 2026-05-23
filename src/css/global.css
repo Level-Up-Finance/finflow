@@ -140,8 +140,26 @@ table {
   width: 100%;
 }
 
-/* Números financeiros — usar tabular-nums pra alinhar colunas */
-.tabular {
+/* Números financeiros — Geist Mono + tabular-nums (BRAND VISUAL.md §4.4).
+   Ativa largura uniforme de dígitos (R$ 1.234,56 e R$ 9.999,99 alinham na
+   vertical) e usa Geist Mono — fonte monoespacial do brand.
+
+   Aplicada em valores PEQUENOS/MÉDIOS (linhas de tabela, items, badges,
+   pills) onde Geist Mono cabe bem. Valores GRANDES (KPI cards 24px+) ficam
+   em Manrope porque Geist Mono ocupa mais largura horizontal e quebra layout
+   em cards apertados — esses usam `font-variant-numeric: tabular-nums` direto
+   nas próprias classes (sem font-mono). */
+.tabular,
+.dre-item-value,
+.pagamento-bloco-stat-value,
+.pagamento-valor-real,
+.conta-card-saldo-valor,
+.caixinha-trn-valor,
+.base-value-number,
+.calendar-popover-value,
+.occ-popover-value,
+.details-field-value {
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 
@@ -156,13 +174,45 @@ table {
 .text-center { text-align: center; }
 .text-right { text-align: right; }
 
-.flex { display: flex; }
-.flex-col { flex-direction: column; }
-.items-center { align-items: center; }
+/* Utility classes — composáveis pra evitar inline styles */
+.flex          { display: flex; }
+.flex-col      { flex-direction: column; }
+.flex-wrap     { flex-wrap: wrap; }
+.flex-1        { flex: 1; }
+.items-center  { align-items: center; }
+.items-start   { align-items: flex-start; }
+.items-end     { align-items: flex-end; }
 .justify-between { justify-content: space-between; }
+.justify-center  { justify-content: center; }
+.justify-end     { justify-content: flex-end; }
+.gap-1 { gap: var(--space-1); }
 .gap-2 { gap: var(--space-2); }
 .gap-3 { gap: var(--space-3); }
 .gap-4 { gap: var(--space-4); }
+.gap-5 { gap: var(--space-5); }
+.gap-6 { gap: var(--space-6); }
+/* Margins */
+.mt-1 { margin-top: var(--space-1); }
+.mt-2 { margin-top: var(--space-2); }
+.mt-3 { margin-top: var(--space-3); }
+.mt-4 { margin-top: var(--space-4); }
+.mt-5 { margin-top: var(--space-5); }
+.mt-6 { margin-top: var(--space-6); }
+.mt-8 { margin-top: var(--space-8); }
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: var(--space-1); }
+.mb-2 { margin-bottom: var(--space-2); }
+.mb-3 { margin-bottom: var(--space-3); }
+.mb-4 { margin-bottom: var(--space-4); }
+.mb-5 { margin-bottom: var(--space-5); }
+.mb-6 { margin-bottom: var(--space-6); }
+.mb-8 { margin-bottom: var(--space-8); }
+.ml-auto { margin-left: auto; }
+.mr-auto { margin-right: auto; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+/* Paddings rápidos */
+.pt-0 { padding-top: 0; }
+.p-0  { padding: 0; }
 
 /* Scrollbar suave */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -173,9 +223,9 @@ table {
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
 
-/* Focus ring acessível */
+/* Focus ring acessível — usa --focus-outline token (vira lime no dark mode) */
 :focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: var(--focus-outline);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
@@ -185,7 +235,7 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: var(--focus-outline);
   outline-offset: 2px;
 }
 

@@ -2,6 +2,8 @@
 // Aplica um arquivo SQL via service role.
 // Uso: node scripts/apply-migration.mjs <arquivo.sql>
 
+// Nota: usamos `fetch` direto pro endpoint REST do Supabase (linha ~37),
+// não o cliente JS — porque o cliente não expõe RAW SQL.
 import { readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'

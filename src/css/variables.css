@@ -2,7 +2,7 @@
    FinFlow · Design Tokens · v2.0
    ----------------------------------------------------------------------------
    Substitui o variables.css anterior (v1.0.5 com Indigo+Salmão).
-   Nova paleta: Roxo Tech + Lime (Mix A+D · aprovado).
+   Nova paleta: Roxo Tech + Lime (Mix A+D · aprovado em 22/05/2026).
    Suporta dois modos: light (default) + dark (via [data-theme="dark"]).
 
    Fonte da verdade pra toda decisão visual do produto.
@@ -47,10 +47,11 @@
   --color-accent:      var(--color-accent-400);
   --color-accent-dark: var(--color-accent-600);  /* usar pra texto sobre fundo claro */
 
-  /* Aliases legados */
-  --color-secondary:      var(--color-primary-500); /* o que era "secondary" no v1 agora é primary */
+  /* Aliases legados — o "secondary" v1 (azul) virou primary v2 (roxo) */
+  --color-secondary:      var(--color-primary-500);
   --color-secondary-dark: var(--color-primary-700);
   --color-secondary-light:var(--color-primary-300);
+  --color-secondary-50:   var(--color-primary-50);
 
   /* ────────────────────────────────────────────────────────────────────────
      3. NEUTROS — Slate inverte no dark mode
@@ -101,6 +102,7 @@
   --color-warning:      #F59E0B;
   --color-warning-bg:   #FEF3C7;
   --color-warning-text: #92400E;
+  --color-warning-dark: #92400E;  /* alias legado, usado por feedback-status-badge */
 
   --color-danger:       #EF4444;
   --color-danger-bg:    #FEE2E2;
@@ -111,23 +113,23 @@
   --color-info-text:    #1E40AF;
 
   /* ────────────────────────────────────────────────────────────────────────
-     6. STATUS DE PAGAMENTO — 4 + default
+     6. STATUS DE PAGAMENTO — 4 + default (v2.0 oficiais)
         bg / text pares por status. Usar var(--color-status-<x>-bg) etc.
      ──────────────────────────────────────────────────────────────────────── */
-  --color-status-pago-bg:        #D1FAE5;
-  --color-status-pago-text:      #065F46;
+  --color-status-pago-bg:          #D1FAE5;
+  --color-status-pago-text:        #065F46;
 
   --color-status-transferido-bg:   #DBEAFE;
   --color-status-transferido-text: #1E40AF;
 
-  --color-status-transferir-bg:   #FCE7F3;
-  --color-status-transferir-text: #9D174D;
+  --color-status-transferir-bg:    #FCE7F3;
+  --color-status-transferir-text:  #9D174D;
 
-  --color-status-cancelado-bg:   #F3F4F6;
-  --color-status-cancelado-text: #4B5563;
+  --color-status-cancelado-bg:     #F3F4F6;
+  --color-status-cancelado-text:   #4B5563;
 
-  --color-status-apagar-bg:      #FEF3C7;
-  --color-status-apagar-text:    #92400E;
+  --color-status-apagar-bg:        #FEF3C7;
+  --color-status-apagar-text:      #92400E;
 
   /* ────────────────────────────────────────────────────────────────────────
      7. FIXED TOKENS — não invertem no dark mode
@@ -147,7 +149,7 @@
   --font-body:    'Inter',   -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono:    'Geist Mono', ui-monospace, 'SF Mono', Monaco, Consolas, monospace;
 
-  /* Escala (mantida do v1) */
+  /* Escala (12px a 60px) */
   --fs-xs:   0.75rem;   /* 12px */
   --fs-sm:   0.875rem;  /* 14px */
   --fs-base: 1rem;      /* 16px */
@@ -160,6 +162,7 @@
   --fs-5xl:  3.75rem;   /* 60px — adicionado v2 */
 
   --fw-normal:    400;
+  --fw-regular:   400; /* alias legado */
   --fw-medium:    500;
   --fw-semibold:  600;
   --fw-bold:      700;
@@ -211,7 +214,7 @@
   --shadow-modal: 0 40px 80px rgba(15, 23, 42, 0.25);
 
   /* ────────────────────────────────────────────────────────────────────────
-     12. GRADIENTES — 3 oficiais
+     12. GRADIENTES — 4 oficiais
      ──────────────────────────────────────────────────────────────────────── */
   --gradient-primary:      linear-gradient(135deg, #6D5EF5 0%, #4B3FD6 100%);
   --gradient-primary-soft: linear-gradient(135deg,
@@ -228,17 +231,29 @@
 
   --transition-fast:   150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base:   var(--transition-normal); /* alias legado v1 */
   --transition-slow:   400ms cubic-bezier(0.4, 0, 0.2, 1);
 
   /* ────────────────────────────────────────────────────────────────────────
-     14. Z-INDEX
+     14. LAYOUT (do v1 — necessário em components.css/layout.css)
      ──────────────────────────────────────────────────────────────────────── */
-  --z-sidebar:   40;
-  --z-nav:       50;
-  --z-dropdown:  100;
-  --z-modal:     200;
-  --z-toast:     300;
-  --z-tooltip:   400;
+  --sidebar-width:           72px;   /* ícone-only por padrão */
+  --sidebar-width-expanded:  240px;  /* modo expansivo / mobile aberto */
+  --sidebar-width-collapsed: 64px;
+  --header-height:           64px;
+  --content-max-width:       1600px;
+
+  /* ────────────────────────────────────────────────────────────────────────
+     15. Z-INDEX
+     ──────────────────────────────────────────────────────────────────────── */
+  --z-sidebar:         40;
+  --z-nav:             50;
+  --z-header:          90;
+  --z-dropdown:        100;
+  --z-modal-backdrop:  190;
+  --z-modal:           200;
+  --z-toast:           300;
+  --z-tooltip:         400;
 }
 
 
@@ -290,6 +305,7 @@
   --color-primary-100: #2A2384;
   --color-accent-50:   #2E460B;
   --color-accent-100:  #4D6A0E;
+  --color-secondary-50:#1E1B45; /* alias legado dark */
 
   /* Semânticas — invertem bg + text */
   --color-success-bg:   #064E3B;
@@ -301,7 +317,7 @@
   --color-info-bg:      #1E3A8A;
   --color-info-text:    #93C5FD;
 
-  /* Status invertidos */
+  /* Status v2 invertidos */
   --color-status-pago-bg:          #064E3B;
   --color-status-pago-text:        #6EE7B7;
   --color-status-transferido-bg:   #1E3A8A;
@@ -348,22 +364,43 @@
   :root {
     --transition-fast:   0.01ms;
     --transition-normal: 0.01ms;
+    --transition-base:   0.01ms;
     --transition-slow:   0.01ms;
   }
 }
 
 
 /* ============================================================================
-   BACKWARDS COMPATIBILITY
-   Aliases pros nomes antigos do variables.css v1 (Indigo+Salmão).
-   Permite que código legado continue funcionando enquanto vocês migram
-   pros nomes novos. Pode remover esta seção após migração completa.
+   BACKWARDS COMPATIBILITY — Aliases legados do variables.css v1
+   ----------------------------------------------------------------------------
+   Tokens com nomes antigos que o components.css ainda usa.
+   Permite que código legado continue funcionando enquanto a migração
+   gradual acontece. Pode remover esta seção quando todo o components.css
+   tiver sido migrado pros nomes novos (--color-status-* etc.).
    ============================================================================ */
 :root {
-  /* v1 usava --color-primary como #6D5EF5 e --color-secondary como #3B82F6.
-     Mantemos --color-primary igual. --color-secondary agora aponta pro mesmo
-     roxo (não tem mais "azul secundário" no sistema v2). */
+  /* Generic aliases */
   --color-bg:           var(--color-canvas);
   --color-text:         var(--color-ink-900);
   --color-code-bg:      var(--color-ink-100);
+
+  /* Status v1 (alias 1:1 com os v2) — components.css usa estes hoje */
+  --status-pago-bg:          var(--color-status-pago-bg);
+  --status-pago-text:        var(--color-status-pago-text);
+  --status-transferido-bg:   var(--color-status-transferido-bg);
+  --status-transferido-text: var(--color-status-transferido-text);
+  --status-cancelado-bg:     var(--color-status-cancelado-bg);
+  --status-cancelado-text:   var(--color-status-cancelado-text);
+  --status-a-transferir-bg:  var(--color-status-transferir-bg);
+  --status-a-transferir-text:var(--color-status-transferir-text);
+
+  /* Status removidos na v2 — mantemos aliases neutros pra UI não quebrar
+     enquanto Fase 4 (migração de dados) está em andamento. Quando todos
+     pagamentos forem migrados pra Pago/A Pagar, estas linhas podem sair. */
+  --status-agendado-bg:      var(--color-status-apagar-bg);
+  --status-agendado-text:    var(--color-status-apagar-text);
+  --status-cartao-bg:        var(--color-status-pago-bg);
+  --status-cartao-text:      var(--color-status-pago-text);
+  --status-parcial-bg:       var(--color-status-pago-bg);
+  --status-parcial-text:     var(--color-status-pago-text);
 }
