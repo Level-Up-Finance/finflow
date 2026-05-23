@@ -84,7 +84,7 @@ function renderTable() {
       ? `<img src="${escapeHtml(u.foto_url)}" alt="" class="adm-usr-avatar-img">`
       : escapeHtml(initials);
     const suspensoBadge = u.suspenso
-      ? `<span class="plano-badge" style="background:var(--color-error-subtle,#fee2e2);color:var(--color-error,#dc2626);margin-left:4px;">Suspenso</span>`
+      ? `<span class="plano-badge" style="background:var(--color-danger-bg);color:var(--color-danger-text);margin-left:4px;">Suspenso</span>`
       : '';
     return `
       <tr class="adm-usr-row${u.suspenso ? ' adm-usr-row--suspenso' : ''}" data-id="${u.id}" tabindex="0" role="button">

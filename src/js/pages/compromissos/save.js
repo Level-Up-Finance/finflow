@@ -507,7 +507,7 @@ export function openEncerrarModal(c, deps) {
     `Encerrar <strong>${nome}</strong>?<br><br>` +
     `Isso vai:<ul style="margin:var(--space-2) 0 0 var(--space-4);line-height:1.8;">` +
     `<li>Definir <em>Termina em</em> = hoje</li>` +
-    `<li>Remover todos os pagamentos futuros com status Agendado</li>` +
+    `<li>Remover todos os pagamentos futuros com status A Pagar</li>` +
     `<li>Remover entradas de orçamento dos meses futuros</li>` +
     `</ul>`;
 
@@ -556,12 +556,12 @@ export async function confirmarEncerrar(deps) {
     .eq('id', encerrandoId);
   if (subErr) { showToast('Erro ao encerrar: ' + subErr.message, 'error', 8000); return; }
 
-  // 2. Remove pagamentos Agendados futuros
+  // 2. Remove pagamentos pendentes (A Pagar) futuros
   await supabase
     .from('pagamentos')
     .delete()
     .eq('subcategoria_id', encerrandoId)
-    .eq('status', 'Agendado')
+    .eq('status', 'A Pagar')
     .gte('data_vencimento', today);
 
   // 3. Remove orcamentos de meses futuros

@@ -51,8 +51,10 @@ const canceledItemsByBloco  = new Map(); // num → items[], para o modal de can
 
 const FINALIZADOS_STATUS = new Set(['Pago', 'Transferido']);
 
-// Status removido da UI mas mantido no DB enquanto dados históricos existirem
-const DEPRECATED_STATUSES = new Set(['Cartão']);
+// Status removidos na v2.0 (Cartão/Parcial/Agendado migrados para Pago/A Pagar).
+// Mantido vazio por compatibilidade — set fica aqui caso novos status sejam
+// depreciados no futuro. Ver migration 0112_consolidate_payment_statuses_v2.sql.
+const DEPRECATED_STATUSES = new Set();
 
 function getMainCurrencySymbol() {
   const code = localStorage.getItem('finflow.moeda_padrao') || 'BRL';
@@ -62,13 +64,11 @@ function getMainCurrencySymbol() {
 const MONTH_LABELS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 const STATUS_OPTIONS = [
-  { value: 'Agendado',      label: 'A Pagar',       cls: 'status-agendado' },
+  { value: 'A Pagar',       label: 'A Pagar',       cls: 'status-apagar' },
   { value: 'Pago',          label: 'Pago',          cls: 'status-pago' },
   { value: 'A Transferir',  label: 'A Transferir',  cls: 'status-a-transferir' },
   { value: 'Transferido',   label: 'Transferido',   cls: 'status-transferido' },
   { value: 'Cancelado',     label: 'Cancelado',     cls: 'status-cancelado' },
-  // Legado — só aparece no select quando o pagamento JÁ tem esse status
-  { value: 'Cartão',        label: 'Cartão',        cls: 'status-cartao' },
 ];
 
 // -----------------------------
@@ -179,7 +179,7 @@ function initFlatDates() {
 // Status helpers (Fase 5.C)
 // -----------------------------
 function isAtrasado(p) {
-  if (p.status !== 'Agendado' && p.status !== 'A Transferir') return false;
+  if (p.status !== 'A Pagar' && p.status !== 'A Transferir') return false;
   if (!p.data_vencimento) return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -189,8 +189,8 @@ function isAtrasado(p) {
 
 function getStatusGroup(p) {
   if (p.status === 'Cancelado') return 'cancelados';
-  if (['Pago', 'Transferido', 'Cartão'].includes(p.status)) return 'pagos'; // Cartão: legado
-  if (isAtrasado(p)) return 'atrasados'; // cobre Agendado e A Transferir
+  if (['Pago', 'Transferido'].includes(p.status)) return 'pagos';
+  if (isAtrasado(p)) return 'atrasados'; // cobre A Pagar e A Transferir
   return 'pendentes';
 }
 
@@ -260,8 +260,35 @@ async function loadMonth() {
     return;
   }
 
-  // Filtra subcategorias arquivadas/inativas
-  cachedPagamentos = (data || []).filter((p) => p.subcategorias?.status === 'ativa');
+  // 3b. Busca também pagamentos do BLOCO CROSSOVER (último bloco do mês anterior
+  // que se estende para o mês visível). Esses pagamentos têm mes_ano do mês anterior
+  // mas suas datas caem dentro do mês visível — devem aparecer no "Bloco anterior".
+  const blocosVisible = getBlocosForMonth(viewYear, viewMonth);
+  const crossoverBloco = blocosVisible.find((b) => b.crossover === true);
+  let crossoverPagamentos = [];
+  if (crossoverBloco) {
+    const crossMesAno = isoMonth(crossoverBloco.startDate.getFullYear(), crossoverBloco.startDate.getMonth());
+    const startIso = isoDate(crossoverBloco.startDate.getFullYear(), crossoverBloco.startDate.getMonth(), crossoverBloco.startDate.getDate());
+    const endIso   = isoDate(crossoverBloco.endDate.getFullYear(),   crossoverBloco.endDate.getMonth(),   crossoverBloco.endDate.getDate());
+    const { data: crossData, error: crossErr } = await supabase
+      .from('pagamentos')
+      .select('*, subcategorias(*, categorias(*))')
+      .eq('mes_ano', crossMesAno)
+      .gte('data_vencimento', startIso)
+      .lte('data_vencimento', endIso)
+      .order('data_vencimento');
+    if (!crossErr) crossoverPagamentos = crossData || [];
+  }
+
+  // Filtra subcategorias arquivadas/inativas + dedupe por id (defensivo)
+  const allRows = [...(data || []), ...crossoverPagamentos];
+  const seenIds = new Set();
+  cachedPagamentos = allRows.filter((p) => {
+    if (!p.subcategorias || p.subcategorias.status !== 'ativa') return false;
+    if (seenIds.has(p.id)) return false;
+    seenIds.add(p.id);
+    return true;
+  });
 
   // 4. Busca transações vinculadas pra detectar pagamentos travados (vinculados ao banco)
   await attachLinkedTransacoes(cachedPagamentos);
@@ -693,7 +720,7 @@ async function ensurePagamentosForMonth(year, month) {
               valor_previsto: valorPorOcorrencia,
               valor_real: valorPorOcorrencia,
               moeda: orc.moeda,
-              status: (sub.tipo === 'Transferência' || sub.tipo === 'Caixinha') ? 'A Transferir' : 'Agendado',
+              status: (sub.tipo === 'Transferência' || sub.tipo === 'Caixinha') ? 'A Transferir' : 'A Pagar',
               data_vencimento: isoDate(cur.getFullYear(), cur.getMonth(), cur.getDate()),
             });
           }
@@ -704,18 +731,59 @@ async function ensurePagamentosForMonth(year, month) {
   }
 
   if (rows.length > 0) {
-    const { error: insertError } = await supabase.from('pagamentos').upsert(rows, {
-      onConflict: 'user_id,subcategoria_id,mes_ano,data_vencimento',
-      ignoreDuplicates: true,
-    });
-    if (insertError) console.error('[ensurePagamentosForMonth]', insertError);
+    // SELECT-then-INSERT pra contornar limitação do Supabase JS client com PARTIAL UNIQUE INDEX.
+    //
+    // Contexto: a migration 0109 substituiu o UNIQUE CONSTRAINT por um UNIQUE INDEX PARCIAL
+    // com predicado `WHERE valor_real IS NULL OR valor_real >= 0` — pra permitir resgates de
+    // caixinha (valor negativo) coexistirem com aportes no mesmo dia.
+    //
+    // PostgreSQL exige que ON CONFLICT em partial index inclua o mesmo predicado WHERE na
+    // inferência (`ON CONFLICT (cols) WHERE (...)`). O Supabase JS client não expõe esse
+    // parâmetro, então o upsert quebrava com erro 42P10.
+    //
+    // Solução: filtrar em JS quais (sub, mes_ano, data_vencimento) já existem com valor
+    // não-negativo, e inserir só os rows novos. Resgates negativos não bloqueiam o aporte
+    // automático (alinhado com a intenção da 0109).
+    const subIdsAll = [...new Set(rows.map((r) => r.subcategoria_id))];
+    const datasAll  = [...new Set(rows.map((r) => r.data_vencimento))];
+
+    const { data: existentes, error: selectError } = await supabase
+      .from('pagamentos')
+      .select('subcategoria_id, data_vencimento')
+      .eq('user_id', user.id)
+      .in('subcategoria_id', subIdsAll)
+      .in('data_vencimento', datasAll)
+      .or('valor_real.is.null,valor_real.gte.0');
+
+    if (selectError) {
+      console.error('[ensurePagamentosForMonth] select existentes:', selectError);
+      return;
+    }
+
+    // Set de chaves existentes — deduplica por (sub, data_vencimento) IGNORANDO mes_ano.
+    // Motivo: o mesmo (sub, data) pode aparecer com mes_ano diferentes dependendo de qual
+    // mês o user visualizou primeiro (bloco crossover faz pagamento de 1/8 nascer com
+    // mes_ano='2026-08-01' se viu Agosto primeiro, ou '2026-07-01' se viu Julho primeiro).
+    // Manter só 1 versão evita duplicatas funcionalmente equivalentes.
+    const existKey = new Set(
+      (existentes || []).map((e) => `${e.subcategoria_id}|${e.data_vencimento}`)
+    );
+
+    const newRows = rows.filter(
+      (r) => !existKey.has(`${r.subcategoria_id}|${r.data_vencimento}`)
+    );
+
+    if (newRows.length > 0) {
+      const { error: insertError } = await supabase.from('pagamentos').insert(newRows);
+      if (insertError) console.error('[ensurePagamentosForMonth] insert:', insertError);
+    }
   }
 
   // Para compromissos de dívida: sincroniza valor_previsto/valor_real de entradas pendentes.
   // Usa sub.valor_base quando disponível (mais confiável que orcamento_geral para empréstimos
   // com parcelas iguais) e orcamento_geral para taxa variável.
   // Necessário porque o upsert acima usa ignoreDuplicates:true e não atualiza linhas existentes.
-  const PENDENTE = ['Agendado', 'A Transferir'];
+  const PENDENTE = ['A Pagar', 'A Transferir'];
   const user2 = user; // user já obtido acima
   for (const sub of cachedSubcategorias) {
     if (!sub.divida_id) continue;
@@ -787,9 +855,30 @@ function getBlocosForMonth(year, month) {
 
   const blocos = [];
 
+  // ── BLOCO 0 (crossover) ─────────────────────────────────────────────────────
+  // Quando a 1ª ocorrência da renda em M cai depois do dia 1, os dias de M antes
+  // dessa ocorrência pertencem ao último bloco do mês ANTERIOR (que se estende pra
+  // dentro de M). Sem esse "bloco 0", pagamentos com data nesses primeiros dias
+  // ficam invisíveis na visão do mês visível e nunca são gerados pelo iterador.
+  // Solução: incluir o "rabo" do ciclo anterior como Bloco 0 (crossover=true).
+  // O índice 0 é especial e não conflita com os índices normais (1+).
+  const firstOccDate = occInMonth[0];
+  if (firstOccDate.getDate() > 1) {
+    // Encontra a última ocorrência da renda ANTES do mês visível
+    const prevOcc = nextOccurrenceBefore(renda, new Date(year, month, 1));
+    if (prevOcc) {
+      blocos.push({
+        indice: 0,
+        startDate: prevOcc,
+        endDate: addDays(firstOccDate, -1),
+        title: 'Bloco anterior',
+        period: formatPeriod(prevOcc, addDays(firstOccDate, -1)),
+        crossover: true, // flag: bloco vem do mês anterior
+      });
+    }
+  }
+
   // Um bloco por ocorrência da renda principal no mês.
-  // (Pagamentos cujas datas caem ANTES da 1ª ocorrência do mês visível pertencem
-  // ao último bloco do mês ANTERIOR — que se estende pra dentro do mês visível.)
   for (let i = 0; i < occInMonth.length; i++) {
     const start = occInMonth[i];
     let end;
@@ -808,6 +897,15 @@ function getBlocosForMonth(year, month) {
   }
 
   return blocos;
+}
+
+// Última ocorrência ANTES de fromDate (limite: 90 dias). Espelho de nextOccurrenceAfter.
+function nextOccurrenceBefore(sub, fromDate) {
+  for (let i = 1; i <= 90; i++) {
+    const d = addDays(fromDate, -i);
+    if (occursOn(sub, d)) return d;
+  }
+  return null;
 }
 
 // Próxima ocorrência da subcategoria depois de fromDate (limite: 90 dias)
@@ -921,7 +1019,18 @@ function renderPagamentos() {
   }
 
   const blocosHtml = blocos.map((b) => {
-    const items = filtered.filter((p) => p.bloco_quinzenal === b.indice).sort(sortFn);
+    // Bloco crossover (indice 0) filtra por data_vencimento no range do bloco,
+    // porque os pagamentos têm bloco_quinzenal do mês anterior (não 0).
+    // Blocos normais filtram por bloco_quinzenal.
+    const items = filtered.filter((p) => {
+      if (b.crossover) {
+        if (!p.data_vencimento) return false;
+        const startIso = isoDate(b.startDate.getFullYear(), b.startDate.getMonth(), b.startDate.getDate());
+        const endIso   = isoDate(b.endDate.getFullYear(),   b.endDate.getMonth(),   b.endDate.getDate());
+        return p.data_vencimento >= startIso && p.data_vencimento <= endIso;
+      }
+      return p.bloco_quinzenal === b.indice;
+    }).sort(sortFn);
     return renderBloco(b.indice, b.title, b.period, items);
   }).join('');
 
@@ -933,7 +1042,7 @@ function renderPagamentos() {
 function renderBloco(num, title, period, items) {
   // Calcula saldo do bloco (contabilizando apenas não-cancelados)
   // E também: realizado/restante (apenas despesas)
-  const REALIZADO_STATUS = ['Pago', 'Cartão'];
+  const REALIZADO_STATUS = ['Pago'];
   let saldoBRL = 0;
   let despesaRealizadaBRL = 0;
   let despesaRestanteBRL = 0;
@@ -1295,7 +1404,7 @@ function renderPagamentoRow(p, catColor) {
   }
 
   // Coluna Dias — countdown até vencimento para pagamentos pendentes
-  const isPendingDias = p.status === 'Agendado' || p.status === 'A Transferir';
+  const isPendingDias = p.status === 'A Pagar' || p.status === 'A Transferir';
   let diasHtml = '—';
   if (isPendingDias && p.data_vencimento) {
     const todayDias = new Date();
@@ -1509,7 +1618,7 @@ async function propagateDivida(dividaId) {
     .from('pagamentos')
     .select('valor_real')
     .in('subcategoria_id', subs.map((s) => s.id))
-    .in('status', ['Pago', 'Transferido', 'Cartão']);
+    .in('status', ['Pago', 'Transferido']);
 
   const totalPago = (pags || []).reduce((s, p) => s + (Number(p.valor_real) || 0), 0);
 

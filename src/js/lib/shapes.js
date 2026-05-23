@@ -151,7 +151,7 @@
  * @property {string}  [moeda]
  * @property {string}  [conta_debitada_id]
  * @property {string}  [bloco_quinzenal]     '1a'|'2a' (quinzena)
- * @property {'Agendado'|'A Transferir'|'Pago'|'Cartão'|'Transferido'|'Cancelado'} status
+ * @property {'A Pagar'|'A Transferir'|'Pago'|'Transferido'|'Cancelado'} status
  */
 
 // ── Transação ────────────────────────────────────────────────

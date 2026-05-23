@@ -77,7 +77,7 @@ const TIPO_PGTO_COLORS = {
 
 const MONTH_LABELS      = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const MONTH_LABELS_LONG = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const PAID_STATUSES     = new Set(['Pago','Cartão','Transferido','Parcial']);
+const PAID_STATUSES     = new Set(['Pago','Transferido']);
 
 // -------------------------------------------------------
 // Init
@@ -1404,7 +1404,7 @@ function renderCumprimento() {
     if (!byMonth[key]) byMonth[key] = { total: 0, pagos: 0, pendentes: 0, cancelados: 0 };
     byMonth[key].total++;
     if (PAID_STATUSES.has(p.status))                      byMonth[key].pagos++;
-    else if (p.status === 'Agendado' || p.status === 'A Transferir') byMonth[key].pendentes++;
+    else if (p.status === 'A Pagar' || p.status === 'A Transferir') byMonth[key].pendentes++;
     else if (p.status === 'Cancelado')                    byMonth[key].cancelados++;
   });
 

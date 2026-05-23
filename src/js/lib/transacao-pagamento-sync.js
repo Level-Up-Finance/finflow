@@ -12,7 +12,7 @@ import { todayISO } from './utils.js';
 /** @typedef {import('./shapes.js').Subcategoria} Subcategoria */
 /** @typedef {import('./shapes.js').Transacao} Transacao */
 
-const PAID_STATUSES = ['Pago', 'Cartão', 'Transferido'];
+const PAID_STATUSES = ['Pago', 'Transferido'];
 
 export function isPaidStatus(status) {
   return PAID_STATUSES.includes(status);

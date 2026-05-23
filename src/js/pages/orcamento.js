@@ -330,12 +330,11 @@ async function renderPassadosForMonth(container, availableMonths, selectedMesAno
       totalRealizado += toBRL(real, pagamento.moeda || 'BRL');
       totalPrevisto  += toBRL(previsto, pagamento.moeda || 'BRL');
       const statusClass = ({
-        'Pago':        'status-pago',
-        'Cartão':      'status-cartao',
-        'Transferido': 'status-pago',
-        'Agendado':    'status-agendado',
-        'Cancelado':   'status-cancelado',
-        'Parcial':     'status-parcial',
+        'Pago':         'status-pago',
+        'Transferido':  'status-transferido',
+        'A Pagar':      'status-apagar',
+        'A Transferir': 'status-a-transferir',
+        'Cancelado':    'status-cancelado',
       })[pagamento.status] || '';
       return `
         <tr class="orcamento-row" data-pagamento-id="${pagamento.id}">
@@ -449,7 +448,7 @@ async function loadRealizadoProjetos() {
   const { data } = await supabase
     .from('pagamentos')
     .select('subcategoria_id, valor_real')
-    .in('status', ['Pago', 'Cartão']);
+    .in('status', ['Pago']);
   realizadoByProjetoOrc = new Map();
   const subToProj = new Map(
     cachedSubcategorias.filter((s) => s.projeto_id).map((s) => [s.id, s.projeto_id])

@@ -876,7 +876,7 @@ function renderFaturasHistorico(fechadas, pagamentos, transacoes) {
     return;
   }
 
-  const PAID = ['Pago', 'Cartão', 'Transferido', 'Parcial'];
+  const PAID = ['Pago', 'Transferido'];
 
   const rows = fechadas.map((f) => {
     // Encontra o pagamento da fatura: mesma subcategoria_id e mes_ano = primeiro dia do mes do vencimento
@@ -1647,7 +1647,7 @@ async function openCaixinhaDetailsModal(cx) {
 
   const statusLabel = { ativa: 'Ativa', inativa: 'Inativa', arquivada: 'Arquivada' }[cx.status] || cx.status;
   document.getElementById('cx-details-meta').innerHTML = `
-    <span class="status-pill" style="background: #F59E0B1A; color: #F59E0B;">
+    <span class="status-pill" style="background: var(--color-warning-bg); color: var(--color-warning-text);">
       <span style="width:6px;height:6px;border-radius:50%;background:currentColor;"></span>Caixinha
     </span>
     <span class="status-pill status-${cx.status}">${statusLabel}</span>

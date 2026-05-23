@@ -536,7 +536,7 @@ async function applyPagamentoMatches(rows, contaId) {
     .from('pagamentos')
     .select('id, subcategoria_id, status, valor_previsto, valor_real, data_vencimento, moeda')
     .in('subcategoria_id', subIds)
-    .in('status', ['Agendado', 'A Transferir'])
+    .in('status', ['A Pagar', 'A Transferir'])
     .gte('data_vencimento', expandDate(minDate, -3))
     .lte('data_vencimento', expandDate(maxDate, 3));
   if (!pags?.length) return;
@@ -622,12 +622,12 @@ async function applyCrossAccountMatches(rows, contaId) {
     (contas || []).forEach((c) => contasMap.set(c.id, c.apelido?.trim() || c.nome));
   }
 
-  // Pagamentos JÁ pagos (Pago/Cartão) nessas subs no range
+  // Pagamentos JÁ pagos nessas subs no range
   const { data: pags } = await supabase
     .from('pagamentos')
     .select('id, subcategoria_id, status, valor_previsto, valor_real, data_vencimento, data_pagamento, conta_id_efetiva')
     .in('subcategoria_id', subIds)
-    .in('status', ['Pago', 'Cartão'])
+    .in('status', ['Pago'])
     .gte('data_vencimento', expandDate(minDate, -10))
     .lte('data_vencimento', expandDate(maxDate, 10));
   if (!pags?.length) return;

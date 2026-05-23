@@ -157,7 +157,7 @@ async function loadAll() {
     // Pagamentos com sub.categorias pra filtrar grupo
     supabase.from('pagamentos')
       .select('*, subcategorias(projeto_id, nome, apelido, categorias(grupo))')
-      .in('status', ['Pago', 'Cartão']),
+      .in('status', ['Pago']),
     // Orçamento do mês corrente — pra "previsto neste mês"
     supabase.from('orcamento_geral')
       .select('*, subcategorias(projeto_id, categorias(grupo))')
@@ -1342,7 +1342,7 @@ async function saveProjeto(event) {
           .from('pagamentos')
           .delete()
           .eq('subcategoria_id', investSubDb.id)
-          .in('status', ['Agendado', 'A Transferir']);
+          .in('status', ['A Pagar', 'A Transferir']);
         if (delErr) console.warn('[regen pagamentos]', delErr);
 
         // Limpa orcamento_geral de meses antes da nova data de início.

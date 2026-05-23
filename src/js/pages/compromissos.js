@@ -1875,7 +1875,7 @@ async function renderOcorrenciasSections(c) {
       .from('pagamentos')
       .select('mes_ano, valor_real, status, data_vencimento, updated_at')
       .eq('subcategoria_id', c.id)
-      .in('status', ['Pago', 'Cartão', 'Transferido', 'Parcial'])
+      .in('status', ['Pago', 'Transferido'])
       .order('mes_ano', { ascending: false })
       .limit(3);
 
@@ -1889,10 +1889,8 @@ async function renderOcorrenciasSections(c) {
       const realizada = p.updated_at ? fmt(p.updated_at.slice(0, 10)) : '—';
       const valor     = Number(p.valor_real) || 0;
       const statusColor = ({
-        'Pago': 'var(--color-success)',
-        'Cartão': 'var(--color-info)',
-        'Transferido': 'var(--color-success)',
-        'Parcial': 'var(--color-warning)',
+        'Pago':        'var(--color-success)',
+        'Transferido': 'var(--color-info)',
       })[p.status] || 'var(--color-text-muted)';
       return `
         <div style="display:flex;flex-direction:column;gap:2px;padding:6px 0;${i < pags.length - 1 ? 'border-bottom:1px solid var(--color-border);' : ''}">

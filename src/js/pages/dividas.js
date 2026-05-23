@@ -1863,7 +1863,7 @@ async function regenerateOrcamentoGeralForDivida(subId, dvd, tabela) {
 
   // Sincroniza valor_previsto/valor_real em pagamentos pendentes para refletir os novos valores.
   // Roda em paralelo para evitar N chamadas sequenciais (seria ~80ms × N parcelas).
-  const PENDENTE = ['Agendado', 'A Transferir'];
+  const PENDENTE = ['A Pagar', 'A Transferir'];
   await Promise.all(rows.map((row) =>
     supabase
       .from('pagamentos')

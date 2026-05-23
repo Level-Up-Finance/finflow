@@ -1575,11 +1575,12 @@ function renderDataRows(items) {
       contatoHtml = '<span class="trans-contato-empty">—</span>';
     }
 
-    // Indicador de parcial: pagamento marcado como Parcial, ou compromisso criado de parcial
-    const isParcialPag  = t.pagamento?.status === 'Parcial';
+    // Indicador de parcial: compromisso criado a partir de pagamento parcial (flag is_parcial).
+    // O status 'Parcial' foi removido na v2.0 — agora pagamento parcial é registrado como
+    // 'Pago' com um compromisso filho que carrega is_parcial=true (ver migration 0027).
     const isParcialComp = sub?.is_parcial === true;
-    const parcialTitle  = isParcialComp ? 'Transação do restante de pagamento parcial' : 'Pagamento parcial';
-    const parcialIcon   = (isParcialPag || isParcialComp)
+    const parcialTitle  = 'Transação do restante de pagamento parcial';
+    const parcialIcon   = isParcialComp
       ? `<span class="parcial-indicator trans-parcial-icon" title="${parcialTitle}">½</span>`
       : '';
 
