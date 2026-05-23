@@ -163,10 +163,33 @@ async function handleForgotPassword(event) {
 
   setLoadingState(button, true);
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/index.html',
+    // Chama Edge Function customizada `send-password-reset` em vez do
+    // resetPasswordForEmail default — pra ter template branded via Resend.
+    // A Edge Function:
+    //   1. Valida email
+    //   2. Gera recovery link via admin.generateLink (service_role)
+    //   3. Envia email com brand FinFlow via Resend
+    //   4. Retorna sempre {ok: true} pra evitar enumeração de emails
+    //
+    // Fallback: se a Edge Function não estiver deployed ainda, cai pro
+    // resetPasswordForEmail nativo do Supabase (template default sem brand).
+    const { data, error: fnError } = await supabase.functions.invoke('send-password-reset', {
+      body: {
+        email,
+        redirectTo: window.location.origin + '/index.html',
+      },
     });
-    if (error) throw error;
+
+    // Fallback se Edge Function não existe (404) ou falhou de outra forma:
+    // usa resetPasswordForEmail nativo (template default do Supabase).
+    if (fnError || !data?.ok) {
+      console.warn('[forgot] Edge Function indisponível, usando fallback nativo:', fnError);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/index.html',
+      });
+      if (error) throw error;
+    }
+
     showToast(t('login.toast.link_enviado', 'Link de recuperação enviado pro seu email.'), 'success', 6000);
     form.reset();
     showMode('login');
