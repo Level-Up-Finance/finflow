@@ -7,6 +7,39 @@
 
 export const CHANGELOG = [
   {
+    id: '2026-05-24-auditoria-fixes-gating-favicon',
+    version: '1.1.1',
+    date: '24/05/2026',
+    title: 'Auditoria: 4 bugs corrigidos + role gating universal + favicon v2.0',
+    items: [
+      { type: 'fix', text: 'Aporte manual em projetos de investimento: INSERT em aportes_projeto faltava workspace_id — em workspace compartilhado falhava silenciosamente. Corrigido.' },
+      { type: 'fix', text: 'Criar compromisso com nome igual a outro existente (branch "criar mesmo assim"): INSERT em subcategorias faltava workspace_id. Corrigido.' },
+      { type: 'fix', text: 'Resgate de caixinha: par de transações (saída/entrada) faltava workspace_id em ambos. Corrigido.' },
+      { type: 'fix', text: 'Restaurar dívida arquivada: status era setado como "Ativa" hardcoded (não existia no enum). Agora deriva via statusAposDesquitar → "Pagando" ou "A pagar" conforme valor_pago.' },
+      { type: 'new', text: 'Role gating universal na UI: viewer não vê mais botões de criar/editar/deletar em pagamentos, dívidas, investimentos, transações, compromissos, contas, contatos, importar, configurações.' },
+      { type: 'new', text: 'Owner-only nos botões de hard delete em dívidas (canManage). Editor pode arquivar, owner pode deletar com histórico.' },
+      { type: 'improvement', text: 'Pagamentos: status-select vira pill estática colorida pra viewer (com tooltip explicando "você é viewer"). Input de valor vira readonly.' },
+      { type: 'improvement', text: 'Dívidas: Promise.allSettled em loadAll + timeout 5s em fetchIndicadores. Refresh de taxas indexadas roda em background — não bloqueia render se BrasilAPI estiver lenta.' },
+      { type: 'improvement', text: 'Rollback automático quando criar projeto novo COM compromisso falha na subcategoria: projeto recém-criado é deletado pra restaurar estado consistente.' },
+      { type: 'fix', text: 'Favicon e app-icon: corrigido de lime escuro (brand 1.0) para lime brilhante (brand v2.0). Hard refresh do browser pode ser necessário pra ver a cor nova.' },
+      { type: 'improvement', text: 'Refactor interno: extraído helper applyBodyRoleGating compartilhado entre 8 páginas (-51 LOC de duplicação).' },
+    ],
+  },
+  {
+    id: '2026-05-24-multi-perfil-workspaces',
+    version: '1.1.0',
+    date: '24/05/2026',
+    title: 'Multi-perfil: workspaces compartilhados (casal/família)',
+    items: [
+      { type: 'new', text: 'Workspaces compartilhados: você pode criar um workspace "Casa" ou "Família" e convidar pessoas. Owner / Editor / Viewer com permissões diferentes. Cada pessoa tem uma cor única.' },
+      { type: 'new', text: 'Switcher de workspace no header: bolinha colorida + nome do workspace ativo. Click abre dropdown com lista de workspaces, criar novo, convidar pessoa.' },
+      { type: 'new', text: 'Página /aceitar-convite.html?token=… para convidados aceitarem o link de convite.' },
+      { type: 'new', text: 'Atribuição de ações: quando há 2+ pessoas no workspace, cada pagamento marcado como Pago mostra mini-avatar colorido com inicial de quem marcou + tooltip "Maria marcou · hoje". Visível também em transações, dívidas e investimentos.' },
+      { type: 'new', text: 'Cada signup novo cria automaticamente um workspace "Pessoal — <nome>". Usuários existentes ganharam workspace pessoal via backfill.' },
+      { type: 'improvement', text: 'Backend: 8 migrations Supabase (0114-0121) reescreveram RLS de 24 tabelas para isolamento por workspace_id.' },
+    ],
+  },
+  {
     id: '2026-05-20-recorrencia-conta-transferido-cleanup',
     version: '1.0.5',
     date: '20/05/2026',
