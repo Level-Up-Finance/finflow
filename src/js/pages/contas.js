@@ -7,7 +7,7 @@
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { requireWorkspaceId } from '../lib/workspace.js';
-import { canWrite } from '../lib/permissions.js';
+import { applyBodyRoleGating } from '../lib/permissions.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -103,23 +103,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyRoleGating();
 });
 
-/**
- * Esconde controles destrutivos pra viewer. Toggle direto pros botões fixos;
- * body[data-can-write] cobre controles renderizados em cards/tabela (via CSS).
- */
+/** Esconde controles destrutivos pra viewer (conta + caixinha). */
 function applyRoleGating() {
-  const writable = canWrite();
-  document.body.dataset.canWrite = String(writable);
-  const toggle = (id) => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = writable ? '' : 'none';
-  };
-  toggle('btn-nova-conta');
-  toggle('btn-salvar-conta');
-  toggle('btn-arquivar-conta');
-  toggle('btn-deletar-conta');
-  toggle('btn-cx-resgatar');
-  toggle('btn-cx-arquivar');
+  applyBodyRoleGating({
+    writeIds: ['btn-nova-conta', 'btn-salvar-conta', 'btn-arquivar-conta', 'btn-deletar-conta', 'btn-cx-resgatar', 'btn-cx-arquivar'],
+  });
 }
 
 // -----------------------------

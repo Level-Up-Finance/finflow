@@ -5,7 +5,7 @@ import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { requireWorkspaceId } from '../lib/workspace.js';
 import { listMembers } from '../lib/workspace-members.js';
 import { renderAttribBadge } from '../lib/attribution-badge.js';
-import { canWrite, canManage } from '../lib/permissions.js';
+import { applyBodyRoleGating } from '../lib/permissions.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -432,34 +432,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /**
- * Esconde/disable controles destrutivos pra viewer/editor.
+ * Esconde controles destrutivos pra viewer/editor.
+ *   - canWrite (owner+editor): criar, editar, pagar parcela, atualizar taxa,
+ *     arquivar (soft delete)
+ *   - canManage (owner): hard delete (registro contábil)
  *
- * Hierarquia:
- *   - canWrite (owner+editor): pode criar, editar, pagar parcela, atualizar
- *     taxa, arquivar (soft delete que preserva histórico)
- *   - canManage (owner only): pode deletar (hard delete) — destrói registro
- *     contábil — e mudar inclui_no_patrimonio (afeta cálculo de patrimônio
- *     do workspace inteiro)
- *
- * Aplicado no DOM após loadAll() — re-aplicar via re-render se necessário.
+ * Botões nos cards (re-renderizados) usam CSS body[data-can-*] — definido
+ * pelo helper applyBodyRoleGating.
  */
 function applyRoleGating() {
-  const writable = canWrite();
-  const manageable = canManage();
-
-  // Marca o body com data-attributes — CSS esconde elementos baseado neles
-  // (mais escalável que patchear cada botão individual)
-  document.body.dataset.canWrite = String(writable);
-  document.body.dataset.canManage = String(manageable);
-
-  // Botão "Nova dívida" no header — toggle direto pois é fixo (não re-renderizado)
-  const novaBtn = document.getElementById('btn-nova-divida');
-  if (novaBtn) novaBtn.style.display = writable ? '' : 'none';
+  applyBodyRoleGating({
+    writeIds: ['btn-nova-divida'],
+  });
+  // [data-trigger-nova] não é ID, requer toggle manual
   const novaBtnAlt = document.querySelector('[data-trigger-nova]');
-  if (novaBtnAlt) novaBtnAlt.style.display = writable ? '' : 'none';
-
-  // Botões de Pagar/Editar nos cards (re-renderizados a cada loadAll) — CSS faz o gating
-  // via .div-btn-pagar/.div-btn-editar dentro de body[data-can-write="false"]
+  if (novaBtnAlt) novaBtnAlt.style.display = document.body.dataset.canWrite === 'true' ? '' : 'none';
 }
 
 /**

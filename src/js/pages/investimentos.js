@@ -10,7 +10,7 @@ import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { requireWorkspaceId } from '../lib/workspace.js';
 import { listMembers } from '../lib/workspace-members.js';
 import { renderAttribBadge } from '../lib/attribution-badge.js';
-import { canWrite, canManage } from '../lib/permissions.js';
+import { applyBodyRoleGating } from '../lib/permissions.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -148,23 +148,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyRoleGating();
 });
 
-/**
- * Esconde/disable controles destrutivos pra viewer/editor.
- * Hierarquia:
- *   - canWrite (owner+editor): criar/editar projeto, registrar aporte
- *   - canManage (owner only): hard delete projeto
- *
- * Botões dentro de cards/tabela ficam escondidos via CSS
- * body[data-can-write="false"] .proj-* / .btn-novo-projeto.
- */
+/** Esconde controles destrutivos. canManage = hard delete. */
 function applyRoleGating() {
-  const writable = canWrite();
-  const manageable = canManage();
-  document.body.dataset.canWrite = String(writable);
-  document.body.dataset.canManage = String(manageable);
-
-  const novaBtn = document.getElementById('btn-novo-projeto');
-  if (novaBtn) novaBtn.style.display = writable ? '' : 'none';
+  applyBodyRoleGating({ writeIds: ['btn-novo-projeto'] });
 }
 
 // -----------------------------

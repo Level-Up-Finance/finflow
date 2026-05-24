@@ -79,3 +79,37 @@ export function canManage() {
 export function clearPermissionsCache() {
   _cachedUserId = null;
 }
+
+/**
+ * Aplica gating de role no DOM:
+ *   1. Seta `body.dataset.canWrite` e `body.dataset.canManage` —
+ *      regras CSS body[data-can-*="false"] [seletor] cobrem
+ *      elementos renderizados dinamicamente (cards, tabelas, tree).
+ *   2. Toggle direto de displays pra IDs específicos passados em opts.
+ *
+ * Use em cada page após loadAll(). Padrão:
+ *
+ *   import { applyBodyRoleGating } from '../lib/permissions.js';
+ *   ...
+ *   applyBodyRoleGating({
+ *     writeIds: ['btn-novo-x', 'btn-salvar-x'],
+ *     manageIds: ['btn-deletar-x'],
+ *   });
+ *
+ * @param {object} [opts]
+ * @param {string[]} [opts.writeIds] IDs a esconder quando !canWrite()
+ * @param {string[]} [opts.manageIds] IDs a esconder quando !canManage()
+ */
+export function applyBodyRoleGating(opts = {}) {
+  const writable = canWrite();
+  const manageable = canManage();
+  document.body.dataset.canWrite = String(writable);
+  document.body.dataset.canManage = String(manageable);
+
+  const toggle = (id, show) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = show ? '' : 'none';
+  };
+  (opts.writeIds || []).forEach((id) => toggle(id, writable));
+  (opts.manageIds || []).forEach((id) => toggle(id, manageable));
+}

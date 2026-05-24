@@ -10,7 +10,7 @@
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { requireWorkspaceId } from '../lib/workspace.js';
-import { canWrite } from '../lib/permissions.js';
+import { applyBodyRoleGating } from '../lib/permissions.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -1452,22 +1452,11 @@ function showConfirm(title, msgHtml, confirmLabel = 'Confirmar') {
   openModal('modal-confirmar');
 }
 
-/**
- * Aplica gating de role: viewer não vê botões de criar/salvar/deletar
- * de compromissos. Toggle direto pros fixos (header + modal); cards/tabela
- * renderizados a cada load não precisam — CSS body[data-can-write] cobre.
- */
+/** Viewer não vê botões de criar/salvar/deletar de compromissos. */
 function applyRoleGating() {
-  const writable = canWrite();
-  document.body.dataset.canWrite = String(writable);
-  const toggle = (id) => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = writable ? '' : 'none';
-  };
-  toggle('btn-novo-compromisso');
-  toggle('btn-salvar-compromisso');
-  toggle('btn-deletar');
-  toggle('btn-arquivar');
+  applyBodyRoleGating({
+    writeIds: ['btn-novo-compromisso', 'btn-salvar-compromisso', 'btn-deletar', 'btn-arquivar'],
+  });
 }
 
 // -----------------------------
