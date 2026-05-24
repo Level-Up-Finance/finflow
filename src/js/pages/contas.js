@@ -7,6 +7,7 @@
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { requireWorkspaceId } from '../lib/workspace.js';
+import { canWrite } from '../lib/permissions.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -99,7 +100,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   await loadContas();
+  applyRoleGating();
 });
+
+/**
+ * Esconde controles destrutivos pra viewer. Toggle direto pros botões fixos;
+ * body[data-can-write] cobre controles renderizados em cards/tabela (via CSS).
+ */
+function applyRoleGating() {
+  const writable = canWrite();
+  document.body.dataset.canWrite = String(writable);
+  const toggle = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = writable ? '' : 'none';
+  };
+  toggle('btn-nova-conta');
+  toggle('btn-salvar-conta');
+  toggle('btn-arquivar-conta');
+  toggle('btn-deletar-conta');
+  toggle('btn-cx-resgatar');
+  toggle('btn-cx-arquivar');
+}
 
 // -----------------------------
 // Filters: tipo pills
@@ -1861,10 +1882,13 @@ async function submitCaixinhaResgate() {
     //   saída: conta_reserva → conta_destino   (deduz saldo da reserva)
     //   entrada: conta_destino                  (acrescenta saldo no destino)
     // Vinculadas por transferencia_par_id em ambos os sentidos.
+    const _wsId = requireWorkspaceId();
     const { data: saida, error: saidaErr } = await supabase
       .from('transacoes')
       .insert({
         user_id:              user.id,
+        workspace_id:         _wsId,
+        created_by:           user.id,
         data,
         tipo:                 'Transferência',
         valor:                valor,
@@ -1884,6 +1908,8 @@ async function submitCaixinhaResgate() {
       .from('transacoes')
       .insert({
         user_id:              user.id,
+        workspace_id:         _wsId,
+        created_by:           user.id,
         data,
         tipo:                 'Transferência',
         valor:                valor,

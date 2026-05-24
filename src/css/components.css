@@ -17534,6 +17534,18 @@ body[data-can-write="false"] .trans-actions-col .btn-icon[data-edit] {
   display: none !important;
 }
 
+/* Contas + Contatos — gating de botões de actions */
+body[data-can-write="false"] .conta-btn-editar,
+body[data-can-write="false"] .conta-btn-deletar,
+body[data-can-write="false"] .conta-btn-arquivar,
+body[data-can-write="false"] .cx-btn-editar,
+body[data-can-write="false"] .cx-btn-resgate,
+body[data-can-write="false"] .ct-btn-editar,
+body[data-can-write="false"] .ct-btn-deletar,
+body[data-can-write="false"] [data-delete-bd] {
+  display: none !important;
+}
+
 /* Delta de dias entre data_pagamento e data_vencimento (na coluna VTO) */
 .pag-vto-delta {
   display: inline-block;

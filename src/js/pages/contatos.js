@@ -2,6 +2,7 @@
 // FinFlow — Contatos
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
+import { canWrite } from '../lib/permissions.js';
 import { initSidebar }                  from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase }                     from '../lib/supabase.js';
@@ -49,7 +50,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   initPhonePickersContatos();
   bindEvents();
   renderList();
+  applyRoleGating();
 });
+
+/** Esconde controles de escrita pra viewer. */
+function applyRoleGating() {
+  const writable = canWrite();
+  document.body.dataset.canWrite = String(writable);
+  const toggle = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = writable ? '' : 'none';
+  };
+  toggle('btn-novo-contato');
+  toggle('btn-deletar-contato');
+}
 
 function initPhonePickersContatos() {
   const elTel = document.getElementById('ct-telefone');
