@@ -353,7 +353,7 @@ export async function saveCompromisso(event, deps) {
           subcategoriaMsg = `Já existe um compromisso com esse nome nessa categoria. Um novo foi criado mesmo assim.`;
         }
       } else {
-        response = await supabase.from('subcategorias').insert({ ...payload, user_id: user.id }).select().single();
+        response = await supabase.from('subcategorias').insert({ ...payload, user_id: user.id, workspace_id: requireWorkspaceId(), created_by: user.id }).select().single();
         subcategoriaMsg = isCaixinha
           ? 'Uma nova caixinha foi criada.'
           : 'Uma nova subcategoria foi criada junto com este compromisso.';

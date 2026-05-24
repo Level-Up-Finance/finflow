@@ -10,6 +10,7 @@
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { requireWorkspaceId } from '../lib/workspace.js';
+import { canWrite } from '../lib/permissions.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -226,6 +227,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── Fluxo normal (não-preload) ──────────────────────────────────
   await loadCompromissos();
+  applyRoleGating();
 
   // Auto-open from configuracoes.html via URL params
   // ?cfg_sub=UUID   → edit that sub in the modal
@@ -1448,6 +1450,24 @@ function showConfirm(title, msgHtml, confirmLabel = 'Confirmar') {
   document.getElementById('modal-confirmar-msg').innerHTML = msgHtml;
   document.getElementById('btn-confirmar-acao').textContent = confirmLabel;
   openModal('modal-confirmar');
+}
+
+/**
+ * Aplica gating de role: viewer não vê botões de criar/salvar/deletar
+ * de compromissos. Toggle direto pros fixos (header + modal); cards/tabela
+ * renderizados a cada load não precisam — CSS body[data-can-write] cobre.
+ */
+function applyRoleGating() {
+  const writable = canWrite();
+  document.body.dataset.canWrite = String(writable);
+  const toggle = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = writable ? '' : 'none';
+  };
+  toggle('btn-novo-compromisso');
+  toggle('btn-salvar-compromisso');
+  toggle('btn-deletar');
+  toggle('btn-arquivar');
 }
 
 // -----------------------------
