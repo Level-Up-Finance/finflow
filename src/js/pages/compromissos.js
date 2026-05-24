@@ -222,6 +222,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }).observe(_modal, { attributes: true, attributeFilter: ['class'] });
 
     loadCompromissos(); // background — sem await
+    applyRoleGating();   // gating ainda em embedded — viewer não vê botões do modal
     return;
   }
 

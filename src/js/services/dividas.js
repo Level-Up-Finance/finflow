@@ -54,9 +54,17 @@ export function archiveDivida(id) {
   return supabase.from('dividas').update({ status: 'Arquivada' }).eq('id', id);
 }
 
-/** Atualiza status para 'Ativa' (restaurar de arquivada). */
-export function restoreDivida(id) {
-  return supabase.from('dividas').update({ status: 'Ativa' }).eq('id', id);
+/**
+ * Restaura dívida arquivada pra um status ativo. O caller passa o status
+ * derivado do contexto (ex: 'Pagando' se há valor_pago > 0, 'A pagar' se
+ * não — calculado via `statusAposDesquitar`). Status hardcoded 'Ativa'
+ * legacy foi removido — não existe no enum STATUS_BY_CONTEXT.divida.
+ *
+ * @param {string} id          UUID da dívida
+ * @param {string} novoStatus  dbValue do STATUS_BY_CONTEXT.divida
+ */
+export function restoreDivida(id, novoStatus) {
+  return supabase.from('dividas').update({ status: novoStatus }).eq('id', id);
 }
 
 /**

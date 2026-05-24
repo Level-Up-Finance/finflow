@@ -12,6 +12,7 @@
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { requireWorkspaceId } from '../lib/workspace.js';
+import { canWrite } from '../lib/permissions.js';
 import { initSidebar } from '../components/sidebar.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
@@ -690,6 +691,8 @@ function isPastMonth(year, month) {
  */
 async function freezeUnfrozenEntries() {
   if (!isPastMonth(viewYear, viewMonth)) return;
+  // Viewer não pode escrever — sai cedo pra evitar 403 silencioso (RLS).
+  if (!canWrite()) return;
 
   const unfrozen = cachedOrcamento.filter(
     (e) => e.moeda && e.moeda !== 'BRL' && e.cambio_travado === null
@@ -1287,6 +1290,8 @@ async function loadYearly() {
 
 async function ensureOrcamentoFor12Months() {
   if (cachedSubcategorias.length === 0) return;
+  // Viewer não escreve — pula auto-geração de 12 meses (RLS bloquearia silenciosamente).
+  if (!canWrite()) return;
   const user = await getCurrentUser();
   if (!user) return;
 

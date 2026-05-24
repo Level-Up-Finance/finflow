@@ -2126,15 +2126,18 @@ async function confirmarExcluir() {
   const acao = document.getElementById('btn-confirmar-excluir')?.dataset.acao;
   const d    = cachedDividas.find((x) => x.id === pendingDeleteId);
 
-  // ─── RESTAURAR (Arquivada → Ativa + recria compromisso) ──────────
+  // ─── RESTAURAR (Arquivada → Pagando/A pagar conforme valor_pago) ─
   if (acao === 'restaurar') {
-    const { error: updErr } = await dividasService.restoreDivida(pendingDeleteId);
+    // Calcula status correto via enum (era 'Ativa' hardcoded — não existe no
+    // STATUS_BY_CONTEXT.divida; agora deriva de statusAposDesquitar).
+    const novoStatus = statusAposDesquitar(d?.valor_pago);
+    const { error: updErr } = await dividasService.restoreDivida(pendingDeleteId, novoStatus);
     if (updErr) { showToast(`${t('dividas.toast.erro_restaurar', 'Erro ao restaurar')}: ${updErr.message}`, 'error', 8000); return; }
 
     // Recria a subcategoria (ensureSubcategoriaForDivida pula se já existir)
     if (d && d.regime && d.n_parcelas) {
       // Atualiza status no payload pra ensureSubcategoria criar com dados corretos
-      const dvdAtualizada = { ...d, status: statusAposDesquitar(d?.valor_pago) };
+      const dvdAtualizada = { ...d, status: novoStatus };
       try { await ensureSubcategoriaForDivida(pendingDeleteId, dvdAtualizada); }
       catch (err) { console.warn('[restaurar] ensureSubcategoria', err); }
     }
