@@ -1383,7 +1383,22 @@ async function saveProjeto(event) {
           );
         } catch (err) {
           console.warn('[ensureSubcategoriaForProjeto]', err);
-          showToast('Projeto salvo, mas falhou ao criar compromisso: ' + (err?.message || String(err)), 'error', 10000);
+          // Rollback se foi criação nova (editingId vazio): apaga o projeto recém-criado
+          // pra evitar projeto órfão sem compromisso. Em edit, projeto já existia, mantém.
+          if (!editingId && response.data?.id) {
+            const { error: rollbackErr } = await supabase
+              .from('projetos_investimento')
+              .delete()
+              .eq('id', response.data.id);
+            if (rollbackErr) {
+              console.error('[rollback projeto]', rollbackErr);
+              showToast(`Falha ao criar compromisso e ao reverter o projeto. Verifique a lista — pode ter projeto incompleto. Erro: ${err?.message || err}`, 'error', 12000);
+            } else {
+              showToast(`Falha ao criar o compromisso vinculado. O projeto foi revertido — tente novamente. Erro: ${err?.message || err}`, 'error', 10000);
+            }
+          } else {
+            showToast('Projeto atualizado, mas falhou ao criar compromisso: ' + (err?.message || String(err)), 'error', 10000);
+          }
         }
       }
     } else if (!editingId && response.data?.id && user) {
