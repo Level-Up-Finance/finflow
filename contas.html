@@ -393,6 +393,26 @@
     </div>
   </div>
 
+  <!-- ============================================================
+       MODAL: Faturas do Cartão (aberta + projetadas + fechadas)
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-cartao-faturas" role="dialog" aria-modal="true">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-cartao-faturas-title">Faturas</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-cartao-faturas" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-cartao-faturas-body">
+          <div class="loading-overlay"><span class="spinner"></span> Carregando…</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-cartao-faturas">Fechar</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast-container" class="toast-container"></div>
   <script type="module" src="src/js/pages/contas.js"></script>
 </body>

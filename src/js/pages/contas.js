@@ -18,7 +18,7 @@ import { findBank, logoUrl, searchBanks } from '../lib/banks.js';
 import { initColVisibility } from '../lib/col-visibility.js';
 import { autoAttachDecimalInputs } from '../lib/number-format.js';
 import { escapeHtml, formatDateBR, todayISO, parseUserNumber } from '../lib/utils.js';
-import { checkAndCloseFaturas } from '../lib/faturas-cartao.js';
+import { checkAndCloseFaturas, listFaturasConhecidas } from '../lib/faturas-cartao.js';
 import { formatCurrency, formatCurrencyHTML } from '../lib/moedas.js';
 import { COLOR_PALETTE, DEFAULT_COLOR, renderColorPicker } from '../lib/color-palette.js';
 import { fetchExchangeRate } from '../lib/currency.js';
@@ -1311,13 +1311,13 @@ function renderContaCard(conta) {
     </div>
   ` : '';
 
-  // Fatura aberta (badge)
+  // Fatura aberta (badge clicável — abre modal com todas as faturas)
   const faturaAbertaValor = cachedFaturasAbertas.get(conta.id);
-  const faturaBadge = faturaAbertaValor
-    ? `<div class="conta-fatura-badge">
+  const faturaBadge = isCartao
+    ? `<button type="button" class="conta-fatura-badge" data-action="ver-faturas" data-conta-id="${conta.id}" title="Ver todas as faturas">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-        Fatura aberta: ${formatCurrencyHTML(faturaAbertaValor)}
-       </div>`
+        ${faturaAbertaValor ? `Fatura aberta: ${formatCurrencyHTML(faturaAbertaValor)}` : 'Ver faturas'}
+       </button>`
     : '';
 
   const comprometidoBadge = renderComprometidoBadge(conta);
@@ -1465,9 +1465,148 @@ function renderIndicadoresImportacao(conta) {
   return `<div class="conta-indicadores-row">${parts.join('')}</div>`;
 }
 
+// -----------------------------
+// Modal de faturas do cartão (aberta + projetadas + fechadas)
+// Pattern: mesmo padrão de innerHTML usado em todo o codebase. Valores
+// controlados pelo user (apelido, nome) passam por escapeHtml; valores
+// numéricos por formatCurrencyHTML (já safe). Status/mesRef são internos.
+// -----------------------------
+const MES_ABREV_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+function fmtMesRef(mesRef) {
+  if (!mesRef) return '';
+  const [y, m] = mesRef.split('-').map(Number);
+  return `${MES_ABREV_PT[m - 1]}/${y}`;
+}
+function statusPillFatura(status) {
+  if (status === 'aberta')     return '<span class="cartao-fatura-status status-aberta">Aberta</span>';
+  if (status === 'projetada')  return '<span class="cartao-fatura-status status-pendente">Projetada</span>';
+  if (status === 'fechada')    return '<span class="cartao-fatura-status status-paga">Fechada</span>';
+  return '';
+}
+
+async function openFaturasModal(contaId) {
+  const body = document.getElementById('modal-cartao-faturas-body');
+  const title = document.getElementById('modal-cartao-faturas-title');
+  body.innerHTML = '<div class="loading-overlay"><span class="spinner"></span> Carregando…</div>';
+  openModal('modal-cartao-faturas');
+
+  const { ok, faturas, conta, error } = await listFaturasConhecidas(contaId, { mesesFuturo: 6 });
+  if (!ok) {
+    body.innerHTML = `<div class="cartao-faturas-empty">Não foi possível carregar: ${escapeHtml(error || 'erro desconhecido')}</div>`;
+    return;
+  }
+  title.textContent = `Faturas — ${conta.apelido || conta.nome}`;
+
+  const aberta     = faturas.filter((f) => f.status === 'aberta');
+  const projetadas = faturas.filter((f) => f.status === 'projetada');
+  const fechadas   = faturas.filter((f) => f.status === 'fechada');
+
+  const sections = [];
+
+  if (aberta.length > 0) {
+    sections.push(`
+      <h3 class="cartao-faturas-subtitle">Fatura aberta</h3>
+      ${aberta.map(renderFaturaCardAberta).join('')}
+    `);
+  }
+
+  if (projetadas.length > 0) {
+    sections.push(`
+      <h3 class="cartao-faturas-subtitle">Próximas (projetadas)</h3>
+      <table class="cartao-faturas-tabela">
+        <thead>
+          <tr><th>Mês</th><th>Vence</th><th>Itens conhecidos</th><th style="text-align:right">Valor projetado</th></tr>
+        </thead>
+        <tbody>
+          ${projetadas.map(renderFaturaRowProjetada).join('')}
+        </tbody>
+      </table>
+      <p class="cartao-faturas-empty" style="font-size:var(--fs-xs); margin-top:var(--space-2);">
+        * Valor projetado considera apenas compromissos recorrentes neste cartão. Parcelamentos de compras individuais ainda não são projetados.
+      </p>
+    `);
+  }
+
+  if (fechadas.length > 0) {
+    sections.push(`
+      <h3 class="cartao-faturas-subtitle">Fechadas</h3>
+      <table class="cartao-faturas-tabela">
+        <thead>
+          <tr><th>Mês</th><th>Venceu</th><th style="text-align:right">Valor</th><th></th></tr>
+        </thead>
+        <tbody>
+          ${fechadas.map(renderFaturaRowFechada).join('')}
+        </tbody>
+      </table>
+    `);
+  }
+
+  if (sections.length === 0) {
+    body.innerHTML = '<div class="cartao-faturas-empty">Nenhuma fatura registrada ainda. Adicione transações neste cartão para que faturas sejam criadas automaticamente.</div>';
+    return;
+  }
+
+  body.innerHTML = sections.join('');
+}
+
+function renderFaturaCardAberta(f) {
+  return `
+    <div class="cartao-fatura-aberta-card">
+      <div class="cartao-fatura-aberta-header">
+        <span class="cartao-fatura-mes">${fmtMesRef(f.mesReferencia)}</span>
+        ${statusPillFatura(f.status)}
+      </div>
+      <div class="cartao-fatura-aberta-valor">${formatCurrencyHTML(f.valor)}</div>
+      <div class="cartao-fatura-aberta-info">
+        <div>
+          <span class="cf-label">Fechamento</span>
+          <span class="cf-value">${formatDateBR(f.dataFechamento)}</span>
+        </div>
+        <div>
+          <span class="cf-label">Vencimento</span>
+          <span class="cf-value">${formatDateBR(f.dataVencimento)}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderFaturaRowProjetada(f) {
+  const itens = (f.transacoes || []).length;
+  const itensTxt = itens === 0
+    ? '<span class="cf-sub">nenhum recorrente</span>'
+    : `${itens} recorrente${itens > 1 ? 's' : ''}`;
+  return `
+    <tr>
+      <td class="cf-td-data">${fmtMesRef(f.mesReferencia)}</td>
+      <td class="cf-td-data">${formatDateBR(f.dataVencimento)}</td>
+      <td>${itensTxt}</td>
+      <td class="cf-td-valor" style="text-align:right">${formatCurrencyHTML(f.valor)}</td>
+    </tr>
+  `;
+}
+
+function renderFaturaRowFechada(f) {
+  return `
+    <tr>
+      <td class="cf-td-data">${fmtMesRef(f.mesReferencia)}</td>
+      <td class="cf-td-data">${formatDateBR(f.dataVencimento)}</td>
+      <td class="cf-td-valor" style="text-align:right">${formatCurrencyHTML(f.valor)}</td>
+      <td>${statusPillFatura(f.status)}</td>
+    </tr>
+  `;
+}
+
 function bindCardClicks() {
   document.querySelectorAll('.conta-card-v2').forEach((card) => {
-    card.addEventListener('click', () => {
+    card.addEventListener('click', (e) => {
+      // Badge "Ver faturas" tem handler próprio (não abre details modal)
+      if (e.target.closest('[data-action="ver-faturas"]')) {
+        e.stopPropagation();
+        const btn = e.target.closest('[data-action="ver-faturas"]');
+        openFaturasModal(btn.dataset.contaId);
+        return;
+      }
       const conta = cachedContas.find((c) => c.id === card.dataset.id);
       if (conta) openDetailsModal(conta);
     });
