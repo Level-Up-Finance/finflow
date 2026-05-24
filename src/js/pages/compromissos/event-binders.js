@@ -218,6 +218,11 @@ export function bindAllEvents(deps) {
   document.getElementById('btn-ir-vinculo').addEventListener('click', () => {
     const c = d.getDetailsCompromisso();
     if (!c) return;
+    // Subs auto-geradas (fatura de cartão) levam pra Contas — fonte da verdade
+    if (c.auto_gerado === true && c.auto_tipo === 'fatura_cartao') {
+      location.href = 'contas.html';
+      return;
+    }
     if (c.divida_id) {
       location.href = `dividas.html?divida_id=${encodeURIComponent(c.divida_id)}`;
     } else if (c.projeto_id) {

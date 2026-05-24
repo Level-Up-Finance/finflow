@@ -1183,18 +1183,26 @@ async function openDetailsModal(c) {
   const ehInvestCat    = cat?.grupo === 'investimentos';
   const ehVinculado    = ehDividasCat || ehInvestCat;
   const ehDivida       = !!c.divida_id || ehDividasCat;
+  // Sub auto-gerada pelo sistema (ex: "Fatura {Cartão}"). Trigger no banco
+  // (migration 0122) bloqueia UPDATE/DELETE; UI esconde botões e mostra
+  // "Ir para Contas" pra o user gerenciar lá.
+  const ehAutoGerado   = c.auto_gerado === true;
   const btnIrVinculo   = document.getElementById('btn-ir-vinculo');
   const btnEditar      = document.getElementById('btn-editar');
   const btnAtualizar   = document.getElementById('btn-atualizar-valor');
-  if (ehVinculado) {
+  if (ehVinculado || ehAutoGerado) {
     btnEditar.classList.add('hidden');
     btnAtualizar.classList.add('hidden');
     btnArq.classList.add('hidden');
     btnDel.classList.add('hidden');
     document.getElementById('btn-encerrar').classList.add('hidden');
     btnIrVinculo.classList.remove('hidden');
-    document.getElementById('btn-ir-vinculo-label').textContent =
-      ehDivida ? 'Ir para Dívida' : 'Ir para Projeto';
+    let label;
+    if (ehAutoGerado && c.auto_tipo === 'fatura_cartao') label = 'Ir para Contas';
+    else if (ehAutoGerado)                               label = 'Gerenciado pelo sistema';
+    else if (ehDivida)                                   label = 'Ir para Dívida';
+    else                                                 label = 'Ir para Projeto';
+    document.getElementById('btn-ir-vinculo-label').textContent = label;
   } else {
     btnIrVinculo.classList.add('hidden');
   }
