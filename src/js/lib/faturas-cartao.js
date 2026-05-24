@@ -429,11 +429,16 @@ async function cleanupPagamentosFaturaOrfaos(mesAnos) {
 }
 
 /**
- * Garante pagamento + orcamento_geral pra cada fatura_cartao cujo
- * data_vencimento cai nos meses cobertos.
+ * MODELO SIMPLIFICADO (definido pelo user):
+ * Pra cada cartão ativo, gera 1 pagamento por mes_ano em mesAnos,
+ * com data_vencimento = primeiro dia do mes_ano + (conta.vencimento - 1).
  *
- * Usa faturas_cartao como SOURCE OF TRUTH — a tabela já tem data_vencimento
- * correto via computeFaturaDates (trata caso venc<fec → vence no mês seguinte).
+ * Não usa fec_fatura. Não consulta faturas_cartao. Cada cartão tem
+ * pagamento todo dia X (= dia_vencimento) de todo mês civil.
+ *
+ * Exemplos:
+ *   - Inter venc=5 → pagamentos 05/05, 05/06, 05/07, ...
+ *   - C6 venc=20  → pagamentos 20/05, 20/06, 20/07, ...
  *
  * Idempotente: pula se já existe pagamento pra (sub, data_vencimento).
  */
@@ -443,52 +448,35 @@ export async function ensurePagamentosFaturaForMonths(mesAnos) {
   if (!user) return 0;
   const wsId = requireWorkspaceId();
 
-  // Self-healing: limpa pagamentos órfãos (de versões antigas da lógica)
-  // antes de gerar os corretos. Idempotente — só apaga entries que NÃO
-  // correspondem a nenhuma fatura_cartao real no range.
+  // Self-healing: limpa pagamentos órfãos antes de criar novos
   try {
     await cleanupPagamentosFaturaOrfaos(mesAnos);
   } catch (e) {
     console.warn('[cleanupPagamentosFaturaOrfaos]', e);
   }
 
-  // Range de datas: do primeiro dia do menor mesAno ao último dia do maior
-  const sorted = [...mesAnos].sort();
-  const minMesAno = sorted[0];
-  const maxMesAno = sorted[sorted.length - 1];
-  const [maxY, maxM] = maxMesAno.split('-').map(Number);
-  const lastDayMaxMes = new Date(maxY, maxM, 0).getDate();
-  const maxDate = `${maxY}-${String(maxM).padStart(2, '0')}-${String(lastDayMaxMes).padStart(2, '0')}`;
-
-  // Busca faturas cujo data_vencimento cai no range, com sub espelho
-  const { data: faturas, error } = await supabase
-    .from('faturas_cartao')
-    .select('id, conta_id, data_vencimento, valor_total, subcategoria_id, status, contas(id, nome, apelido, vencimento, fec_fatura, status)')
+  // Busca todos cartões ativos + suas subs espelho
+  const { data: cartoes, error: contasErr } = await supabase
+    .from('contas')
+    .select('id, nome, apelido, vencimento, status')
     .eq('workspace_id', wsId)
-    .gte('data_vencimento', minMesAno)
-    .lte('data_vencimento', maxDate);
-  if (error || !faturas) {
-    if (error) console.warn('[ensurePagamentosFatura]', error);
-    return 0;
-  }
+    .eq('tipo', TIPO_CARTAO)
+    .eq('status', 'ativa');
+  if (contasErr || !cartoes || cartoes.length === 0) return 0;
 
   let created = 0;
-  for (const fat of faturas) {
-    // Garante sub espelho (se ainda não está vinculada)
-    let subId = fat.subcategoria_id;
-    if (!subId && fat.contas) {
-      subId = await ensureSubcategoriaFatura(fat.contas);
-      if (subId) {
-        await supabase.from('faturas_cartao').update({ subcategoria_id: subId }).eq('id', fat.id);
-      }
-    }
+  for (const cartao of cartoes) {
+    if (!cartao.vencimento) continue;
+    const subId = await ensureSubcategoriaFatura(cartao);
     if (!subId) continue;
 
-    const dataVencimento = fat.data_vencimento;
-    const [vy, vm, vd] = dataVencimento.split('-').map(Number);
-    const mesAno = `${vy}-${String(vm).padStart(2, '0')}-01`;
-    const blocoQuinzenal = vd <= 15 ? 1 : 2;
-    const valorPrevisto = Number(fat.valor_total) || 0;
+    for (const mesAno of mesAnos) {
+      const [vy, vm] = mesAno.split('-').map(Number);
+      const lastDay = new Date(vy, vm, 0).getDate();
+      const vd = Math.min(Number(cartao.vencimento), lastDay);
+      const dataVencimento = `${vy}-${String(vm).padStart(2, '0')}-${String(vd).padStart(2, '0')}`;
+      const blocoQuinzenal = vd <= 15 ? 1 : 2;
+      const valorPrevisto = 0;
 
     // 1. Garante orcamento_geral entry
     let orcId;
@@ -543,7 +531,8 @@ export async function ensurePagamentosFaturaForMonths(mesAnos) {
       });
     if (pagErr) { console.warn('[ensurePagamentosFatura] pag', pagErr); continue; }
     created++;
-  }
+    } // fim for mesAno
+  } // fim for cartao
   return created;
 }
 
