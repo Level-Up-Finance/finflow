@@ -993,12 +993,27 @@ async function loadFaturasAbertas(contaIds) {
   }
 
   for (const f of (data || [])) {
-    if (f.status === 'aberta' && Number(f.valor_total) > 0) {
+    if (f.status === 'aberta') {
+      // HF-8: inclui faturas zeradas (cartão sem transação ainda) — UX
+      // espera ver "Em formação: R$ 0" e não card vazio.
       const prev = cachedFaturasAbertas.get(f.conta_id) || 0;
-      cachedFaturasAbertas.set(f.conta_id, prev + Number(f.valor_total));
-    } else if (f.status === 'fechada' && f.data_vencimento >= today) {
-      // Mantém só a primeira (mais próxima) por conta — order ASC garante
-      if (!cachedProximaFatura.has(f.conta_id)) {
+      cachedFaturasAbertas.set(f.conta_id, prev + Number(f.valor_total || 0));
+    } else if (f.status === 'fechada') {
+      // Fatura fechada (não importa se já venceu ou não — fatura vencida
+      // ainda precisa ser exibida; o usuário precisa ver que está em atraso).
+      // Mantém só uma por conta:
+      //   - Prioridade: fatura mais próxima >= hoje (a próxima a pagar)
+      //   - Senão: a mais recente vencida (atraso a regularizar)
+      const existing = cachedProximaFatura.get(f.conta_id);
+      const isFuture = f.data_vencimento >= today;
+      if (!existing) {
+        cachedProximaFatura.set(f.conta_id, {
+          valor: Number(f.valor_total || 0),
+          dataVencimento: f.data_vencimento,
+          status: f.status,
+        });
+      } else if (isFuture && existing.dataVencimento < today) {
+        // Achou uma futura — substitui vencida antiga
         cachedProximaFatura.set(f.conta_id, {
           valor: Number(f.valor_total || 0),
           dataVencimento: f.data_vencimento,
@@ -1358,7 +1373,8 @@ function renderContaCard(conta) {
         if (dias < 0)      stateClass = ' conta-fatura-vencida';
         else if (dias <= 5) stateClass = ' conta-fatura-proxima';
       }
-    } else if (faturaAbertaValor) {
+    } else if (faturaAbertaValor !== undefined) {
+      // Fatura aberta existe (mesmo zerada) → "Em formação: R$ X"
       label = `Em formação: ${formatCurrencyHTML(faturaAbertaValor)}`;
     } else {
       label = 'Ver faturas';

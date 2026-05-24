@@ -170,8 +170,12 @@ export async function ensureSubcategoriaFatura(conta) {
 /**
  * Garante que existe uma fatura aberta/fechada para (conta, mes_referencia).
  * Cria se não existir. Retorna o id.
+ *
+ * Exportado pra permitir ensureSubcategoriasFaturas criar a fatura aberta
+ * inicial R$ 0 — sem ela, o card de cartão fica vazio e o pagamento
+ * mensal não é gerado (HF-8).
  */
-async function upsertFatura(conta, mesReferencia) {
+export async function upsertFatura(conta, mesReferencia) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
@@ -284,10 +288,20 @@ export async function ensureSubcategoriasFaturas(contas = null) {
   }
 
   let count = 0;
+  const hoje = todayISO();
   for (const cartao of cartoes) {
-    if (!cartao.vencimento) continue; // sem config completa
+    if (!cartao.vencimento || !cartao.fec_fatura) continue; // sem config completa
     const subId = await ensureSubcategoriaFatura(cartao);
     if (subId) count++;
+
+    // HF-8: garante fatura aberta do mes_referencia atual (R$ 0 inicial).
+    // Sem isso, faturas_cartao só existe quando uma transação dispara
+    // upsertFatura — cartões zerados ficam invisíveis no card e nenhum
+    // pagamento mensal é gerado.
+    const mesRefAtual = computeMesReferencia(hoje, cartao.fec_fatura);
+    if (mesRefAtual) {
+      await upsertFatura(cartao, mesRefAtual);
+    }
   }
   return count;
 }

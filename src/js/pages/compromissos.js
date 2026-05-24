@@ -1497,11 +1497,17 @@ async function loadCompromissos() {
     return;
   }
 
-  // Defesa em profundidade: mesmo que o .or() do PostgREST falhe ou a query
-  // venha de cache/SW antigo, garante que subs auto-geradas tipo agregador
-  // (gastos_diversos) NUNCA apareçam como compromisso visível.
+  // Defesa em profundidade QUÁDRUPLA contra "Gastos diversos" aparecer:
+  //   1. .or() PostgREST (acima)
+  //   2. JS filtro por auto_tipo (linha abaixo)
+  //   3. JS filtro por nome (caso sub manual antiga sem auto_tipo)
+  //   4. JS filtro por flag auto_gerado + nome (paranoia)
   // Sub fatura_cartao continua visível (read-only, conforme HF-2).
-  cachedCompromissos = (data || []).filter((s) => s.auto_tipo !== 'gastos_diversos');
+  cachedCompromissos = (data || []).filter((s) => {
+    if (s.auto_tipo === 'gastos_diversos') return false;
+    if (s.nome === 'Gastos diversos' && (s.auto_gerado === true || !s.auto_tipo)) return false;
+    return true;
+  });
 
   await Promise.all([loadProxValores(), refreshLocalRates()]);
   renderCompromissos();
