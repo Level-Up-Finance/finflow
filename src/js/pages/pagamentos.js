@@ -15,7 +15,7 @@ import { requireWorkspaceId } from '../lib/workspace.js';
 import { listMembers } from '../lib/workspace-members.js';
 import { renderAttribBadge } from '../lib/attribution-badge.js';
 import { canWrite } from '../lib/permissions.js';
-import { ensureGastosDiversosForMonth } from '../lib/gastos-diversos.js';
+import { ensureGastosDiversosForBlocos } from '../lib/gastos-diversos.js';
 import { ensureSubcategoriasFaturas, checkAndCloseFaturas, ensurePagamentosFaturaForMonths } from '../lib/faturas-cartao.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
@@ -289,15 +289,16 @@ async function loadMonth() {
     console.warn('[ensurePagamentosFaturaForMonths]', e);
   }
 
-  // 2b. Garante pagamento de "Gastos diversos" pra cada bloco do mês
-  // (recalcula valor a partir de transações soltas). AWAIT: senão o fetch
-  // de pagamentos abaixo pode rodar antes do INSERT — pagamento não aparece.
-  // Pode criar categoria "Diversos" e sub "Gastos diversos" em fallback JS
-  // se a migration 0124 não rodou.
+  // 2b. Garante pagamento de "Gastos diversos" pra cada BLOCO REAL da
+  // renda principal (não 1 por bloco_quinzenal civil). Fonte da verdade:
+  // getBlocosForMonth (mesma função que a UI usa pra renderizar blocos).
+  // Bloco crossover é o mesmo entre meses — pagamento é idempotente por
+  // (sub, data_vencimento), não duplica.
   try {
-    await ensureGastosDiversosForMonth(viewYear, viewMonth);
+    const blocosPagDiv = getBlocosForMonth(viewYear, viewMonth);
+    await ensureGastosDiversosForBlocos(blocosPagDiv);
   } catch (e) {
-    console.warn('[ensureGastosDiversosForMonth]', e);
+    console.warn('[ensureGastosDiversosForBlocos]', e);
   }
 
   // 2c. Re-fetch categorias + subs depois dos ensures — eles podem ter
