@@ -17494,6 +17494,23 @@ body.comp-embedded { background: transparent; }
   /* Reaproveita backgrounds das .status-* classes via composição */
 }
 
+/* ============================================================
+   PERMISSIONS GATING (Multi-perfil Fase 2)
+   body[data-can-write="false"] = viewer
+   body[data-can-manage="false"] = não-owner (viewer ou editor)
+   Esconde controles destrutivos baseado em role.
+   ============================================================ */
+body[data-can-write="false"] .div-btn-pagar,
+body[data-can-write="false"] .div-btn-editar,
+body[data-can-write="false"] .div-btn-taxa,
+body[data-can-write="false"] .div-btn-arquivar,
+body[data-can-write="false"] .div-btn-restaurar {
+  display: none !important;
+}
+body[data-can-manage="false"] .div-btn-deletar {
+  display: none !important;
+}
+
 /* Delta de dias entre data_pagamento e data_vencimento (na coluna VTO) */
 .pag-vto-delta {
   display: inline-block;

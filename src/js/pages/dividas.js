@@ -5,6 +5,7 @@ import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { requireWorkspaceId } from '../lib/workspace.js';
 import { listMembers } from '../lib/workspace-members.js';
 import { renderAttribBadge } from '../lib/attribution-badge.js';
+import { canWrite, canManage } from '../lib/permissions.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -427,7 +428,39 @@ document.addEventListener('DOMContentLoaded', async () => {
   const membersP = listMembers().catch(() => []);
   await loadAll();
   await membersP;
+  applyRoleGating();
 });
+
+/**
+ * Esconde/disable controles destrutivos pra viewer/editor.
+ *
+ * Hierarquia:
+ *   - canWrite (owner+editor): pode criar, editar, pagar parcela, atualizar
+ *     taxa, arquivar (soft delete que preserva histórico)
+ *   - canManage (owner only): pode deletar (hard delete) — destrói registro
+ *     contábil — e mudar inclui_no_patrimonio (afeta cálculo de patrimônio
+ *     do workspace inteiro)
+ *
+ * Aplicado no DOM após loadAll() — re-aplicar via re-render se necessário.
+ */
+function applyRoleGating() {
+  const writable = canWrite();
+  const manageable = canManage();
+
+  // Marca o body com data-attributes — CSS esconde elementos baseado neles
+  // (mais escalável que patchear cada botão individual)
+  document.body.dataset.canWrite = String(writable);
+  document.body.dataset.canManage = String(manageable);
+
+  // Botão "Nova dívida" no header — toggle direto pois é fixo (não re-renderizado)
+  const novaBtn = document.getElementById('btn-nova-divida');
+  if (novaBtn) novaBtn.style.display = writable ? '' : 'none';
+  const novaBtnAlt = document.querySelector('[data-trigger-nova]');
+  if (novaBtnAlt) novaBtnAlt.style.display = writable ? '' : 'none';
+
+  // Botões de Pagar/Editar nos cards (re-renderizados a cada loadAll) — CSS faz o gating
+  // via .div-btn-pagar/.div-btn-editar dentro de body[data-can-write="false"]
+}
 
 /**
  * Atualiza juros_percentual de dívidas indexadas (SELIC, CDI, IPCA, +spread)
@@ -474,22 +507,45 @@ async function refreshIndexedRates(dividas) {
 // -----------------------------
 // Load
 // -----------------------------
+// Helper: timeout em ms pra promises externas (evita pendurar a página
+// se BrasilAPI ou Supabase ficarem lentos). Resolve com null em vez de rejeitar.
+function withTimeout(promise, ms = 5000) {
+  return Promise.race([
+    promise,
+    new Promise((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+}
+
 async function loadAll() {
-  const [divRes, contRes, contatosRes, histRes, taxaHistRes, subsRes] = await Promise.all([
+  // Promise.allSettled garante que uma query lenta não pendura todas. Cada
+  // resultado vira { status: 'fulfilled', value } ou { status: 'rejected', reason }.
+  const results = await Promise.allSettled([
     dividasService.listDividas(),
     supabase.from('contas').select('id, nome, apelido, tipo, icone_cor, moeda').neq('status', 'arquivada').order('nome'),
     supabase.from('contatos').select('id, nome, tipo, status, logo_url').neq('status', 'arquivado').order('nome'),
     dividasService.listPagamentosDividaHistorico(),
     dividasService.listTaxaHistorico(),
-    // Aquece cache de indicadores (SELIC/CDI/IPCA) p/ corrMensalDecimal usar valores reais
-    fetchIndicadores().catch(() => null),
+    // Aquece cache de indicadores (SELIC/CDI/IPCA) p/ corrMensalDecimal usar valores reais.
+    // Timeout 5s — se BrasilAPI estiver lenta, render segue sem indicadores ao vivo.
+    withTimeout(fetchIndicadores().catch(() => null), 5000),
     // Subs vinculadas a dividas (próprias ou via custo_vida) — pra "Custos vinculados"
     supabase.from('subcategorias').select('id, nome, divida_id, valor_base, status, categorias(grupo)').not('divida_id', 'is', null),
   ]);
+  // Helper: extrai value ou retorna fallback se rejected
+  const val = (r, fallback = { data: null, error: null }) => r.status === 'fulfilled' ? r.value : fallback;
+  const [divRes, contRes, contatosRes, histRes, taxaHistRes, , subsRes] = [
+    val(results[0]), val(results[1]), val(results[2]),
+    val(results[3]), val(results[4]), val(results[5]),
+    val(results[6]),
+  ];
   cachedSubcategorias = subsRes?.data || [];
 
-  // Auto-refresh de taxas indexadas (SELIC/CDI/IPCA) — feito antes do render
-  if (divRes.data) await refreshIndexedRates(divRes.data);
+  // Auto-refresh de taxas indexadas roda em BACKGROUND (não bloqueia render).
+  // Se demorar, o usuário vê dados anteriores; quando completar, próximo loadAll
+  // já terá taxas atualizadas.
+  if (divRes.data) {
+    refreshIndexedRates(divRes.data).catch((e) => console.warn('[refreshIndexedRates bg]', e));
+  }
 
   if (divRes.error) {
     showToast(`${t('dividas.toast.erro_carregar', 'Erro ao carregar dívidas')}: ${divRes.error.message}`, 'error', 8000);
