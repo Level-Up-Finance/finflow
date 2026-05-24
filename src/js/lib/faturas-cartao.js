@@ -149,7 +149,13 @@ export async function ensureSubcategoriaFatura(conta) {
       vencimento_dia: Number(conta.vencimento) || 1,
       valor_base:     0,
       valor_variavel: true,
-      iniciado_em:    todayISO(),
+      // iniciado_em = primeiro dia do mês corrente.
+      // Se setar todayISO(), e o user criar o cartão depois do dia
+      // de vencimento (ex: hoje dia 24, venc dia 5 ou 20), o sistema
+      // calcula 0 ocorrências no mês — orcamento/pagamento nem
+      // nascem. Setar dia 1 garante que a sub "começa em 01/MM" e
+      // captura vencimentos posteriores ao dia de criação.
+      iniciado_em:    (() => { const t = todayISO(); return t.slice(0, 8) + '01'; })(),
       moeda:          'BRL',
       status:         'ativa',
       // Blindagem: sub gerenciada pelo sistema (lib/faturas-cartao.js).
