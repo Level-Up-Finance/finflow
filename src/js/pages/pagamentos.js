@@ -14,6 +14,7 @@ import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { requireWorkspaceId } from '../lib/workspace.js';
 import { listMembers } from '../lib/workspace-members.js';
 import { renderAttribBadge } from '../lib/attribution-badge.js';
+import { canWrite } from '../lib/permissions.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -1341,15 +1342,23 @@ function renderPagamentoRow(p, catColor) {
     .join('');
   const currentStatus = STATUS_OPTIONS.find((s) => s.value === p.status) || STATUS_OPTIONS[0];
 
-  // Quando travado, renderiza badge "Vinculado" no lugar do select
-  const statusCellHtml = locked
-    ? `<span class="pagamento-status-locked" title="Vinculado a uma transação do banco. Desvincule pela página de Transações pra mudar o status.">
+  // Quando travado (vinculado a transação), renderiza badge "Vinculado".
+  // Quando viewer (sem permissão de escrever), renderiza pill estática.
+  // Senão, select interativo.
+  const readonly = !canWrite();
+  let statusCellHtml;
+  if (locked) {
+    statusCellHtml = `<span class="pagamento-status-locked" title="Vinculado a uma transação do banco. Desvincule pela página de Transações pra mudar o status.">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
         Vinculado
-      </span>`
-    : `<select class="pagamento-status-select ${currentStatus.cls}" data-pagamento-id="${p.id}">
+      </span>`;
+  } else if (readonly) {
+    statusCellHtml = `<span class="pagamento-status-readonly ${currentStatus.cls}" title="Você é viewer deste workspace e não pode mudar status. Peça pra um owner ou editor.">${currentStatus.label}</span>`;
+  } else {
+    statusCellHtml = `<select class="pagamento-status-select ${currentStatus.cls}" data-pagamento-id="${p.id}">
         ${statusOptions}
       </select>`;
+  }
 
   // Atribuição: "Maria marcou" — só renderiza em workspace compartilhado.
   const markedByHtml = renderAttribBadge({
@@ -1462,7 +1471,8 @@ function renderPagamentoRow(p, catColor) {
             value="${valorInputValue}"
             placeholder="—"
             aria-label="Valor pago em ${moeda}"
-            ${locked ? 'readonly' : ''}
+            ${locked || readonly ? 'readonly' : ''}
+            ${readonly && !locked ? 'title="Você é viewer deste workspace e não pode editar valores."' : ''}
           />
         </span>
       </td>

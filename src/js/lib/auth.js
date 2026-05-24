@@ -3,6 +3,7 @@
 // =============================================================
 import { supabase, isSupabaseConfigured } from './supabase.js';
 import { bootstrapWorkspace, clearWorkspaceState } from './workspace.js';
+import { preloadPermissions, clearPermissionsCache } from './permissions.js';
 // Importa theme.js pelo efeito colateral — aplica tema persistido
 // imediatamente, antes do primeiro render.
 import './theme.js';
@@ -45,6 +46,7 @@ export async function guardSession() {
   // setup (trigger handle_new_user deveria ter criado um).
   try {
     await bootstrapWorkspace();
+    await preloadPermissions();
   } catch (err) {
     console.error('[guardSession] bootstrapWorkspace falhou:', err);
     // Não bloqueia o login — algumas páginas (perfil, configuracoes
@@ -81,6 +83,7 @@ export async function getCurrentUser() {
  */
 export async function logout() {
   clearWorkspaceState();
+  clearPermissionsCache();
   await supabase.auth.signOut();
   window.location.href = LOGIN_PATH;
 }

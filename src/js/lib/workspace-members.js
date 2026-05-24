@@ -81,6 +81,21 @@ export function isShared() {
 }
 
 /**
+ * Retorna o role do user logado no workspace ativo.
+ * Síncrono — assume cache populado (listMembers + auth carregados).
+ * Aceita opcionalmente o profileId pra evitar buscar; senão lê do supabase.auth
+ * (mas só funciona se quem chama já tem o id em mãos).
+ *
+ * @param {string} profileId  ID do user logado
+ * @returns {'owner'|'editor'|'viewer'|null}
+ */
+export function getMemberRole(profileId) {
+  if (!profileId || !_membersCache) return null;
+  const m = _membersCache.find((x) => x.profile_id === profileId);
+  return m ? m.role : null;
+}
+
+/**
  * Invalida o cache. Use após convidar/aceitar/remover membro.
  */
 export function refreshMembers() {

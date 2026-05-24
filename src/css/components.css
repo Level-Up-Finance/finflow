@@ -17481,6 +17481,19 @@ body.comp-embedded { background: transparent; }
   height: 12px;
 }
 
+/* Status pill estática pra viewer (sem permissão de editar) */
+.pagamento-status-readonly {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+  cursor: help;
+  /* Reaproveita backgrounds das .status-* classes via composição */
+}
+
 /* Delta de dias entre data_pagamento e data_vencimento (na coluna VTO) */
 .pag-vto-delta {
   display: inline-block;
