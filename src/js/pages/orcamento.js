@@ -16,7 +16,7 @@ import { canWrite } from '../lib/permissions.js';
 import { SUPER_BLOCOS } from '../lib/super-blocos.js';
 import { initSidebar } from '../components/sidebar.js';
 import { supabase } from '../lib/supabase.js';
-import { filterVisibleSubs } from '../lib/subs-visibility.js';
+import { filterVisibleSubs, isSubOculta } from '../lib/subs-visibility.js';
 import { showToast } from '../components/toast.js';
 import { formatCurrency, formatCurrencyHTML, MOEDAS } from '../lib/moedas.js';
 import { fetchExchangeRate, startCurrencyAutoRefresh, toBRL } from '../lib/currency.js';
@@ -498,7 +498,12 @@ async function loadMonth() {
   }
 
   // Filtra subcategorias arquivadas/inativas (entry pode existir mas a sub mudou de status)
-  cachedOrcamento = (data || []).filter((e) => e.subcategorias?.status === 'ativa');
+  // Filtra: ativas + visíveis (esconde Gastos diversos / Fatura X). Entries
+  // de placeholders existem no orcamento_geral (criadas via caminho próprio
+  // pra pagamentos), mas não devem aparecer em Mensal/Anual/Histórico.
+  cachedOrcamento = (data || []).filter(
+    (e) => e.subcategorias?.status === 'ativa' && !isSubOculta(e.subcategorias)
+  );
 
   // Busca cotações pras moedas estrangeiras presentes (live)
   await refreshRates();
@@ -1264,7 +1269,12 @@ async function loadYearly() {
     return;
   }
 
-  cachedOrcamento = (data || []).filter((e) => e.subcategorias?.status === 'ativa');
+  // Filtra: ativas + visíveis (esconde Gastos diversos / Fatura X). Entries
+  // de placeholders existem no orcamento_geral (criadas via caminho próprio
+  // pra pagamentos), mas não devem aparecer em Mensal/Anual/Histórico.
+  cachedOrcamento = (data || []).filter(
+    (e) => e.subcategorias?.status === 'ativa' && !isSubOculta(e.subcategorias)
+  );
 
   // Refresh cotações pra moedas estrangeiras
   await refreshRates();
