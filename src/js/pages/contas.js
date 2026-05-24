@@ -1353,32 +1353,45 @@ function renderContaCard(conta) {
     </div>
   ` : '';
 
-  // Fatura — UI hierárquica: prioriza "próxima a pagar" (fechada), depois
-  // "em formação" (aberta), depois link genérico "Ver faturas".
+  // Fatura — sempre "Próxima fatura: R$ X" (R$ 0 se nada lançado).
+  // Prioridade do valor exibido:
+  //   1. Fatura fechada futura mais próxima (a que está pra pagar)
+  //   2. Fatura aberta (em formação)
+  //   3. Fatura fechada vencida (atraso)
+  //   4. R$ 0 (nada existe)
   const faturaAbertaValor = cachedFaturasAbertas.get(conta.id);
   const proxFatura        = cachedProximaFatura.get(conta.id);
   let faturaBadge = '';
   if (isCartao) {
     const CARTAO_SVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>`;
-    let label;
-    let extra = '';
+
+    // Determina valor + venc + state
+    let valor = 0;
+    let dataVencimento = null;
     let stateClass = '';
+
     if (proxFatura) {
-      // Próxima fatura fechada a pagar — informação mais acionável
-      label = `Próxima fatura: ${formatCurrencyHTML(proxFatura.valor)}`;
-      const dias = diasAteISO(proxFatura.dataVencimento);
+      // Fechada (futura OU vencida)
+      valor = proxFatura.valor;
+      dataVencimento = proxFatura.dataVencimento;
+    } else if (faturaAbertaValor !== undefined) {
+      valor = faturaAbertaValor;
+      // Pra fatura aberta, vencimento = dia "vencimento" do cartão no mês atual
+      // (informação aproximada, não precisa ser exata)
+    }
+
+    let extra = '';
+    if (dataVencimento) {
+      const dias = diasAteISO(dataVencimento);
       if (dias !== null) {
         const venceStr = dias === 0 ? 'hoje' : dias === 1 ? 'amanhã' : dias < 0 ? `${Math.abs(dias)}d atr.` : `em ${dias}d`;
         extra = `<span class="conta-fatura-sub">Vence ${venceStr}</span>`;
         if (dias < 0)      stateClass = ' conta-fatura-vencida';
         else if (dias <= 5) stateClass = ' conta-fatura-proxima';
       }
-    } else if (faturaAbertaValor !== undefined) {
-      // Fatura aberta existe (mesmo zerada) → "Em formação: R$ X"
-      label = `Em formação: ${formatCurrencyHTML(faturaAbertaValor)}`;
-    } else {
-      label = 'Ver faturas';
     }
+
+    const label = `Próxima fatura: ${formatCurrencyHTML(valor)}`;
     faturaBadge = `<button type="button" class="conta-fatura-badge${stateClass}" data-action="ver-faturas" data-conta-id="${conta.id}" title="Ver todas as faturas">
       ${CARTAO_SVG}
       <span>${label}</span>
