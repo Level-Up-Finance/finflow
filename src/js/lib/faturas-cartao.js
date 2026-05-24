@@ -189,15 +189,29 @@ export async function upsertFatura(conta, mesReferencia) {
 
   const { data: existing } = await supabase
     .from('faturas_cartao')
-    .select('id')
+    .select('id, subcategoria_id')
     .eq('conta_id', conta.id)
     .eq('mes_referencia', mesReferencia)
     .maybeSingle();
-  if (existing) return existing.id;
+  // Se já existe MAS sem subcategoria_id, linka antes de retornar.
+  // Faturas antigas (criadas antes desse fix) podem ter subId=null.
+  if (existing) {
+    if (!existing.subcategoria_id) {
+      const subId = await ensureSubcategoriaFatura(conta);
+      if (subId) {
+        await supabase.from('faturas_cartao').update({ subcategoria_id: subId }).eq('id', existing.id);
+      }
+    }
+    return existing.id;
+  }
 
   const { dataFechamento, dataVencimento } = computeFaturaDates(
     mesReferencia, conta.fec_fatura, conta.vencimento
   );
+
+  // Cria sub espelho ANTES de inserir a fatura, garantindo que
+  // toda fatura nasce com subcategoria_id válido.
+  const subId = await ensureSubcategoriaFatura(conta);
 
   const { data: nova, error } = await supabase
     .from('faturas_cartao')
@@ -210,6 +224,7 @@ export async function upsertFatura(conta, mesReferencia) {
       data_vencimento: dataVencimento,
       valor_total:     0,
       status:          'aberta',
+      subcategoria_id: subId,
     })
     .select('id').single();
   if (error) { console.warn('[upsertFatura]', error); return null; }

@@ -273,18 +273,21 @@ async function loadMonth() {
   // 2. Garante que pagamentos tenha entries pro mês (cascata: orcamento → pagamentos)
   await ensurePagamentosForMonth(viewYear, viewMonth);
 
-  // 2a. Garante pagamentos das subs Fatura — path próprio que NÃO depende
-  // de occursOn / iniciado_em. Imune ao bug onde sub criada após o dia
-  // do venc no mês ficava com 0 ocorrências (Inter venc 5, sub criada dia 24).
-  // Cobre tanto o mês visível quanto o próximo (blocos crossover).
+  // 2a. Garante pagamentos das subs Fatura. Cobre 7 meses fixos
+  // (atual -1 até +5) — independente dos blocos visíveis. Garante
+  // que TODAS as faturas conhecidas no DB tenham pagamento criado,
+  // não importa qual mês o user navega primeiro.
+  //
+  // Sem essa janela fixa, fatura mes_ref=05 do Inter (venc 05/06)
+  // podia "sumir" quando user navegava entre meses específicos —
+  // dependendo de qual ordem as funções idempotentes rodavam.
   try {
-    const blocosForCobertos = getBlocosForMonth(viewYear, viewMonth);
-    const mesesCobertosF = new Set([isoMonth(viewYear, viewMonth)]);
-    for (const b of blocosForCobertos) {
-      mesesCobertosF.add(isoMonth(b.startDate.getFullYear(), b.startDate.getMonth()));
-      mesesCobertosF.add(isoMonth(b.endDate.getFullYear(), b.endDate.getMonth()));
+    const mesesFixos = [];
+    for (let i = -1; i <= 5; i++) {
+      const d = new Date(viewYear, viewMonth + i, 1);
+      mesesFixos.push(isoMonth(d.getFullYear(), d.getMonth()));
     }
-    await ensurePagamentosFaturaForMonths(Array.from(mesesCobertosF));
+    await ensurePagamentosFaturaForMonths(mesesFixos);
   } catch (e) {
     console.warn('[ensurePagamentosFaturaForMonths]', e);
   }
