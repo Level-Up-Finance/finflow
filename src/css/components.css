@@ -8957,6 +8957,10 @@ td .currency-split {
 /* ---- configuracoes: Sidebar layout ---- */
 .cfg-main {
   padding-top: 0 !important;
+  /* Padding-bottom generoso pra que o último bloco não fique colado
+     no fim da tela — user precisa ver o conteúdo final sem sticky banners
+     "comendo" o viewport útil. */
+  padding-bottom: var(--space-9, 4rem);
 }
 
 .cfg-layout {

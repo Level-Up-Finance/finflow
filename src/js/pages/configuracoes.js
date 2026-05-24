@@ -376,19 +376,24 @@ function updateBlocoStack() {
   // Restore all originals
   wrappers.forEach((w) => w.querySelector('.cfg-bloco-banner')?.classList.remove('is-stacked'));
 
-  // Rebuild stack
-  _blocoStack.innerHTML = '';
+  // Rebuild stack — mostra APENAS o banner do bloco ativo (último que
+  // passou pelo top), não empilha todos. Empilhar todos comia ~150px de
+  // viewport útil em telas pequenas e fazia parecer que o scroll travava.
+  _blocoStack.replaceChildren();
 
+  let activeWrapper = null;
+  const threshold = HEADER_H + BANNER_H;
   for (const wrapper of wrappers) {
-    const banner = wrapper.querySelector('.cfg-bloco-banner');
-    if (!banner) continue;
-
-    const stackedCount = _blocoStack.children.length;
-    const threshold = HEADER_H + stackedCount * BANNER_H;
-
     if (wrapper.getBoundingClientRect().top <= threshold) {
+      activeWrapper = wrapper; // último que passou — banner do bloco atual
+    }
+  }
+
+  if (activeWrapper) {
+    const banner = activeWrapper.querySelector('.cfg-bloco-banner');
+    if (banner) {
       const clone = banner.cloneNode(true);
-      const accent = wrapper.style.getPropertyValue('--bloco-accent');
+      const accent = activeWrapper.style.getPropertyValue('--bloco-accent');
       if (accent) clone.style.setProperty('--bloco-accent', accent);
       _blocoStack.appendChild(clone);
       banner.classList.add('is-stacked');
