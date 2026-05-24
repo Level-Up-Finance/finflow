@@ -225,6 +225,9 @@ async function loadAll() {
   } else {
     cachedCategoriasInvest = categorias.data || [];
   }
+
+  // Invalida caches de cálculo — os dados subjacentes mudaram
+  clearCalcCache();
 }
 
 let contatoPicker = null;
@@ -1002,32 +1005,67 @@ function bindCardClicks() {
 }
 
 // -----------------------------
-// Cálculos
+// Cálculos (memoizados)
 // -----------------------------
-function calcRealizado(projetoId) {
-  const proj = cachedProjetos.find((p) => p.id === projetoId);
-  if (!proj) return 0;
-  let total = Number(proj.saldo_inicial) || 0;
+// Cache invalidado em loadAll() via clearCalcCache(). Com 50+ projetos × N renders
+// por mudança, sem memoização cada render dispara 150+ iterações sobre
+// cachedPagamentos/cachedAportes/cachedOrcamento. Memo reduz pra 1 cálculo por
+// projeto por loadAll.
+const _cacheRealizado = new Map();
+const _cachePrevistoMes = new Map();
+const _cacheSubIdsByProjeto = new Map(); // sub.projeto_id → [subIds] (pré-computado)
 
-  const subIds = cachedSubcategorias.filter((s) => s.projeto_id === projetoId).map((s) => s.id);
+/** Limpa cache de cálculos. Chamar após loadAll() popular caches do estado. */
+function clearCalcCache() {
+  _cacheRealizado.clear();
+  _cachePrevistoMes.clear();
+  _cacheSubIdsByProjeto.clear();
+}
+
+/** Pré-computa subIds por projeto — evita filter() N vezes nos calcs. */
+function getSubIdsByProjeto(projetoId) {
+  if (_cacheSubIdsByProjeto.has(projetoId)) return _cacheSubIdsByProjeto.get(projetoId);
+  const ids = cachedSubcategorias.filter((s) => s.projeto_id === projetoId).map((s) => s.id);
+  _cacheSubIdsByProjeto.set(projetoId, ids);
+  return ids;
+}
+
+function calcRealizado(projetoId) {
+  if (_cacheRealizado.has(projetoId)) return _cacheRealizado.get(projetoId);
+
+  const proj = cachedProjetos.find((p) => p.id === projetoId);
+  if (!proj) { _cacheRealizado.set(projetoId, 0); return 0; }
+
+  let total = Number(proj.saldo_inicial) || 0;
+  const subIds = getSubIdsByProjeto(projetoId);
+  const subIdSet = new Set(subIds); // Set lookup é O(1) vs Array O(n)
+
   for (const p of cachedPagamentos) {
-    if (!subIds.includes(p.subcategoria_id)) continue;
+    if (!subIdSet.has(p.subcategoria_id)) continue;
     total += Number(p.valor_real) || 0;
   }
   for (const a of cachedAportes) {
     if (a.projeto_id !== projetoId) continue;
     total += Number(a.valor) || 0;
   }
+
+  _cacheRealizado.set(projetoId, total);
   return total;
 }
 
 function calcPrevistoMes(projetoId) {
-  const subIds = cachedSubcategorias.filter((s) => s.projeto_id === projetoId).map((s) => s.id);
+  if (_cachePrevistoMes.has(projetoId)) return _cachePrevistoMes.get(projetoId);
+
+  const subIds = getSubIdsByProjeto(projetoId);
+  const subIdSet = new Set(subIds);
+
   let total = 0;
   for (const e of cachedOrcamento) {
-    if (!subIds.includes(e.subcategoria_id)) continue;
+    if (!subIdSet.has(e.subcategoria_id)) continue;
     total += Number(e.valor_previsto) || 0;
   }
+
+  _cachePrevistoMes.set(projetoId, total);
   return total;
 }
 
