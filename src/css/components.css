@@ -17494,6 +17494,14 @@ body.comp-embedded { background: transparent; }
   /* Reaproveita backgrounds das .status-* classes via composição */
 }
 
+/* Status "Acompanhamento" — exclusivo da sub agregadora "Gastos diversos".
+   Cor neutra (slate) pra sinalizar que não é actionable. */
+.status-acompanhamento {
+  background: color-mix(in srgb, var(--color-text-muted) 12%, var(--color-surface));
+  color: var(--color-text-secondary);
+  border: 1px solid color-mix(in srgb, var(--color-text-muted) 20%, var(--color-border));
+}
+
 /* ============================================================
    PERMISSIONS GATING (Multi-perfil Fase 2)
    body[data-can-write="false"] = viewer

@@ -15,6 +15,7 @@ import { requireWorkspaceId } from '../lib/workspace.js';
 import { listMembers } from '../lib/workspace-members.js';
 import { renderAttribBadge } from '../lib/attribution-badge.js';
 import { canWrite } from '../lib/permissions.js';
+import { ensureGastosDiversosForMonth } from '../lib/gastos-diversos.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -248,6 +249,12 @@ async function loadMonth() {
 
   // 2. Garante que pagamentos tenha entries pro mês (cascata: orcamento → pagamentos)
   await ensurePagamentosForMonth(viewYear, viewMonth);
+
+  // 2b. Garante pagamento de "Gastos diversos" pra cada bloco do mês (recalcula
+  // valor a partir de transações soltas). Não-bloqueante.
+  ensureGastosDiversosForMonth(viewYear, viewMonth).catch((e) =>
+    console.warn('[ensureGastosDiversosForMonth]', e)
+  );
 
   // 3. Busca pagamentos do mês com JOIN
   const mesAno = isoMonth(viewYear, viewMonth);
@@ -1347,8 +1354,13 @@ function renderPagamentoRow(p, catColor) {
   // Quando viewer (sem permissão de escrever), renderiza pill estática.
   // Senão, select interativo.
   const readonly = !canWrite();
+  const isGastosDiversos = sub?.auto_tipo === 'gastos_diversos';
   let statusCellHtml;
-  if (locked) {
+  if (isGastosDiversos) {
+    // Sub agregadora "Gastos diversos": status sempre "Acompanhamento"
+    // (sem botão pra marcar como pago — valor vem de soma de transações soltas)
+    statusCellHtml = `<span class="pagamento-status-readonly status-acompanhamento" title="Soma das transações soltas (sem compromisso vinculado) deste bloco. Atualiza automaticamente.">📊 Acompanhamento</span>`;
+  } else if (locked) {
     statusCellHtml = `<span class="pagamento-status-locked" title="Vinculado a uma transação do banco. Desvincule pela página de Transações pra mudar o status.">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
         Vinculado

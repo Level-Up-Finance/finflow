@@ -17,6 +17,7 @@ import { requireWorkspaceId } from '../lib/workspace.js';
 import { listMembers } from '../lib/workspace-members.js';
 import { renderAttribBadge } from '../lib/attribution-badge.js';
 import { applyBodyRoleGating } from '../lib/permissions.js';
+import { blocoFromDate, recalcGastosDiversosBlocoDebounced } from '../lib/gastos-diversos.js';
 import { getBlocoByGrupo, BLOCO_GRUPOS } from '../lib/super-blocos.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
@@ -2609,6 +2610,13 @@ async function saveTransacao() {
       await recalcFaturaTotal(wasCartaoFatura).catch((e) => console.warn('[recalc]', e));
     }
 
+    // Sync com Gastos Diversos: se transação é despesa solta (sem
+    // pagamento_id) em conta não-cartão, recalcula o bloco.
+    if (savedTr.tipo === 'Despesa' && !savedTr.pagamento_id && !isContaCartao(novaConta)) {
+      const b = blocoFromDate(savedTr.data);
+      if (b) recalcGastosDiversosBlocoDebounced(b.mesAno, b.blocoQuinzenal);
+    }
+
     // Aprende associação banco_desc→contato para futuras importações
     if (contato_id && savedTr.banco_desc) {
       upsertContatoBancoDesc(contato_id, savedTr.banco_desc, subcategoria_id).catch(() => {});
@@ -2726,6 +2734,12 @@ async function execDelete(id) {
   // Recalcula total da fatura afetada (Fase 4)
   if (faturaIdAfetada) {
     await recalcFaturaTotal(faturaIdAfetada).catch((e) => console.warn('[recalc após delete]', e));
+  }
+
+  // Recalcula Gastos Diversos do bloco se a tx era despesa solta não-cartão
+  if (tr && tr.tipo === 'Despesa' && !tr.pagamento_id && !faturaIdAfetada) {
+    const b = blocoFromDate(tr.data);
+    if (b) recalcGastosDiversosBlocoDebounced(b.mesAno, b.blocoQuinzenal);
   }
 
   showToast('Transação excluída', 'success');
