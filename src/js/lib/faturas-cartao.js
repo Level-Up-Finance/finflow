@@ -315,6 +315,102 @@ export async function ensureSubcategoriasFaturas(contas = null) {
 }
 
 // -----------------------------
+// Geração de pagamentos das faturas pro mês visível
+// -----------------------------
+
+/**
+ * Garante pagamento + orcamento_geral pra cada sub fatura_cartao,
+ * pra cada mês em `mesAnos` (lista de 'YYYY-MM-01').
+ *
+ * Path próprio que NÃO depende de occursOn / iniciado_em — calcula
+ * data_vencimento direto do sub.vencimento_dia. Imune ao bug em que
+ * sub criada após o dia do venc no mês fica com 0 ocorrências.
+ *
+ * Idempotente: pula se já existe pagamento pra (sub, data_vencimento).
+ */
+export async function ensurePagamentosFaturaForMonths(mesAnos) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return 0;
+  const wsId = requireWorkspaceId();
+
+  const { data: subs, error: subsErr } = await supabase
+    .from('subcategorias')
+    .select('id, vencimento_dia, moeda')
+    .eq('workspace_id', wsId)
+    .eq('auto_tipo', 'fatura_cartao')
+    .eq('status', 'ativa');
+  if (subsErr || !subs || subs.length === 0) return 0;
+
+  let created = 0;
+  for (const mesAno of mesAnos) {
+    const [y, m] = mesAno.split('-').map(Number);
+    const lastDay = new Date(y, m, 0).getDate();
+
+    for (const sub of subs) {
+      const venDia = Math.min(Number(sub.vencimento_dia) || 1, lastDay);
+      const dataVencimento = `${y}-${String(m).padStart(2, '0')}-${String(venDia).padStart(2, '0')}`;
+      const blocoQuinzenal = venDia <= 15 ? 1 : 2;
+
+      // 1. Garante orcamento_geral entry (idempotente via maybeSingle)
+      let orcId;
+      const { data: orcExisting } = await supabase
+        .from('orcamento_geral')
+        .select('id')
+        .eq('subcategoria_id', sub.id)
+        .eq('mes_ano', mesAno)
+        .maybeSingle();
+
+      if (orcExisting) {
+        orcId = orcExisting.id;
+      } else {
+        const { data: orcNovo, error: orcErr } = await supabase
+          .from('orcamento_geral')
+          .insert({
+            user_id:         user.id,
+            workspace_id:    wsId,
+            subcategoria_id: sub.id,
+            mes_ano:         mesAno,
+            valor_previsto:  0,
+            moeda:           sub.moeda || 'BRL',
+          })
+          .select('id').single();
+        if (orcErr) { console.warn('[ensurePagamentosFatura] orc', orcErr); continue; }
+        orcId = orcNovo.id;
+      }
+
+      // 2. Garante pagamento (idempotente)
+      const { data: pagExisting } = await supabase
+        .from('pagamentos')
+        .select('id')
+        .eq('subcategoria_id', sub.id)
+        .eq('data_vencimento', dataVencimento)
+        .maybeSingle();
+      if (pagExisting) continue;
+
+      const { error: pagErr } = await supabase
+        .from('pagamentos')
+        .insert({
+          user_id:         user.id,
+          workspace_id:    wsId,
+          created_by:      user.id,
+          orcamento_id:    orcId,
+          subcategoria_id: sub.id,
+          mes_ano:         mesAno,
+          bloco_quinzenal: blocoQuinzenal,
+          valor_previsto:  0,
+          valor_real:      0,
+          moeda:           sub.moeda || 'BRL',
+          status:          'A Pagar',
+          data_vencimento: dataVencimento,
+        });
+      if (pagErr) { console.warn('[ensurePagamentosFatura] pag', pagErr); continue; }
+      created++;
+    }
+  }
+  return created;
+}
+
+// -----------------------------
 // Listagem unificada de faturas (passadas + atual + futuras projetadas)
 // -----------------------------
 

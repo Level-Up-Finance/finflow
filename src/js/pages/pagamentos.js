@@ -16,7 +16,7 @@ import { listMembers } from '../lib/workspace-members.js';
 import { renderAttribBadge } from '../lib/attribution-badge.js';
 import { canWrite } from '../lib/permissions.js';
 import { ensureGastosDiversosForMonth } from '../lib/gastos-diversos.js';
-import { ensureSubcategoriasFaturas, checkAndCloseFaturas } from '../lib/faturas-cartao.js';
+import { ensureSubcategoriasFaturas, checkAndCloseFaturas, ensurePagamentosFaturaForMonths } from '../lib/faturas-cartao.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -272,6 +272,22 @@ async function loadMonth() {
 
   // 2. Garante que pagamentos tenha entries pro mês (cascata: orcamento → pagamentos)
   await ensurePagamentosForMonth(viewYear, viewMonth);
+
+  // 2a. Garante pagamentos das subs Fatura — path próprio que NÃO depende
+  // de occursOn / iniciado_em. Imune ao bug onde sub criada após o dia
+  // do venc no mês ficava com 0 ocorrências (Inter venc 5, sub criada dia 24).
+  // Cobre tanto o mês visível quanto o próximo (blocos crossover).
+  try {
+    const blocosForCobertos = getBlocosForMonth(viewYear, viewMonth);
+    const mesesCobertosF = new Set([isoMonth(viewYear, viewMonth)]);
+    for (const b of blocosForCobertos) {
+      mesesCobertosF.add(isoMonth(b.startDate.getFullYear(), b.startDate.getMonth()));
+      mesesCobertosF.add(isoMonth(b.endDate.getFullYear(), b.endDate.getMonth()));
+    }
+    await ensurePagamentosFaturaForMonths(Array.from(mesesCobertosF));
+  } catch (e) {
+    console.warn('[ensurePagamentosFaturaForMonths]', e);
+  }
 
   // 2b. Garante pagamento de "Gastos diversos" pra cada bloco do mês
   // (recalcula valor a partir de transações soltas). AWAIT: senão o fetch
@@ -697,6 +713,10 @@ async function ensureOrcamentoForMonth(year, month) {
   const rows = [];
   for (const sub of cachedSubcategorias) {
     if (!isActiveInMonth(sub, year, month)) continue;
+    // Subs ocultas têm path próprio (ensurePagamentosFaturaForMonth,
+    // ensureGastosDiversosForMonth) — não entram aqui pra evitar
+    // duplicar entries.
+    if (sub.oculta === true) continue;
     const occurrences = countOccurrencesInMonth(sub, year, month);
     if (occurrences === 0) continue;
     const valor = (Number(sub.valor_base) || 0) * occurrences;
@@ -750,6 +770,10 @@ async function ensurePagamentosForMonth(year, month) {
   const rows = [];
   for (const sub of cachedSubcategorias) {
     if (sub.status !== 'ativa') continue;
+    // Subs ocultas (placeholders: Gastos diversos, Fatura X) têm paths
+    // próprios que não passam por occursOn — pula aqui pra evitar
+    // duplicação de pagamentos.
+    if (sub.oculta === true) continue;
 
     for (const bloco of blocos) {
       let cur = new Date(bloco.startDate);
