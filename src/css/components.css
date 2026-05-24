@@ -17527,6 +17527,13 @@ body[data-can-manage="false"] .btn-excluir-projeto {
   display: none !important;
 }
 
+/* Transações — gating de rows/actions */
+body[data-can-write="false"] .trans-recon-confirm,
+body[data-can-write="false"] .trans-row-check,
+body[data-can-write="false"] .trans-actions-col .btn-icon[data-edit] {
+  display: none !important;
+}
+
 /* Delta de dias entre data_pagamento e data_vencimento (na coluna VTO) */
 .pag-vto-delta {
   display: inline-block;

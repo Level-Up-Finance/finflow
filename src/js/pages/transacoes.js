@@ -16,6 +16,7 @@ import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { requireWorkspaceId } from '../lib/workspace.js';
 import { listMembers } from '../lib/workspace-members.js';
 import { renderAttribBadge } from '../lib/attribution-badge.js';
+import { canWrite } from '../lib/permissions.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -945,9 +946,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadAll();
   await membersP;
   render();
+  applyRoleGating();
   // Migração retroativa de descrições de adiantamentos (one-shot, cache em localStorage)
   import('../lib/adiantamentos.js').then((m) => m.regenerarDescricoesAntigas()).catch(() => {});
 });
+
+/**
+ * Aplica gating de role: viewer não vê botões de criar/editar/deletar/reconciliar.
+ * Toggle direto pros botões fixos (header/modal); body[data-can-write] cobre
+ * controles renderizados nos rows da tabela.
+ */
+function applyRoleGating() {
+  const writable = canWrite();
+  document.body.dataset.canWrite = String(writable);
+
+  const toggle = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = writable ? '' : 'none';
+  };
+  toggle('btn-nova-transacao');
+  toggle('btn-bulk-delete');
+  toggle('btn-deletar-transacao'); // dentro do modal
+  toggle('btn-salvar-transacao');  // dentro do modal
+}
 
 // -----------------------------
 // Loaders
