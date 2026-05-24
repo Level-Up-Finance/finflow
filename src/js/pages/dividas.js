@@ -1884,10 +1884,12 @@ async function regenerateOrcamentoGeralForDivida(subId, dvd, tabela) {
   const [y0, m0] = dvd.data_inicio.split('-').map(Number);
 
   // Apaga linhas existentes deste compromisso
+  // Defense in depth: filtra por workspace_id explícito
   const { error: delErr } = await supabase
     .from('orcamento_geral')
     .delete()
-    .eq('subcategoria_id', subId);
+    .eq('subcategoria_id', subId)
+    .eq('workspace_id', requireWorkspaceId());
   if (delErr) {
     console.error('[regenerateOrcamento delete]', delErr);
   }
@@ -2159,9 +2161,11 @@ async function confirmarExcluir() {
     const { error: updErr } = await dividasService.archiveDivida(pendingDeleteId);
     if (updErr) { showToast(`${t('dividas.toast.erro_arquivar', 'Erro ao arquivar')}: ${updErr.message}`, 'error', 8000); return; }
 
+    // Defense in depth: filtra por workspace_id explícito
     const { error: subErr } = await supabase.from('subcategorias')
       .delete()
-      .eq('divida_id', pendingDeleteId);
+      .eq('divida_id', pendingDeleteId)
+      .eq('workspace_id', requireWorkspaceId());
     if (subErr) console.warn('[arquivar] falha ao remover subcategoria', subErr);
 
     showToast(t('dividas.toast.arquivada', 'Dívida arquivada (movida para Terminado)'), 'success');
@@ -2900,10 +2904,12 @@ async function saveHistoricoDivida() {
       if (!user) throw new Error('Sessão expirada');
 
       // Full replace historico
+      // Defense in depth: filtra por workspace_id explícito
       const { error: delErr } = await supabase
         .from('pagamentos_divida_historico')
         .delete()
-        .eq('divida_id', historicoDividaId);
+        .eq('divida_id', historicoDividaId)
+        .eq('workspace_id', requireWorkspaceId());
       if (delErr) throw delErr;
 
       if (rows.length > 0) {

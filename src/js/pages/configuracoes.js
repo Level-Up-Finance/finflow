@@ -820,10 +820,13 @@ async function execDelete() {
       showToast(t('configuracoes.toast.excluir_com_subs', 'Não é possível excluir: existem subcategorias nessa categoria.'), 'error', 8000);
       return;
     }
-    ({ error } = await supabase.from('categorias').delete().eq('id', id));
+    // Defense in depth: filtra por workspace_id explícito em todos os DELETEs
+    const _wsId = requireWorkspaceId();
+    ({ error } = await supabase.from('categorias').delete().eq('id', id).eq('workspace_id', _wsId));
   } else {
     const sub = cachedSubcategorias.find((s) => s.id === id);
     const cat = cachedCategorias.find((c) => c.id === sub?.categoria_id);
+    const _wsId = requireWorkspaceId();
 
     if (sub?.divida_id && cat?.grupo === 'dividas') {
       // Cascade: apaga ou arquiva a dívida vinculada (1:1)
@@ -834,10 +837,10 @@ async function execDelete() {
       if ((count || 0) > 0) {
         // Tem histórico → arquiva a dívida, apaga sub manualmente
         await supabase.from('dividas').update({ status: 'Arquivada' }).eq('id', sub.divida_id);
-        ({ error } = await supabase.from('subcategorias').delete().eq('id', id));
+        ({ error } = await supabase.from('subcategorias').delete().eq('id', id).eq('workspace_id', _wsId));
       } else {
         // Sem histórico → hard delete da dívida (CASCADE apaga a sub via FK)
-        ({ error } = await supabase.from('dividas').delete().eq('id', sub.divida_id));
+        ({ error } = await supabase.from('dividas').delete().eq('id', sub.divida_id).eq('workspace_id', _wsId));
       }
     } else if (sub?.projeto_id && cat?.grupo === 'investimentos') {
       // Cascade: apaga ou arquiva o projeto vinculado (1:1)
@@ -846,7 +849,7 @@ async function execDelete() {
         .select('id', { count: 'exact', head: true })
         .eq('projeto_id', sub.projeto_id);
       // Apaga a sub primeiro (FK é SET NULL, projeto sobrevive para arquivar/deletar)
-      ({ error } = await supabase.from('subcategorias').delete().eq('id', id));
+      ({ error } = await supabase.from('subcategorias').delete().eq('id', id).eq('workspace_id', _wsId));
       if (!error) {
         if ((count || 0) > 0) {
           // Tem histórico → arquiva projeto com backup do compromisso
@@ -858,11 +861,11 @@ async function execDelete() {
             comp_data_inicio:  sub.iniciado_em,
           }).eq('id', sub.projeto_id);
         } else {
-          await supabase.from('projetos_investimento').delete().eq('id', sub.projeto_id);
+          await supabase.from('projetos_investimento').delete().eq('id', sub.projeto_id).eq('workspace_id', _wsId);
         }
       }
     } else {
-      ({ error } = await supabase.from('subcategorias').delete().eq('id', id));
+      ({ error } = await supabase.from('subcategorias').delete().eq('id', id).eq('workspace_id', _wsId));
     }
   }
 

@@ -9,6 +9,7 @@ import { supabase } from '../../lib/supabase.js';
 import { showToast } from '../../components/toast.js';
 import { getCurrentUser } from '../../lib/auth.js';
 import { parseUserNumber } from '../../lib/utils.js';
+import { requireWorkspaceId } from '../../lib/workspace.js';
 
 /** Próximos N meses como [{year, month, mesAno, label}, ...] */
 export function nextNMonths(n = 12) {
@@ -84,15 +85,18 @@ export async function saveValoresMensaisToOrcamento(subcategoriaId, moeda, items
   if (categoriaId) {
     // Índice parcial não suporta ON CONFLICT — usa DELETE + INSERT
     const mesAnos = items.map((it) => it.mes_ano);
+    // Defense in depth: filtra por workspace_id explícito
     const { error: delErr } = await supabase
       .from('orcamento_geral')
       .delete()
       .eq('categoria_id', categoriaId)
-      .in('mes_ano', mesAnos);
+      .in('mes_ano', mesAnos)
+      .eq('workspace_id', requireWorkspaceId());
     if (delErr) console.error('[saveValoresMensais delete]', delErr);
 
     const rows = items.map((it) => ({
       user_id: user.id,
+      workspace_id: requireWorkspaceId(),
       categoria_id: categoriaId,
       mes_ano: it.mes_ano,
       valor_previsto: it.valor_previsto,
@@ -109,6 +113,7 @@ export async function saveValoresMensaisToOrcamento(subcategoriaId, moeda, items
 
   const rows = items.map((it) => ({
     user_id: user.id,
+    workspace_id: requireWorkspaceId(),
     subcategoria_id: subcategoriaId,
     mes_ano: it.mes_ano,
     valor_previsto: it.valor_previsto,

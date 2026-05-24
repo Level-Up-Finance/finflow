@@ -1852,10 +1852,12 @@ async function confirmarAcaoProjeto() {
       if (updErr) throw updErr;
 
       // 2. Remove subcategorias vinculadas (cascades orcamento + pagamentos futuros)
+      // Defense in depth: filtra por workspace_id explícito
       const { error: subErr } = await supabase
         .from('subcategorias')
         .delete()
-        .eq('projeto_id', p.id);
+        .eq('projeto_id', p.id)
+        .eq('workspace_id', requireWorkspaceId());
 
       if (subErr) {
         // Projeto já foi arquivado (status atualizado), mas a remoção da
@@ -1873,12 +1875,15 @@ async function confirmarAcaoProjeto() {
 
     } else {
       // Hard delete — remove subcategorias antes (FK é SET NULL, não CASCADE)
-      await supabase.from('subcategorias').delete().eq('projeto_id', p.id);
+      // Defense in depth: filtra por workspace_id explícito
+      const _wsId = requireWorkspaceId();
+      await supabase.from('subcategorias').delete().eq('projeto_id', p.id).eq('workspace_id', _wsId);
 
       const { error } = await supabase
         .from('projetos_investimento')
         .delete()
-        .eq('id', p.id);
+        .eq('id', p.id)
+        .eq('workspace_id', _wsId);
       if (error) throw error;
 
       showToast(`Projeto "${p.nome}" excluído`, 'success');
@@ -2071,10 +2076,12 @@ async function saveHistoricoInvest() {
       if (!user) throw new Error('Sessão expirada');
 
       // Full replace
+      // Defense in depth: filtra por workspace_id explícito
       const { error: delErr } = await supabase
         .from('aportes_projeto')
         .delete()
-        .eq('projeto_id', historicoInvestId);
+        .eq('projeto_id', historicoInvestId)
+        .eq('workspace_id', requireWorkspaceId());
       if (delErr) throw delErr;
 
       if (rows.length > 0) {

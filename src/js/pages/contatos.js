@@ -2,6 +2,7 @@
 // FinFlow — Contatos
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
+import { requireWorkspaceId } from '../lib/workspace.js';
 import { applyBodyRoleGating } from '../lib/permissions.js';
 import { initSidebar }                  from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
@@ -764,7 +765,8 @@ function bindEvents() {
   });
   document.getElementById('btn-confirm-delete').addEventListener('click', async () => {
     if (!pendingDeleteId) return;
-    const { error } = await supabase.from('contatos').delete().eq('id', pendingDeleteId);
+    // Defense in depth: filtra por workspace_id (extra além da RLS)
+    const { error } = await supabase.from('contatos').delete().eq('id', pendingDeleteId).eq('workspace_id', requireWorkspaceId());
     if (error) { showToast('Erro ao excluir: ' + error.message, 'error'); return; }
     showToast('Contato excluído.', 'success');
     closeConfirmar();

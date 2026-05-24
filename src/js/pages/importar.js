@@ -1170,12 +1170,14 @@ async function doImport() {
       console.warn('[import] update pagamento cross failed', pagErr);
     }
     // Deleta tx manual antiga (fantasma) que tinha sido criada na conta config
+    // Defense in depth: filtra por workspace_id explícito
     const { error: delErr } = await supabase
       .from('transacoes')
       .delete()
       .eq('pagamento_id', item.cross.id)
       .eq('reconciliacao_status', 'manual')
-      .eq('conta_id', item.cross.conta_antiga_id);
+      .eq('conta_id', item.cross.conta_antiga_id)
+      .eq('workspace_id', requireWorkspaceId());
     if (delErr) {
       console.warn('[import] delete tx manual antiga failed', delErr);
     }

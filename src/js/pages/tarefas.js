@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { escapeHtml, showConfirm } from '../lib/utils.js';
+import { requireWorkspaceId } from '../lib/workspace.js';
 import {
   loadTarefasPendentes,
   gerarTarefasImportExtrato,
@@ -92,7 +93,8 @@ function bindEvents() {
     if (action === 'delete') {
       const ok = await showConfirm('Excluir essa tarefa?', { okLabel: 'Excluir', danger: true });
       if (!ok) return;
-      await supabase.from('tarefas_usuario').delete().eq('id', id);
+      // Defense in depth: filtra por workspace_id explícito
+      await supabase.from('tarefas_usuario').delete().eq('id', id).eq('workspace_id', requireWorkspaceId());
       await loadAll();
       render();
       return;

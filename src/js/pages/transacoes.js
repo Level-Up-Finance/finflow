@@ -1273,7 +1273,8 @@ async function execBulkDelete() {
   });
   const allIds = [...new Set([...deletableIds, ...parIds])];
 
-  const { error } = await supabase.from('transacoes').delete().in('id', allIds);
+  // Defense in depth: filtra por workspace_id explícito
+  const { error } = await supabase.from('transacoes').delete().in('id', allIds).eq('workspace_id', requireWorkspaceId());
   if (error) { showToast(`${t('transacoes.toast.erro_excluir', 'Erro ao excluir')}: ${error.message}`, 'error', 8000); return; }
 
   allIds.forEach((id) => {
@@ -2715,7 +2716,8 @@ async function execDelete(id) {
   const parId = tr?.transferencia_par_id || null;
 
   const idsToDelete = parId ? [id, parId] : [id];
-  const { error } = await supabase.from('transacoes').delete().in('id', idsToDelete);
+  // Defense in depth: filtra por workspace_id explícito
+  const { error } = await supabase.from('transacoes').delete().in('id', idsToDelete).eq('workspace_id', requireWorkspaceId());
   if (error) {
     showToast('Erro ao excluir: ' + error.message, 'error', 8000);
     return;

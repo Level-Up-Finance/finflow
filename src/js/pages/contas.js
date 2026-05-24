@@ -2125,7 +2125,8 @@ async function changeStatus(id, newStatus) {
 }
 
 async function deleteConta(id) {
-  const { error } = await supabase.from('contas').delete().eq('id', id);
+  // Defense in depth: filtra por workspace_id explícito (além da RLS)
+  const { error } = await supabase.from('contas').delete().eq('id', id).eq('workspace_id', requireWorkspaceId());
   if (error) {
     console.error('[deleteConta] falhou:', error);
     showToast('Erro ao deletar: ' + error.message, 'error', 8000);
