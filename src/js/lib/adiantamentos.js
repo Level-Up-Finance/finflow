@@ -19,6 +19,7 @@
 // =============================================================
 import { supabase } from './supabase.js';
 import { STORAGE_KEYS } from './storage-keys.js';
+import { requireWorkspaceId } from './workspace.js';
 
 /**
  * Lista adiantamentos do usuário, opcionalmente filtrado por sub.
@@ -116,6 +117,8 @@ export async function registrarAdiantamento(input) {
     .from('transacoes')
     .insert({
       user_id:         user.id,
+      workspace_id:    requireWorkspaceId(),
+      created_by:      user.id,
       data:            input.data_recebimento,
       tipo:            'Receita',
       valor:           valor_liquido,
@@ -134,6 +137,7 @@ export async function registrarAdiantamento(input) {
     .from('adiantamentos_receita')
     .insert({
       user_id:              user.id,
+      workspace_id:         requireWorkspaceId(),
       subcategoria_id:      input.subcategoria_id,
       conta_credito_id:     contaCredito,
       data_recebimento:     input.data_recebimento,
@@ -190,6 +194,7 @@ async function applyDescontoAoOrcamento(subId, mesAno, parcela, userId, moeda) {
     const valor = Math.max(0, base - parcela);
     await supabase.from('orcamento_geral').insert({
       user_id:          userId,
+      workspace_id:     requireWorkspaceId(),
       subcategoria_id:  subId,
       mes_ano:          mesAno,
       valor_previsto:   valor,
@@ -234,7 +239,6 @@ export async function regenerarDescricoesAntigas() {
   const { data: ativos } = await supabase
     .from('adiantamentos_receita')
     .select('id, subcategoria_id, valor_solicitado, valor_liquido, taxa, n_parcelas, mes_inicio_desconto, observacao, transacao_credito_id, subcategorias(nome, apelido)')
-    .eq('user_id', user.id)
     .not('transacao_credito_id', 'is', null);
   if (!ativos || ativos.length === 0) {
     localStorage.setItem(CACHE_KEY, '1');

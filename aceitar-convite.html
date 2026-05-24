@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aceitar convite · FinFlow</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <script>(function(){try{var t=localStorage.getItem("finflow.tema");if(t==="escuro"||(t!=="claro"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.setAttribute("data-theme","dark");}}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=optional" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/variables.css">
+  <link rel="stylesheet" href="src/css/global.css">
+  <link rel="stylesheet" href="src/css/components.css">
+  <link rel="stylesheet" href="src/css/layout.css">
+</head>
+<body class="body-loading">
+  <div class="auth-layout">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="auth-logo-mark"></div>
+        <div class="auth-logo-name">FinFlow</div>
+      </div>
+
+      <div id="convite-loading" class="auth-form">
+        <h1 class="auth-title">Validando convite…</h1>
+        <p class="auth-subtitle">Aguarde um instante.</p>
+      </div>
+
+      <div id="convite-info" class="auth-form hidden">
+        <h1 class="auth-title">Você foi convidado</h1>
+        <p class="auth-subtitle">
+          <strong id="convite-invited-by">Alguém</strong> te convidou para o workspace
+          <strong id="convite-workspace-name">—</strong> como
+          <strong id="convite-role">—</strong>.
+        </p>
+        <div style="display: flex; gap: var(--space-2); margin-top: var(--space-4)">
+          <button type="button" class="btn btn-secondary" id="btn-recusar" style="flex: 1">Recusar</button>
+          <button type="button" class="btn btn-primary" id="btn-aceitar" style="flex: 2">Aceitar e entrar</button>
+        </div>
+      </div>
+
+      <div id="convite-erro" class="auth-form hidden">
+        <h1 class="auth-title">Convite inválido</h1>
+        <p class="auth-subtitle" id="convite-erro-msg">O link pode ter expirado ou já ter sido usado.</p>
+        <a href="/dashboard.html" class="btn btn-primary" style="display: block; text-align: center; margin-top: var(--space-4)">Ir para o Dashboard</a>
+      </div>
+
+      <div id="convite-sucesso" class="auth-form hidden">
+        <h1 class="auth-title">Convite aceito 🎉</h1>
+        <p class="auth-subtitle">Você foi adicionado ao workspace. Redirecionando…</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="src/js/pages/aceitar-convite.js"></script>
+</body>
+</html>

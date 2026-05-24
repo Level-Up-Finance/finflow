@@ -9,6 +9,7 @@
 // • View: tabela apenas
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
+import { requireWorkspaceId } from '../lib/workspace.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -293,7 +294,7 @@ async function criarProjeto(nome) {
   if (!user) return null;
   const { data, error } = await supabase
     .from('projetos_investimento')
-    .insert({ user_id: user.id, nome })
+    .insert({ user_id: user.id, workspace_id: requireWorkspaceId(), created_by: user.id, nome })
     .select()
     .single();
   if (error) {
@@ -486,9 +487,11 @@ async function loadCategorias() {
 async function seedDefaultCategorias() {
   const user = await getCurrentUser();
   if (!user) return;
+  const wsId = requireWorkspaceId();
   const rows = CATEGORIAS_DEFAULT.map((c) => ({
     ...c,
     user_id: user.id,
+    workspace_id: wsId,
     is_default: true,
   }));
   const { error } = await supabase.from('categorias').insert(rows);
@@ -1409,6 +1412,7 @@ async function logHistoryEntries(subcategoriaId, oldData, newData, motivo) {
       entries.push({
         subcategoria_id: subcategoriaId,
         user_id: user.id,
+        workspace_id: requireWorkspaceId(),
         campo: field,
         valor_anterior: oldStr || null,
         valor_novo: newStr || null,

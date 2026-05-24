@@ -14,6 +14,7 @@
 // (silenciosamente, ao escolher o contato).
 // =============================================================
 import { supabase } from './supabase.js';
+import { requireWorkspaceId } from './workspace.js';
 
 /**
  * Carrega todas as regras do usuário (ordenadas por contato_id).
@@ -57,6 +58,7 @@ export async function upsertRule(contatoId, subcategoriaId, autoConfirmar = fals
     .upsert(
       {
         user_id: user.id,
+        workspace_id: requireWorkspaceId(),
         contato_id: contatoId,
         subcategoria_id: subcategoriaId,
         auto_confirmar: !!autoConfirmar,
@@ -73,10 +75,10 @@ export async function upsertRule(contatoId, subcategoriaId, autoConfirmar = fals
 export async function setAutoConfirmar(contatoId, autoConfirmar) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: 'no_user' };
+  // RLS filtra por workspace_id — não precisa eq('user_id')
   const { error } = await supabase
     .from('regras_reconciliacao')
     .update({ auto_confirmar: !!autoConfirmar })
-    .eq('user_id', user.id)
     .eq('contato_id', contatoId);
   return error ? { ok: false, error: error.message } : { ok: true };
 }

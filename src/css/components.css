@@ -4405,6 +4405,186 @@ td .currency-split {
 }
 
 /* ============================================================
+   WORKSPACE SWITCHER (Multi-perfil Fase 2)
+   ============================================================ */
+#workspace-switcher {
+  position: relative;
+}
+
+.ws-switch-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px var(--space-2) 6px var(--space-3);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--color-text-main);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  font-family: inherit;
+  max-width: 200px;
+}
+
+.ws-switch-trigger:hover {
+  background: var(--color-surface-alt);
+}
+
+.ws-switch-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ws-switch-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ws-switch-chevron {
+  display: inline-flex;
+  color: var(--color-text-muted);
+}
+
+.ws-switch-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 280px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-2);
+  z-index: var(--z-dropdown);
+  animation: modal-fade-in var(--transition-fast);
+}
+
+.ws-switch-section-label {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  padding: var(--space-2) var(--space-3);
+}
+
+.ws-switch-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-main);
+  font-size: var(--fs-sm);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.ws-switch-item:hover {
+  background: var(--color-surface-alt);
+}
+
+.ws-switch-item.active {
+  background: var(--color-primary-bg, rgba(109, 94, 245, 0.08));
+}
+
+.ws-switch-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.ws-switch-item-name {
+  font-weight: var(--fw-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ws-switch-item-role {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  text-transform: capitalize;
+}
+
+.ws-switch-item svg {
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.ws-switch-divider {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: var(--space-2) 0;
+}
+
+.ws-switch-action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-main);
+  font-size: var(--fs-sm);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.ws-switch-action:hover {
+  background: var(--color-surface-alt);
+}
+
+.ws-switch-action svg {
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   ATTRIBUTION BADGE (Multi-perfil Fase 2)
+   Avatar mini com inicial colorida, exibido junto ao status
+   pra mostrar "quem marcou como pago/transferido"
+   ============================================================ */
+.pag-status-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pag-attrib {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  cursor: help;
+  box-shadow: 0 0 0 2px var(--color-surface);
+}
+
+/* ============================================================
    PERFIL PAGE (Fase 6.C)
    ============================================================ */
 .perfil-grid {

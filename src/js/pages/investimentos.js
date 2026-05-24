@@ -7,6 +7,9 @@
 // Pago/Cartão das subs atreladas (todos os meses).
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
+import { requireWorkspaceId } from '../lib/workspace.js';
+import { listMembers } from '../lib/workspace-members.js';
+import { renderAttribBadge } from '../lib/attribution-badge.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -121,7 +124,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   bindEvents();
   bindSimulador({ onCreateProject: (prefill) => openProjetoModal(null, prefill) });
   autoAttachDecimalInputs();
+  const membersP = listMembers().catch(() => []);
   await loadAll();
+  await membersP;
 
   colVisEl = initColVisibility({
     storageKey: 'investimentos',
@@ -558,6 +563,7 @@ function renderCard(p) {
           <div class="projeto-card-tags">
             ${p.inclui_no_patrimonio ? `<span class="tag-patrimonio" title="Incluído no cálculo de patrimônio">💎 Patrimônio</span>` : ''}
             ${isParcial ? `<span class="tag-parcial" title="Encerrado antes de atingir a meta">Parcial</span>` : ''}
+            ${renderAttribBadge({ profileId: p.created_by, timestamp: p.created_at, verb: 'criou' })}
           </div>
         </div>
       </header>
@@ -1302,7 +1308,7 @@ async function saveProjeto(event) {
     } else {
       user = await getCurrentUser();
       if (!user) throw new Error('Sessão expirada');
-      response = await supabase.from('projetos_investimento').insert({ ...payload, user_id: user.id }).select().single();
+      response = await supabase.from('projetos_investimento').insert({ ...payload, user_id: user.id, workspace_id: requireWorkspaceId(), created_by: user.id }).select().single();
     }
     if (response.error) throw response.error;
 
@@ -1425,6 +1431,8 @@ async function ensureSubcategoriaForProjeto(projetoId, userId, nomeProjeto, comp
 
   const { error: insErr } = await supabase.from('subcategorias').insert({
     user_id:        userId,
+    workspace_id:   requireWorkspaceId(),
+    created_by:     userId,
     nome:           nomeProjeto,
     tipo:           'Despesa',
     categoria_id:   comp.categoria_id,
@@ -1462,7 +1470,6 @@ async function ensureBareLinkForProjeto(projetoId, userId, proj) {
   // Se já existe sub com mesmo nome sem vínculo, apenas linka — não duplica
   const { data: unlinked } = await supabase.from('subcategorias')
     .select('id')
-    .eq('user_id', userId)
     .eq('categoria_id', catInvest.id)
     .eq('nome', proj.nome)
     .is('projeto_id', null)
@@ -1475,6 +1482,8 @@ async function ensureBareLinkForProjeto(projetoId, userId, proj) {
   const today = new Date().toISOString().slice(0, 10);
   const { error } = await supabase.from('subcategorias').insert({
     user_id:        userId,
+    workspace_id:   requireWorkspaceId(),
+    created_by:     userId,
     nome:           proj.nome,
     tipo:           'Despesa',
     categoria_id:   catInvest.id,

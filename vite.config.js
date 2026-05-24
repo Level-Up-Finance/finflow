@@ -5,6 +5,9 @@ import { resolve } from 'node:path';
 const root = process.cwd();
 const htmlPages = [
   'index',
+  'aceitar-convite',
+  'privacidade',
+  'termos',
   'dashboard',
   'pagamentos',
   'transacoes',

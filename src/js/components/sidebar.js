@@ -3,6 +3,7 @@
 // =============================================================
 import { initTheme } from '../lib/theme.js';
 import { mountHeaderUserMenu } from './header-user-menu.js';
+import { mountWorkspaceSwitcher } from './workspace-switcher.js';
 import { CHANGELOG } from '../lib/changelog.js';
 import { isCurrentUserAdmin } from '../lib/auth.js';
 
@@ -198,5 +199,7 @@ export async function initSidebar(activePage) {
 
   // Monta o menu de perfil no canto superior direito do header
   mountHeaderUserMenu();
+  // Monta o switcher de workspace (antes do user menu)
+  mountWorkspaceSwitcher();
 }
 

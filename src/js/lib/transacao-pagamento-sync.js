@@ -7,6 +7,7 @@
 // =============================================================
 import { supabase } from './supabase.js';
 import { todayISO } from './utils.js';
+import { requireWorkspaceId } from './workspace.js';
 
 /** @typedef {import('./shapes.js').Pagamento} Pagamento */
 /** @typedef {import('./shapes.js').Subcategoria} Subcategoria */
@@ -149,7 +150,7 @@ export async function syncPagamentoToTransacao(pagamento, subcategoria) {
 
   const { error } = await supabase
     .from('transacoes')
-    .insert({ ...payload, user_id: user.id });
+    .insert({ ...payload, user_id: user.id, workspace_id: requireWorkspaceId(), created_by: user.id });
   return error ? { action: 'error', reason: error.message } : { action: 'created' };
 }
 

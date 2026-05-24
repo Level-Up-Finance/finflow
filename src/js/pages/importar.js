@@ -5,6 +5,7 @@
 // e precisam ser confirmadas na página de Transações.
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
+import { requireWorkspaceId } from '../lib/workspace.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -975,6 +976,7 @@ async function doImport() {
     .from('extratos_importados')
     .insert({
       user_id: user.id,
+      workspace_id: requireWorkspaceId(),
       conta_id: selectedContaId,
       formato: detectImportFormat(),
       total_linhas: totalLinhasPreview,
@@ -1007,6 +1009,8 @@ async function doImport() {
     const importTs  = new Date().toISOString();
     const basePayload = {
       user_id:               user.id,
+      workspace_id:          requireWorkspaceId(),
+      created_by:            user.id,
       data:                  row.date,
       tipo,
       valor:                 row.valor,
@@ -1121,6 +1125,8 @@ async function doImport() {
         data_pagamento: item.row.date,
         valor_real: item.row.valor,
         status_atualizado_em: new Date().toISOString(),
+        marked_paid_by: user.id,
+        marked_paid_at: new Date().toISOString(),
       })
       .eq('id', item.pagamento.id);
     if (pagErr) {
@@ -1182,6 +1188,7 @@ async function doImport() {
     const conta = cachedContas.find((c) => c.id === selectedContaId);
     await supabase.from('saldos_bancarios_snapshots').insert({
       user_id: user.id,
+      workspace_id: requireWorkspaceId(),
       conta_id: selectedContaId,
       data:     ledger.data,
       saldo:    ledger.saldo,

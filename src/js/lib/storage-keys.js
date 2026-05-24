@@ -31,6 +31,9 @@ export const STORAGE_KEYS = {
 
   // Novidades: última versão de changelog vista (string semver)
   CHANGELOG_SEEN:   'finflow.changelog.seen',
+
+  // Workspace ativo (multi-perfil). UUID do workspace selecionado.
+  WORKSPACE_CURRENT: 'finflow.workspace.current',
 };
 
 // -------------------------------------------------------

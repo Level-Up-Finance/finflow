@@ -13,6 +13,9 @@
 //   - Fase 4: faturas de cartão de crédito + compromisso automático
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
+import { requireWorkspaceId } from '../lib/workspace.js';
+import { listMembers } from '../lib/workspace-members.js';
+import { renderAttribBadge } from '../lib/attribution-badge.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -458,6 +461,7 @@ async function saveSplits(transacaoId, userId) {
     .map((s, i) => ({
       transacao_id:    transacaoId,
       user_id:         userId,
+      workspace_id:    requireWorkspaceId(),
       valor:           parseUserNumber(String(s.valor || '0')) || 0,
       categoria_id:    s.categoria_id    || null,
       subcategoria_id: s.subcategoria_id || null,
@@ -601,7 +605,7 @@ async function _doCreateSub(nome) {
   const user = await getCurrentUser();
   if (!user) return;
   const { data, error } = await supabase.from('subcategorias').insert({
-    nome: nome.trim(), categoria_id: catId, user_id: user.id, status: 'ativa',
+    nome: nome.trim(), categoria_id: catId, user_id: user.id, workspace_id: requireWorkspaceId(), created_by: user.id, status: 'ativa',
   }).select().single();
   if (error) { showToast('Erro ao criar subcategoria: ' + error.message, 'error'); return; }
   cachedSubcategorias.push(data);
@@ -889,7 +893,7 @@ async function _doCreateSplitSub(idx, nome) {
   const user = await getCurrentUser();
   if (!user) return;
   const { data, error } = await supabase.from('subcategorias').insert({
-    nome: nome.trim(), categoria_id: catId, user_id: user.id, status: 'ativa',
+    nome: nome.trim(), categoria_id: catId, user_id: user.id, workspace_id: requireWorkspaceId(), created_by: user.id, status: 'ativa',
   }).select().single();
   if (error) { showToast('Erro ao criar subcategoria: ' + error.message, 'error'); return; }
   cachedSubcategorias.push(data);
@@ -937,7 +941,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   bindEvents();
   populateMoedaSelect();
   autoAttachDecimalInputs();
+  const membersP = listMembers().catch(() => []);
   await loadAll();
+  await membersP;
   render();
   // Migração retroativa de descrições de adiantamentos (one-shot, cache em localStorage)
   import('../lib/adiantamentos.js').then((m) => m.regenerarDescricoesAntigas()).catch(() => {});
@@ -1679,6 +1685,7 @@ function renderDataRows(items) {
         <td class="trans-td-saldo tabular" data-col="saldo" style="${saldoColor}">${formatCurrencyHTML(saldoVal)}</td>
         <td class="trans-td-actions">
           <div class="trans-actions-col">
+            ${renderAttribBadge({ profileId: t.created_by, timestamp: t.created_at, verb: 'criou' })}
             <input type="checkbox" class="trans-row-check" data-id="${t.id}"
               ${selectedIds.has(t.id) ? 'checked' : ''} title="Selecionar">
             ${reconBtn}
@@ -2351,7 +2358,7 @@ async function upsertContatoBancoDesc(contatoId, bancoDesc, subcategoriaId = nul
   await supabase
     .from('contato_banco_descs')
     .upsert(
-      { user_id: user.id, contato_id: contatoId, banco_desc: bancoDesc, last_subcategoria_id: subcategoriaId || null },
+      { user_id: user.id, workspace_id: requireWorkspaceId(), contato_id: contatoId, banco_desc: bancoDesc, last_subcategoria_id: subcategoriaId || null },
       { onConflict: 'user_id,contato_id,banco_desc' },
     )
     .then(({ error }) => { if (error && !/relation.*contato_banco_descs/i.test(error.message)) console.warn('[upsertCDB]', error); });
@@ -2569,7 +2576,7 @@ async function saveTransacao() {
       } else {
         const user = await getCurrentUser();
         if (!user) throw new Error('Sessão expirada. Faça login novamente.');
-        response = await supabase.from('transacoes').insert({ ...payload, user_id: user.id }).select().single();
+        response = await supabase.from('transacoes').insert({ ...payload, user_id: user.id, workspace_id: requireWorkspaceId(), created_by: user.id }).select().single();
       }
       if (response.error) throw response.error;
       savedTr = response.data;
@@ -2661,8 +2668,9 @@ async function handleTransferSave({ editingId, data, descricao, tags, valor, moe
   }
 
   // Nova transferência: inserir saída
+  const wsId = requireWorkspaceId();
   const { data: saida, error: saidaErr } = await supabase.from('transacoes').insert({
-    data, tipo: 'Transferência', user_id: user.id,
+    data, tipo: 'Transferência', user_id: user.id, workspace_id: wsId, created_by: user.id,
     conta_id, valor, moeda, descricao, tags,
     conta_destino_id, taxa_cambio_oficial, valor_destino: valorEntrada, taxa_cambio_efetiva,
   }).select().single();
@@ -2670,7 +2678,7 @@ async function handleTransferSave({ editingId, data, descricao, tags, valor, moe
 
   // Inserir entrada
   const { data: entrada, error: entradaErr } = await supabase.from('transacoes').insert({
-    data, tipo: 'Transferência', user_id: user.id,
+    data, tipo: 'Transferência', user_id: user.id, workspace_id: wsId, created_by: user.id,
     conta_id: conta_destino_id, valor: valorEntrada, moeda: destMoeda, descricao,
     transferencia_par_id: saida.id,
   }).select().single();

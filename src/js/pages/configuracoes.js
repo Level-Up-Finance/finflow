@@ -2,6 +2,7 @@
 // FinFlow — Página: Configurações (Categorias & Subcategorias)
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
+import { requireWorkspaceId } from '../lib/workspace.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -527,7 +528,7 @@ async function saveCat() {
   } else {
     const ordem = cachedCategorias.length;
     ({ error } = await supabase.from('categorias')
-      .insert({ user_id: user.id, nome, cor, grupo, ordem, is_default: false, descricao }));
+      .insert({ user_id: user.id, workspace_id: requireWorkspaceId(), nome, cor, grupo, ordem, is_default: false, descricao }));
   }
 
   btn.disabled = false;
@@ -708,6 +709,8 @@ async function saveSub() {
 
     const ins = await supabase.from('subcategorias').insert({
       user_id:            user.id,
+      workspace_id:       requireWorkspaceId(),
+      created_by:         user.id,
       nome,
       descricao,
       categoria_id:       resolvedCatId,
@@ -725,7 +728,7 @@ async function saveSub() {
     if (!error && insertedId && isDividasCat) {
       const { data: novaDivida, error: divErr } = await supabase
         .from('dividas')
-        .insert({ user_id: user.id, nome, valor_total: 0, valor_pago: 0, status: 'Ativa' })
+        .insert({ user_id: user.id, workspace_id: requireWorkspaceId(), created_by: user.id, nome, valor_total: 0, valor_pago: 0, status: 'Ativa' })
         .select('id').single();
       if (divErr) {
         showToast('Subcategoria criada, mas erro ao criar dívida: ' + divErr.message, 'warning', 8000);
@@ -738,7 +741,7 @@ async function saveSub() {
     if (!error && insertedId && isInvestCat) {
       const { data: novoProjeto, error: projErr } = await supabase
         .from('projetos_investimento')
-        .insert({ user_id: user.id, nome, status: 'ativo', cor: '#6D5EF5' })
+        .insert({ user_id: user.id, workspace_id: requireWorkspaceId(), created_by: user.id, nome, status: 'ativo', cor: '#6D5EF5' })
         .select('id').single();
       if (projErr) {
         showToast('Subcategoria criada, mas erro ao criar projeto: ' + projErr.message, 'warning', 8000);
@@ -1161,11 +1164,12 @@ async function seedDefaultCategories() {
     { nome: 'Educação e Saúde',   grupo: 'custo_vida',     cor: '#3b82f6', isDefault: false, subs: [] },
   ];
 
+  const wsId = requireWorkspaceId();
   for (let i = 0; i < defaults.length; i++) {
     const d = defaults[i];
     const { data: catData, error: catErr } = await supabase
       .from('categorias')
-      .insert({ user_id: user.id, nome: d.nome, cor: d.cor, grupo: d.grupo, ordem: i, is_default: d.isDefault })
+      .insert({ user_id: user.id, workspace_id: wsId, nome: d.nome, cor: d.cor, grupo: d.grupo, ordem: i, is_default: d.isDefault })
       .select('id')
       .single();
     if (catErr) { console.warn('[seed] cat error:', catErr.message); continue; }
@@ -1173,7 +1177,7 @@ async function seedDefaultCategories() {
     for (const subNome of d.subs) {
       const tipo = d.grupo === 'receitas' ? 'Receita' : 'Despesa';
       await supabase.from('subcategorias').insert({
-        user_id: user.id, nome: subNome, categoria_id: catData.id,
+        user_id: user.id, workspace_id: wsId, created_by: user.id, nome: subNome, categoria_id: catData.id,
         tipo, periodo: 'Mensal', valor_base: 0, iniciado_em: today, status: 'ativa',
       });
     }

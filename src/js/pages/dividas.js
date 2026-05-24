@@ -2,6 +2,9 @@
 // FinFlow — Página: Dívidas
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
+import { requireWorkspaceId } from '../lib/workspace.js';
+import { listMembers } from '../lib/workspace-members.js';
+import { renderAttribBadge } from '../lib/attribution-badge.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -421,7 +424,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadStrings();
   applyTranslationsToDom();
 
+  const membersP = listMembers().catch(() => []);
   await loadAll();
+  await membersP;
 });
 
 /**
@@ -453,6 +458,7 @@ async function refreshIndexedRates(dividas) {
       await dividasService.insertTaxaHistorico({
         divida_id:     d.id,
         user_id:       d.user_id,
+        workspace_id:  d.workspace_id,
         taxa_anterior: atual,
         taxa_nova:     nova,
         data_vigencia: today,
@@ -943,6 +949,7 @@ function renderCard(d) {
           ${d.tipo === 'a_receber' ? `<span class="div-card-tipo-badge div-card-tipo-badge--receber" title="Empréstimo a receber">↙ A receber</span>` : ''}
           ${d.inclui_no_patrimonio ? `<span class="tag-patrimonio" title="Incluído no cálculo de patrimônio">💎 Patrimônio</span>` : ''}
           ${quitada && pago < total ? `<span class="tag-parcial" title="Encerrada antes de quitar o valor total">Parcial</span>` : ''}
+          ${renderAttribBadge({ profileId: d.created_by, timestamp: d.created_at, verb: 'criou' })}
         </div>
         <span class="div-card-credor">${d.tipo === 'a_receber' ? `Devedor: ${d.credor || '—'}` : (d.credor || '')}</span>
       </div>
@@ -1652,6 +1659,8 @@ async function saveDivida(e) {
     tipo: editingTipo, // 'a_pagar' | 'a_receber'
     inclui_no_patrimonio: incluiNoPatrimonio,
     user_id: user.id,
+    workspace_id: requireWorkspaceId(),
+    created_by: user.id,
   };
 
   let error;
@@ -1673,7 +1682,7 @@ async function saveDivida(e) {
   if (savedId) {
     try {
       if (ativoData) {
-        await ativosService.upsertAtivo({ ...ativoData, divida_id: savedId, user_id: user.id });
+        await ativosService.upsertAtivo({ ...ativoData, divida_id: savedId, user_id: user.id, workspace_id: requireWorkspaceId() });
       } else {
         // Desmarcou "Incluir" — se existia ativo, remove
         const { data: existing } = await ativosService.getAtivoByDivida(savedId);
@@ -1738,10 +1747,9 @@ async function ensureSubcategoriaForDivida(dividaId, dvd) {
   }
   const subExistente = existing && existing.length > 0 ? existing[0].id : null;
 
-  // Busca categoria "Dívidas"
+  // Busca categoria "Dívidas" — RLS filtra por workspace
   const { data: cats, error: catSelErr } = await supabase.from('categorias')
-    .select('id, nome')
-    .eq('user_id', dvd.user_id);
+    .select('id, nome');
   if (catSelErr) {
     showToast('Aviso: falha ao buscar categoria Dívidas — ' + catSelErr.message, 'error', 8000);
     return;
@@ -1782,6 +1790,8 @@ async function ensureSubcategoriaForDivida(dividaId, dvd) {
 
   const subPayload = {
     user_id:        dvd.user_id,
+    workspace_id:   dvd.workspace_id,
+    created_by:     dvd.user_id,
     nome:           dvd.nome,
     tipo:           compTipo,
     categoria_id:   catDividas.id,
@@ -1846,6 +1856,7 @@ async function regenerateOrcamentoGeralForDivida(subId, dvd, tabela) {
     const mesAno = `${year}-${String(month).padStart(2, '0')}-01`;
     return {
       user_id: dvd.user_id,
+      workspace_id: dvd.workspace_id,
       subcategoria_id: subId,
       mes_ano: mesAno,
       valor_previsto: Number(Number(p.parcela).toFixed(2)),
@@ -1886,14 +1897,13 @@ async function ensureBareLinkForDivida(dividaId, dvd, user) {
 
   // Busca categoria do grupo "dividas" (usa grupo, não nome, para ser robusto)
   const { data: cats } = await supabase.from('categorias')
-    .select('id, grupo').eq('user_id', dvd.user_id).eq('grupo', 'dividas').limit(1);
+    .select('id, grupo').eq('grupo', 'dividas').limit(1);
   const catDividas = (cats || [])[0];
   if (!catDividas) return;
 
   // Se já existe sub com mesmo nome sem vínculo, apenas linka — não duplica
   const { data: unlinked } = await supabase.from('subcategorias')
     .select('id')
-    .eq('user_id', dvd.user_id)
     .eq('categoria_id', catDividas.id)
     .eq('nome', dvd.nome)
     .is('divida_id', null)
@@ -1908,6 +1918,8 @@ async function ensureBareLinkForDivida(dividaId, dvd, user) {
 
   const { error } = await supabase.from('subcategorias').insert({
     user_id:        user.id,
+    workspace_id:   requireWorkspaceId(),
+    created_by:     user.id,
     nome:           dvd.nome,
     tipo:           compTipo,
     categoria_id:   catDividas.id,
@@ -2299,6 +2311,7 @@ async function saveParcela() {
       return {
         divida_id:           pagarParcelaId,
         user_id:             user.id,
+        workspace_id:        requireWorkspaceId(),
         data,
         valor:               valorRow,
         descricao:           `Parcela ${r.n}/${n}`,
@@ -2333,7 +2346,7 @@ async function saveParcela() {
       ? `Parcela ${rows[0].n}/${n} — ${d.nome}`
       : `Parcelas ${rows[0].n}–${rows[rows.length - 1].n}/${n} — ${d.nome}`;
     const { error: transErr } = await supabase.from('transacoes').insert({
-      user_id: user.id, conta_id: contaIdPgto, tipo: 'Despesa',
+      user_id: user.id, workspace_id: requireWorkspaceId(), created_by: user.id, conta_id: contaIdPgto, tipo: 'Despesa',
       valor: valorRealEfetivo, data, descricao: descTrans,
       divida_id: pagarParcelaId,
       contato_id: d.contato_id || null,
@@ -2591,6 +2604,7 @@ async function saveAtualizarTaxa() {
     const { error: histErr } = await dividasService.insertTaxaHistorico({
       divida_id:     atualizarTaxaId,
       user_id:       user.id,
+      workspace_id:  requireWorkspaceId(),
       taxa_anterior: d.juros_percentual,
       taxa_nova:     novaTaxa,
       data_vigencia: vigencia,
@@ -2677,6 +2691,7 @@ function renderTable(dividas) {
           <span class="divida-tabela-nome">
             <span class="divida-tabela-dot" style="background:${cor};"></span>
             ${escapeHtml(d.nome)}
+            ${renderAttribBadge({ profileId: d.created_by, timestamp: d.created_at, verb: 'criou' })}
           </span>
         </td>
         <td data-col="credor" class="text-muted-if-empty">${d.credor ? escapeHtml(d.credor) : '<span class="text-muted">—</span>'}</td>
@@ -2848,7 +2863,7 @@ async function saveHistoricoDivida() {
       if (rows.length > 0) {
         const { error: insErr } = await supabase
           .from('pagamentos_divida_historico')
-          .insert(rows.map((r) => ({ ...r, divida_id: historicoDividaId, user_id: user.id })));
+          .insert(rows.map((r) => ({ ...r, divida_id: historicoDividaId, user_id: user.id, workspace_id: requireWorkspaceId() })));
         if (insErr) throw insErr;
       }
 

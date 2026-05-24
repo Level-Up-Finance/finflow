@@ -14,6 +14,7 @@
 // (registrado como alocação destino_tipo='rollover').
 // =============================================================
 import { supabase } from './supabase.js';
+import { requireWorkspaceId } from './workspace.js';
 
 /**
  * Carrega alocações dos blocos do mês (todas, agrupadas por bloco_indice).
@@ -53,6 +54,7 @@ export async function criarAlocacao({
 
   const payload = {
     user_id: user.id,
+    workspace_id: requireWorkspaceId(),
     mes_ano,
     bloco_indice,
     destino_tipo,

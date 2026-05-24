@@ -11,6 +11,9 @@
 //  • Editar pagamento NÃO altera orçamento (são separados)
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
+import { requireWorkspaceId } from '../lib/workspace.js';
+import { listMembers } from '../lib/workspace-members.js';
+import { renderAttribBadge } from '../lib/attribution-badge.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -83,9 +86,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   initCurrencyWidget('currency-widget');
   bindEvents();
   bindAlocacaoEvents();
+  // Carrega membros do workspace em paralelo (pra atribuição "Maria marcou…")
+  const membersP = listMembers().catch(() => []);
   await loadCategorias();
   await loadSubcategorias();
   await loadContas();
+  await membersP; // garante cache populado antes do render
   await loadMonth();
 });
 
@@ -713,6 +719,8 @@ async function ensurePagamentosForMonth(year, month) {
             const valorPorOcorrencia = Number(orc.valor_previsto) / occInVenMes;
             rows.push({
               user_id: user.id,
+              workspace_id: requireWorkspaceId(),
+              created_by: user.id,
               orcamento_id: orc.id,
               subcategoria_id: sub.id,
               mes_ano: mesAno,
@@ -750,7 +758,6 @@ async function ensurePagamentosForMonth(year, month) {
     const { data: existentes, error: selectError } = await supabase
       .from('pagamentos')
       .select('subcategoria_id, data_vencimento')
-      .eq('user_id', user.id)
       .in('subcategoria_id', subIdsAll)
       .in('data_vencimento', datasAll)
       .or('valor_real.is.null,valor_real.gte.0');
@@ -784,7 +791,6 @@ async function ensurePagamentosForMonth(year, month) {
   // com parcelas iguais) e orcamento_geral para taxa variável.
   // Necessário porque o upsert acima usa ignoreDuplicates:true e não atualiza linhas existentes.
   const PENDENTE = ['A Pagar', 'A Transferir'];
-  const user2 = user; // user já obtido acima
   for (const sub of cachedSubcategorias) {
     if (!sub.divida_id) continue;
 
@@ -808,7 +814,6 @@ async function ensurePagamentosForMonth(year, month) {
       .update({ valor_previsto: valorSinc, valor_real: valorSinc })
       .eq('subcategoria_id', sub.id)
       .eq('mes_ano', mesAno)
-      .eq('user_id', user2.id)
       .in('status', PENDENTE);
   }
 }
@@ -1346,6 +1351,13 @@ function renderPagamentoRow(p, catColor) {
         ${statusOptions}
       </select>`;
 
+  // Atribuição: "Maria marcou" — só renderiza em workspace compartilhado.
+  const markedByHtml = renderAttribBadge({
+    profileId: p.marked_paid_by,
+    timestamp: p.marked_paid_at,
+    verb: 'marcou',
+  });
+
   // Indicador de observação
   const obsIcon = hasObs
     ? `<span class="obs-indicator" title="${escapeHtml(p.observacao)}">
@@ -1454,7 +1466,7 @@ function renderPagamentoRow(p, catColor) {
           />
         </span>
       </td>
-      <td>${statusCellHtml}</td>
+      <td><div class="pag-status-cell">${statusCellHtml}${markedByHtml}</div></td>
     </tr>
   `;
 }
@@ -1874,7 +1886,7 @@ async function saveStatus(select) {
     return;
   }
 
-  // Salva status + data_pagamento (se aplicável) + audit timestamp
+  // Salva status + data_pagamento (se aplicável) + audit timestamp + attribution
   const updatePayload = {
     status: newStatus,
     status_atualizado_em: new Date().toISOString(),
@@ -1884,10 +1896,18 @@ async function saveStatus(select) {
     // Se usuário escolheu conta diferente da configurada, guarda em conta_id_efetiva.
     // Se igual (ou cancelou a escolha), limpa pra usar o default da subcategoria.
     updatePayload.conta_id_efetiva = contaEfetivaEscolhida;
+    // Atribuição: quem marcou como pago + quando
+    const _u = await getCurrentUser();
+    if (_u) {
+      updatePayload.marked_paid_by = _u.id;
+      updatePayload.marked_paid_at = new Date().toISOString();
+    }
   } else {
-    // Reverte: limpa data_pagamento e conta_efetiva
+    // Reverte: limpa data_pagamento, conta_efetiva e attribution
     updatePayload.data_pagamento = null;
     updatePayload.conta_id_efetiva = null;
+    updatePayload.marked_paid_by = null;
+    updatePayload.marked_paid_at = null;
   }
 
   const { error } = await supabase
@@ -1976,8 +1996,9 @@ async function createTransferPairAndUpdateStatus(pag, select, dataPagamento = nu
     }
 
     // Insere saída
+    const wsId = requireWorkspaceId();
     const { data: saida, error: saidaErr } = await supabase.from('transacoes').insert({
-      data, tipo: 'Transferência', user_id: user.id,
+      data, tipo: 'Transferência', user_id: user.id, workspace_id: wsId, created_by: user.id,
       conta_id: contaOrigemId, valor, moeda, descricao,
       conta_destino_id: contaDestinoId,
       pagamento_id: pag.id,
@@ -1986,7 +2007,7 @@ async function createTransferPairAndUpdateStatus(pag, select, dataPagamento = nu
 
     // Insere entrada
     const { data: entrada, error: entradaErr } = await supabase.from('transacoes').insert({
-      data, tipo: 'Transferência', user_id: user.id,
+      data, tipo: 'Transferência', user_id: user.id, workspace_id: wsId, created_by: user.id,
       conta_id: contaDestinoId, valor, moeda, descricao,
       transferencia_par_id: saida.id,
     }).select().single();
@@ -2006,6 +2027,8 @@ async function createTransferPairAndUpdateStatus(pag, select, dataPagamento = nu
         data_pagamento: dataPagamento || null,
         conta_id_efetiva: contaEfetivaEscolhida,
         status_atualizado_em: new Date().toISOString(),
+        marked_paid_by: user.id,
+        marked_paid_at: new Date().toISOString(),
       })
       .eq('id', pag.id);
     if (pagErr) throw pagErr;

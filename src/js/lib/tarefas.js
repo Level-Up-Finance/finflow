@@ -8,6 +8,7 @@
 // =============================================================
 import { supabase } from './supabase.js';
 import { STORAGE_KEYS } from './storage-keys.js';
+import { requireWorkspaceId } from './workspace.js';
 
 const SESSION_CACHE_KEY       = STORAGE_KEYS.TAREFAS_GENERATED_AT;
 const SESSION_CACHE_KEY_RECON = STORAGE_KEYS.TAREFAS_RECON_AT;
@@ -59,7 +60,6 @@ export async function gerarTarefasImportExtrato({ force = false } = {}) {
   const { data: contasRaw } = await supabase
     .from('contas')
     .select('id, nome, apelido, frequencia_importacao_dias, status')
-    .eq('user_id', user.id)
     .eq('status', 'ativa');
   const contas = (contasRaw || [])
     .map((c) => ({ ...c, _freq: c.frequencia_importacao_dias == null ? 30 : c.frequencia_importacao_dias }))
@@ -116,6 +116,7 @@ export async function gerarTarefasImportExtrato({ force = false } = {}) {
       : `Você ainda não importou extrato dessa conta.`;
     novas.push({
       user_id: user.id,
+      workspace_id: requireWorkspaceId(),
       tipo: 'import_extrato',
       titulo: `Importar extrato — ${nomeExib}`,
       descricao,
@@ -164,7 +165,6 @@ export async function gerarTarefasReconciliacaoPendente({ force = false } = {}) 
   const { data: pendentes } = await supabase
     .from('transacoes')
     .select('conta_id')
-    .eq('user_id', user.id)
     .eq('reconciliacao_status', 'importado');
   const countByConta = new Map();
   for (const t of pendentes || []) {
@@ -207,6 +207,7 @@ export async function gerarTarefasReconciliacaoPendente({ force = false } = {}) 
     const nomeExib = conta?.apelido?.trim() || conta?.nome || 'Conta';
     novas.push({
       user_id: user.id,
+      workspace_id: requireWorkspaceId(),
       tipo: 'reconciliacao_pendente',
       titulo: `Reconciliar transações — ${nomeExib}`,
       descricao: `Você tem ${count} transação${count > 1 ? 'ões' : ''} importada${count > 1 ? 's' : ''} esperando confirmação.`,
@@ -259,7 +260,6 @@ export async function autoConcluirTarefas(evento) {
   let query = supabase
     .from('tarefas_usuario')
     .select('id, auto_completa_quando')
-    .eq('user_id', user.id)
     .eq('status', 'pendente')
     .not('auto_completa_quando', 'is', null);
   const { data: tarefas } = await query;

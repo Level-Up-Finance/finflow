@@ -21,6 +21,7 @@
 // =============================================================
 import { supabase } from './supabase.js';
 import { todayISO } from './utils.js';
+import { requireWorkspaceId } from './workspace.js';
 
 const TIPO_CARTAO = 'Cartão de Crédito';
 const NOME_CATEGORIA_CARTOES = 'Cartões';
@@ -92,7 +93,6 @@ export async function ensureCategoriaCartoes() {
   const { data: existing } = await supabase
     .from('categorias')
     .select('id')
-    .eq('user_id', user.id)
     .eq('nome', NOME_CATEGORIA_CARTOES)
     .maybeSingle();
   if (existing) return existing.id;
@@ -101,6 +101,7 @@ export async function ensureCategoriaCartoes() {
     .from('categorias')
     .insert({
       user_id:    user.id,
+      workspace_id: requireWorkspaceId(),
       nome:       NOME_CATEGORIA_CARTOES,
       grupo:      'custo_vida',
       cor:        '#7E57C2',
@@ -129,7 +130,6 @@ export async function ensureSubcategoriaFatura(conta) {
   const { data: existing } = await supabase
     .from('subcategorias')
     .select('id')
-    .eq('user_id', user.id)
     .eq('categoria_id', categoriaId)
     .eq('nome', nome)
     .maybeSingle();
@@ -139,6 +139,8 @@ export async function ensureSubcategoriaFatura(conta) {
     .from('subcategorias')
     .insert({
       user_id:        user.id,
+      workspace_id:   requireWorkspaceId(),
+      created_by:     user.id,
       categoria_id:   categoriaId,
       nome,
       tipo:           'Despesa',
@@ -170,7 +172,6 @@ async function upsertFatura(conta, mesReferencia) {
   const { data: existing } = await supabase
     .from('faturas_cartao')
     .select('id')
-    .eq('user_id', user.id)
     .eq('conta_id', conta.id)
     .eq('mes_referencia', mesReferencia)
     .maybeSingle();
@@ -184,6 +185,7 @@ async function upsertFatura(conta, mesReferencia) {
     .from('faturas_cartao')
     .insert({
       user_id:         user.id,
+      workspace_id:    requireWorkspaceId(),
       conta_id:        conta.id,
       mes_referencia:  mesReferencia,
       data_fechamento: dataFechamento,
@@ -269,7 +271,6 @@ export async function checkAndCloseFaturas() {
   const { data: abertas, error } = await supabase
     .from('faturas_cartao')
     .select('*, contas(id, nome, apelido, tipo, fec_fatura, vencimento)')
-    .eq('user_id', user.id)
     .eq('status', 'aberta')
     .lt('data_fechamento', today);
   if (error) {
@@ -300,6 +301,7 @@ export async function checkAndCloseFaturas() {
       .upsert(
         {
           user_id:        user.id,
+          workspace_id:   requireWorkspaceId(),
           subcategoria_id: subId,
           mes_ano:        mesAno,
           valor_previsto: Number(fat.valor_total) || 0,

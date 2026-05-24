@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase.js';
 import { showToast } from '../../components/toast.js';
 import { openModal, closeModal } from '../../components/modal.js';
 import { getCurrentUser } from '../../lib/auth.js';
+import { requireWorkspaceId } from '../../lib/workspace.js';
 import { escapeHtml, todayISO, parseUserNumber } from '../../lib/utils.js';
 import { t } from '../../lib/textos.js';
 import { collectValoresMensais, saveValoresMensaisToOrcamento } from './valores-mensais.js';
@@ -155,6 +156,8 @@ export async function saveCatDirectCompromisso(deps) {
       const user = await getCurrentUser();
       const { data: novaDivida, error: divErr } = await supabase.from('dividas').insert({
         user_id:         user.id,
+        workspace_id:    requireWorkspaceId(),
+        created_by:      user.id,
         nome:            cat.nome,
         valor_total:     valorBaseParsed || 0,
         valor_pago:      0,
@@ -346,7 +349,7 @@ export async function saveCompromisso(event, deps) {
           response = await supabase.from('subcategorias').update({ ...payload }).eq('id', existing.id).select().single();
           subcategoriaMsg = `Esta ${entidade} já existia em Configurações. O compromisso foi vinculado a ela.`;
         } else {
-          response = await supabase.from('subcategorias').insert({ ...payload, user_id: user.id }).select().single();
+          response = await supabase.from('subcategorias').insert({ ...payload, user_id: user.id, workspace_id: requireWorkspaceId(), created_by: user.id }).select().single();
           subcategoriaMsg = `Já existe um compromisso com esse nome nessa categoria. Um novo foi criado mesmo assim.`;
         }
       } else {
@@ -374,6 +377,8 @@ export async function saveCompromisso(event, deps) {
       const user = await getCurrentUser();
       const { data: novaDivida, error: divErr } = await supabase.from('dividas').insert({
         user_id:      user.id,
+        workspace_id: requireWorkspaceId(),
+        created_by:   user.id,
         nome:         payload.apelido || payload.nome,
         valor_total:  0,  // sem configuração — usuário define em Dívidas
         valor_pago:   0,
@@ -400,11 +405,13 @@ export async function saveCompromisso(event, deps) {
     if (isInvestCat && projetoRaw === '__new__') {
       const user = await getCurrentUser();
       const { data: novoProjeto, error: projErr } = await supabase.from('projetos_investimento').insert({
-        user_id:   user.id,
-        nome:      payload.apelido || payload.nome,
-        meta_valor: null,  // sem configuração — usuário define em Investimentos
-        status:    'ativo',
-        cor:       '#6D5EF5',
+        user_id:      user.id,
+        workspace_id: requireWorkspaceId(),
+        created_by:   user.id,
+        nome:         payload.apelido || payload.nome,
+        meta_valor:   null,  // sem configuração — usuário define em Investimentos
+        status:       'ativo',
+        cor:          '#6D5EF5',
       }).select('id').single();
       if (projErr) {
         showToast('Compromisso salvo, mas erro ao criar projeto: ' + projErr.message, 'warning', 8000);

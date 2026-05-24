@@ -11,6 +11,7 @@
 // • Tudo em BRL nesta versão (4.A) — câmbio na 4.B
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
+import { requireWorkspaceId } from '../lib/workspace.js';
 import { initSidebar } from '../components/sidebar.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
@@ -554,6 +555,7 @@ async function ensureOrcamentoForMonth(year, month) {
     const valor = (Number(sub.valor_base) || 0) * occurrences;
     rows.push({
       user_id: user.id,
+      workspace_id: requireWorkspaceId(),
       subcategoria_id: sub.id,
       mes_ano: mesAno,
       valor_previsto: valor,
@@ -568,7 +570,6 @@ async function ensureOrcamentoForMonth(year, month) {
     const { error: delErr } = await supabase
       .from('orcamento_geral')
       .delete()
-      .eq('user_id', user.id)
       .eq('mes_ano', mesAno)
       .in('subcategoria_id', staleSubIds)
       .is('cambio_travado', null);
@@ -1303,6 +1304,7 @@ async function ensureOrcamentoFor12Months() {
       const valor = (Number(sub.valor_base) || 0) * occurrences;
       allRows.push({
         user_id: user.id,
+        workspace_id: requireWorkspaceId(),
         subcategoria_id: sub.id,
         mes_ano: mesAno,
         valor_previsto: valor,

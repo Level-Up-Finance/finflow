@@ -6,6 +6,7 @@
 // • Fluxo: arquivar antes de deletar
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
+import { requireWorkspaceId } from '../lib/workspace.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -1532,7 +1533,6 @@ async function renderCaixinhasSection() {
   const { data: caixinhas } = await supabase
     .from('subcategorias')
     .select('id, nome, apelido, categoria_id, conta_id, conta_destino_id, valor_base, valor_variavel, moeda, periodo, vencimento_dia, dia_semana, intervalo_semanas, iniciado_em, terminado_em, descricao, tipo_pagamento, status, tipo')
-    .eq('user_id', user.id)
     .eq('tipo', 'Caixinha')
     .eq('status', 'ativa')
     .order('nome');
@@ -1546,7 +1546,6 @@ async function renderCaixinhasSection() {
   const { data: pagsTrn } = await supabase
     .from('pagamentos')
     .select('subcategoria_id, valor_real')
-    .eq('user_id', user.id)
     .eq('status', 'Transferido')
     .in('subcategoria_id', subIds);
 
@@ -1562,7 +1561,6 @@ async function renderCaixinhasSection() {
   const { data: pagsMes } = await supabase
     .from('pagamentos')
     .select('subcategoria_id, valor_previsto, valor_real, status')
-    .eq('user_id', user.id)
     .eq('mes_ano', mesAno)
     .neq('status', 'Cancelado')
     .in('subcategoria_id', subIds);
@@ -1577,7 +1575,6 @@ async function renderCaixinhasSection() {
   const { data: pagsHist } = await supabase
     .from('pagamentos')
     .select('subcategoria_id, data_vencimento, valor_real')
-    .eq('user_id', user.id)
     .eq('status', 'Transferido')
     .in('subcategoria_id', subIds)
     .order('data_vencimento', { ascending: false })
@@ -1813,7 +1810,6 @@ async function submitCaixinhaResgate() {
     const { data: orcExistente } = await supabase
       .from('orcamento_geral')
       .select('id')
-      .eq('user_id', user.id)
       .eq('subcategoria_id', cx.id)
       .eq('mes_ano', mesAno)
       .maybeSingle();
@@ -1825,6 +1821,7 @@ async function submitCaixinhaResgate() {
         .from('orcamento_geral')
         .insert({
           user_id:         user.id,
+          workspace_id:    requireWorkspaceId(),
           subcategoria_id: cx.id,
           mes_ano:         mesAno,
           valor_previsto:  0,
@@ -1843,6 +1840,10 @@ async function submitCaixinhaResgate() {
 
     const { data: pagInserted, error: pagErr } = await supabase.from('pagamentos').insert({
       user_id:         user.id,
+      workspace_id:    requireWorkspaceId(),
+      created_by:      user.id,
+      marked_paid_by:  user.id,
+      marked_paid_at:  new Date().toISOString(),
       orcamento_id:    orcId,
       subcategoria_id: cx.id,
       mes_ano:         mesAno,

@@ -9,6 +9,22 @@ import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 const HOME_PATH = '/dashboard.html';
 
+/**
+ * Resolve pra onde redirecionar após login. Se ?redirect= está presente
+ * e é uma URL relativa segura (mesma origem, sem protocol://), usa ela.
+ * Caso contrário, volta pro dashboard. Evita open-redirect.
+ */
+function resolveRedirect() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const r = params.get('redirect');
+    if (!r) return HOME_PATH;
+    // Apenas caminhos relativos começando com / e sem // (que iniciaria protocol-relative)
+    if (r.startsWith('/') && !r.startsWith('//')) return r;
+  } catch { /* ok */ }
+  return HOME_PATH;
+}
+
 // -----------------------------
 // Helpers
 // -----------------------------
@@ -80,7 +96,7 @@ async function handleLogin(event) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     showToast(t('login.toast.bem_vindo', 'Bem-vindo de volta!'), 'success');
-    setTimeout(() => { window.location.href = HOME_PATH; }, 400);
+    setTimeout(() => { window.location.href = resolveRedirect(); }, 400);
   } catch (err) {
     const msg = (err.message || '').toLowerCase();
     if (msg.includes('invalid login credentials')) {
@@ -131,7 +147,7 @@ async function handleSignup(event) {
     if (data.session) {
       // Email confirmation desabilitado → já logado
       showToast(`Conta criada! Bem-vindo, ${nome}!`, 'success');
-      setTimeout(() => { window.location.href = HOME_PATH; }, 600);
+      setTimeout(() => { window.location.href = resolveRedirect(); }, 600);
     } else {
       // Confirmation habilitada → precisa confirmar email
       showToast(t('login.toast.conta_criada_confirmacao', 'Conta criada! Verifique seu email pra confirmar antes de entrar.'), 'success', 8000);

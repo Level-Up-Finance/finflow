@@ -2,6 +2,7 @@
 // FinFlow — Autenticação e Session Guard
 // =============================================================
 import { supabase, isSupabaseConfigured } from './supabase.js';
+import { bootstrapWorkspace, clearWorkspaceState } from './workspace.js';
 // Importa theme.js pelo efeito colateral — aplica tema persistido
 // imediatamente, antes do primeiro render.
 import './theme.js';
@@ -38,6 +39,18 @@ export async function guardSession() {
     window.location.href = LOGIN_PATH + '?suspenso=1';
     return null;
   }
+  // Bootstrap do workspace ativo. Antes de qualquer query de domínio
+  // rodar, garantimos que getCurrentWorkspaceId() vai retornar um UUID
+  // válido. Falha hard: se o user não tem workspace algum, é bug de
+  // setup (trigger handle_new_user deveria ter criado um).
+  try {
+    await bootstrapWorkspace();
+  } catch (err) {
+    console.error('[guardSession] bootstrapWorkspace falhou:', err);
+    // Não bloqueia o login — algumas páginas (perfil, configuracoes
+    // mínimas) podem funcionar sem workspace. Páginas de domínio
+    // devem chamar requireWorkspaceId() e tratar o throw.
+  }
   return session;
 }
 
@@ -67,6 +80,7 @@ export async function getCurrentUser() {
  * Encerra sessão e redireciona pro login.
  */
 export async function logout() {
+  clearWorkspaceState();
   await supabase.auth.signOut();
   window.location.href = LOGIN_PATH;
 }

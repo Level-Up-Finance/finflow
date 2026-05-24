@@ -14,6 +14,7 @@
 
 import { supabase } from '../lib/supabase.js';
 import { getCurrentUser } from '../lib/auth.js';
+import { requireWorkspaceId } from '../lib/workspace.js';
 import { showToast } from './toast.js';
 import { escapeHtml } from '../lib/utils.js';
 import {
@@ -165,7 +166,7 @@ export function openContatoModal({ initialData = {}, modo = 'create', editingId 
           const r = await supabase.from('contatos').update(payload).eq('id', editingId).select().single();
           result = r;
         } else {
-          const r = await supabase.from('contatos').insert({ ...payload, user_id: user.id }).select().single();
+          const r = await supabase.from('contatos').insert({ ...payload, user_id: user.id, workspace_id: requireWorkspaceId() }).select().single();
           result = r;
         }
         if (result.error) throw result.error;
