@@ -27,6 +27,7 @@ import { findBank, logoUrl } from '../lib/banks.js';
 import { syncPagamentoToTransacao, isPaidStatus, findTransacaoLinkedToPagamento } from '../lib/transacao-pagamento-sync.js';
 import { showDateConfirmPopover } from '../components/date-confirm-popover.js';
 import { escapeHtml, formatDateBR, isoMonth, parseUserNumber, showConfirm } from '../lib/utils.js';
+import { occursOn, countOccurrencesInMonth } from '../lib/recurrence.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 
 // -----------------------------
@@ -2164,56 +2165,12 @@ function syncWithFeedback(pagamento, subcategoria) {
 }
 
 // -----------------------------
-// Recurrence helpers (duplicado de orcamento.js)
+// Recurrence helpers
 // -----------------------------
-function occursOn(c, date) {
-  const target = new Date(date);
-  target.setHours(0, 0, 0, 0);
-
-  const start = c.iniciado_em ? new Date(c.iniciado_em + 'T00:00:00') : null;
-  if (start && target < start) return false;
-
-  if (c.terminado_em) {
-    const term = new Date(c.terminado_em + 'T00:00:00');
-    if (target > term) return false;
-  }
-
-  if (c.periodo === 'Único') {
-    return start && target.getTime() === start.getTime();
-  }
-  if (c.periodo === 'Mensal') {
-    return c.vencimento_dia === target.getDate();
-  }
-  if (c.periodo === 'Anual') {
-    return start
-      && c.vencimento_dia === target.getDate()
-      && start.getMonth() === target.getMonth();
-  }
-  if (c.periodo === 'Semanal') {
-    if (c.dia_semana !== target.getDay()) return false;
-    const n = Number(c.intervalo_semanas) || 1;
-    if (n <= 1) return true;
-    if (!start) return true;
-    const diff = Math.round((target - start) / (24 * 60 * 60 * 1000));
-    return diff >= 0 && diff % (n * 7) === 0;
-  }
-  if (c.periodo === 'Quinzenal') {
-    if (!start || c.dia_semana !== target.getDay()) return false;
-    const diff = Math.round((target - start) / (24 * 60 * 60 * 1000));
-    return diff >= 0 && diff % 14 === 0;
-  }
-  return false;
-}
-
-function countOccurrencesInMonth(sub, year, month) {
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  let count = 0;
-  for (let day = 1; day <= daysInMonth; day++) {
-    const d = new Date(year, month, day);
-    if (occursOn(sub, d)) count++;
-  }
-  return count;
-}
+// occursOn + countOccurrencesInMonth movidos pra lib/recurrence.js
+// (import no topo do arquivo). Versão única, alinhada com orcamento.js
+// e calendar.js. Antes: divergência sutil em Semanal/Quinzenal com
+// iniciado_em desalinhado.
 
 function isActiveInMonth(sub, year, month) {
   if (sub.status !== 'ativa') return false;
