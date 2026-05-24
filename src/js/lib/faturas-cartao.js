@@ -327,6 +327,87 @@ export async function ensureSubcategoriasFaturas(contas = null) {
 // -----------------------------
 
 /**
+ * Limpa pagamentos órfãos de subs Fatura: pagamentos cujo
+ * data_vencimento NÃO bate com nenhuma fatura_cartao real.
+ *
+ * Aparecem quando versões anteriores da lógica criaram pagamentos
+ * com data calculada errada (ex: mes_ano + venc_dia sem considerar
+ * venc<fec). Self-healing: deleta os entries inválidos antes de
+ * gerar os corretos.
+ *
+ * Safe: só apaga pagamentos com valor_real=0/null, status='A Pagar'
+ * e sem transação vinculada.
+ */
+async function cleanupPagamentosFaturaOrfaos(mesAnos) {
+  if (!mesAnos || mesAnos.length === 0) return;
+  const wsId = requireWorkspaceId();
+
+  // Busca subs Fatura ativas
+  const { data: subs } = await supabase
+    .from('subcategorias')
+    .select('id')
+    .eq('workspace_id', wsId)
+    .eq('auto_tipo', 'fatura_cartao');
+  if (!subs || subs.length === 0) return;
+  const subIds = subs.map((s) => s.id);
+
+  // Range
+  const sorted = [...mesAnos].sort();
+  const [maxY, maxM] = sorted[sorted.length - 1].split('-').map(Number);
+  const lastDayMax = new Date(maxY, maxM, 0).getDate();
+  const maxDate = `${maxY}-${String(maxM).padStart(2, '0')}-${String(lastDayMax).padStart(2, '0')}`;
+
+  // Busca pagamentos das subs Fatura no range
+  const { data: pagsExistentes } = await supabase
+    .from('pagamentos')
+    .select('id, data_vencimento, subcategoria_id, valor_real, status')
+    .in('subcategoria_id', subIds)
+    .gte('data_vencimento', sorted[0])
+    .lte('data_vencimento', maxDate);
+  if (!pagsExistentes || pagsExistentes.length === 0) return;
+
+  // Busca faturas_cartao no mesmo range com data_vencimento real
+  const { data: faturasReais } = await supabase
+    .from('faturas_cartao')
+    .select('data_vencimento, subcategoria_id')
+    .eq('workspace_id', wsId)
+    .gte('data_vencimento', sorted[0])
+    .lte('data_vencimento', maxDate);
+  const datasReais = new Set(
+    (faturasReais || []).map((f) => `${f.subcategoria_id}|${f.data_vencimento}`)
+  );
+
+  // Identifica pagamentos órfãos: sub Fatura sem fatura_cartao correspondente
+  const orfaos = (pagsExistentes || []).filter((p) => {
+    const key = `${p.subcategoria_id}|${p.data_vencimento}`;
+    if (datasReais.has(key)) return false; // tem fatura real correspondente
+    // Só apaga se inalterado
+    if (p.status !== 'A Pagar') return false;
+    if (p.valor_real !== null && Number(p.valor_real) !== 0) return false;
+    return true;
+  });
+
+  if (orfaos.length === 0) return;
+
+  // Checa se tem transação vinculada
+  const orfaoIds = orfaos.map((p) => p.id);
+  const { data: txsVinc } = await supabase
+    .from('transacoes')
+    .select('pagamento_id')
+    .in('pagamento_id', orfaoIds);
+  const idsComTx = new Set((txsVinc || []).map((t) => t.pagamento_id));
+
+  const idsParaDeletar = orfaoIds.filter((id) => !idsComTx.has(id));
+  if (idsParaDeletar.length === 0) return;
+
+  await supabase
+    .from('pagamentos')
+    .delete()
+    .in('id', idsParaDeletar)
+    .eq('workspace_id', wsId);
+}
+
+/**
  * Garante pagamento + orcamento_geral pra cada fatura_cartao cujo
  * data_vencimento cai nos meses cobertos.
  *
@@ -340,6 +421,15 @@ export async function ensurePagamentosFaturaForMonths(mesAnos) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return 0;
   const wsId = requireWorkspaceId();
+
+  // Self-healing: limpa pagamentos órfãos (de versões antigas da lógica)
+  // antes de gerar os corretos. Idempotente — só apaga entries que NÃO
+  // correspondem a nenhuma fatura_cartao real no range.
+  try {
+    await cleanupPagamentosFaturaOrfaos(mesAnos);
+  } catch (e) {
+    console.warn('[cleanupPagamentosFaturaOrfaos]', e);
+  }
 
   // Range de datas: do primeiro dia do menor mesAno ao último dia do maior
   const sorted = [...mesAnos].sort();
