@@ -300,27 +300,41 @@ export async function ensureGastosDiversosForMonth(year, month) {
 }
 
 /**
- * Helper: deleta pagamentos legados de Gastos diversos com valor_real=0,
- * status='A Pagar' e sem transação vinculada. Roda no início do
- * ensureGastosDiversosForBlocos pra limpar entries da regra antiga
- * (bloco_quinzenal civil 1/2 ou dia 1) antes de criar pelas regras novas.
+ * Helper: limpa pagamentos de Gastos diversos cujo data_vencimento NÃO
+ * corresponde a endDate de NENHUM bloco real conhecido. Isso captura
+ * legados de regras antigas (dia 1, dia 15, último dia do mês civil
+ * etc) mesmo quando valor_real != 0 (recalc antigo populou).
+ *
+ * Safe: a função recalc é idempotente, então mesmo se deletar um
+ * pagamento com valor agregado, a próxima execução recria com valor
+ * correto via somaTransacoesSoltasNoRange.
+ *
+ * @param {string} subId — id da sub Gastos diversos
+ * @param {Set<string>} endDatesValidos — Set de 'YYYY-MM-DD' das
+ *                                         endDates de blocos reais
  */
-async function cleanupGastosDiversosLegados(subId) {
-  if (!subId) return;
-  // Busca todos pagamentos órfãos potenciais
+async function cleanupGastosDiversosLegados(subId, endDatesValidos, rangeMin, rangeMax) {
+  if (!subId || !endDatesValidos) return;
+  const wsId = requireWorkspaceId();
+
+  // Busca pagamentos da sub APENAS no range visível atual.
+  // Não toca em pagamentos de meses não visíveis (poderiam ser legítimos
+  // de blocos que o user ainda não navegou).
   const { data: pags } = await supabase
     .from('pagamentos')
-    .select('id, valor_real, status')
-    .eq('subcategoria_id', subId);
+    .select('id, data_vencimento')
+    .eq('subcategoria_id', subId)
+    .gte('data_vencimento', rangeMin)
+    .lte('data_vencimento', rangeMax);
   if (!pags || pags.length === 0) return;
 
-  const candidatos = pags.filter(
-    (p) => p.status === 'A Pagar' && (p.valor_real === null || Number(p.valor_real) === 0)
-  );
-  if (candidatos.length === 0) return;
+  // Filtra os cuja data_vencimento NÃO é endDate de bloco real
+  const orfaos = pags.filter((p) => !endDatesValidos.has(p.data_vencimento));
+  if (orfaos.length === 0) return;
 
-  // Filtra os que NÃO têm transação vinculada
-  const ids = candidatos.map((p) => p.id);
+  // Pra segurança extra: não deleta se tem transação vinculada (improvável
+  // pra Gastos diversos, mas defesa)
+  const ids = orfaos.map((p) => p.id);
   const { data: txs } = await supabase
     .from('transacoes')
     .select('pagamento_id')
@@ -333,7 +347,7 @@ async function cleanupGastosDiversosLegados(subId) {
     .from('pagamentos')
     .delete()
     .in('id', idsParaDeletar)
-    .eq('workspace_id', requireWorkspaceId());
+    .eq('workspace_id', wsId);
 }
 
 /**
@@ -413,8 +427,16 @@ export async function ensureGastosDiversosForBlocos(blocos) {
   if (!user) return;
   const wsId = requireWorkspaceId();
 
-  // Cleanup de entries legados antes de criar os novos
-  await cleanupGastosDiversosLegados(subId);
+  // Calcula endDates válidos + range escopado ao mês visível.
+  // Cleanup escopado: só apaga pagamentos cuja data_vencimento está
+  // no range mas NÃO bate com nenhuma endDate de bloco real.
+  // Pagamentos fora do range visível (de outros meses) são preservados.
+  const endDatesValidos = new Set(blocos.map((b) => isoDateLocal(b.endDate)));
+  const startDatesIso = blocos.map((b) => isoDateLocal(b.startDate));
+  const endDatesIso = blocos.map((b) => isoDateLocal(b.endDate));
+  const rangeMin = startDatesIso.reduce((a, b) => (a < b ? a : b));
+  const rangeMax = endDatesIso.reduce((a, b) => (a > b ? a : b));
+  await cleanupGastosDiversosLegados(subId, endDatesValidos, rangeMin, rangeMax);
 
   for (const bloco of blocos) {
     const startDate = bloco.startDate;
