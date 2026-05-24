@@ -3,6 +3,7 @@
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { requireWorkspaceId } from '../lib/workspace.js';
+import { canWrite } from '../lib/permissions.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -90,7 +91,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Pré-aquece o iframe de compromissos em background para abertura instantânea
   preWarmEmbedded();
+
+  applyRoleGating();
 });
+
+/**
+ * Gating em configuracoes: esconde botões de salvar/seed/delete pra viewer.
+ * Os botões "Nova categoria/subcategoria" são renderizados dinamicamente
+ * no tree via data-attributes — CSS body[data-can-write="false"] cobre.
+ */
+function applyRoleGating() {
+  const writable = canWrite();
+  document.body.dataset.canWrite = String(writable);
+  const toggle = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = writable ? '' : 'none';
+  };
+  toggle('btn-save-categoria');
+  toggle('btn-save-subcategoria');
+  toggle('btn-save-sistema');
+  toggle('btn-cfg-confirmar-ok'); // delete confirm
+  toggle('btn-sub-detail-edit');
+}
 
 // -----------------------------
 // Sticky thead offset

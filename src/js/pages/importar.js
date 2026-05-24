@@ -6,6 +6,7 @@
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { requireWorkspaceId } from '../lib/workspace.js';
+import { canWrite } from '../lib/permissions.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -51,7 +52,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyTranslationsToDom();
   await loadData();
   bindStep1Events();
+  applyRoleGating();
 });
+
+/**
+ * Esconde o botão de importação pra viewer. RLS bloqueia o INSERT no DB
+ * mesmo se o user burlar a UI — esse gating é UX (avisa antes de tentar).
+ */
+function applyRoleGating() {
+  const writable = canWrite();
+  document.body.dataset.canWrite = String(writable);
+  // step3-import é o botão "Importar transações" final do fluxo.
+  // Se viewer escolher arquivo + reconciliar, ao chegar no passo 3 não vê o botão.
+  // (Em vez de esconder a página inteira, deixa o user explorar/preview.)
+  const importBtn = document.getElementById('step3-import');
+  if (importBtn) importBtn.style.display = writable ? '' : 'none';
+}
 
 async function loadData() {
   const [contasRes, contatosRes, subRes, catRes] = await Promise.all([

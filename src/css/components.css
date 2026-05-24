@@ -17546,6 +17546,17 @@ body[data-can-write="false"] [data-delete-bd] {
   display: none !important;
 }
 
+/* Configurações — gating do tree de categorias/subcategorias (data-attrs) */
+body[data-can-write="false"] [data-new-cat-grupo],
+body[data-can-write="false"] [data-new-sub-bloco],
+body[data-can-write="false"] [data-new-sub-cat],
+body[data-can-write="false"] [data-edit-cat],
+body[data-can-write="false"] [data-edit-sub],
+body[data-can-write="false"] [data-delete-cat],
+body[data-can-write="false"] [data-delete-sub] {
+  display: none !important;
+}
+
 /* Delta de dias entre data_pagamento e data_vencimento (na coluna VTO) */
 .pag-vto-delta {
   display: inline-block;
