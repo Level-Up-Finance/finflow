@@ -293,6 +293,25 @@ export function recalcGastosDiversosBlocoDebounced(mesAno, blocoQuinzenal, delay
  */
 export async function ensureGastosDiversosForMonth(year, month) {
   const mesAno = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+
+  // Cleanup de pagamentos LEGADOS: antes do fix, ensurePagamentosForMonth
+  // iterava a sub Gastos diversos (vencimento_dia=1) e criava pagamento
+  // dia 1 do mês. Agora a sub é pulada (oculta=true), mas pagamentos
+  // antigos persistem. Deleta pagamentos com data_vencimento exatamente
+  // dia 1, valor_real=0 e sem transação vinculada (safe — se tiver
+  // dado, mantém).
+  const subId = await getGastosDiversosSubId();
+  if (subId) {
+    const dia1 = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    await supabase
+      .from('pagamentos')
+      .delete()
+      .eq('subcategoria_id', subId)
+      .eq('mes_ano', mesAno)
+      .eq('data_vencimento', dia1)
+      .eq('valor_real', 0);
+  }
+
   // Recalc força ensurePagamento + UPDATE — idempotente
   await recalcGastosDiversosBloco(mesAno, 1);
   await recalcGastosDiversosBloco(mesAno, 2);

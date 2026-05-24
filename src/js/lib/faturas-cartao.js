@@ -297,18 +297,26 @@ export async function ensureSubcategoriasFaturas(contas = null) {
 
   let count = 0;
   const hoje = todayISO();
+  // Garante faturas pros próximos N meses (incluindo o atual). Cobre
+  // navegação do user entre meses e gera pagamentos antecipados em
+  // Pagamentos sem precisar esperar a fatura fechar.
+  const MONTHS_AHEAD = 4;
   for (const cartao of cartoes) {
     if (!cartao.vencimento || !cartao.fec_fatura) continue; // sem config completa
     const subId = await ensureSubcategoriaFatura(cartao);
     if (subId) count++;
 
-    // HF-8: garante fatura aberta do mes_referencia atual (R$ 0 inicial).
-    // Sem isso, faturas_cartao só existe quando uma transação dispara
-    // upsertFatura — cartões zerados ficam invisíveis no card e nenhum
-    // pagamento mensal é gerado.
-    const mesRefAtual = computeMesReferencia(hoje, cartao.fec_fatura);
-    if (mesRefAtual) {
-      await upsertFatura(cartao, mesRefAtual);
+    // Garante faturas dos próximos N meses_referencia
+    const [hy, hm, hd] = hoje.split('-').map(Number);
+    const monthsToEnsure = new Set();
+    for (let i = 0; i < MONTHS_AHEAD; i++) {
+      const refMonth = hm + i; // Pode passar de 12 — Date normaliza
+      const refDate = `${hy + Math.floor((refMonth - 1) / 12)}-${String(((refMonth - 1) % 12) + 1).padStart(2, '0')}-15`;
+      const mesRef = computeMesReferencia(refDate, cartao.fec_fatura);
+      if (mesRef) monthsToEnsure.add(mesRef);
+    }
+    for (const mesRef of monthsToEnsure) {
+      await upsertFatura(cartao, mesRef);
     }
   }
   return count;
@@ -319,93 +327,111 @@ export async function ensureSubcategoriasFaturas(contas = null) {
 // -----------------------------
 
 /**
- * Garante pagamento + orcamento_geral pra cada sub fatura_cartao,
- * pra cada mês em `mesAnos` (lista de 'YYYY-MM-01').
+ * Garante pagamento + orcamento_geral pra cada fatura_cartao cujo
+ * data_vencimento cai nos meses cobertos.
  *
- * Path próprio que NÃO depende de occursOn / iniciado_em — calcula
- * data_vencimento direto do sub.vencimento_dia. Imune ao bug em que
- * sub criada após o dia do venc no mês fica com 0 ocorrências.
+ * Usa faturas_cartao como SOURCE OF TRUTH — a tabela já tem data_vencimento
+ * correto via computeFaturaDates (trata caso venc<fec → vence no mês seguinte).
  *
  * Idempotente: pula se já existe pagamento pra (sub, data_vencimento).
  */
 export async function ensurePagamentosFaturaForMonths(mesAnos) {
+  if (!mesAnos || mesAnos.length === 0) return 0;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return 0;
   const wsId = requireWorkspaceId();
 
-  const { data: subs, error: subsErr } = await supabase
-    .from('subcategorias')
-    .select('id, vencimento_dia, moeda')
+  // Range de datas: do primeiro dia do menor mesAno ao último dia do maior
+  const sorted = [...mesAnos].sort();
+  const minMesAno = sorted[0];
+  const maxMesAno = sorted[sorted.length - 1];
+  const [maxY, maxM] = maxMesAno.split('-').map(Number);
+  const lastDayMaxMes = new Date(maxY, maxM, 0).getDate();
+  const maxDate = `${maxY}-${String(maxM).padStart(2, '0')}-${String(lastDayMaxMes).padStart(2, '0')}`;
+
+  // Busca faturas cujo data_vencimento cai no range, com sub espelho
+  const { data: faturas, error } = await supabase
+    .from('faturas_cartao')
+    .select('id, conta_id, data_vencimento, valor_total, subcategoria_id, status, contas(id, nome, apelido, vencimento, fec_fatura, status)')
     .eq('workspace_id', wsId)
-    .eq('auto_tipo', 'fatura_cartao')
-    .eq('status', 'ativa');
-  if (subsErr || !subs || subs.length === 0) return 0;
+    .gte('data_vencimento', minMesAno)
+    .lte('data_vencimento', maxDate);
+  if (error || !faturas) {
+    if (error) console.warn('[ensurePagamentosFatura]', error);
+    return 0;
+  }
 
   let created = 0;
-  for (const mesAno of mesAnos) {
-    const [y, m] = mesAno.split('-').map(Number);
-    const lastDay = new Date(y, m, 0).getDate();
-
-    for (const sub of subs) {
-      const venDia = Math.min(Number(sub.vencimento_dia) || 1, lastDay);
-      const dataVencimento = `${y}-${String(m).padStart(2, '0')}-${String(venDia).padStart(2, '0')}`;
-      const blocoQuinzenal = venDia <= 15 ? 1 : 2;
-
-      // 1. Garante orcamento_geral entry (idempotente via maybeSingle)
-      let orcId;
-      const { data: orcExisting } = await supabase
-        .from('orcamento_geral')
-        .select('id')
-        .eq('subcategoria_id', sub.id)
-        .eq('mes_ano', mesAno)
-        .maybeSingle();
-
-      if (orcExisting) {
-        orcId = orcExisting.id;
-      } else {
-        const { data: orcNovo, error: orcErr } = await supabase
-          .from('orcamento_geral')
-          .insert({
-            user_id:         user.id,
-            workspace_id:    wsId,
-            subcategoria_id: sub.id,
-            mes_ano:         mesAno,
-            valor_previsto:  0,
-            moeda:           sub.moeda || 'BRL',
-          })
-          .select('id').single();
-        if (orcErr) { console.warn('[ensurePagamentosFatura] orc', orcErr); continue; }
-        orcId = orcNovo.id;
+  for (const fat of faturas) {
+    // Garante sub espelho (se ainda não está vinculada)
+    let subId = fat.subcategoria_id;
+    if (!subId && fat.contas) {
+      subId = await ensureSubcategoriaFatura(fat.contas);
+      if (subId) {
+        await supabase.from('faturas_cartao').update({ subcategoria_id: subId }).eq('id', fat.id);
       }
+    }
+    if (!subId) continue;
 
-      // 2. Garante pagamento (idempotente)
-      const { data: pagExisting } = await supabase
-        .from('pagamentos')
-        .select('id')
-        .eq('subcategoria_id', sub.id)
-        .eq('data_vencimento', dataVencimento)
-        .maybeSingle();
-      if (pagExisting) continue;
+    const dataVencimento = fat.data_vencimento;
+    const [vy, vm, vd] = dataVencimento.split('-').map(Number);
+    const mesAno = `${vy}-${String(vm).padStart(2, '0')}-01`;
+    const blocoQuinzenal = vd <= 15 ? 1 : 2;
+    const valorPrevisto = Number(fat.valor_total) || 0;
 
-      const { error: pagErr } = await supabase
-        .from('pagamentos')
+    // 1. Garante orcamento_geral entry
+    let orcId;
+    const { data: orcExisting } = await supabase
+      .from('orcamento_geral')
+      .select('id')
+      .eq('subcategoria_id', subId)
+      .eq('mes_ano', mesAno)
+      .maybeSingle();
+    if (orcExisting) {
+      orcId = orcExisting.id;
+    } else {
+      const { data: orcNovo, error: orcErr } = await supabase
+        .from('orcamento_geral')
         .insert({
           user_id:         user.id,
           workspace_id:    wsId,
-          created_by:      user.id,
-          orcamento_id:    orcId,
-          subcategoria_id: sub.id,
+          subcategoria_id: subId,
           mes_ano:         mesAno,
-          bloco_quinzenal: blocoQuinzenal,
-          valor_previsto:  0,
-          valor_real:      0,
-          moeda:           sub.moeda || 'BRL',
-          status:          'A Pagar',
-          data_vencimento: dataVencimento,
-        });
-      if (pagErr) { console.warn('[ensurePagamentosFatura] pag', pagErr); continue; }
-      created++;
+          valor_previsto:  valorPrevisto,
+          moeda:           'BRL',
+        })
+        .select('id').single();
+      if (orcErr) { console.warn('[ensurePagamentosFatura] orc', orcErr); continue; }
+      orcId = orcNovo.id;
     }
+
+    // 2. Garante pagamento (idempotente)
+    const { data: pagExisting } = await supabase
+      .from('pagamentos')
+      .select('id')
+      .eq('subcategoria_id', subId)
+      .eq('data_vencimento', dataVencimento)
+      .maybeSingle();
+    if (pagExisting) continue;
+
+    const { error: pagErr } = await supabase
+      .from('pagamentos')
+      .insert({
+        user_id:         user.id,
+        workspace_id:    wsId,
+        created_by:      user.id,
+        orcamento_id:    orcId,
+        subcategoria_id: subId,
+        mes_ano:         mesAno,
+        bloco_quinzenal: blocoQuinzenal,
+        valor_previsto:  valorPrevisto,
+        valor_real:      valorPrevisto,
+        moeda:           'BRL',
+        status:          'A Pagar',
+        data_vencimento: dataVencimento,
+      });
+    if (pagErr) { console.warn('[ensurePagamentosFatura] pag', pagErr); continue; }
+    created++;
   }
   return created;
 }
