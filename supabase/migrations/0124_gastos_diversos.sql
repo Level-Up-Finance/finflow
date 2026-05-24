@@ -24,8 +24,15 @@ DECLARE
   sub_id     uuid;
 BEGIN
   -- Pra cada workspace existente, garante categoria + subcategoria
+  -- Owner = membro com role='owner' (workspace_members). Fallback: created_by.
   FOR ws_id, ws_owner IN
-    SELECT w.id, w.owner_id FROM public.workspaces w
+    SELECT w.id,
+           COALESCE(
+             (SELECT wm.profile_id FROM public.workspace_members wm
+               WHERE wm.workspace_id = w.id AND wm.role = 'owner' LIMIT 1),
+             w.created_by
+           )
+      FROM public.workspaces w
   LOOP
     -- 1. Categoria "Diversos" (grupo='custo_vida')
     SELECT id INTO cat_id
@@ -67,7 +74,12 @@ END $$;
 
 -- Trigger: ao criar um workspace novo, cria também a sub "Gastos diversos"
 -- (futuros workspaces ganham automaticamente)
-CREATE OR REPLACE FUNCTION public.workspaces_ensure_gastos_diversos()
+-- Trigger pós-INSERT em workspace_members: quando a row do owner é
+-- inserida (logo após o workspace), cria a sub "Gastos diversos".
+-- Não usa AFTER INSERT em workspaces porque o owner ainda não foi
+-- registrado em workspace_members nesse momento — esperaria pelos
+-- triggers em cascata que populam o member 'owner'.
+CREATE OR REPLACE FUNCTION public.workspace_members_ensure_gastos_diversos()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -75,17 +87,22 @@ AS $$
 DECLARE
   cat_id uuid;
 BEGIN
+  -- Só age quando a row inserida é a do owner (uma por workspace)
+  IF NEW.role <> 'owner' THEN
+    RETURN NEW;
+  END IF;
+
   -- 1. Categoria "Diversos"
   SELECT id INTO cat_id
     FROM public.categorias
-   WHERE workspace_id = NEW.id AND nome = 'Diversos'
+   WHERE workspace_id = NEW.workspace_id AND nome = 'Diversos'
    LIMIT 1;
 
   IF cat_id IS NULL THEN
     INSERT INTO public.categorias (
       user_id, workspace_id, nome, grupo, cor, ordem, is_default
     ) VALUES (
-      NEW.owner_id, NEW.id, 'Diversos', 'custo_vida', '#94A3B8', 998, false
+      NEW.profile_id, NEW.workspace_id, 'Diversos', 'custo_vida', '#94A3B8', 998, false
     )
     RETURNING id INTO cat_id;
   END IF;
@@ -93,7 +110,7 @@ BEGIN
   -- 2. Subcategoria sistêmica
   IF NOT EXISTS (
     SELECT 1 FROM public.subcategorias
-     WHERE workspace_id = NEW.id AND auto_tipo = 'gastos_diversos'
+     WHERE workspace_id = NEW.workspace_id AND auto_tipo = 'gastos_diversos'
   ) THEN
     INSERT INTO public.subcategorias (
       user_id, workspace_id, created_by, categoria_id,
@@ -101,7 +118,7 @@ BEGIN
       iniciado_em, moeda, status,
       auto_gerado, auto_tipo
     ) VALUES (
-      NEW.owner_id, NEW.id, NEW.owner_id, cat_id,
+      NEW.profile_id, NEW.workspace_id, NEW.profile_id, cat_id,
       'Gastos diversos', 'Despesa', 'Mensal', 1, 0, true,
       CURRENT_DATE, 'BRL', 'ativa',
       true, 'gastos_diversos'
@@ -112,9 +129,9 @@ BEGIN
 END;
 $$;
 
-DROP TRIGGER IF EXISTS trg_workspaces_ensure_gastos_diversos ON public.workspaces;
+DROP TRIGGER IF EXISTS trg_workspace_members_ensure_gastos_diversos ON public.workspace_members;
 
-CREATE TRIGGER trg_workspaces_ensure_gastos_diversos
-  AFTER INSERT ON public.workspaces
+CREATE TRIGGER trg_workspace_members_ensure_gastos_diversos
+  AFTER INSERT ON public.workspace_members
   FOR EACH ROW
-  EXECUTE FUNCTION public.workspaces_ensure_gastos_diversos();
+  EXECUTE FUNCTION public.workspace_members_ensure_gastos_diversos();
