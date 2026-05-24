@@ -10,6 +10,7 @@ import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { requireWorkspaceId } from '../lib/workspace.js';
 import { listMembers } from '../lib/workspace-members.js';
 import { renderAttribBadge } from '../lib/attribution-badge.js';
+import { canWrite, canManage } from '../lib/permissions.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -144,7 +145,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   render();
+  applyRoleGating();
 });
+
+/**
+ * Esconde/disable controles destrutivos pra viewer/editor.
+ * Hierarquia:
+ *   - canWrite (owner+editor): criar/editar projeto, registrar aporte
+ *   - canManage (owner only): hard delete projeto
+ *
+ * Botões dentro de cards/tabela ficam escondidos via CSS
+ * body[data-can-write="false"] .proj-* / .btn-novo-projeto.
+ */
+function applyRoleGating() {
+  const writable = canWrite();
+  const manageable = canManage();
+  document.body.dataset.canWrite = String(writable);
+  document.body.dataset.canManage = String(manageable);
+
+  const novaBtn = document.getElementById('btn-novo-projeto');
+  if (novaBtn) novaBtn.style.display = writable ? '' : 'none';
+}
 
 // -----------------------------
 // Loaders
@@ -2020,7 +2041,7 @@ async function saveHistoricoInvest() {
       if (rows.length > 0) {
         const { error: insErr } = await supabase
           .from('aportes_projeto')
-          .insert(rows.map((r) => ({ ...r, projeto_id: historicoInvestId, user_id: user.id })));
+          .insert(rows.map((r) => ({ ...r, projeto_id: historicoInvestId, user_id: user.id, workspace_id: requireWorkspaceId(), created_by: user.id })));
         if (insErr) throw insErr;
       }
       showToast(`${rows.length} entrada${rows.length !== 1 ? 's' : ''} salva${rows.length !== 1 ? 's' : ''}`, 'success');

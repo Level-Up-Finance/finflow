@@ -17500,6 +17500,7 @@ body.comp-embedded { background: transparent; }
    body[data-can-manage="false"] = não-owner (viewer ou editor)
    Esconde controles destrutivos baseado em role.
    ============================================================ */
+/* Dívidas — gating de cards */
 body[data-can-write="false"] .div-btn-pagar,
 body[data-can-write="false"] .div-btn-editar,
 body[data-can-write="false"] .div-btn-taxa,
@@ -17508,6 +17509,21 @@ body[data-can-write="false"] .div-btn-restaurar {
   display: none !important;
 }
 body[data-can-manage="false"] .div-btn-deletar {
+  display: none !important;
+}
+
+/* Investimentos — gating de cards/tabela de projetos */
+body[data-can-write="false"] .projeto-btn-editar,
+body[data-can-write="false"] .projeto-btn-aporte,
+body[data-can-write="false"] .projeto-btn-arquivar,
+body[data-can-write="false"] .projeto-btn-restaurar,
+body[data-can-write="false"] .btn-novo-projeto,
+body[data-can-write="false"] .btn-hist-invest-add-row,
+body[data-can-write="false"] .btn-salvar-hist-invest {
+  display: none !important;
+}
+body[data-can-manage="false"] .projeto-btn-excluir,
+body[data-can-manage="false"] .btn-excluir-projeto {
   display: none !important;
 }
 
