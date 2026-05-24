@@ -22,6 +22,7 @@ import { getBlocoByGrupo, BLOCO_GRUPOS } from '../lib/super-blocos.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
+import { filterVisibleSubs } from '../lib/subs-visibility.js';
 import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { formatCurrency, formatCurrencyHTML, renderMoedaOptions, moedaInputPlaceholder } from '../lib/moedas.js';
@@ -1006,7 +1007,7 @@ async function loadAll() {
 
   cachedTransacoes    = transRes.data || [];
   cachedContas        = contRes.data  || [];
-  cachedSubcategorias = subRes.data   || [];
+  cachedSubcategorias = filterVisibleSubs(subRes.data);
   cachedCategorias    = catRes.data   || [];
   // Dívidas (silencioso se erro — campo divida_id pode não existir antes da migration 0063)
   if (divRes && !divRes.error) cachedDividas = divRes.data || [];

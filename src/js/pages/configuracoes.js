@@ -8,6 +8,7 @@ import { SUPER_BLOCOS } from '../lib/super-blocos.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
+import { filterVisibleSubs } from '../lib/subs-visibility.js';
 import { showToast } from '../components/toast.js';
 import { getTheme, setTheme } from '../lib/theme.js';
 import { CURRENCIES } from '../lib/currencies.js';
@@ -121,7 +122,7 @@ async function loadAll() {
   ]);
 
   cachedCategorias    = cats.data  || [];
-  cachedSubcategorias = subs.data  || [];
+  cachedSubcategorias = filterVisibleSubs(subs.data);
   cachedProjetos      = projs.data || [];
   cachedDividas       = divs.data  || [];
 
@@ -136,7 +137,7 @@ async function loadAll() {
       supabase.from('subcategorias').select('*').neq('status', 'arquivada'),
     ]);
     cachedCategorias    = cats2.data  || [];
-    cachedSubcategorias = subs2.data  || [];
+    cachedSubcategorias = filterVisibleSubs(subs2.data);
   }
 
   await computeHistorico();

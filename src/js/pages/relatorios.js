@@ -7,6 +7,7 @@ import { guardSession } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
+import { filterVisibleSubs } from '../lib/subs-visibility.js';
 import { showToast } from '../components/toast.js';
 import { formatCurrency, formatCurrencyHTML } from '../lib/moedas.js';
 import { escapeHtml, formatDateBR } from '../lib/utils.js';
@@ -377,7 +378,7 @@ async function loadAndRender() {
   allTransacoes    = transRes.data || [];
   allPagamentos    = pagRes.data   || [];
   allCategorias    = catRes.data   || [];
-  allSubcategorias = subRes.data   || [];
+  allSubcategorias = filterVisibleSubs(subRes.data);
 
   document.getElementById('relat-period-label').textContent = range.label;
 

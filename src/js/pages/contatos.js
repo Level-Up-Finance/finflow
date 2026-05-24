@@ -7,6 +7,7 @@ import { applyBodyRoleGating } from '../lib/permissions.js';
 import { initSidebar }                  from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase }                     from '../lib/supabase.js';
+import { filterVisibleSubs }            from '../lib/subs-visibility.js';
 import { showToast }                    from '../components/toast.js';
 import { formatCurrency, formatCurrencyHTML } from '../lib/moedas.js';
 import { escapeHtml, formatDateBR } from '../lib/utils.js';
@@ -116,7 +117,7 @@ async function loadData() {
     supabase.from('projetos_investimento').select('id, nome, status, cor, meta_valor, data_alvo, contato_id').order('nome'),
   ]);
   cachedContatos      = contatosRes.data || [];
-  cachedSubcategorias = subRes.data      || [];
+  cachedSubcategorias = filterVisibleSubs(subRes.data);
   cachedCategorias    = catRes.data      || [];
   cachedContas        = contasRes.data   || [];
   cachedDividas       = divRes.data      || [];

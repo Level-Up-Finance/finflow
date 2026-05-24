@@ -12,6 +12,7 @@ import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { requireWorkspaceId } from '../lib/workspace.js';
 import { applyBodyRoleGating } from '../lib/permissions.js';
 import { SUPER_BLOCOS as SUPER_BLOCOS_LIST } from '../lib/super-blocos.js';
+import { filterVisibleSubs } from '../lib/subs-visibility.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -1476,14 +1477,14 @@ async function loadCompromissos() {
   const container = document.getElementById('compromissos-container');
   container.innerHTML = '<div class="loading-overlay"><span class="spinner"></span>Carregando…</div>';
 
-  // Filtra subs auto-geradas que NÃO fazem sentido como compromisso visual:
-  // - 'gastos_diversos': agregador de transações soltas — vive apenas em Pagamentos.
+  // Filtra subs auto-geradas que NÃO fazem sentido como compromisso visual.
   // Sub 'fatura_cartao' continua aparecendo (user precisa ver os compromissos
   // dos cartões na lista), mas como read-only (lógica de UI em openDetailsModal).
+  // Subs ocultas (Gastos diversos): filtradas no JS via isSubOculta — também
+  // tentamos filtrar no PostgREST quando a coluna `oculta` existir.
   const { data, error } = await supabase
     .from('subcategorias')
     .select('*')
-    .or('auto_tipo.is.null,auto_tipo.neq.gastos_diversos')
     .order('nome');
 
   if (error) {
@@ -1497,17 +1498,10 @@ async function loadCompromissos() {
     return;
   }
 
-  // Defesa em profundidade QUÁDRUPLA contra "Gastos diversos" aparecer:
-  //   1. .or() PostgREST (acima)
-  //   2. JS filtro por auto_tipo (linha abaixo)
-  //   3. JS filtro por nome (caso sub manual antiga sem auto_tipo)
-  //   4. JS filtro por flag auto_gerado + nome (paranoia)
-  // Sub fatura_cartao continua visível (read-only, conforme HF-2).
-  cachedCompromissos = (data || []).filter((s) => {
-    if (s.auto_tipo === 'gastos_diversos') return false;
-    if (s.nome === 'Gastos diversos' && (s.auto_gerado === true || !s.auto_tipo)) return false;
-    return true;
-  });
+  // Filtro unificado de subs ocultas (lib/subs-visibility.js):
+  // cobre oculta=true (migration 0126) + auto_tipo='gastos_diversos'
+  // + fallback por nome. Sub fatura_cartao continua visível.
+  cachedCompromissos = filterVisibleSubs(data);
 
   await Promise.all([loadProxValores(), refreshLocalRates()]);
   renderCompromissos();

@@ -10,6 +10,7 @@ import { applyBodyRoleGating } from '../lib/permissions.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
+import { filterVisibleSubs } from '../lib/subs-visibility.js';
 import { showToast } from '../components/toast.js';
 import { loadRules, findRule } from '../lib/regras-reconciliacao.js';
 import { formatCurrency } from '../lib/moedas.js';
@@ -72,7 +73,7 @@ async function loadData() {
   ]);
   cachedContas        = contasRes.data   || [];
   cachedContatos      = contatosRes.data || [];
-  cachedSubcategorias = subRes.data      || [];
+  cachedSubcategorias = filterVisibleSubs(subRes.data);
   cachedCategorias    = catRes.data      || [];
   cachedRules         = await loadRules();
 
