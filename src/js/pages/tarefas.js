@@ -11,6 +11,7 @@ import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { escapeHtml, showConfirm } from '../lib/utils.js';
 import { requireWorkspaceId } from '../lib/workspace.js';
+import { t } from '../lib/textos.js';
 import {
   loadTarefasPendentes,
   gerarTarefasImportExtrato,
@@ -75,7 +76,7 @@ function bindEvents() {
       await dispensarTarefa(id, 3);
       await loadAll();
       render();
-      showToast('Lembrarei em 3 dias', 'info', 4000);
+      showToast(t('tarefas.toast.snooze_3d', 'Lembrarei em 3 dias'), 'info', 4000);
       return;
     }
     if (action === 'never') {
@@ -209,7 +210,7 @@ async function salvarTarefa(e) {
   const descricao = document.getElementById('tarefa-descricao').value.trim() || null;
   const prioridade = document.getElementById('tarefa-prioridade').value;
   const prazoIso  = document.getElementById('tarefa-prazo').value || null;
-  if (!titulo) { showToast('Informe o título', 'error'); return; }
+  if (!titulo) { showToast(t('tarefas.validacao.titulo_obrigatorio', 'Informe o título'), 'error'); return; }
 
   const user = await getCurrentUser();
   if (!user) return;
@@ -235,11 +236,13 @@ async function salvarTarefa(e) {
     }));
   }
   if (error) {
-    showToast('Erro: ' + error.message, 'error', 8000);
+    showToast(`${t('common.toast.erro', 'Erro')}: ${error.message}`, 'error', 8000);
     return;
   }
   closeModal('modal-tarefa');
   await loadAll();
   render();
-  showToast(id ? 'Tarefa atualizada' : 'Tarefa criada', 'success');
+  showToast(id
+    ? t('tarefas.toast.atualizada', 'Tarefa atualizada')
+    : t('tarefas.toast.criada', 'Tarefa criada'), 'success');
 }

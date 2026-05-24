@@ -541,7 +541,7 @@ async function saveCat() {
   btn.disabled = false;
   btn.textContent = 'Salvar';
 
-  if (error) { showToast('Erro: ' + error.message, 'error', 8000); return; }
+  if (error) { showToast(`${t('common.toast.erro', 'Erro')}: ${error.message}`, 'error', 8000); return; }
 
   showToast(editingCatId
     ? t('configuracoes.toast.cat_atualizada', 'Categoria atualizada')
@@ -738,7 +738,7 @@ async function saveSub() {
         .insert({ user_id: user.id, workspace_id: requireWorkspaceId(), created_by: user.id, nome, valor_total: 0, valor_pago: 0, status: 'Ativa' })
         .select('id').single();
       if (divErr) {
-        showToast('Subcategoria criada, mas erro ao criar dívida: ' + divErr.message, 'warning', 8000);
+        showToast(`${t('configuracoes.toast.sub_criada_erro_divida', 'Subcategoria criada, mas erro ao criar dívida')}: ${divErr.message}`, 'warning', 8000);
       } else {
         await supabase.from('subcategorias').update({ divida_id: novaDivida.id }).eq('id', insertedId);
       }
@@ -751,7 +751,7 @@ async function saveSub() {
         .insert({ user_id: user.id, workspace_id: requireWorkspaceId(), created_by: user.id, nome, status: 'ativo', cor: '#6D5EF5' })
         .select('id').single();
       if (projErr) {
-        showToast('Subcategoria criada, mas erro ao criar projeto: ' + projErr.message, 'warning', 8000);
+        showToast(`${t('configuracoes.toast.sub_criada_erro_projeto', 'Subcategoria criada, mas erro ao criar projeto')}: ${projErr.message}`, 'warning', 8000);
       } else {
         await supabase.from('subcategorias').update({ projeto_id: novoProjeto.id }).eq('id', insertedId);
       }
@@ -763,9 +763,9 @@ async function saveSub() {
 
   if (error) {
     if (error.code === '23505' && error.message?.includes('renda_principal')) {
-      showToast('Já existe uma renda principal. Remova a marcação da outra subcategoria primeiro.', 'error', 8000);
+      showToast(t('configuracoes.toast.renda_principal_duplicada', 'Já existe uma renda principal. Remova a marcação da outra subcategoria primeiro.'), 'error', 8000);
     } else {
-      showToast('Erro: ' + error.message, 'error', 8000);
+      showToast(`${t('common.toast.erro', 'Erro')}: ${error.message}`, 'error', 8000);
     }
     return;
   }
@@ -869,7 +869,7 @@ async function execDelete() {
     }
   }
 
-  if (error) { showToast('Erro ao excluir: ' + error.message, 'error', 8000); return; }
+  if (error) { showToast(`${t('common.toast.erro_excluir', 'Erro ao excluir')}: ${error.message}`, 'error', 8000); return; }
 
   showToast(type === 'cat' ? t('configuracoes.toast.cat_excluida', 'Categoria excluída') : t('configuracoes.toast.sub_excluida', 'Subcategoria excluída'), 'success');
   await reloadAll();
@@ -1147,10 +1147,10 @@ async function renderImportacoesPanel() {
         .update({ frequencia_importacao_dias: newFreq })
         .eq('id', contaId);
       if (updErr) {
-        showToast('Erro ao salvar: ' + updErr.message, 'error', 8000);
+        showToast(`${t('common.toast.erro_salvar', 'Erro ao salvar')}: ${updErr.message}`, 'error', 8000);
         return;
       }
-      showToast('Frequência atualizada', 'success', 2500);
+      showToast(t('configuracoes.toast.freq_atualizada', 'Frequência atualizada'), 'success', 2500);
     });
   });
 }
@@ -1782,7 +1782,7 @@ async function reorderCategoria(sourceCatId, targetCatId, insertAbove, blocoGrup
   );
   const errors = results.filter((r) => r.error);
   if (errors.length) {
-    showToast(`Erro ao reordenar: ${errors[0].error.message}`, 'error', 8000);
+    showToast(`${t('configuracoes.toast.erro_reordenar', 'Erro ao reordenar')}: ${errors[0].error.message}`, 'error', 8000);
     return;
   }
 

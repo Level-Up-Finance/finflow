@@ -44,17 +44,6 @@
     ]
   },
   {
-    "chave": "admin.feedback.titulo",
-    "pt_br": "Gerenciar feedback",
-    "pagina": "admin",
-    "fontes": [
-      "admin-feedback.html"
-    ],
-    "kinds": [
-      "html"
-    ]
-  },
-  {
     "chave": "admin.feedback.toast.excluido",
     "pt_br": "Excluído.",
     "pagina": "admin",
@@ -154,6 +143,40 @@
     ]
   },
   {
+    "chave": "common.toast.erro",
+    "pt_br": "Erro",
+    "pagina": "common",
+    "fontes": [
+      "src/js/pages/configuracoes.js",
+      "src/js/pages/tarefas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "common.toast.erro_excluir",
+    "pt_br": "Erro ao excluir",
+    "pagina": "common",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "common.toast.erro_salvar",
+    "pt_br": "Erro ao salvar",
+    "pagina": "common",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "compromissos.descricao",
     "pt_br": "Aqui você configura seus compromissos — entradas e saídas recorrentes. As demais abas (Mensal, Anual, Histórico) são apenas visualização.",
     "pagina": "compromissos",
@@ -167,17 +190,6 @@
   {
     "chave": "compromissos.empty.titulo",
     "pt_br": "Nenhum compromisso cadastrado",
-    "pagina": "compromissos",
-    "fontes": [
-      "compromissos.html"
-    ],
-    "kinds": [
-      "html"
-    ]
-  },
-  {
-    "chave": "compromissos.titulo",
-    "pt_br": "Compromissos e Orçamentos",
     "pagina": "compromissos",
     "fontes": [
       "compromissos.html"
@@ -407,6 +419,17 @@
     ]
   },
   {
+    "chave": "configuracoes.toast.erro_reordenar",
+    "pt_br": "Erro ao reordenar",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "configuracoes.toast.excluir_com_subs",
     "pt_br": "Não é possível excluir: existem subcategorias nessa categoria.",
     "pagina": "configuracoes",
@@ -418,8 +441,30 @@
     ]
   },
   {
+    "chave": "configuracoes.toast.freq_atualizada",
+    "pt_br": "Frequência atualizada",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "configuracoes.toast.idioma_salvo",
     "pt_br": "Idioma salvo. Será aplicado quando as traduções estiverem disponíveis.",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "configuracoes.toast.renda_principal_duplicada",
+    "pt_br": "Já existe uma renda principal. Remova a marcação da outra subcategoria primeiro.",
     "pagina": "configuracoes",
     "fontes": [
       "src/js/pages/configuracoes.js"
@@ -464,6 +509,28 @@
   {
     "chave": "configuracoes.toast.sub_criada",
     "pt_br": "Subcategoria criada",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "configuracoes.toast.sub_criada_erro_divida",
+    "pt_br": "Subcategoria criada, mas erro ao criar dívida",
+    "pagina": "configuracoes",
+    "fontes": [
+      "src/js/pages/configuracoes.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "configuracoes.toast.sub_criada_erro_projeto",
+    "pt_br": "Subcategoria criada, mas erro ao criar projeto",
     "pagina": "configuracoes",
     "fontes": [
       "src/js/pages/configuracoes.js"
@@ -541,17 +608,6 @@
   {
     "chave": "contas.empty.titulo",
     "pt_br": "Nenhuma conta cadastrada",
-    "pagina": "contas",
-    "fontes": [
-      "contas.html"
-    ],
-    "kinds": [
-      "html"
-    ]
-  },
-  {
-    "chave": "contas.titulo",
-    "pt_br": "Contas",
     "pagina": "contas",
     "fontes": [
       "contas.html"
@@ -660,17 +716,6 @@
     ]
   },
   {
-    "chave": "contatos.titulo",
-    "pt_br": "Contatos",
-    "pagina": "contatos",
-    "fontes": [
-      "contatos.html"
-    ],
-    "kinds": [
-      "html"
-    ]
-  },
-  {
     "chave": "contatos.toast.arquivado",
     "pt_br": "Contato arquivado.",
     "pagina": "contatos",
@@ -761,17 +806,6 @@
   {
     "chave": "dividas.modal.placeholder.nome",
     "pt_br": "Ex: Financiamento carro",
-    "pagina": "dividas",
-    "fontes": [
-      "dividas.html"
-    ],
-    "kinds": [
-      "html"
-    ]
-  },
-  {
-    "chave": "dividas.titulo",
-    "pt_br": "Financiamentos e Dívidas",
     "pagina": "dividas",
     "fontes": [
       "dividas.html"
@@ -1034,17 +1068,6 @@
     ]
   },
   {
-    "chave": "feedback.titulo",
-    "pt_br": "Sugestões & Bugs",
-    "pagina": "feedback",
-    "fontes": [
-      "feedback.html"
-    ],
-    "kinds": [
-      "html"
-    ]
-  },
-  {
     "chave": "feedback.toast.enviado",
     "pt_br": "Enviado! Obrigado pelo feedback.",
     "pagina": "feedback",
@@ -1155,17 +1178,6 @@
     ]
   },
   {
-    "chave": "importar.titulo",
-    "pt_br": "Importar transações",
-    "pagina": "importar",
-    "fontes": [
-      "importar.html"
-    ],
-    "kinds": [
-      "html"
-    ]
-  },
-  {
     "chave": "importar.toast.arquivo_vazio",
     "pt_br": "Arquivo vazio ou sem dados suficientes.",
     "pagina": "importar",
@@ -1245,17 +1257,6 @@
   {
     "chave": "investimentos.empty.titulo",
     "pt_br": "Nenhum projeto ainda",
-    "pagina": "investimentos",
-    "fontes": [
-      "investimentos.html"
-    ],
-    "kinds": [
-      "html"
-    ]
-  },
-  {
-    "chave": "investimentos.titulo",
-    "pt_br": "Projetos e Investimentos",
     "pagina": "investimentos",
     "fontes": [
       "investimentos.html"
@@ -1595,30 +1596,8 @@
     ]
   },
   {
-    "chave": "novidades.titulo",
-    "pt_br": "Novidades",
-    "pagina": "novidades",
-    "fontes": [
-      "novidades.html"
-    ],
-    "kinds": [
-      "html"
-    ]
-  },
-  {
     "chave": "orcamento.descricao",
     "pt_br": "Visão financeira gerada a partir dos seus compromissos. Use a aba",
-    "pagina": "orcamento",
-    "fontes": [
-      "orcamento.html"
-    ],
-    "kinds": [
-      "html"
-    ]
-  },
-  {
-    "chave": "orcamento.titulo",
-    "pt_br": "Compromissos e Orçamentos",
     "pagina": "orcamento",
     "fontes": [
       "orcamento.html"
@@ -1705,17 +1684,6 @@
     ]
   },
   {
-    "chave": "pagamentos.titulo",
-    "pt_br": "Pagamentos",
-    "pagina": "pagamentos",
-    "fontes": [
-      "pagamentos.html"
-    ],
-    "kinds": [
-      "html"
-    ]
-  },
-  {
     "chave": "pagamentos.toast.schema_desatualizado",
     "pt_br": "Schema desatualizado. Rode a migration 0011 no Supabase pra blocos dinâmicos.",
     "pagina": "pagamentos",
@@ -1762,17 +1730,6 @@
   {
     "chave": "perfil.hint.tipos_imagem",
     "pt_br": "JPG, PNG, WEBP ou GIF até 5 MB.",
-    "pagina": "perfil",
-    "fontes": [
-      "perfil.html"
-    ],
-    "kinds": [
-      "html"
-    ]
-  },
-  {
-    "chave": "perfil.titulo",
-    "pt_br": "Meu perfil",
     "pagina": "perfil",
     "fontes": [
       "perfil.html"
@@ -1881,17 +1838,6 @@
     ]
   },
   {
-    "chave": "relatorios.titulo",
-    "pt_br": "Relatórios",
-    "pagina": "relatorios",
-    "fontes": [
-      "relatorios.html"
-    ],
-    "kinds": [
-      "html"
-    ]
-  },
-  {
     "chave": "relatorios.toast.carregando_sheetjs",
     "pt_br": "Carregando SheetJS…",
     "pagina": "relatorios",
@@ -1958,6 +1904,50 @@
     ]
   },
   {
+    "chave": "tarefas.toast.atualizada",
+    "pt_br": "Tarefa atualizada",
+    "pagina": "tarefas",
+    "fontes": [
+      "src/js/pages/tarefas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tarefas.toast.criada",
+    "pt_br": "Tarefa criada",
+    "pagina": "tarefas",
+    "fontes": [
+      "src/js/pages/tarefas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tarefas.toast.snooze_3d",
+    "pt_br": "Lembrarei em 3 dias",
+    "pagina": "tarefas",
+    "fontes": [
+      "src/js/pages/tarefas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
+    "chave": "tarefas.validacao.titulo_obrigatorio",
+    "pt_br": "Informe o título",
+    "pagina": "tarefas",
+    "fontes": [
+      "src/js/pages/tarefas.js"
+    ],
+    "kinds": [
+      "js"
+    ]
+  },
+  {
     "chave": "transacoes.descricao",
     "pt_br": "Registro real do dinheiro que entrou e saiu — diferente do orçamento (planejado) e dos pagamentos (status mensal).",
     "pagina": "transacoes",
@@ -1993,17 +1983,6 @@
   {
     "chave": "transacoes.empty.titulo",
     "pt_br": "Nenhuma transação ainda",
-    "pagina": "transacoes",
-    "fontes": [
-      "transacoes.html"
-    ],
-    "kinds": [
-      "html"
-    ]
-  },
-  {
-    "chave": "transacoes.titulo",
-    "pt_br": "Transações",
     "pagina": "transacoes",
     "fontes": [
       "transacoes.html"
