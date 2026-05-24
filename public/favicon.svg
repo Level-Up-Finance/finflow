@@ -2,5 +2,5 @@
   <title>FinFlow favicon — auto-theme (alterna entre light/dark mode)</title>
   
   <line class="plan" x1="14" y1="32" x2="86" y2="32" stroke="#6D5EF5" stroke-width="12" stroke-linecap="round"></line>
-  <path class="real" d="M14 68 L38 68 L41 50 L59 50 L62 68 L86 68" stroke="#84B121" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+  <path class="real" d="M14 68 L38 68 L41 50 L59 50 L62 68 L86 68" stroke="#C2F542" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
 </svg>
