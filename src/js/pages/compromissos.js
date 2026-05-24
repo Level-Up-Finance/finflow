@@ -1497,7 +1497,12 @@ async function loadCompromissos() {
     return;
   }
 
-  cachedCompromissos = data || [];
+  // Defesa em profundidade: mesmo que o .or() do PostgREST falhe ou a query
+  // venha de cache/SW antigo, garante que subs auto-geradas tipo agregador
+  // (gastos_diversos) NUNCA apareçam como compromisso visível.
+  // Sub fatura_cartao continua visível (read-only, conforme HF-2).
+  cachedCompromissos = (data || []).filter((s) => s.auto_tipo !== 'gastos_diversos');
+
   await Promise.all([loadProxValores(), refreshLocalRates()]);
   renderCompromissos();
 }

@@ -2315,7 +2315,10 @@
   margin-left: 6px;
 }
 
-/* Badge de fatura aberta no card do cartão */
+/* Badge de fatura no card do cartão — info hierárquica:
+   - default: "Em formação" ou "Ver faturas" (neutro)
+   - .conta-fatura-proxima: vence em ≤5d (amarelo)
+   - .conta-fatura-vencida: data passou (vermelho) */
 .conta-fatura-badge {
   display: inline-flex;
   align-items: center;
@@ -2328,6 +2331,30 @@
   background: var(--color-primary-50);
   border-radius: var(--radius-full);
   white-space: nowrap;
+  border: none;
+  cursor: pointer;
+}
+.conta-fatura-badge:hover {
+  background: color-mix(in srgb, var(--color-primary) 14%, var(--color-surface));
+}
+.conta-fatura-sub {
+  color: var(--color-text-secondary);
+  font-weight: var(--fw-regular);
+  margin-left: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.conta-fatura-badge.conta-fatura-proxima {
+  color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 12%, var(--color-surface));
+}
+.conta-fatura-badge.conta-fatura-vencida {
+  color: var(--color-error);
+  background: color-mix(in srgb, var(--color-error) 12%, var(--color-surface));
+}
+.conta-fatura-badge.conta-fatura-proxima .conta-fatura-sub,
+.conta-fatura-badge.conta-fatura-vencida .conta-fatura-sub {
+  color: inherit;
+  opacity: 0.85;
 }
 
 .conta-comprometido-badge {

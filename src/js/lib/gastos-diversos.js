@@ -34,6 +34,10 @@ export function computeBlocoSimples(dataIso) {
 /**
  * Retorna a sub sistêmica "Gastos diversos" do workspace atual.
  * Idempotente (cache em memória após primeira chamada).
+ *
+ * Robustez: se a migration 0124 não rodou (ou rodou parcial),
+ * cria a categoria + sub on-demand via JS. Garante que a feature
+ * funcione mesmo em ambientes onde a migration ainda não foi aplicada.
  */
 let _cachedSubId = null;
 let _cachedWsId = null;
@@ -41,19 +45,84 @@ export async function getGastosDiversosSubId() {
   const wsId = requireWorkspaceId();
   if (_cachedSubId && _cachedWsId === wsId) return _cachedSubId;
 
-  const { data, error } = await supabase
+  // 1. Tenta achar
+  const { data: existing } = await supabase
     .from('subcategorias')
     .select('id')
     .eq('workspace_id', wsId)
     .eq('auto_tipo', 'gastos_diversos')
     .maybeSingle();
-  if (error || !data) {
-    console.warn('[getGastosDiversosSubId] sub não encontrada', error);
+  if (existing) {
+    _cachedSubId = existing.id;
+    _cachedWsId = wsId;
+    return existing.id;
+  }
+
+  // 2. Não existe — cria categoria "Diversos" + sub em fallback JS
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  // 2a. Categoria "Diversos" (se já existir por outro motivo, reusa)
+  let catId = null;
+  const { data: catExisting } = await supabase
+    .from('categorias')
+    .select('id')
+    .eq('workspace_id', wsId)
+    .eq('nome', 'Diversos')
+    .maybeSingle();
+  if (catExisting) {
+    catId = catExisting.id;
+  } else {
+    const { data: novaCat, error: catErr } = await supabase
+      .from('categorias')
+      .insert({
+        user_id:    user.id,
+        workspace_id: wsId,
+        nome:       'Diversos',
+        grupo:      'custo_vida',
+        cor:        '#94A3B8',
+        ordem:      998,
+        is_default: false,
+      })
+      .select('id').single();
+    if (catErr) {
+      console.warn('[getGastosDiversosSubId] falha criar categoria Diversos', catErr);
+      return null;
+    }
+    catId = novaCat.id;
+  }
+
+  // 2b. Sub "Gastos diversos" (auto_gerado bloqueia edição pelo trigger 0122)
+  const today = new Date();
+  const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const { data: novaSub, error: subErr } = await supabase
+    .from('subcategorias')
+    .insert({
+      user_id:        user.id,
+      workspace_id:   wsId,
+      created_by:     user.id,
+      categoria_id:   catId,
+      nome:           'Gastos diversos',
+      tipo:           'Despesa',
+      periodo:        'Mensal',
+      vencimento_dia: 1,
+      valor_base:     0,
+      valor_variavel: true,
+      iniciado_em:    todayIso,
+      moeda:          'BRL',
+      status:         'ativa',
+      auto_gerado:    true,
+      auto_tipo:      'gastos_diversos',
+    })
+    .select('id').single();
+  if (subErr) {
+    console.warn('[getGastosDiversosSubId] falha criar sub Gastos diversos', subErr);
     return null;
   }
-  _cachedSubId = data.id;
+
+  _cachedSubId = novaSub.id;
   _cachedWsId = wsId;
-  return data.id;
+  return novaSub.id;
 }
 
 /**

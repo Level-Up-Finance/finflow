@@ -250,13 +250,22 @@ async function loadMonth() {
   // vai pegar a nova entry no próximo refresh se houver delay.
   checkAndCloseFaturas().catch((e) => console.warn('[checkAndCloseFaturas]', e));
 
-  // 0b. Garante sub "Fatura {X}" pra cada cartão existente — sem isso,
-  // checkAndCloseFaturas não consegue ligar a fatura à sub espelho.
-  // AWAIT: precisa estar pronto antes do ensurePagamentosForMonth, senão
-  // o pagamento do cartão pode não ser gerado pra cartões novos.
-  await ensureSubcategoriasFaturas().catch((e) => {
+  // 0b. Garante sub "Fatura {X}" pra cada cartão existente. AWAIT: precisa
+  // estar pronto antes de TUDO — inclusive do cache cachedSubcategorias.
+  let novasFaturas = 0;
+  try {
+    novasFaturas = await ensureSubcategoriasFaturas();
+  } catch (e) {
     console.warn('[ensureSubcategoriasFaturas]', e);
-  });
+  }
+
+  // 0c. Se criou sub nova, RE-FETCH o cache — senão ensureOrcamento e
+  // ensurePagamentos abaixo iteram sem ver as subs recém-criadas.
+  // Bug histórico HF-4a: cartões novos não geravam pagamento porque o
+  // cache foi populado antes do sweep de faturas.
+  if (novasFaturas > 0 || cachedSubcategorias.length === 0) {
+    await loadSubcategorias();
+  }
 
   // 1. Garante que orcamento_geral tenha entries pro mês (cascata: subcategoria → orcamento)
   await ensureOrcamentoForMonth(viewYear, viewMonth);
@@ -267,11 +276,19 @@ async function loadMonth() {
   // 2b. Garante pagamento de "Gastos diversos" pra cada bloco do mês
   // (recalcula valor a partir de transações soltas). AWAIT: senão o fetch
   // de pagamentos abaixo pode rodar antes do INSERT — pagamento não aparece.
+  // Pode criar categoria "Diversos" e sub "Gastos diversos" em fallback JS
+  // se a migration 0124 não rodou.
   try {
     await ensureGastosDiversosForMonth(viewYear, viewMonth);
   } catch (e) {
     console.warn('[ensureGastosDiversosForMonth]', e);
   }
+
+  // 2c. Re-fetch categorias + subs depois dos ensures — eles podem ter
+  // criado entries novas no banco que o cache ainda não conhece. Sem isso,
+  // o render abaixo (que itera cachedCategorias) pula o pagamento "Gastos
+  // diversos" porque a categoria "Diversos" não está no cache.
+  await Promise.all([loadCategorias(), loadSubcategorias()]);
 
   // 3. Busca pagamentos do mês com JOIN
   const mesAno = isoMonth(viewYear, viewMonth);
@@ -740,7 +757,15 @@ async function ensurePagamentosForMonth(year, month) {
         if (occursOn(sub, cur)) {
           const venMesAno = isoMonth(cur.getFullYear(), cur.getMonth());
           const orc = orcMap.get(`${sub.id}__${venMesAno}`);
-          if (orc && Number(orc.valor_previsto) > 0) {
+          // Cria pagamento se:
+          //  - orc tem valor > 0 (caso normal: aluguel R$ 2000 → gera)
+          //  - OU é sub valor_variavel (fatura, gastos diversos: nasce 0,
+          //    valor real vem das transações via syncTransacaoFatura ou
+          //    recalcGastosDiversosBloco)
+          //  - OU é auto_gerado fatura_cartao (mesma lógica, redundância
+          //    intencional pra clareza)
+          const ehVariavel = sub.valor_variavel === true || sub.auto_tipo === 'fatura_cartao';
+          if (orc && (Number(orc.valor_previsto) > 0 || ehVariavel)) {
             const occInVenMes = countOccurrencesInMonth(sub, cur.getFullYear(), cur.getMonth()) || 1;
             const valorPorOcorrencia = Number(orc.valor_previsto) / occInVenMes;
             rows.push({
