@@ -287,7 +287,7 @@ export async function ensureSubcategoriasFaturas(contas = null) {
   if (!cartoes) {
     const { data } = await supabase
       .from('contas')
-      .select('id, nome, apelido, tipo, vencimento, status')
+      .select('id, nome, apelido, tipo, vencimento, fec_fatura, status')
       .eq('tipo', TIPO_CARTAO)
       .eq('status', 'ativa');
     cartoes = data || [];
@@ -306,13 +306,19 @@ export async function ensureSubcategoriasFaturas(contas = null) {
     const subId = await ensureSubcategoriaFatura(cartao);
     if (subId) count++;
 
-    // Garante faturas dos próximos N meses_referencia
-    const [hy, hm, hd] = hoje.split('-').map(Number);
+    // Garante faturas do mês PASSADO (-1) + atual + próximos 3.
+    // O -1 é crítico: pra cartões cuja fatura do mês anterior ainda
+    // vence neste mês (ex: C6 fec=13/05, venc=20/05 — fatura mes_ref=05
+    // vence 20/05 mas hoje (24/05) já passou. computeMesReferencia(hoje)
+    // retorna '06' — sem -1, a fatura de venc 20/05 nunca é criada).
+    const [hy, hm] = hoje.split('-').map(Number);
     const monthsToEnsure = new Set();
-    for (let i = 0; i < MONTHS_AHEAD; i++) {
-      const refMonth = hm + i; // Pode passar de 12 — Date normaliza
-      const refDate = `${hy + Math.floor((refMonth - 1) / 12)}-${String(((refMonth - 1) % 12) + 1).padStart(2, '0')}-15`;
-      const mesRef = computeMesReferencia(refDate, cartao.fec_fatura);
+    for (let i = -1; i < MONTHS_AHEAD; i++) {
+      // refMonth pode ser 0 ou negativo (janeiro - 1 = dezembro do ano anterior).
+      // Normaliza via Date.
+      const refDateObj = new Date(hy, hm - 1 + i, 15); // 15 = meio do mês pra evitar edge
+      const refIso = `${refDateObj.getFullYear()}-${String(refDateObj.getMonth() + 1).padStart(2, '0')}-15`;
+      const mesRef = computeMesReferencia(refIso, cartao.fec_fatura);
       if (mesRef) monthsToEnsure.add(mesRef);
     }
     for (const mesRef of monthsToEnsure) {

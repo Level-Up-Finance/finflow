@@ -1100,17 +1100,17 @@ function renderPagamentos() {
   }
 
   const blocosHtml = blocos.map((b) => {
-    // Bloco crossover (indice 0) filtra por data_vencimento no range do bloco,
-    // porque os pagamentos têm bloco_quinzenal do mês anterior (não 0).
-    // Blocos normais filtram por bloco_quinzenal.
+    // Filtra pagamentos cuja data_vencimento cai no range exato do bloco
+    // (definido pela renda principal). Antes usava bloco_quinzenal pra
+    // blocos normais, mas bloco_quinzenal só é 1 ou 2 (constraint do schema)
+    // e não distingue 3+ blocos por mês — pagamento com bloco_quinzenal=2
+    // aparecia em Bloco 2 E Bloco 3 (crossover). Agora data_vencimento
+    // dentro do [startDate, endDate] é a única fonte da verdade.
     const items = filtered.filter((p) => {
-      if (b.crossover) {
-        if (!p.data_vencimento) return false;
-        const startIso = isoDate(b.startDate.getFullYear(), b.startDate.getMonth(), b.startDate.getDate());
-        const endIso   = isoDate(b.endDate.getFullYear(),   b.endDate.getMonth(),   b.endDate.getDate());
-        return p.data_vencimento >= startIso && p.data_vencimento <= endIso;
-      }
-      return p.bloco_quinzenal === b.indice;
+      if (!p.data_vencimento) return false;
+      const startIso = isoDate(b.startDate.getFullYear(), b.startDate.getMonth(), b.startDate.getDate());
+      const endIso   = isoDate(b.endDate.getFullYear(),   b.endDate.getMonth(),   b.endDate.getDate());
+      return p.data_vencimento >= startIso && p.data_vencimento <= endIso;
     }).sort(sortFn);
     return renderBloco(b.indice, b.title, b.period, items);
   }).join('');
