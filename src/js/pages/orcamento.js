@@ -16,6 +16,7 @@ import { canWrite } from '../lib/permissions.js';
 import { SUPER_BLOCOS } from '../lib/super-blocos.js';
 import { initSidebar } from '../components/sidebar.js';
 import { supabase } from '../lib/supabase.js';
+import { filterVisibleSubs } from '../lib/subs-visibility.js';
 import { showToast } from '../components/toast.js';
 import { formatCurrency, formatCurrencyHTML, MOEDAS } from '../lib/moedas.js';
 import { fetchExchangeRate, startCurrencyAutoRefresh, toBRL } from '../lib/currency.js';
@@ -453,7 +454,12 @@ async function loadSubcategorias() {
     console.error('[loadSubcategorias]', error);
     return;
   }
-  cachedSubcategorias = data || [];
+  // Filtra subs ocultas (Fatura X, Gastos diversos) — esses placeholders
+  // só devem aparecer em Pagamentos, nunca em Mensal/Anual/Histórico.
+  // Os pagamentos/orcamento_geral dos placeholders são criados em
+  // caminhos próprios (checkAndCloseFaturas, ensurePagamentoGastosDiversos)
+  // — não dependem do loop ensure desta página.
+  cachedSubcategorias = filterVisibleSubs(data);
 }
 
 // -----------------------------

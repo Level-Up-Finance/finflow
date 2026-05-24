@@ -154,9 +154,11 @@ export async function ensureSubcategoriaFatura(conta) {
       status:         'ativa',
       // Blindagem: sub gerenciada pelo sistema (lib/faturas-cartao.js).
       // Trigger no banco (migration 0122) bloqueia DELETE e UPDATE
-      // de campos críticos. UI esconde botões de edição (Compromissos).
+      // de campos críticos. Flag `oculta` (migration 0126) esconde
+      // dos UIs de sub — fatura aparece SÓ em Pagamentos.
       auto_gerado:    true,
       auto_tipo:      'fatura_cartao',
+      oculta:         true,
     })
     .select('id').single();
   if (error) { console.warn('[ensureSubcategoriaFatura]', error); return null; }
