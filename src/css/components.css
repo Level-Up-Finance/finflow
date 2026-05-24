@@ -2315,10 +2315,9 @@
   margin-left: 6px;
 }
 
-/* Badge de fatura no card do cartão — info hierárquica:
-   - default: "Em formação" ou "Ver faturas" (neutro)
-   - .conta-fatura-proxima: vence em ≤5d (amarelo)
-   - .conta-fatura-vencida: data passou (vermelho) */
+/* Badge de fatura no card do cartão — pill consistente entre todos
+   os cards. A urgência (vencido / próximo) aparece apenas no sub-texto
+   (Vence Xd), não no pill, pra manter coerência visual. */
 .conta-fatura-badge {
   display: inline-flex;
   align-items: center;
@@ -2343,18 +2342,13 @@
   margin-left: 6px;
   font-variant-numeric: tabular-nums;
 }
-.conta-fatura-badge.conta-fatura-proxima {
+.conta-fatura-sub--proxima {
   color: var(--color-warning);
-  background: color-mix(in srgb, var(--color-warning) 12%, var(--color-surface));
+  font-weight: var(--fw-semibold);
 }
-.conta-fatura-badge.conta-fatura-vencida {
+.conta-fatura-sub--vencida {
   color: var(--color-error);
-  background: color-mix(in srgb, var(--color-error) 12%, var(--color-surface));
-}
-.conta-fatura-badge.conta-fatura-proxima .conta-fatura-sub,
-.conta-fatura-badge.conta-fatura-vencida .conta-fatura-sub {
-  color: inherit;
-  opacity: 0.85;
+  font-weight: var(--fw-semibold);
 }
 
 .conta-comprometido-badge {

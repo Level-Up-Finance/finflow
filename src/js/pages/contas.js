@@ -1365,10 +1365,9 @@ function renderContaCard(conta) {
   if (isCartao) {
     const CARTAO_SVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>`;
 
-    // Determina valor + venc + state
+    // Determina valor + venc (sem state-class no badge — pill sempre igual)
     let valor = 0;
     let dataVencimento = null;
-    let stateClass = '';
 
     if (proxFatura) {
       // Fechada (futura OU vencida)
@@ -1376,23 +1375,24 @@ function renderContaCard(conta) {
       dataVencimento = proxFatura.dataVencimento;
     } else if (faturaAbertaValor !== undefined) {
       valor = faturaAbertaValor;
-      // Pra fatura aberta, vencimento = dia "vencimento" do cartão no mês atual
-      // (informação aproximada, não precisa ser exata)
     }
 
+    // Sub-info "Vence Xd" — só a urgência ganha cor (laranja/vermelho),
+    // o pill em si permanece consistente entre todos os cartões.
     let extra = '';
     if (dataVencimento) {
       const dias = diasAteISO(dataVencimento);
       if (dias !== null) {
         const venceStr = dias === 0 ? 'hoje' : dias === 1 ? 'amanhã' : dias < 0 ? `${Math.abs(dias)}d atr.` : `em ${dias}d`;
-        extra = `<span class="conta-fatura-sub">Vence ${venceStr}</span>`;
-        if (dias < 0)      stateClass = ' conta-fatura-vencida';
-        else if (dias <= 5) stateClass = ' conta-fatura-proxima';
+        let subClass = 'conta-fatura-sub';
+        if (dias < 0)      subClass += ' conta-fatura-sub--vencida';
+        else if (dias <= 5) subClass += ' conta-fatura-sub--proxima';
+        extra = `<span class="${subClass}">Vence ${venceStr}</span>`;
       }
     }
 
     const label = `Próxima fatura: ${formatCurrencyHTML(valor)}`;
-    faturaBadge = `<button type="button" class="conta-fatura-badge${stateClass}" data-action="ver-faturas" data-conta-id="${conta.id}" title="Ver todas as faturas">
+    faturaBadge = `<button type="button" class="conta-fatura-badge" data-action="ver-faturas" data-conta-id="${conta.id}" title="Ver todas as faturas">
       ${CARTAO_SVG}
       <span>${label}</span>
       ${extra}
