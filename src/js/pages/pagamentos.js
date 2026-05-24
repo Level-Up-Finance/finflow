@@ -16,6 +16,7 @@ import { listMembers } from '../lib/workspace-members.js';
 import { renderAttribBadge } from '../lib/attribution-badge.js';
 import { canWrite } from '../lib/permissions.js';
 import { ensureGastosDiversosForMonth } from '../lib/gastos-diversos.js';
+import { ensureSubcategoriasFaturas, checkAndCloseFaturas } from '../lib/faturas-cartao.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -244,17 +245,33 @@ async function loadMonth() {
   // Atualiza label
   document.getElementById('pag-month-label').textContent = `${MONTH_LABELS[viewMonth]} ${viewYear}`;
 
+  // 0a. Fecha faturas vencidas (cria entry em orcamento_geral pro mês de
+  // vencimento). Fire-and-forget — o ensure de pagamentos próximo passo
+  // vai pegar a nova entry no próximo refresh se houver delay.
+  checkAndCloseFaturas().catch((e) => console.warn('[checkAndCloseFaturas]', e));
+
+  // 0b. Garante sub "Fatura {X}" pra cada cartão existente — sem isso,
+  // checkAndCloseFaturas não consegue ligar a fatura à sub espelho.
+  // AWAIT: precisa estar pronto antes do ensurePagamentosForMonth, senão
+  // o pagamento do cartão pode não ser gerado pra cartões novos.
+  await ensureSubcategoriasFaturas().catch((e) => {
+    console.warn('[ensureSubcategoriasFaturas]', e);
+  });
+
   // 1. Garante que orcamento_geral tenha entries pro mês (cascata: subcategoria → orcamento)
   await ensureOrcamentoForMonth(viewYear, viewMonth);
 
   // 2. Garante que pagamentos tenha entries pro mês (cascata: orcamento → pagamentos)
   await ensurePagamentosForMonth(viewYear, viewMonth);
 
-  // 2b. Garante pagamento de "Gastos diversos" pra cada bloco do mês (recalcula
-  // valor a partir de transações soltas). Não-bloqueante.
-  ensureGastosDiversosForMonth(viewYear, viewMonth).catch((e) =>
-    console.warn('[ensureGastosDiversosForMonth]', e)
-  );
+  // 2b. Garante pagamento de "Gastos diversos" pra cada bloco do mês
+  // (recalcula valor a partir de transações soltas). AWAIT: senão o fetch
+  // de pagamentos abaixo pode rodar antes do INSERT — pagamento não aparece.
+  try {
+    await ensureGastosDiversosForMonth(viewYear, viewMonth);
+  } catch (e) {
+    console.warn('[ensureGastosDiversosForMonth]', e);
+  }
 
   // 3. Busca pagamentos do mês com JOIN
   const mesAno = isoMonth(viewYear, viewMonth);

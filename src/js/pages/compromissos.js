@@ -1476,9 +1476,14 @@ async function loadCompromissos() {
   const container = document.getElementById('compromissos-container');
   container.innerHTML = '<div class="loading-overlay"><span class="spinner"></span>Carregando…</div>';
 
+  // Filtra subs auto-geradas que NÃO fazem sentido como compromisso visual:
+  // - 'gastos_diversos': agregador de transações soltas — vive apenas em Pagamentos.
+  // Sub 'fatura_cartao' continua aparecendo (user precisa ver os compromissos
+  // dos cartões na lista), mas como read-only (lógica de UI em openDetailsModal).
   const { data, error } = await supabase
     .from('subcategorias')
     .select('*')
+    .or('auto_tipo.is.null,auto_tipo.neq.gastos_diversos')
     .order('nome');
 
   if (error) {

@@ -18,7 +18,7 @@ import { findBank, logoUrl, searchBanks } from '../lib/banks.js';
 import { initColVisibility } from '../lib/col-visibility.js';
 import { autoAttachDecimalInputs } from '../lib/number-format.js';
 import { escapeHtml, formatDateBR, todayISO, parseUserNumber } from '../lib/utils.js';
-import { checkAndCloseFaturas, listFaturasConhecidas } from '../lib/faturas-cartao.js';
+import { checkAndCloseFaturas, listFaturasConhecidas, ensureSubcategoriasFaturas } from '../lib/faturas-cartao.js';
 import { formatCurrency, formatCurrencyHTML } from '../lib/moedas.js';
 import { COLOR_PALETTE, DEFAULT_COLOR, renderColorPicker } from '../lib/color-palette.js';
 import { fetchExchangeRate } from '../lib/currency.js';
@@ -1017,6 +1017,13 @@ async function loadContas() {
   checkAndCloseFaturas()
     .then((n) => { if (n > 0) showToast(`${n} fatura${n > 1 ? 's' : ''} de cartão fechada${n > 1 ? 's' : ''} — confira em Pagamentos`, 'success', 5000); })
     .catch((e) => console.warn('[checkAndCloseFaturas]', e));
+
+  // Garante sub "Fatura {X}" pra cada cartão existente — cobre cartões
+  // que ainda não tiveram fatura fechada (sem isso, o pagamento mensal
+  // do cartão não é gerado em Pagamentos). Fire-and-forget é OK aqui:
+  // a UI de Contas não depende dessa sub pra renderizar.
+  ensureSubcategoriasFaturas()
+    .catch((e) => console.warn('[ensureSubcategoriasFaturas]', e));
 
   const { data, error } = await supabase
     .from('contas')

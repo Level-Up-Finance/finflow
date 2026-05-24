@@ -257,6 +257,42 @@ export async function syncTransacaoFatura(transacao, conta) {
 }
 
 // -----------------------------
+// Sweep: garante sub "Fatura {X}" pra cada cartão existente
+// -----------------------------
+
+/**
+ * Pra cada conta tipo 'Cartão de Crédito' ativa, garante que existe
+ * a subcategoria espelho "Fatura {Cartão}". Idempotente.
+ *
+ * Chame ao carregar Contas e Pagamentos — cobre cartões que nunca
+ * tiveram fatura fechada (e portanto não passaram por checkAndCloseFaturas).
+ *
+ * @param {Array} contas — opcional. Se não passar, busca do banco.
+ * @returns {Promise<number>} quantas subs foram criadas/garantidas
+ */
+export async function ensureSubcategoriasFaturas(contas = null) {
+  let cartoes = contas;
+  if (!cartoes) {
+    const { data } = await supabase
+      .from('contas')
+      .select('id, nome, apelido, tipo, vencimento, status')
+      .eq('tipo', TIPO_CARTAO)
+      .eq('status', 'ativa');
+    cartoes = data || [];
+  } else {
+    cartoes = cartoes.filter((c) => isContaCartao(c) && c.status === 'ativa');
+  }
+
+  let count = 0;
+  for (const cartao of cartoes) {
+    if (!cartao.vencimento) continue; // sem config completa
+    const subId = await ensureSubcategoriaFatura(cartao);
+    if (subId) count++;
+  }
+  return count;
+}
+
+// -----------------------------
 // Listagem unificada de faturas (passadas + atual + futuras projetadas)
 // -----------------------------
 
