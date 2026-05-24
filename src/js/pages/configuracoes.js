@@ -23,7 +23,9 @@ import { STORAGE_KEYS } from '../lib/storage-keys.js';
 // State
 // -----------------------------
 let cachedCategorias    = [];
-let cachedSubcategorias = [];
+let cachedSubcategorias = [];      // visível ao user (filtra ocultas)
+let cachedSubcategoriasRaw = [];   // todas (inclui ocultas) — pra checks de integridade
+                                    // como "pode deletar categoria?"
 let cachedProjetos      = [];
 let cachedDividas       = [];
 
@@ -121,8 +123,9 @@ async function loadAll() {
     supabase.from('dividas').select('id, nome, valor_total, valor_pago, credor, status').order('nome'),
   ]);
 
-  cachedCategorias    = cats.data  || [];
-  cachedSubcategorias = filterVisibleSubs(subs.data);
+  cachedCategorias       = cats.data  || [];
+  cachedSubcategoriasRaw = subs.data  || [];
+  cachedSubcategorias    = filterVisibleSubs(cachedSubcategoriasRaw);
   cachedProjetos      = projs.data || [];
   cachedDividas       = divs.data  || [];
 
@@ -136,8 +139,9 @@ async function loadAll() {
       supabase.from('categorias').select('*').order('ordem'),
       supabase.from('subcategorias').select('*').neq('status', 'arquivada'),
     ]);
-    cachedCategorias    = cats2.data  || [];
-    cachedSubcategorias = filterVisibleSubs(subs2.data);
+    cachedCategorias       = cats2.data  || [];
+    cachedSubcategoriasRaw = subs2.data  || [];
+    cachedSubcategorias    = filterVisibleSubs(cachedSubcategoriasRaw);
   }
 
   await computeHistorico();
@@ -248,10 +252,16 @@ function renderTree() {
       const subs      = subsBycat.get(cat.id) || [];
       const isDefault = cat.is_default;
 
+      // Pra decidir delete: usa cachedSubcategoriasRaw (inclui subs ocultas
+      // como "Gastos diversos" e "Fatura X"). Categoria com sub oculta é
+      // sistêmica — não pode ser deletada porque cascade ON DELETE tentaria
+      // remover subs auto_gerado e o trigger 0122 bloqueia.
+      const hasAnySubRaw = cachedSubcategoriasRaw.some((s) => s.categoria_id === cat.id);
+
       const catActions = `
         <div class="cfg-cat-inline-actions">
           ${!isDefault ? `<button class="btn-icon" data-edit-cat="${cat.id}" title="Editar categoria">${ICON_EDIT}</button>` : ''}
-          ${!isDefault && subs.length === 0 ? `<button class="btn-icon danger" data-delete-cat="${cat.id}" title="Excluir categoria">${ICON_TRASH}</button>` : ''}
+          ${!isDefault && !hasAnySubRaw ? `<button class="btn-icon danger" data-delete-cat="${cat.id}" title="Excluir categoria">${ICON_TRASH}</button>` : ''}
         </div>`;
 
       const catCell = (rowspan) => `
