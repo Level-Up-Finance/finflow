@@ -11,6 +11,7 @@
 import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { requireWorkspaceId } from '../lib/workspace.js';
 import { applyBodyRoleGating } from '../lib/permissions.js';
+import { SUPER_BLOCOS as SUPER_BLOCOS_LIST } from '../lib/super-blocos.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -1992,11 +1993,7 @@ async function confirmarEncerrar()           { return saveModule.confirmarEncerr
 
 // Definição dos super-blocos (mesma usada no orçamento, mas duplicada aqui pra
 // não criar dependência cruzada entre páginas). Mantém em sync se mudar.
-const SUPER_BLOCOS_LIST = [
-  { id: 'contribuicao', label: 'Contribuição', grupos: ['receitas', 'dividas'],       accent: 'var(--color-success)' },
-  { id: 'sonhos',       label: 'Sonhos',       grupos: ['investimentos'],             accent: 'var(--color-primary)' },
-  { id: 'custo_vida',   label: 'Custo de vida', grupos: ['custo_vida'],               accent: 'var(--color-secondary)' },
-];
+// SUPER_BLOCOS_LIST importado de lib/super-blocos.js (no topo do arquivo)
 
 
 // -----------------------------

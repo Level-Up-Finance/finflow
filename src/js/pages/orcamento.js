@@ -13,6 +13,7 @@
 import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { requireWorkspaceId } from '../lib/workspace.js';
 import { canWrite } from '../lib/permissions.js';
+import { SUPER_BLOCOS } from '../lib/super-blocos.js';
 import { initSidebar } from '../components/sidebar.js';
 import { supabase } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
@@ -57,30 +58,7 @@ let viewMode = 'monthly'; // 'monthly' | 'yearly'
 const MONTH_LABELS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const MONTH_SHORT_LABELS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
-// Agrupamento visual da página em 3 super-blocos
-const SUPER_BLOCOS = [
-  {
-    id: 'contribuicao',
-    label: 'Contribuição',
-    subtitle: 'Receitas e dívidas. O que sobra contribui pra Sonhos e Custo de vida.',
-    grupos: ['receitas', 'dividas'],
-    accent: 'var(--color-success)',
-  },
-  {
-    id: 'sonhos',
-    label: 'Sonhos',
-    subtitle: 'Investimentos.',
-    grupos: ['investimentos'],
-    accent: 'var(--color-primary)',
-  },
-  {
-    id: 'custo_vida',
-    label: 'Custo de vida',
-    subtitle: 'Despesas operacionais do dia a dia.',
-    grupos: ['custo_vida'],
-    accent: 'var(--color-secondary)',
-  },
-];
+// SUPER_BLOCOS importado de lib/super-blocos.js (fonte única)
 
 // -----------------------------
 // Init

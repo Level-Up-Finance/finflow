@@ -17,6 +17,7 @@ import { requireWorkspaceId } from '../lib/workspace.js';
 import { listMembers } from '../lib/workspace-members.js';
 import { renderAttribBadge } from '../lib/attribution-badge.js';
 import { applyBodyRoleGating } from '../lib/permissions.js';
+import { getBlocoByGrupo, BLOCO_GRUPOS } from '../lib/super-blocos.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -907,26 +908,17 @@ async function _doCreateSplitSub(idx, nome) {
 // Estado do modal de sync
 let syncModalState = null;
 
-// Mapa de grupo da categoria → super-bloco (mesma lógica de configuracoes/orcamento)
-const SUPER_BLOCOS = {
-  receitas:      { id: 'contribuicao', label: 'Contribuição',  color: 'var(--color-success)' },
-  dividas:       { id: 'contribuicao', label: 'Contribuição',  color: 'var(--color-success)' },
-  investimentos: { id: 'sonhos',       label: 'Sonhos',        color: 'var(--color-primary)' },
-  custo_vida:    { id: 'custo_vida',   label: 'Custo de vida', color: 'var(--color-secondary)' },
-};
-
-// Mapeia id do bloco → grupos de categoria que pertencem a ele
-const BLOCO_GRUPOS = {
-  contribuicao: ['receitas', 'dividas'],
-  sonhos:       ['investimentos'],
-  custo_vida:   ['custo_vida'],
-};
+// SUPER_BLOCOS + BLOCO_GRUPOS importados de lib/super-blocos.js (fonte única,
+// compartilhada com dashboard, orcamento, configuracoes, compromissos).
 
 function getBlocoFromSub(sub) {
   if (!sub) return null;
   const cat = cachedCategorias.find((c) => c.id === sub.categoria_id);
   if (!cat) return null;
-  return SUPER_BLOCOS[cat.grupo] || SUPER_BLOCOS.custo_vida;
+  // Helper canônico já faz fallback pra custo_vida. Mappeia accent → color
+  // pra manter contrato local (UI usa .color).
+  const bloco = getBlocoByGrupo(cat.grupo);
+  return { id: bloco.id, label: bloco.label, color: bloco.accent };
 }
 
 // -----------------------------

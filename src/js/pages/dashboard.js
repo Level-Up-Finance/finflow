@@ -10,15 +10,10 @@ import { formatCurrencyHTML } from '../lib/moedas.js';
 import { isPaidStatus } from '../lib/transacao-pagamento-sync.js';
 import { escapeHtml, isoMonth } from '../lib/utils.js';
 import { loadStrings, applyTranslationsToDom } from '../lib/textos.js';
+import { SUPER_BLOCOS } from '../lib/super-blocos.js';
 
 const MONTH_LABELS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const DAY_LABELS   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-
-const SUPER_BLOCOS = [
-  { id: 'contribuicao', label: 'Contribuição',  grupos: ['receitas', 'dividas'],  accent: 'var(--color-success)'   },
-  { id: 'sonhos',       label: 'Sonhos',        grupos: ['investimentos'],         accent: 'var(--color-primary)'   },
-  { id: 'custo_vida',   label: 'Custo de vida', grupos: ['custo_vida'],            accent: 'var(--color-secondary)' },
-];
 
 
 const today      = new Date();
