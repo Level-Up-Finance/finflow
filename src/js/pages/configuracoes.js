@@ -8,7 +8,7 @@ import { SUPER_BLOCOS } from '../lib/super-blocos.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
-import { filterVisibleSubs } from '../lib/subs-visibility.js';
+import { filterVisibleSubs, isCategoriaSistemica } from '../lib/subs-visibility.js';
 import { showToast } from '../components/toast.js';
 import { getTheme, setTheme } from '../lib/theme.js';
 import { CURRENCIES } from '../lib/currencies.js';
@@ -211,9 +211,14 @@ function renderTree() {
   }
 
   const html = SUPER_BLOCOS.map((bloco) => {
-    // Categorias: ordem manual definida pelo usuário (campo `ordem`)
+    // Categorias: ordem manual definida pelo usuário (campo `ordem`).
+    // Esconde categorias sistêmicas (Diversos, Cartões) que existem só
+    // pra hospedar placeholders (Gastos diversos, Fatura X). Essas
+    // categorias aparecem em Pagamentos como headers, mas não em
+    // Configurações onde o user gerencia subs.
     const cats = cachedCategorias
       .filter((c) => bloco.grupos.includes(c.grupo || 'custo_vida'))
+      .filter((c) => !isCategoriaSistemica(c, cachedSubcategoriasRaw))
       .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
 
     const blocoBanner = `<div class="cfg-bloco-banner">${escapeHtml(bloco.label)}</div>`;

@@ -12,7 +12,7 @@ import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { requireWorkspaceId } from '../lib/workspace.js';
 import { applyBodyRoleGating } from '../lib/permissions.js';
 import { SUPER_BLOCOS as SUPER_BLOCOS_LIST } from '../lib/super-blocos.js';
-import { filterVisibleSubs } from '../lib/subs-visibility.js';
+import { filterVisibleSubs, isCategoriaSistemica } from '../lib/subs-visibility.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -54,7 +54,9 @@ import * as saveModule from './compromissos/save.js';
 // -----------------------------
 // State
 // -----------------------------
-let cachedCompromissos = [];   // subcategorias do usuário
+let cachedCompromissos    = [];   // subcategorias do usuário (visíveis)
+let cachedCompromissosRaw = [];   // todas as subs (inclui ocultas) — pra detectar
+                                  // categorias sistêmicas que devem sumir da UI
 let cachedCategorias = [];     // categorias parent do usuário
 let cachedContas = [];         // bancos/cartões
 let compContaPicker = null;
@@ -519,7 +521,7 @@ function renderCategoriaFilters() {
   container.appendChild(existing);
 
   for (const bloco of SUPER_BLOCOS_LIST) {
-    const cats = cachedCategorias.filter((c) => bloco.grupos.includes(c.grupo || 'custo_vida'));
+    const cats = cachedCategorias.filter((c) => bloco.grupos.includes(c.grupo || 'custo_vida') && !isCategoriaSistemica(c, cachedCompromissosRaw));
     if (cats.length === 0) continue;
 
     // Label do super-bloco (visualmente discreto)
@@ -561,7 +563,7 @@ function renderModalDropdowns() {
   // Categorias (parent) — agrupadas por super-bloco via <optgroup>
   const selCat = document.getElementById('comp-categoria');
   const optgroupHtml = SUPER_BLOCOS_LIST.map((bloco) => {
-    const cats = cachedCategorias.filter((c) => bloco.grupos.includes(c.grupo || 'custo_vida'));
+    const cats = cachedCategorias.filter((c) => bloco.grupos.includes(c.grupo || 'custo_vida') && !isCategoriaSistemica(c, cachedCompromissosRaw));
     if (cats.length === 0) return '';
     const opts = cats.map((c) => `<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join('');
     return `<optgroup label="${escapeHtml(bloco.label)}">${opts}</optgroup>`;
@@ -614,7 +616,7 @@ function renderCatExistenteOptions() {
   const sel = document.getElementById('comp-cat-existente');
   if (!sel) return;
   const optgroupHtml = SUPER_BLOCOS_LIST.map((bloco) => {
-    const cats = cachedCategorias.filter((c) => bloco.grupos.includes(c.grupo || 'custo_vida'));
+    const cats = cachedCategorias.filter((c) => bloco.grupos.includes(c.grupo || 'custo_vida') && !isCategoriaSistemica(c, cachedCompromissosRaw));
     if (cats.length === 0) return '';
     const opts = cats.map((c) => `<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join('');
     return `<optgroup label="${escapeHtml(bloco.label)}">${opts}</optgroup>`;
@@ -1501,7 +1503,8 @@ async function loadCompromissos() {
   // Filtro unificado de subs ocultas (lib/subs-visibility.js):
   // cobre oculta=true (migration 0126) + auto_tipo='gastos_diversos'
   // + fallback por nome. Sub fatura_cartao continua visível.
-  cachedCompromissos = filterVisibleSubs(data);
+  cachedCompromissosRaw = data || [];
+  cachedCompromissos    = filterVisibleSubs(cachedCompromissosRaw);
 
   await Promise.all([loadProxValores(), refreshLocalRates()]);
   renderCompromissos();
@@ -1603,7 +1606,7 @@ function buildUnifiedRows() {
   });
 
   for (const bloco of SUPER_BLOCOS_LIST) {
-    const cats = cachedCategorias.filter((c) => bloco.grupos.includes(c.grupo || 'custo_vida'));
+    const cats = cachedCategorias.filter((c) => bloco.grupos.includes(c.grupo || 'custo_vida') && !isCategoriaSistemica(c, cachedCompromissosRaw));
     for (const cat of cats) {
       const subs = (subsByCat.get(cat.id) || []).sort(compareByVencimento);
       // Categoria aparece como linha se tem compromisso direto OU se não tem subcategorias

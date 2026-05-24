@@ -56,3 +56,32 @@ export function filterVisibleSubs(subs) {
 export function isSubVisible(sub) {
   return !isSubOculta(sub);
 }
+
+/**
+ * Categoria é "sistêmica" quando existe SÓ pra hospedar subs ocultas
+ * (placeholders). Critério: tem 1+ sub, e TODAS são ocultas.
+ *
+ * Casos cobertos:
+ *   - "Diversos" → única sub é "Gastos diversos" (oculta) → sistêmica
+ *   - "Cartões"  → todas subs são "Fatura X" (ocultas)   → sistêmica
+ *
+ * Casos não cobertos (intencional):
+ *   - Categoria vazia criada pelo user → NÃO é sistêmica
+ *   - Categoria mista (1 sub real + 1 oculta) → NÃO é sistêmica
+ *
+ * @param {object} cat — categoria
+ * @param {Array} allSubsRaw — todas as subs (NÃO filtradas)
+ */
+export function isCategoriaSistemica(cat, allSubsRaw) {
+  if (!cat || !Array.isArray(allSubsRaw)) return false;
+  const subsDaCat = allSubsRaw.filter((s) => s.categoria_id === cat.id);
+  if (subsDaCat.length === 0) return false; // vazia → não é sistêmica
+  return subsDaCat.every((s) => isSubOculta(s));
+}
+
+/**
+ * Filtra um array de categorias, escondendo as sistêmicas.
+ */
+export function filterVisibleCategorias(cats, allSubsRaw) {
+  return (cats || []).filter((c) => !isCategoriaSistemica(c, allSubsRaw));
+}
