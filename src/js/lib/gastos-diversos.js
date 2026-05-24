@@ -155,12 +155,44 @@ async function ensurePagamentoGastosDiversos(mesAno, blocoQuinzenal) {
   const venDia = blocoQuinzenal === 1 ? 15 : lastDayOfMonth;
   const dataVencimento = `${y}-${String(m).padStart(2, '0')}-${String(venDia).padStart(2, '0')}`;
 
+  // Schema de pagamentos exige orcamento_id NOT NULL.
+  // Garante entry em orcamento_geral pra (sub, mes_ano) antes de criar
+  // o pagamento — idempotente via maybeSingle + INSERT condicional.
+  let orcamentoId = null;
+  const { data: orcExisting } = await supabase
+    .from('orcamento_geral')
+    .select('id')
+    .eq('subcategoria_id', subId)
+    .eq('mes_ano', mesAno)
+    .maybeSingle();
+  if (orcExisting) {
+    orcamentoId = orcExisting.id;
+  } else {
+    const { data: orcNovo, error: orcErr } = await supabase
+      .from('orcamento_geral')
+      .insert({
+        user_id:         user.id,
+        workspace_id:    requireWorkspaceId(),
+        subcategoria_id: subId,
+        mes_ano:         mesAno,
+        valor_previsto:  0,
+        moeda:           'BRL',
+      })
+      .select('id').single();
+    if (orcErr) {
+      console.warn('[ensurePagamentoGastosDiversos] orc insert', orcErr);
+      return null;
+    }
+    orcamentoId = orcNovo.id;
+  }
+
   const { data: novo, error } = await supabase
     .from('pagamentos')
     .insert({
       user_id:         user.id,
       workspace_id:    requireWorkspaceId(),
       created_by:      user.id,
+      orcamento_id:    orcamentoId,
       subcategoria_id: subId,
       mes_ano:         mesAno,
       bloco_quinzenal: blocoQuinzenal,
