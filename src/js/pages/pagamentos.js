@@ -1566,19 +1566,9 @@ function renderPagamentoRow(p, catColor) {
       <td class="tabular text-center" style="font-size: var(--fs-xs); color: var(--color-text-secondary);">${vto}${vtoDeltaHtml}</td>
       <td class="text-center pag-dias-cell">${diasHtml}</td>
       <td class="text-right">
-        <span class="orcamento-input-group">
+        <span class="pagamento-valor-display tabular">
           <span class="brl-prefix">${displaySymbol}</span>
-          <input
-            type="text"
-            inputmode="decimal"
-            class="pagamento-valor-real"
-            data-pagamento-id="${p.id}"
-            value="${valorInputValue}"
-            placeholder="—"
-            aria-label="Valor pago em ${moeda}"
-            ${locked || readonly ? 'readonly' : ''}
-            ${readonly && !locked ? 'title="Você é viewer deste workspace e não pode editar valores."' : ''}
-          />
+          <span class="pagamento-valor-num">${valorInputValue || '—'}</span>
         </span>
       </td>
       <td><div class="pag-status-cell">${statusCellHtml}${markedByHtml}</div></td>
@@ -1951,26 +1941,38 @@ async function saveStatus(select) {
       }
     }
 
+    // Valor inicial pro input: valor_real se existe, senão valor_previsto.
+    const valorInicial = pag.valor_real != null
+      ? Number(pag.valor_real)
+      : Number(pag.valor_previsto) || 0;
+
     const result = await showDateConfirmPopover({
       anchor: select,
       title,
       initialDate: pag.data_pagamento || null,
       accountSelector,
+      valorInput: {
+        value: valorInicial,
+        currency: pag.moeda || 'BRL',
+        label: 'Valor pago',
+      },
     });
     if (!result) {
       // Cancelado pelo usuário — reverte o select
       select.value = pag.status;
       return;
     }
-    if (typeof result === 'string') {
-      dataPagamento = result;
-    } else {
-      dataPagamento = result.date;
-      // Se trocou a conta, marca pra setar conta_id_efetiva no update
-      const subContaId = pag.subcategorias?.conta_id || null;
-      if (result.accountId && result.accountId !== subContaId) {
-        contaEfetivaEscolhida = result.accountId;
-      }
+    // Com valorInput, result é sempre objeto
+    dataPagamento = result.date;
+    // Se trocou a conta, marca pra setar conta_id_efetiva no update
+    const subContaId = pag.subcategorias?.conta_id || null;
+    if (result.accountId && result.accountId !== subContaId) {
+      contaEfetivaEscolhida = result.accountId;
+    }
+    // Valor confirmado/editado no popover
+    if (result.valor != null && Number.isFinite(result.valor)) {
+      // Guarda no pag pra usar no UPDATE abaixo
+      pag._valorConfirmado = result.valor;
     }
   }
 
@@ -2011,6 +2013,11 @@ async function saveStatus(select) {
     // Se usuário escolheu conta diferente da configurada, guarda em conta_id_efetiva.
     // Se igual (ou cancelou a escolha), limpa pra usar o default da subcategoria.
     updatePayload.conta_id_efetiva = contaEfetivaEscolhida;
+    // Valor confirmado/editado no popover (feature nova: campo de valor
+    // no popover substituiu o input inline da coluna VALOR).
+    if (pag._valorConfirmado != null) {
+      updatePayload.valor_real = pag._valorConfirmado;
+    }
     // Atribuição: quem marcou como pago + quando
     const _u = await getCurrentUser();
     if (_u) {
@@ -2039,6 +2046,28 @@ async function saveStatus(select) {
   pag.status = newStatus;
   pag.data_pagamento = updatePayload.data_pagamento;
   pag.conta_id_efetiva = updatePayload.conta_id_efetiva ?? null;
+  if (updatePayload.valor_real != null) {
+    pag.valor_real = updatePayload.valor_real;
+    // Propaga pra transação vinculada (se houver) — sync_pagamento_to_transacao
+    // já lida com criação/update de tx no fluxo normal. Aqui só garantimos que
+    // se já há tx vinculada, ela reflita o novo valor_real.
+    try {
+      const { data: txs } = await supabase
+        .from('transacoes')
+        .select('id')
+        .eq('pagamento_id', id);
+      if (txs && txs.length > 0) {
+        await supabase
+          .from('transacoes')
+          .update({ valor: updatePayload.valor_real })
+          .eq('pagamento_id', id);
+      }
+    } catch (e) {
+      console.warn('[saveStatus] propagar valor pra tx', e);
+    }
+  }
+  // Limpa estado transitório
+  delete pag._valorConfirmado;
   STATUS_OPTIONS.forEach((s) => select.classList.remove(s.cls));
   const cur = STATUS_OPTIONS.find((s) => s.value === newStatus);
   if (cur) select.classList.add(cur.cls);

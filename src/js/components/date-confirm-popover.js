@@ -20,13 +20,18 @@
  * @param {Array<{id, name}>} opts.accountSelector.accounts
  * @param {string} opts.accountSelector.currentId - conta default selecionada
  * @param {string} [opts.accountSelector.label='Conta']
- * @returns {Promise<string|{date,accountId}|null>}
+ * @param {object} [opts.valorInput] - se setado, mostra input de valor
+ * @param {number} opts.valorInput.value - valor inicial (pré-populado)
+ * @param {string} [opts.valorInput.currency='BRL'] - símbolo a exibir
+ * @param {string} [opts.valorInput.label='Valor']
+ * @returns {Promise<string|{date,accountId?,valor?}|null>}
  */
 export function showDateConfirmPopover({
   anchor,
   title = 'Quando foi pago?',
   initialDate = null,
   accountSelector = null,
+  valorInput = null,
 } = {}) {
   return new Promise((resolve) => {
     if (!anchor) { resolve(null); return; }
@@ -53,6 +58,28 @@ export function showDateConfirmPopover({
       `;
     }
 
+    // Monta input de valor (se aplicável)
+    let valorInputHtml = '';
+    if (valorInput) {
+      const label = valorInput.label || 'Valor';
+      const currency = valorInput.currency || 'BRL';
+      const symbol = currency === 'BRL' ? 'R$' : currency;
+      const initialVal = (Number(valorInput.value) || 0).toFixed(2);
+      valorInputHtml = `
+        <label class="date-confirm-popover-label">${label}</label>
+        <div class="orcamento-input-group">
+          <span class="brl-prefix">${escapeHtml(symbol)}</span>
+          <input
+            class="input date-confirm-popover-valor"
+            type="text"
+            inputmode="decimal"
+            value="${initialVal}"
+            aria-label="${label}"
+          />
+        </div>
+      `;
+    }
+
     // Cria o popover
     const pop = document.createElement('div');
     pop.className = 'date-confirm-popover';
@@ -62,6 +89,7 @@ export function showDateConfirmPopover({
       <div class="date-confirm-popover-arrow"></div>
       <p class="date-confirm-popover-title">${title}</p>
       <input class="input date-confirm-popover-input" type="date" value="${defaultDate}">
+      ${valorInputHtml}
       ${accountSelectorHtml}
       <div class="date-confirm-popover-actions">
         <button type="button" class="btn btn-ghost btn-sm" data-action="cancel">Cancelar</button>
@@ -91,6 +119,7 @@ export function showDateConfirmPopover({
 
     const input = pop.querySelector('.date-confirm-popover-input');
     const accountEl = pop.querySelector('.date-confirm-popover-account');
+    const valorEl = pop.querySelector('.date-confirm-popover-valor');
     const btnConfirm = pop.querySelector('[data-action="confirm"]');
     const btnCancel = pop.querySelector('[data-action="cancel"]');
 
@@ -113,8 +142,31 @@ export function showDateConfirmPopover({
     const confirm = () => {
       const val = input.value;
       if (!val) { input.focus(); return; }
-      if (accountSelector) {
-        close({ date: val, accountId: accountEl?.value || accountSelector.currentId });
+
+      // Parse de valor (suporta vírgula ou ponto)
+      let valorNum = null;
+      if (valorInput && valorEl) {
+        const raw = String(valorEl.value || '').replace(/\./g, '').replace(',', '.');
+        valorNum = Number(raw);
+        if (!Number.isFinite(valorNum) || valorNum < 0) {
+          valorEl.focus();
+          valorEl.select?.();
+          return;
+        }
+      }
+
+      // Retorno: sempre objeto se há valor ou conta. String pura só
+      // quando popover é "minimal" (só data, sem extras).
+      const hasExtras = accountSelector || valorInput;
+      if (hasExtras) {
+        const result = { date: val };
+        if (accountSelector) {
+          result.accountId = accountEl?.value || accountSelector.currentId;
+        }
+        if (valorInput) {
+          result.valor = valorNum;
+        }
+        close(result);
       } else {
         close(val);
       }
