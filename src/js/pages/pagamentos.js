@@ -17,6 +17,7 @@ import { renderAttribBadge } from '../lib/attribution-badge.js';
 import { canWrite } from '../lib/permissions.js';
 import { ensureGastosDiversosForBlocos } from '../lib/gastos-diversos.js';
 import { ensureSubcategoriasFaturas, checkAndCloseFaturas, ensurePagamentosFaturaForMonths } from '../lib/faturas-cartao.js';
+import { isMonthPrepared, markMonthAsPrepared, markAllAsStale } from '../lib/month-cache.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -90,12 +91,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   initCurrencyWidget('currency-widget');
   bindEvents();
   bindAlocacaoEvents();
-  // Carrega membros do workspace em paralelo (pra atribuição "Maria marcou…")
-  const membersP = listMembers().catch(() => []);
-  await loadCategorias();
-  await loadSubcategorias();
-  await loadContas();
-  await membersP; // garante cache populado antes do render
+  // Perf-A1: paralelizar fetches independentes do init.
+  // Antes: 4 round-trips sequenciais (members → cats → subs → contas).
+  // Agora: 1 round-trip (todas em paralelo). Ganho ~300-900ms.
+  await Promise.all([
+    listMembers().catch(() => []),
+    loadCategorias(),
+    loadSubcategorias(),
+    loadContas(),
+  ]);
   await loadMonth();
 });
 
@@ -245,19 +249,24 @@ async function loadMonth() {
   // Atualiza label
   document.getElementById('pag-month-label').textContent = `${MONTH_LABELS[viewMonth]} ${viewYear}`;
 
-  // 0a. Fecha faturas vencidas (cria entry em orcamento_geral pro mês de
-  // vencimento). Fire-and-forget — o ensure de pagamentos próximo passo
-  // vai pegar a nova entry no próximo refresh se houver delay.
-  checkAndCloseFaturas().catch((e) => console.warn('[checkAndCloseFaturas]', e));
+  const mesAnoCacheKey = isoMonth(viewYear, viewMonth);
+  const skipEnsures = isMonthPrepared(mesAnoCacheKey);
 
-  // 0b. Garante sub "Fatura {X}" pra cada cartão existente. AWAIT: precisa
-  // estar pronto antes de TUDO — inclusive do cache cachedSubcategorias.
-  let novasFaturas = 0;
-  try {
-    novasFaturas = await ensureSubcategoriasFaturas();
-  } catch (e) {
-    console.warn('[ensureSubcategoriasFaturas]', e);
-  }
+  if (skipEnsures) {
+    // Perf-A2: mês já preparado nessa sessão. Skip toda a cascata de
+    // ensures (~10 round-trips). Fetch direto dos pagamentos.
+    console.debug('[pagamentos] cache hit, skip ensures pra', mesAnoCacheKey);
+  } else {
+    // 0a. Fecha faturas vencidas (fire-and-forget)
+    checkAndCloseFaturas().catch((e) => console.warn('[checkAndCloseFaturas]', e));
+
+    // 0b. Garante sub "Fatura {X}" pra cada cartão existente.
+    let novasFaturas = 0;
+    try {
+      novasFaturas = await ensureSubcategoriasFaturas();
+    } catch (e) {
+      console.warn('[ensureSubcategoriasFaturas]', e);
+    }
 
   // 0c. Se criou sub nova, RE-FETCH o cache — senão ensureOrcamento e
   // ensurePagamentos abaixo iteram sem ver as subs recém-criadas.
@@ -304,11 +313,13 @@ async function loadMonth() {
     console.warn('[ensureGastosDiversosForBlocos]', e);
   }
 
-  // 2c. Re-fetch categorias + subs depois dos ensures — eles podem ter
-  // criado entries novas no banco que o cache ainda não conhece. Sem isso,
-  // o render abaixo (que itera cachedCategorias) pula o pagamento "Gastos
-  // diversos" porque a categoria "Diversos" não está no cache.
+  // 2c. Re-fetch categorias + subs depois dos ensures
   await Promise.all([loadCategorias(), loadSubcategorias()]);
+
+  // Marca mês como preparado — próxima navegação pra esse mês pula
+  // tudo acima e vai direto pro fetch dos pagamentos.
+  markMonthAsPrepared(mesAnoCacheKey);
+  } // fim if (!skipEnsures)
 
   // 3. Busca pagamentos do mês com JOIN
   const mesAno = isoMonth(viewYear, viewMonth);

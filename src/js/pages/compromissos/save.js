@@ -13,6 +13,7 @@ import { escapeHtml, todayISO, parseUserNumber } from '../../lib/utils.js';
 import { t } from '../../lib/textos.js';
 import { collectValoresMensais, saveValoresMensaisToOrcamento } from './valores-mensais.js';
 import { showInfoPopup } from './popovers.js';
+import { markAllAsStale } from '../../lib/month-cache.js';
 
 // State local ao módulo de encerrar (transitório entre openEncerrarModal e confirmarEncerrar)
 let encerrandoId = null;
@@ -431,6 +432,9 @@ export async function saveCompromisso(event, deps) {
     window._embeddedCompSaved = true;
     closeModal('modal-compromisso');
     deps.setEditingId(null);
+    // Perf-A2: invalida cache de meses preparados — sub criada/editada
+    // afeta orcamento_geral e pagamentos em N meses futuros.
+    markAllAsStale();
     await deps.loadCompromissos();
   } catch (err) {
     console.error('[saveCompromisso]', err);
@@ -454,6 +458,7 @@ export async function changeStatus(id, newStatus, deps) {
     return;
   }
   showToast(`Compromisso ${newStatus === 'arquivada' ? 'arquivado' : 'atualizado'}`, 'success');
+  markAllAsStale();
   await deps.loadCompromissos();
 }
 
@@ -504,6 +509,7 @@ export async function deleteCompromisso(id, deps) {
     return;
   }
   showToast(t('compromissos.toast.deletado', 'Compromisso deletado permanentemente'), 'success');
+  markAllAsStale();
   await deps.loadCompromissos();
 }
 
