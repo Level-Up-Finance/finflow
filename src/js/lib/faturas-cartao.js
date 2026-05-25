@@ -310,37 +310,89 @@ export async function ensureSubcategoriasFaturas(contas = null) {
     cartoes = cartoes.filter((c) => isContaCartao(c) && c.status === 'ativa');
   }
 
-  let count = 0;
-  const hoje = todayISO();
-  // Garante faturas pros próximos N meses (incluindo o atual). Cobre
-  // navegação do user entre meses e gera pagamentos antecipados em
-  // Pagamentos sem precisar esperar a fatura fechar.
-  const MONTHS_AHEAD = 4;
-  for (const cartao of cartoes) {
-    if (!cartao.vencimento || !cartao.fec_fatura) continue; // sem config completa
-    const subId = await ensureSubcategoriaFatura(cartao);
-    if (subId) count++;
+  const cartoesValidos = cartoes.filter((c) => c.vencimento && c.fec_fatura);
+  if (cartoesValidos.length === 0) return 0;
 
-    // Garante faturas do mês PASSADO (-1) + atual + próximos 3.
-    // O -1 é crítico: pra cartões cuja fatura do mês anterior ainda
-    // vence neste mês (ex: C6 fec=13/05, venc=20/05 — fatura mes_ref=05
-    // vence 20/05 mas hoje (24/05) já passou. computeMesReferencia(hoje)
-    // retorna '06' — sem -1, a fatura de venc 20/05 nunca é criada).
-    const [hy, hm] = hoje.split('-').map(Number);
-    const monthsToEnsure = new Set();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return 0;
+  const wsId = requireWorkspaceId();
+
+  // [Perf B2] PASSO 1: cria subs espelho de todos cartões em PARALELO
+  // (não sequencial). Cada ensureSubcategoriaFatura é independente.
+  const subsResult = await Promise.all(
+    cartoesValidos.map(async (c) => ({ cartao: c, subId: await ensureSubcategoriaFatura(c) }))
+  );
+  const cartoesComSub = subsResult.filter((x) => x.subId);
+
+  // [Perf B2] PASSO 2: computa TODAS faturas esperadas (cartão × mesRef)
+  const hoje = todayISO();
+  const [hy, hm] = hoje.split('-').map(Number);
+  const MONTHS_AHEAD = 4;
+  const expected = []; // { cartao, subId, mesRef, dataFechamento, dataVencimento }
+  for (const { cartao, subId } of cartoesComSub) {
     for (let i = -1; i < MONTHS_AHEAD; i++) {
-      // refMonth pode ser 0 ou negativo (janeiro - 1 = dezembro do ano anterior).
-      // Normaliza via Date.
-      const refDateObj = new Date(hy, hm - 1 + i, 15); // 15 = meio do mês pra evitar edge
+      const refDateObj = new Date(hy, hm - 1 + i, 15);
       const refIso = `${refDateObj.getFullYear()}-${String(refDateObj.getMonth() + 1).padStart(2, '0')}-15`;
       const mesRef = computeMesReferencia(refIso, cartao.fec_fatura);
-      if (mesRef) monthsToEnsure.add(mesRef);
-    }
-    for (const mesRef of monthsToEnsure) {
-      await upsertFatura(cartao, mesRef);
+      if (!mesRef) continue;
+      const { dataFechamento, dataVencimento } = computeFaturaDates(
+        mesRef, cartao.fec_fatura, cartao.vencimento
+      );
+      expected.push({ cartao, subId, mesRef, dataFechamento, dataVencimento });
     }
   }
-  return count;
+
+  // [Perf B2] PASSO 3: BATCH SELECT — busca faturas existentes em 1 query
+  const allContaIds = [...new Set(expected.map((e) => e.cartao.id))];
+  const allMesRefs  = [...new Set(expected.map((e) => e.mesRef))];
+  const { data: faturasExistentes } = await supabase
+    .from('faturas_cartao')
+    .select('id, conta_id, mes_referencia, subcategoria_id')
+    .in('conta_id', allContaIds)
+    .in('mes_referencia', allMesRefs);
+
+  const faturaExistsSet = new Set(); // 'contaId|mesRef'
+  const faturasOrfas = []; // faturas existem mas sem subId — precisam update
+  for (const f of (faturasExistentes || [])) {
+    faturaExistsSet.add(`${f.conta_id}|${f.mes_referencia}`);
+    if (!f.subcategoria_id) {
+      const exp = expected.find((e) => e.cartao.id === f.conta_id && e.mesRef === f.mes_referencia);
+      if (exp) faturasOrfas.push({ id: f.id, subcategoria_id: exp.subId });
+    }
+  }
+
+  // [Perf B2] PASSO 4: BATCH INSERT — cria faturas que faltam
+  const faturasParaCriar = [];
+  for (const e of expected) {
+    const key = `${e.cartao.id}|${e.mesRef}`;
+    if (faturaExistsSet.has(key)) continue;
+    faturasParaCriar.push({
+      user_id:         user.id,
+      workspace_id:    wsId,
+      conta_id:        e.cartao.id,
+      mes_referencia:  e.mesRef,
+      data_fechamento: e.dataFechamento,
+      data_vencimento: e.dataVencimento,
+      valor_total:     0,
+      status:          'aberta',
+      subcategoria_id: e.subId,
+    });
+  }
+  if (faturasParaCriar.length > 0) {
+    const { error: insErr } = await supabase.from('faturas_cartao').insert(faturasParaCriar);
+    if (insErr) console.warn('[ensureSubcategoriasFaturas] batch insert', insErr);
+  }
+
+  // [Perf B2] PASSO 5: linka subId em faturas órfãs (legado)
+  if (faturasOrfas.length > 0) {
+    await Promise.all(
+      faturasOrfas.map((f) =>
+        supabase.from('faturas_cartao').update({ subcategoria_id: f.subcategoria_id }).eq('id', f.id)
+      )
+    );
+  }
+
+  return cartoesComSub.length;
 }
 
 // -----------------------------
@@ -455,7 +507,7 @@ export async function ensurePagamentosFaturaForMonths(mesAnos) {
     console.warn('[cleanupPagamentosFaturaOrfaos]', e);
   }
 
-  // Busca todos cartões ativos + suas subs espelho
+  // 1. Busca cartões ativos
   const { data: cartoes, error: contasErr } = await supabase
     .from('contas')
     .select('id, nome, apelido, vencimento, status')
@@ -464,76 +516,125 @@ export async function ensurePagamentosFaturaForMonths(mesAnos) {
     .eq('status', 'ativa');
   if (contasErr || !cartoes || cartoes.length === 0) return 0;
 
-  let created = 0;
-  for (const cartao of cartoes) {
-    if (!cartao.vencimento) continue;
-    const subId = await ensureSubcategoriaFatura(cartao);
-    if (!subId) continue;
+  // 2. Garante sub espelho de TODOS os cartões em PARALELO (não sequencial)
+  //    [Perf B2] Antes: N awaits sequenciais. Agora: Promise.all.
+  const cartoesComSub = await Promise.all(
+    cartoes
+      .filter((c) => c.vencimento)
+      .map(async (c) => ({ cartao: c, subId: await ensureSubcategoriaFatura(c) }))
+  );
+  const validos = cartoesComSub.filter((x) => x.subId);
+  if (validos.length === 0) return 0;
 
+  // 3. Computa TODOS pagamentos esperados (cartão × mês)
+  const expected = [];
+  for (const { cartao, subId } of validos) {
     for (const mesAno of mesAnos) {
       const [vy, vm] = mesAno.split('-').map(Number);
       const lastDay = new Date(vy, vm, 0).getDate();
       const vd = Math.min(Number(cartao.vencimento), lastDay);
       const dataVencimento = `${vy}-${String(vm).padStart(2, '0')}-${String(vd).padStart(2, '0')}`;
-      const blocoQuinzenal = vd <= 15 ? 1 : 2;
-      const valorPrevisto = 0;
-
-    // 1. Garante orcamento_geral entry
-    let orcId;
-    const { data: orcExisting } = await supabase
-      .from('orcamento_geral')
-      .select('id')
-      .eq('subcategoria_id', subId)
-      .eq('mes_ano', mesAno)
-      .maybeSingle();
-    if (orcExisting) {
-      orcId = orcExisting.id;
-    } else {
-      const { data: orcNovo, error: orcErr } = await supabase
-        .from('orcamento_geral')
-        .insert({
-          user_id:         user.id,
-          workspace_id:    wsId,
-          subcategoria_id: subId,
-          mes_ano:         mesAno,
-          valor_previsto:  valorPrevisto,
-          moeda:           'BRL',
-        })
-        .select('id').single();
-      if (orcErr) { console.warn('[ensurePagamentosFatura] orc', orcErr); continue; }
-      orcId = orcNovo.id;
+      expected.push({
+        subId, mesAno, dataVencimento,
+        blocoQuinzenal: vd <= 15 ? 1 : 2,
+      });
     }
+  }
 
-    // 2. Garante pagamento (idempotente)
-    const { data: pagExisting } = await supabase
-      .from('pagamentos')
-      .select('id')
-      .eq('subcategoria_id', subId)
-      .eq('data_vencimento', dataVencimento)
-      .maybeSingle();
-    if (pagExisting) continue;
+  const allSubIds = [...new Set(expected.map((e) => e.subId))];
+  const allDatas  = [...new Set(expected.map((e) => e.dataVencimento))];
+  const allMesAnos = [...new Set(expected.map((e) => e.mesAno))];
 
-    const { error: pagErr } = await supabase
-      .from('pagamentos')
-      .insert({
+  // 4. BATCH 1: busca TODOS orcamento_geral existentes em 1 query
+  //    [Perf B2] Antes: N SELECTs sequenciais. Agora: 1 SELECT com .in().
+  const { data: orcsExistentes } = await supabase
+    .from('orcamento_geral')
+    .select('id, subcategoria_id, mes_ano')
+    .in('subcategoria_id', allSubIds)
+    .in('mes_ano', allMesAnos);
+
+  const orcMap = new Map(); // 'subId|mesAno' → id
+  for (const o of (orcsExistentes || [])) {
+    orcMap.set(`${o.subcategoria_id}|${o.mes_ano}`, o.id);
+  }
+
+  // 5. BATCH 2: UPSERT em massa dos orcamentos que faltam
+  //    [Perf B2] Defensiva: upsert com onConflict pra robustez por row.
+  const orcsParaCriar = [];
+  for (const e of expected) {
+    const key = `${e.subId}|${e.mesAno}`;
+    if (!orcMap.has(key)) {
+      orcsParaCriar.push({
         user_id:         user.id,
         workspace_id:    wsId,
-        created_by:      user.id,
-        orcamento_id:    orcId,
-        subcategoria_id: subId,
-        mes_ano:         mesAno,
-        bloco_quinzenal: blocoQuinzenal,
-        valor_previsto:  valorPrevisto,
-        valor_real:      valorPrevisto,
+        subcategoria_id: e.subId,
+        mes_ano:         e.mesAno,
+        valor_previsto:  0,
         moeda:           'BRL',
-        status:          'A Pagar',
-        data_vencimento: dataVencimento,
       });
-    if (pagErr) { console.warn('[ensurePagamentosFatura] pag', pagErr); continue; }
-    created++;
-    } // fim for mesAno
-  } // fim for cartao
-  return created;
+    }
+  }
+  if (orcsParaCriar.length > 0) {
+    const { data: orcsNovos, error: orcBatchErr } = await supabase
+      .from('orcamento_geral')
+      .upsert(orcsParaCriar, {
+        onConflict: 'user_id,subcategoria_id,mes_ano',
+        ignoreDuplicates: false,
+      })
+      .select('id, subcategoria_id, mes_ano');
+    if (orcBatchErr) {
+      console.warn('[ensurePagamentosFatura] batch orcamento', orcBatchErr);
+    } else {
+      for (const o of (orcsNovos || [])) {
+        orcMap.set(`${o.subcategoria_id}|${o.mes_ano}`, o.id);
+      }
+    }
+  }
+
+  // 6. BATCH 3: busca TODOS pagamentos existentes em 1 query
+  const { data: pagsExistentes } = await supabase
+    .from('pagamentos')
+    .select('subcategoria_id, data_vencimento')
+    .in('subcategoria_id', allSubIds)
+    .in('data_vencimento', allDatas);
+
+  const pagSet = new Set(); // 'subId|dataVencimento'
+  for (const p of (pagsExistentes || [])) {
+    pagSet.add(`${p.subcategoria_id}|${p.data_vencimento}`);
+  }
+
+  // 7. BATCH 4: INSERT em massa dos pagamentos que faltam
+  const pagsParaCriar = [];
+  for (const e of expected) {
+    const key = `${e.subId}|${e.dataVencimento}`;
+    if (pagSet.has(key)) continue;
+    const orcId = orcMap.get(`${e.subId}|${e.mesAno}`);
+    if (!orcId) continue; // orcamento falhou — não cria pagamento órfão
+    pagsParaCriar.push({
+      user_id:         user.id,
+      workspace_id:    wsId,
+      created_by:      user.id,
+      orcamento_id:    orcId,
+      subcategoria_id: e.subId,
+      mes_ano:         e.mesAno,
+      bloco_quinzenal: e.blocoQuinzenal,
+      valor_previsto:  0,
+      valor_real:      0,
+      moeda:           'BRL',
+      status:          'A Pagar',
+      data_vencimento: e.dataVencimento,
+    });
+  }
+  if (pagsParaCriar.length > 0) {
+    const { error: pagBatchErr } = await supabase
+      .from('pagamentos')
+      .insert(pagsParaCriar);
+    if (pagBatchErr) {
+      console.warn('[ensurePagamentosFatura] batch pagamento', pagBatchErr);
+      return 0;
+    }
+  }
+  return pagsParaCriar.length;
 }
 
 // -----------------------------
