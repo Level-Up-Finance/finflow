@@ -251,10 +251,15 @@ async function loadMonth() {
   const mesAnoCacheKey = isoMonth(viewYear, viewMonth);
   const skipEnsures = isMonthPrepared(mesAnoCacheKey);
 
+  // PERF-MEASURE: log de timing por etapa pra identificar gargalo real.
+  const _perfStart = performance.now();
+  const _perfLog = (label) => {
+    const t = performance.now() - _perfStart;
+    console.log(`[PERF] ${label}: ${t.toFixed(0)}ms (acumulado)`);
+  };
+
   if (skipEnsures) {
-    // Perf-A2: mês já preparado nessa sessão. Skip toda a cascata de
-    // ensures (~10 round-trips). Fetch direto dos pagamentos.
-    console.debug('[pagamentos] cache hit, skip ensures pra', mesAnoCacheKey);
+    _perfLog('cache hit, skip ensures');
   } else {
     // 0a. Fecha faturas vencidas (fire-and-forget)
     checkAndCloseFaturas().catch((e) => console.warn('[checkAndCloseFaturas]', e));
@@ -266,6 +271,7 @@ async function loadMonth() {
     } catch (e) {
       console.warn('[ensureSubcategoriasFaturas]', e);
     }
+    _perfLog('ensureSubcategoriasFaturas');
 
   // 0c. Se criou sub nova, RE-FETCH o cache — senão ensureOrcamento e
   // ensurePagamentos abaixo iteram sem ver as subs recém-criadas.
@@ -277,9 +283,11 @@ async function loadMonth() {
 
   // 1. Garante que orcamento_geral tenha entries pro mês (cascata: subcategoria → orcamento)
   await ensureOrcamentoForMonth(viewYear, viewMonth);
+  _perfLog('ensureOrcamentoForMonth');
 
   // 2. Garante que pagamentos tenha entries pro mês (cascata: orcamento → pagamentos)
   await ensurePagamentosForMonth(viewYear, viewMonth);
+  _perfLog('ensurePagamentosForMonth');
 
   // 2a. Garante pagamentos das subs Fatura. Cobre 7 meses fixos
   // (atual -1 até +5) — independente dos blocos visíveis. Garante
@@ -299,6 +307,7 @@ async function loadMonth() {
   } catch (e) {
     console.warn('[ensurePagamentosFaturaForMonths]', e);
   }
+  _perfLog('ensurePagamentosFaturaForMonths');
 
   // 2b. Garante pagamento de "Gastos diversos" pra cada BLOCO REAL da
   // renda principal (não 1 por bloco_quinzenal civil). Fonte da verdade:
@@ -311,9 +320,11 @@ async function loadMonth() {
   } catch (e) {
     console.warn('[ensureGastosDiversosForBlocos]', e);
   }
+  _perfLog('ensureGastosDiversosForBlocos');
 
   // 2c. Re-fetch categorias + subs depois dos ensures
   await Promise.all([loadCategorias(), loadSubcategorias()]);
+  _perfLog('re-fetch cats+subs');
 
   // Marca mês como preparado — próxima navegação pra esse mês pula
   // tudo acima e vai direto pro fetch dos pagamentos.
@@ -327,6 +338,7 @@ async function loadMonth() {
     .select('*, subcategorias(*, categorias(*))')
     .eq('mes_ano', mesAno)
     .order('data_vencimento');
+  _perfLog(`fetch pagamentos do mes (${data?.length || 0} rows)`);
 
   if (error) {
     console.error('[loadMonth]', error);
