@@ -91,15 +91,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   initCurrencyWidget('currency-widget');
   bindEvents();
   bindAlocacaoEvents();
-  // Perf-A1: paralelizar fetches independentes do init.
-  // Antes: 4 round-trips sequenciais (members → cats → subs → contas).
-  // Agora: 1 round-trip (todas em paralelo). Ganho ~300-900ms.
-  await Promise.all([
-    listMembers().catch(() => []),
-    loadCategorias(),
-    loadSubcategorias(),
-    loadContas(),
-  ]);
+  // Carrega membros em background, outras sequencial.
+  // (Tentativa de Promise.all causou contenção — possível rate limit
+  // ou lock de conexão Supabase com 4 queries simultâneas.)
+  const membersP = listMembers().catch(() => []);
+  await loadCategorias();
+  await loadSubcategorias();
+  await loadContas();
+  await membersP;
   await loadMonth();
 });
 
