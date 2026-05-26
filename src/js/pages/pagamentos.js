@@ -2157,7 +2157,9 @@ async function createTransferPairAndUpdateStatus(pag, select, dataPagamento = nu
     if (!user) throw new Error('Usuário não autenticado');
 
     const valor    = Number(pag.valor_real ?? pag.valor_previsto ?? 0);
-    const moeda    = pag.moeda || 'BRL';
+    // Fronteira de moeda: transação criada a partir de pagamento confirmado
+    // já passou pela conversão BRL no popover. Hardcoded 'BRL' (idem sync).
+    const moeda    = 'BRL';
     const data     = dataPagamento || pag.data_vencimento || new Date().toISOString().slice(0, 10);
     const descricao = `Transferência — ${displayName(pag)}`;
 

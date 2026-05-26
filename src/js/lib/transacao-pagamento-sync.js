@@ -39,7 +39,7 @@ export async function findMatchingPagamento({ subcategoria_id, data }) {
   const mes = monthOfDate(data);
   const { data: rows, error } = await supabase
     .from('pagamentos')
-    .select('id, subcategoria_id, mes_ano, status, valor_previsto, valor_real, bloco_quinzenal, data_vencimento, moeda')
+    .select('id, subcategoria_id, mes_ano, status, valor_previsto, valor_real, bloco_quinzenal, data_vencimento')
     .eq('subcategoria_id', subcategoria_id)
     .eq('mes_ano', mes)
     .order('bloco_quinzenal');
@@ -127,8 +127,12 @@ export async function syncPagamentoToTransacao(pagamento, subcategoria) {
   // Conta efetiva (se setada) tem prioridade sobre conta do compromisso —
   // cobre o caso de pagamento sair de conta diferente da configurada.
   const conta_id = pagamento.conta_id_efetiva || subcategoria?.conta_id || null;
-  const moeda    = subcategoria?.moeda || pagamento.moeda || 'BRL';
 
+  // Fronteira de moeda: uma transação criada a partir de um pagamento confirmado
+  // já passou pela conversão BRL no popover (pagamentos.js saveStatus). O
+  // valor_real está em BRL. Hardcoding moeda='BRL' aqui impede que o sync
+  // herde a moeda original do compromisso (USD/EUR/etc) — o que causava
+  // double-conversion downstream (display multiplicava por taxa USD).
   const payload = {
     data,
     valor,
@@ -136,7 +140,7 @@ export async function syncPagamentoToTransacao(pagamento, subcategoria) {
     conta_id,
     subcategoria_id: pagamento.subcategoria_id,
     pagamento_id:    pagamento.id,
-    moeda,
+    moeda:           'BRL',
     descricao:       `Auto-criada do pagamento (${pagamento.status})`,
   };
 
