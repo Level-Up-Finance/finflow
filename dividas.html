@@ -588,22 +588,12 @@
           <p class="field-hint" id="pagar-valor-real-delta"></p>
         </div>
 
-        <!-- Registrar em Transações (sempre cria — campo obrigatório) -->
-        <div class="field mt-4">
-          <label class="field-label" for="pagar-transacao-conta">
-            Conta debitada *
-            <span class="field-label-hint">(obrigatório — pagamento sempre é registrado em Transações)</span>
-          </label>
-          <div class="conta-picker" id="pagar-transacao-conta-picker">
-            <button type="button" class="conta-picker-btn" id="pagar-transacao-conta-btn">
-              <div id="pagar-transacao-conta-avatar-wrap"><div class="bank-avatar size-sm"><div class="bank-avatar-fallback" style="background:#9CA3AF;">?</div></div></div>
-              <span class="conta-picker-name" id="pagar-transacao-conta-name">Selecionar conta…</span>
-              <svg class="conta-picker-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
-            <input type="hidden" id="pagar-transacao-conta" value="">
-          </div>
-        </div>
-        <input type="hidden" id="pagar-criar-transacao" checked>
+        <!-- Conta debitada removida intencionalmente:
+             este modal registra apenas o histórico do pagamento de dívida
+             (atualiza pagamentos_divida_historico + saldo da dívida).
+             Não cria transação — então não há conta a debitar. Movimento
+             real de caixa é registrado pela página Pagamentos via popover
+             "Marcar como Pago". -->
 
       </div>
       <div class="modal-footer">

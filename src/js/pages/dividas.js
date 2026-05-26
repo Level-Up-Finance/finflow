@@ -364,7 +364,7 @@ let cachedDividas              = [];
 let cachedSubcategorias        = []; // subs com divida_id (próprias 1:1 + custos vinculados N:1)
 let cachedContas               = [];
 let divContaPicker         = null;
-let pagarContaPicker       = null;
+// pagarContaPicker removido — modal de pagamento de parcela não cria mais transação.
 let cachedContatos         = [];
 let cachedDividaHistorico  = []; // pagamentos_divida_historico
 let cachedTaxaHistorico    = []; // divida_taxa_historico
@@ -582,18 +582,8 @@ async function loadAll() {
     });
     divContaPicker.init();
   }
-  if (!pagarContaPicker) {
-    pagarContaPicker = createContaPicker({
-      triggerBtnId: 'pagar-transacao-conta-btn',
-      hiddenInputId: 'pagar-transacao-conta',
-      avatarWrapId:  'pagar-transacao-conta-avatar-wrap',
-      nameElId:      'pagar-transacao-conta-name',
-      getContas:     () => cachedContas,
-      placeholder:   'Selecionar conta…',
-      allowBlank:    false,
-    });
-    pagarContaPicker.init();
-  }
+  // pagarContaPicker removido: modal de pagamento de parcela não cria mais
+  // transação, então não há conta a escolher.
   initContatoPickerOnce();
   await renderWidgets();
   render();
@@ -2206,7 +2196,7 @@ function openPagarParcelaModal(id) {
   document.getElementById('pagar-valor-real-delta').textContent = '';
 
   // Conta picker (obrigatório — pré-seleciona a conta vinculada à dívida se houver)
-  pagarContaPicker?.setValue(d.conta_id || '');
+  // pagarContaPicker removido — modal não usa mais conta.
 
   renderPagarCard();
   openModal('modal-pagar-parcela');
@@ -2327,9 +2317,6 @@ async function saveParcela() {
 
   if (!data) { showToast(t('dividas.validacao.data_pagamento', 'Informe a data de pagamento'), 'error'); return; }
 
-  const contaIdPgto = document.getElementById('pagar-transacao-conta').value;
-  if (!contaIdPgto) { showToast(t('dividas.validacao.conta_obrigatoria', t('dividas.validacao.conta_debitada', 'Selecione a conta debitada — pagamento sempre é registrado em Transações.')), 'error'); return; }
-
   const pagas     = d.parcelas_pagas || 0;
   const n         = d.n_parcelas;
   const principal = Number(d.valor_total);
@@ -2390,18 +2377,16 @@ async function saveParcela() {
     });
     if (updErr) throw updErr;
 
-    // Registrar em Transações (sempre — campo obrigatório). Vincula à dívida
-    // pra preservar rastreio mesmo se ela for arquivada depois.
-    const descTrans = rows.length === 1
-      ? `Parcela ${rows[0].n}/${n} — ${d.nome}`
-      : `Parcelas ${rows[0].n}–${rows[rows.length - 1].n}/${n} — ${d.nome}`;
-    const { error: transErr } = await supabase.from('transacoes').insert({
-      user_id: user.id, workspace_id: requireWorkspaceId(), created_by: user.id, conta_id: contaIdPgto, tipo: 'Despesa',
-      valor: valorRealEfetivo, data, descricao: descTrans,
-      divida_id: pagarParcelaId,
-      contato_id: d.contato_id || null,
-    });
-    if (transErr) throw transErr;
+    // NOTA ARQUITETURAL: este modal registra o FATO HISTÓRICO da parcela
+    // (entrada em pagamentos_divida_historico + atualização do saldo da
+    // dívida). NÃO cria transação. Motivo: o dinheiro já saiu da conta
+    // bancária no momento real do pagamento. Criar transação aqui
+    // double-counts o caixa.
+    //
+    // Pra registrar movimento de caixa real (afeta saldo da conta), o
+    // usuário usa a página Pagamentos: marca o pagamento como Pago via
+    // popover, e isso cria a transação pelo flow normal (sync via
+    // lib/transacao-pagamento-sync.js).
 
     const msg = pagarValorRealEditado && Math.abs(totalCorrecao) >= 0.01
       ? `${rows.length} parcela${rows.length > 1 ? 's' : ''} registrada${rows.length > 1 ? 's' : ''} (ajuste: ${formatCurrency(totalCorrecao)})`
