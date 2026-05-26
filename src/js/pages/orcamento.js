@@ -321,8 +321,8 @@ async function renderPassadosForMonth(container, availableMonths, selectedMesAno
         <tr class="orcamento-row" data-pagamento-id="${pagamento.id}">
           <td>${escapeHtml(sub.apelido?.trim() || sub.nome)}</td>
           <td><span class="status-pill ${statusClass}">${pagamento.status}</span></td>
-          <td class="text-right tabular">${formatCurrency(previsto, pagamento.moeda || 'BRL')}</td>
-          <td class="text-right tabular">${formatCurrency(real, pagamento.moeda || 'BRL')}</td>
+          <td class="text-right tabular">${formatCurrency(toBRL(previsto, pagamento.moeda || 'BRL'), 'BRL')}</td>
+          <td class="text-right tabular">${formatCurrency(toBRL(real, pagamento.moeda || 'BRL'), 'BRL')}</td>
           <td class="text-muted" style="font-size: var(--fs-xs);">${escapeHtml(pagamento.observacao || '')}</td>
         </tr>
       `;

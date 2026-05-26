@@ -508,13 +508,13 @@ async function loadAll() {
       .eq('mes_ano', mesAno)
       .order('data_vencimento'),
     supabase.from('transacoes')
-      .select('id, data, tipo, valor, descricao, conta_id, contas(nome, apelido), subcategoria_id, subcategorias(categorias(grupo)), pagamento:pagamentos(status)')
+      .select('id, data, tipo, valor, moeda, cambio_travado, descricao, conta_id, contas(nome, apelido), subcategoria_id, subcategorias(categorias(grupo)), pagamento:pagamentos(status)')
       .order('data', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(10),
     // Patrimônio: dívidas e investimentos selecionados + ativos
-    supabase.from('dividas').select('id, nome, valor_pago, valor_total, status').eq('inclui_no_patrimonio', true),
-    supabase.from('projetos_investimento').select('id, nome, saldo_inicial').eq('inclui_no_patrimonio', true),
+    supabase.from('dividas').select('id, nome, moeda, valor_pago, valor_total, status').eq('inclui_no_patrimonio', true),
+    supabase.from('projetos_investimento').select('id, nome, moeda, saldo_inicial').eq('inclui_no_patrimonio', true),
     supabase.from('ativos_subjacentes').select('divida_id, valor_atual, tipo'),
   ]);
 
@@ -531,6 +531,7 @@ async function loadAll() {
       const saldo = Math.max(0, Number(d.valor_total || 0) - Number(d.valor_pago || 0));
       return {
         nome: d.nome,
+        moeda: d.moeda || 'BRL',
         valor_ativo: Number(ativo?.valor_atual || 0),
         saldo_devedor: saldo,
         tem_ativo: !!ativo,
@@ -538,6 +539,7 @@ async function loadAll() {
     }),
     investimentos: (projetosPatr.data || []).map((p) => ({
       nome: p.nome,
+      moeda: p.moeda || 'BRL',
       valor: Number(p.saldo_inicial || 0),
     })),
   };
@@ -549,6 +551,9 @@ async function refreshRates() {
   const fromData = [...new Set([
     ...cachedOrcamento.map((e) => e.moeda).filter((m) => m && m !== 'BRL'),
     ...cachedPagamentos.map((p) => p.moeda).filter((m) => m && m !== 'BRL'),
+    ...cachedTransacoes.map((t) => t.moeda).filter((m) => m && m !== 'BRL'),
+    ...(cachedPatrimonio?.dividas || []).map((d) => d.moeda).filter((m) => m && m !== 'BRL'),
+    ...(cachedPatrimonio?.investimentos || []).map((i) => i.moeda).filter((m) => m && m !== 'BRL'),
   ])];
   // Sempre inclui USD e EUR para o widget de câmbio
   const used = [...new Set([...fromData, 'USD', 'EUR'])];
@@ -708,8 +713,15 @@ function renderPatrimonio() {
     return;
   }
 
-  const totalDividas = dividasComAtivo.reduce((s, d) => s + (d.valor_ativo - d.saldo_devedor), 0);
-  const totalInvest  = investimentos.reduce((s, i) => s + i.valor, 0);
+  const toBRLOr = (v, m) => {
+    const conv = convertToBRL(Number(v) || 0, m);
+    return conv != null ? conv : Number(v) || 0;
+  };
+  const totalDividas = dividasComAtivo.reduce(
+    (s, d) => s + toBRLOr(d.valor_ativo - d.saldo_devedor, d.moeda),
+    0,
+  );
+  const totalInvest  = investimentos.reduce((s, i) => s + toBRLOr(i.valor, i.moeda), 0);
   const patrimonioFixo = totalDividas + totalInvest;
   const fmt = (n) => formatCurrencyHTML(n, 'BRL');
 
@@ -727,7 +739,7 @@ function renderPatrimonio() {
         ${dividasComAtivo.map((d) => `
           <div style="display:flex;justify-content:space-between;padding:var(--space-1) 0;font-size:var(--fs-sm);">
             <span>${escapeHtml(d.nome)}</span>
-            <span class="tabular">${fmt(d.valor_ativo - d.saldo_devedor)}</span>
+            <span class="tabular">${fmt(toBRLOr(d.valor_ativo - d.saldo_devedor, d.moeda))}</span>
           </div>
         `).join('')}
       </div>` : ''}
@@ -737,7 +749,7 @@ function renderPatrimonio() {
         ${investimentos.map((i) => `
           <div style="display:flex;justify-content:space-between;padding:var(--space-1) 0;font-size:var(--fs-sm);">
             <span>${escapeHtml(i.nome)}</span>
-            <span class="tabular">${fmt(i.valor)}</span>
+            <span class="tabular">${fmt(toBRLOr(i.valor, i.moeda))}</span>
           </div>
         `).join('')}
       </div>` : ''}
@@ -1077,7 +1089,8 @@ function renderTransacoesRecentes() {
     const isReceita = t.tipo === 'Receita';
     const sign  = isReceita ? '+' : '−';
     const cls   = isReceita ? 'dre-positive' : 'dre-negative';
-    const valor = formatCurrencyHTML(Number(t.valor) || 0, 'BRL');
+    const valBRL = convertToBRL(Number(t.valor) || 0, t.moeda, t);
+    const valor = formatCurrencyHTML(valBRL != null ? valBRL : Number(t.valor) || 0, 'BRL');
     const d     = new Date(t.data + 'T00:00:00');
     const dia   = String(d.getDate()).padStart(2, '0');
     const mes   = String(d.getMonth() + 1).padStart(2, '0');

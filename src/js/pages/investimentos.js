@@ -51,6 +51,27 @@ const today = new Date();
 const viewYear = today.getFullYear();
 const viewMonth = today.getMonth();
 
+// Cache de taxas (moeda → taxa para BRL). Usado por calcRealizado/calcPrevistoMes
+// pra converter cada pagamento/aporte/orçamento à BRL antes de somar.
+const ratesMapBRL = new Map();
+async function ensureRatesBRL(currencies) {
+  const faltando = [...new Set(currencies.filter((m) => m && m !== 'BRL' && !ratesMapBRL.has(m)))];
+  await Promise.all(faltando.map(async (cur) => {
+    try {
+      ratesMapBRL.set(cur, await fetchExchangeRate(cur, 'BRL'));
+    } catch (err) {
+      console.warn(`[investimentos] taxa ${cur}→BRL falhou:`, err);
+    }
+  }));
+}
+function toBRLValue(value, moeda) {
+  const n = Number(value) || 0;
+  if (!moeda || moeda === 'BRL') return n;
+  const rate = ratesMapBRL.get(moeda);
+  if (!rate) return n; // fallback: valor cru
+  return n * rate;
+}
+
 // STATUS_LABELS deriva da taxonomia unificada — chave é o dbValue, valor o rótulo
 const STATUS_LABELS = Object.fromEntries(
   Object.values(STATUS_BY_CONTEXT.investimento)
@@ -225,6 +246,16 @@ async function loadAll() {
   } else {
     cachedCategoriasInvest = categorias.data || [];
   }
+
+  // Garante taxas pra moedas estrangeiras vistas nos dados (projetos, pagamentos, aportes, orçamento)
+  // — necessário pra calcRealizado/calcPrevistoMes converterem cada item à BRL antes de somar.
+  const moedasUsadas = [
+    ...cachedProjetos.map((p) => p.moeda),
+    ...cachedPagamentos.map((p) => p.moeda),
+    ...cachedAportes.map((a) => a.moeda),
+    ...cachedOrcamento.map((e) => e.moeda),
+  ];
+  await ensureRatesBRL(moedasUsadas);
 
   // Invalida caches de cálculo — os dados subjacentes mudaram
   clearCalcCache();
@@ -420,43 +451,39 @@ async function render() {
 async function renderWidgets(counts) {
   const ativosNaoArq = cachedProjetos.filter((p) => p.status !== ST_INV_ARQUIVADO);
 
-  // Agrupa realizado por moeda do projeto
-  const byCurrency = {};
+  // calcRealizado já retorna em BRL (converte cada pagamento/aporte internamente).
+  // Para o breakdown opcional por moeda, calculamos "realizado nativo" separado
+  // somando saldo_inicial + aportes do projeto na moeda dele.
+  const byCurrencyNative = {}; // { code: { realizadoNativo, meta, comMeta } }
   for (const p of ativosNaoArq) {
     const moeda = p.moeda || 'BRL';
-    if (!byCurrency[moeda]) byCurrency[moeda] = { realizado: 0, meta: 0, comMeta: 0 };
-    byCurrency[moeda].realizado += calcRealizado(p.id);
+    if (!byCurrencyNative[moeda]) byCurrencyNative[moeda] = { realizadoNativo: 0, meta: 0, comMeta: 0 };
+    let nat = Number(p.saldo_inicial) || 0;
+    for (const a of cachedAportes) {
+      if (a.projeto_id === p.id) nat += Number(a.valor) || 0;
+    }
+    byCurrencyNative[moeda].realizadoNativo += nat;
     if (Number(p.meta_valor) > 0) {
-      byCurrency[moeda].meta    += Number(p.meta_valor);
-      byCurrency[moeda].comMeta += 1;
+      byCurrencyNative[moeda].meta    += Number(p.meta_valor);
+      byCurrencyNative[moeda].comMeta += 1;
     }
   }
 
-  const allCodes = Object.keys(byCurrency);
+  const allCodes = Object.keys(byCurrencyNative);
   const nonBRL   = allCodes.filter(c => c !== 'BRL');
 
-  // Câmbio para moedas estrangeiras (paralelo)
-  const ratesMap = {};
-  if (nonBRL.length > 0) {
-    await Promise.all(nonBRL.map(async code => {
-      try { ratesMap[code] = await fetchExchangeRate(code, 'BRL'); }
-      catch { ratesMap[code] = 0; }
-    }));
-  }
-
-  const toBRL = (val, code) => code === 'BRL' ? val : val * (ratesMap[code] || 0);
-
-  // ===== Widget 1: Total investido universal (convertido p/ BRL) =====
+  // ===== Widget 1: Total investido universal (em BRL) =====
+  // calcRealizado já retorna BRL — basta somar.
   let totalUniversalBRL = 0;
-  for (const [code, { realizado }] of Object.entries(byCurrency)) {
-    totalUniversalBRL += toBRL(realizado, code);
+  for (const p of ativosNaoArq) {
+    totalUniversalBRL += calcRealizado(p.id);
   }
 
   const hasMultiple = allCodes.length > 1;
   const breakdownHTML = hasMultiple
     ? ['BRL', ...nonBRL.sort()]
-        .filter(code => byCurrency[code])
-        .map(code => `<span class="kpi-extra-moeda">${formatCurrencyHTML(byCurrency[code].realizado, code)}</span>`)
+        .filter(code => byCurrencyNative[code])
+        .map(code => `<span class="kpi-extra-moeda">${formatCurrencyHTML(byCurrencyNative[code].realizadoNativo, code)}</span>`)
         .join('')
     : '';
 
@@ -478,17 +505,13 @@ async function renderWidgets(counts) {
     return;
   }
 
+  // meta_valor está na moeda do projeto → converter à BRL pra agregar.
+  // calcRealizado já é BRL.
   let metaTotalBRL    = 0;
   let metaRealizadoBRL = 0;
-  for (const [code, { meta, comMeta }] of Object.entries(byCurrency)) {
-    if (comMeta === 0) continue;
-    metaTotalBRL    += toBRL(meta, code);
-    metaRealizadoBRL += toBRL(
-      projetosComMeta
-        .filter(p => (p.moeda || 'BRL') === code)
-        .reduce((s, p) => s + calcRealizado(p.id), 0),
-      code
-    );
+  for (const p of projetosComMeta) {
+    metaTotalBRL    += toBRLValue(p.meta_valor, p.moeda);
+    metaRealizadoBRL += calcRealizado(p.id);
   }
   const pctMeta = metaTotalBRL > 0 ? Math.min(100, (metaRealizadoBRL / metaTotalBRL) * 100) : 0;
 
@@ -509,19 +532,19 @@ function renderUniversalSparkline(projetosAtivos) {
     const d = new Date(viewYear, viewMonth - i, 1);
     const fimDoMes = new Date(d.getFullYear(), d.getMonth() + 1, 0);
     const fimISO = fimDoMes.toISOString().slice(0, 10);
-    let acumulado = 0;
+    let acumulado = 0; // em BRL (sparkline universal agrega multi-moeda)
     for (const p of projetosAtivos) {
-      acumulado += Number(p.saldo_inicial) || 0;
+      acumulado += toBRLValue(p.saldo_inicial, p.moeda);
       const subIds = cachedSubcategorias.filter((s) => s.projeto_id === p.id).map((s) => s.id);
       for (const pag of cachedPagamentos) {
         if (!subIds.includes(pag.subcategoria_id)) continue;
         if (!pag.data_vencimento || pag.data_vencimento > fimISO) continue;
-        acumulado += Number(pag.valor_real) || 0;
+        acumulado += toBRLValue(pag.valor_real, pag.moeda);
       }
       for (const a of cachedAportes) {
         if (a.projeto_id !== p.id) continue;
         if (!a.data || a.data > fimISO) continue;
-        acumulado += Number(a.valor) || 0;
+        acumulado += toBRLValue(a.valor, a.moeda);
       }
     }
     series.push(acumulado);
@@ -1036,17 +1059,18 @@ function calcRealizado(projetoId) {
   const proj = cachedProjetos.find((p) => p.id === projetoId);
   if (!proj) { _cacheRealizado.set(projetoId, 0); return 0; }
 
-  let total = Number(proj.saldo_inicial) || 0;
+  // saldo_inicial está na moeda do projeto
+  let total = toBRLValue(proj.saldo_inicial, proj.moeda);
   const subIds = getSubIdsByProjeto(projetoId);
   const subIdSet = new Set(subIds); // Set lookup é O(1) vs Array O(n)
 
   for (const p of cachedPagamentos) {
     if (!subIdSet.has(p.subcategoria_id)) continue;
-    total += Number(p.valor_real) || 0;
+    total += toBRLValue(p.valor_real, p.moeda);
   }
   for (const a of cachedAportes) {
     if (a.projeto_id !== projetoId) continue;
-    total += Number(a.valor) || 0;
+    total += toBRLValue(a.valor, a.moeda);
   }
 
   _cacheRealizado.set(projetoId, total);
@@ -1062,7 +1086,7 @@ function calcPrevistoMes(projetoId) {
   let total = 0;
   for (const e of cachedOrcamento) {
     if (!subIdSet.has(e.subcategoria_id)) continue;
-    total += Number(e.valor_previsto) || 0;
+    total += toBRLValue(e.valor_previsto, e.moeda);
   }
 
   _cachePrevistoMes.set(projetoId, total);

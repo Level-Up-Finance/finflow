@@ -12,6 +12,27 @@ import { showToast } from '../components/toast.js';
 import { formatCurrency, formatCurrencyHTML } from '../lib/moedas.js';
 import { escapeHtml, formatDateBR } from '../lib/utils.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
+import { fetchExchangeRate } from '../lib/currency.js';
+
+// -------------------------------------------------------
+// Câmbio → BRL (regra arquitetural: relatórios agregam tudo em BRL)
+// -------------------------------------------------------
+const ratesMapBRL = new Map();
+async function refreshRatesFor(items) {
+  const moedas = [...new Set((items || [])
+    .map((i) => i?.moeda)
+    .filter((m) => m && m !== 'BRL' && !ratesMapBRL.has(m)))];
+  await Promise.all(moedas.map(async (m) => {
+    try { ratesMapBRL.set(m, await fetchExchangeRate(m, 'BRL')); }
+    catch (err) { console.warn(`[relatorios] taxa ${m}→BRL falhou:`, err); }
+  }));
+}
+function toBRL(value, currency) {
+  const n = Number(value) || 0;
+  if (!currency || currency === 'BRL') return n;
+  const rate = ratesMapBRL.get(currency);
+  return rate ? n * rate : n;
+}
 
 // -------------------------------------------------------
 // Estado
@@ -380,6 +401,9 @@ async function loadAndRender() {
   allCategorias    = catRes.data   || [];
   allSubcategorias = filterVisibleSubs(subRes.data);
 
+  // Garante taxas pra converter tudo à BRL antes de agregar (regra arquitetural).
+  await refreshRatesFor([...allTransacoes, ...allPagamentos]);
+
   document.getElementById('relat-period-label').textContent = range.label;
 
   renderFluxo();
@@ -408,7 +432,7 @@ async function loadAndRender() {
 function buildTransQ(range) {
   let q = supabase
     .from('transacoes')
-    .select('id, data, tipo, valor, subcategoria_id, pagamento_id, conta_id, conta_destino_id, transferencia_par_id')
+    .select('id, data, tipo, valor, moeda, subcategoria_id, pagamento_id, conta_id, conta_destino_id, transferencia_par_id')
     .order('data');
   if (range.start) q = q.gte('data', range.start).lte('data', range.end);
   return q;
@@ -444,7 +468,7 @@ function renderFluxo() {
   allTransacoes.forEach((t) => {
     const key = t.data.slice(0, 7);
     if (!byMonth[key]) byMonth[key] = { receitas: 0, despesas: 0, transferencias: 0 };
-    const v = Number(t.valor) || 0;
+    const v = toBRL(t.valor, t.moeda);
     if      (t.tipo === 'Receita')      byMonth[key].receitas      += v;
     else if (t.tipo === 'Despesa')      byMonth[key].despesas      += v;
     else if (t.tipo === 'Transferência') byMonth[key].transferencias += v;
@@ -543,11 +567,10 @@ function renderPrevisto() {
       realizado: 0,
     };
 
-    byCat[cat.id].previsto += Number(p.valor_previsto) || 0;
+    byCat[cat.id].previsto += toBRL(p.valor_previsto, p.moeda);
     if (PAID_STATUSES.has(p.status)) {
-      byCat[cat.id].realizado += p.valor_real != null
-        ? Number(p.valor_real)
-        : Number(p.valor_previsto) || 0;
+      const real = p.valor_real != null ? p.valor_real : p.valor_previsto;
+      byCat[cat.id].realizado += toBRL(real, p.moeda);
     }
   });
 
@@ -562,7 +585,7 @@ function renderPrevisto() {
     const catCor  = cat?.cor  || 'var(--color-success)';
 
     if (!avulsasById[catId]) avulsasById[catId] = { nome: catNome, cor: catCor, grupo: 'receitas', previsto: 0, realizado: 0 };
-    avulsasById[catId].realizado += Number(t.valor) || 0;
+    avulsasById[catId].realizado += toBRL(t.valor, t.moeda);
   });
 
   // Mescla avulsas em byCat (sem sobrescrever o previsto das que já existem)
@@ -674,14 +697,15 @@ function renderCategorias() {
     const catNome = cat?.nome || 'Sem categoria';
     const catCor  = cat?.cor  || 'var(--color-text-muted)';
 
+    const vBRL = toBRL(t.valor, t.moeda);
     if (!byCat[catId]) byCat[catId] = { nome: catNome, cor: catCor, total: 0, count: 0, subs: {} };
-    byCat[catId].total += Number(t.valor) || 0;
+    byCat[catId].total += vBRL;
     byCat[catId].count++;
 
     const subId   = sub?.id || '__sem_sub';
     const subNome = sub?.apelido?.trim() || sub?.nome || 'Sem subcategoria';
     if (!byCat[catId].subs[subId]) byCat[catId].subs[subId] = { nome: subNome, total: 0, count: 0 };
-    byCat[catId].subs[subId].total += Number(t.valor) || 0;
+    byCat[catId].subs[subId].total += vBRL;
     byCat[catId].subs[subId].count++;
   });
 
@@ -1599,22 +1623,26 @@ async function renderSaldos() {
   const saldos = await loadSaldosAtuais(contas);
   const snaps  = await loadSnapshotsBancarios(contas.map((c) => c.id));
 
+  // Garante taxas pras moedas das contas — totais agregados ficam em BRL.
+  await refreshRatesFor(contas);
+
   const enriched = contas.map((c) => {
     const nome  = c.apelido?.trim() || c.nome;
     const saldo = saldos.get(c.id) ?? 0;
+    const saldoBRL = toBRL(saldo, c.moeda);
     const snap  = snaps.get(c.id);
-    return { ...c, displayName: nome, saldo, snapshot: snap };
+    return { ...c, displayName: nome, saldo, saldoBRL, snapshot: snap };
   });
 
   // Cartão de Crédito não compõe patrimônio positivo (são contas de gasto)
   const positivos = enriched.filter((c) => c.tipo !== 'Cartão de Crédito');
-  const totalPatrim = positivos.reduce((s, c) => s + (c.saldo || 0), 0);
+  const totalPatrim = positivos.reduce((s, c) => s + (c.saldoBRL || 0), 0);
   const totalDispon = positivos
     .filter((c) => TIPOS_DISPONIVEIS.has(c.tipo))
-    .reduce((s, c) => s + (c.saldo || 0), 0);
+    .reduce((s, c) => s + (c.saldoBRL || 0), 0);
   const totalCofrin = positivos
     .filter((c) => c.tipo === 'Cofrinho')
-    .reduce((s, c) => s + (c.saldo || 0), 0);
+    .reduce((s, c) => s + (c.saldoBRL || 0), 0);
 
   // KPIs
   document.getElementById('saldos-kpis').innerHTML = [
@@ -1624,12 +1652,12 @@ async function renderSaldos() {
     kpiCard('Contas ativas',        String(contas.length),              'primary', '#'),
   ].join('');
 
-  // Donut por tipo de conta (somando saldos positivos por tipo)
+  // Donut por tipo de conta (somando saldos positivos por tipo, em BRL pra agregar)
   const byTipo = {};
   positivos.forEach((c) => {
     const t = c.tipo || 'Outros';
     if (!byTipo[t]) byTipo[t] = { label: t, value: 0, color: CONTA_TIPO_COLORS[t] || 'var(--color-primary)' };
-    byTipo[t].value += Math.max(0, c.saldo || 0);
+    byTipo[t].value += Math.max(0, c.saldoBRL || 0);
   });
   const donutItems = Object.values(byTipo).filter((t) => t.value > 0).sort((a, b) => b.value - a.value);
   const donutTotal = donutItems.reduce((s, t) => s + t.value, 0);
@@ -1637,23 +1665,23 @@ async function renderSaldos() {
     ? renderDonut(donutItems, donutTotal)
     : '<p class="relat-empty-chart">Sem saldos positivos para distribuir.</p>';
 
-  // Top contas (horizontal bars)
+  // Top contas (horizontal bars — comparáveis em BRL)
   const topContas = positivos
-    .filter((c) => c.saldo > 0)
-    .sort((a, b) => b.saldo - a.saldo)
+    .filter((c) => c.saldoBRL > 0)
+    .sort((a, b) => b.saldoBRL - a.saldoBRL)
     .slice(0, 8);
   document.getElementById('saldos-hbars').innerHTML = topContas.length > 0
     ? renderHorizontalBars(
-        topContas.map((c) => ({ nome: c.displayName, total: c.saldo, catCor: CONTA_TIPO_COLORS[c.tipo] || 'var(--color-primary)' })),
-        topContas.reduce((s, c) => s + c.saldo, 0),
+        topContas.map((c) => ({ nome: c.displayName, total: c.saldoBRL, catCor: CONTA_TIPO_COLORS[c.tipo] || 'var(--color-primary)' })),
+        topContas.reduce((s, c) => s + c.saldoBRL, 0),
       )
     : '<p class="relat-empty-chart">Nenhuma conta com saldo positivo.</p>';
 
-  // Tabela
-  const ordered = [...positivos].sort((a, b) => b.saldo - a.saldo);
+  // Tabela — saldo individual em moeda nativa, mas % do total em BRL pra comparabilidade
+  const ordered = [...positivos].sort((a, b) => b.saldoBRL - a.saldoBRL);
   let tbody = '';
   ordered.forEach((c) => {
-    const pct = totalPatrim > 0 ? (c.saldo / totalPatrim * 100) : 0;
+    const pct = totalPatrim > 0 ? (c.saldoBRL / totalPatrim * 100) : 0;
     const corTipo = CONTA_TIPO_COLORS[c.tipo] || 'var(--color-text-muted)';
     const saldoCls = c.saldo < 0 ? 'relat-text-danger' : c.saldo === 0 ? 'relat-text-muted' : '';
     tbody += `<tr>
@@ -1696,6 +1724,10 @@ async function renderEvolucao() {
   const contas = await loadContasAtivas();
   const saldosFinais = await loadSaldosAtuais(contas);
 
+  // Mapa pra resolver moeda por conta (pra converter saldos + transações à BRL)
+  await refreshRatesFor(contas);
+  const contaMoedaMap = new Map(contas.map((c) => [c.id, c.moeda || 'BRL']));
+
   const transNoPeriodo = (allTransacoes || []).filter((tr) =>
     contas.find((c) => c.id === tr.conta_id) && tr.tipo !== 'Transferência',
   );
@@ -1717,14 +1749,17 @@ async function renderEvolucao() {
     days.push(d.toISOString().slice(0, 10));
   }
 
-  // Saldo final consolidado conhecido
-  const saldoFinalAtual = Array.from(saldosFinais.values()).reduce((s, v) => s + (Number(v) || 0), 0);
+  // Saldo final consolidado conhecido — convertido à BRL (multi-conta multi-moeda)
+  let saldoFinalAtual = 0;
+  for (const [contaId, v] of saldosFinais.entries()) {
+    saldoFinalAtual += toBRL(v, contaMoedaMap.get(contaId));
+  }
 
-  // Variação diária no período (Receita +, Despesa -)
+  // Variação diária no período (Receita +, Despesa -) — em BRL
   const deltaDia = new Map(days.map((d) => [d, 0]));
   transNoPeriodo.forEach((tr) => {
     if (!deltaDia.has(tr.data)) return;
-    const v = Number(tr.valor) || 0;
+    const v = toBRL(tr.valor, tr.moeda);
     if (tr.tipo === 'Receita')  deltaDia.set(tr.data, deltaDia.get(tr.data) + v);
     if (tr.tipo === 'Despesa')  deltaDia.set(tr.data, deltaDia.get(tr.data) - v);
   });
@@ -1773,7 +1808,7 @@ async function renderEvolucao() {
     const mesKey = tr.data.slice(0, 7);
     if (!byMes.has(mesKey)) byMes.set(mesKey, { entradas: 0, saidas: 0 });
     const bucket = byMes.get(mesKey);
-    const v = Number(tr.valor) || 0;
+    const v = toBRL(tr.valor, tr.moeda);
     if (tr.tipo === 'Receita') bucket.entradas += v;
     if (tr.tipo === 'Despesa') bucket.saidas   += v;
   });
@@ -1817,9 +1852,12 @@ async function renderMovimentacao() {
   const contas = await loadContasAtivas();
   const contasMap = new Map(contas.map((c) => [c.id, c]));
 
+  // Garante taxas pra agregar totais multi-conta em BRL.
+  await refreshRatesFor(contas);
+
   const trans = (allTransacoes || []).filter((tr) => contasMap.has(tr.conta_id));
 
-  // Agrupa por conta
+  // Agrupa por conta (valores em moeda nativa da conta, pra exibir per-row)
   const byConta = new Map();
   trans.forEach((tr) => {
     if (!byConta.has(tr.conta_id)) byConta.set(tr.conta_id, { entradas: 0, saidas: 0, count: 0 });
@@ -1838,22 +1876,26 @@ async function renderMovimentacao() {
   const rows = contas
     .map((c) => {
       const b = byConta.get(c.id) || { entradas: 0, saidas: 0, count: 0 };
+      const moedaConta = c.moeda || 'BRL';
       return {
-        id:        c.id,
-        nome:      c.apelido?.trim() || c.nome,
-        tipo:      c.tipo,
-        moeda:     c.moeda || 'BRL',
-        entradas:  b.entradas,
-        saidas:    b.saidas,
-        liquido:   b.entradas - b.saidas,
-        count:     b.count,
+        id:           c.id,
+        nome:         c.apelido?.trim() || c.nome,
+        tipo:         c.tipo,
+        moeda:        moedaConta,
+        entradas:     b.entradas,
+        saidas:       b.saidas,
+        liquido:      b.entradas - b.saidas,
+        entradasBRL:  toBRL(b.entradas, moedaConta),
+        saidasBRL:    toBRL(b.saidas, moedaConta),
+        count:        b.count,
       };
     })
     .filter((r) => r.count > 0)
-    .sort((a, b) => (b.entradas + b.saidas) - (a.entradas + a.saidas));
+    .sort((a, b) => (b.entradasBRL + b.saidasBRL) - (a.entradasBRL + a.saidasBRL));
 
-  const totEnt   = rows.reduce((s, r) => s + r.entradas, 0);
-  const totSai   = rows.reduce((s, r) => s + r.saidas, 0);
+  // Totais agregados em BRL (multi-moeda)
+  const totEnt   = rows.reduce((s, r) => s + r.entradasBRL, 0);
+  const totSai   = rows.reduce((s, r) => s + r.saidasBRL, 0);
   const totCount = rows.reduce((s, r) => s + r.count, 0);
   const maisMov  = rows[0]?.nome || '—';
 
@@ -1868,8 +1910,8 @@ async function renderMovimentacao() {
   // Truque visual: mostrar entradas vs saídas como duas barras lado a lado
   const chartData = rows.slice(0, 9).map((r) => ({
     nome:      r.nome,
-    previsto:  r.entradas,
-    realizado: r.saidas,
+    previsto:  r.entradasBRL,
+    realizado: r.saidasBRL,
   }));
   let chartHtml;
   if (chartData.length > 0) {
@@ -1943,7 +1985,7 @@ async function loadDividaPagsHist() {
   const range = getDateRange();
   let q = supabase
     .from('pagamentos_divida_historico')
-    .select('id, divida_id, data, valor, descricao')
+    .select('id, divida_id, data, valor, moeda, descricao')
     .order('data', { ascending: false });
   if (range && range.start) q = q.gte('data', range.start).lte('data', range.end);
   const { data, error } = await q;
@@ -2116,28 +2158,33 @@ async function renderDivHistorico() {
   const pags    = await loadDividaPagsHist();
   const divMap  = new Map(dividas.map((d) => [d.id, d]));
 
-  const total      = pags.reduce((s, p) => s + (Number(p.valor) || 0), 0);
+  // Garante taxas pras moedas presentes — pagamento usa moeda da dívida se ele mesmo não tiver.
+  await refreshRatesFor([...dividas, ...pags]);
+  const pagMoeda = (p) => p.moeda || divMap.get(p.divida_id)?.moeda || 'BRL';
+
+  // Totais agregados em BRL (multi-moeda)
+  const total      = pags.reduce((s, p) => s + toBRL(p.valor, pagMoeda(p)), 0);
   const count      = pags.length;
   const dividasUnq = new Set(pags.map((p) => p.divida_id)).size;
 
-  // Maior pagamento
+  // Maior pagamento (compara em BRL pra ser justo entre moedas)
   const maior = pags.length > 0
-    ? pags.reduce((a, b) => (Number(a.valor) > Number(b.valor) ? a : b))
+    ? pags.reduce((a, b) => (toBRL(a.valor, pagMoeda(a)) > toBRL(b.valor, pagMoeda(b)) ? a : b))
     : null;
 
   document.getElementById('div-hist-kpis').innerHTML = [
     kpiCard('Pago no período',  formatCurrency(total, 'BRL'),                                       'success', '✓'),
     kpiCard('# Pagamentos',     String(count),                                                      'primary', '#'),
     kpiCard('Dívidas pagas',    String(dividasUnq),                                                 'info',    '▤'),
-    kpiCard('Maior pagamento',  maior ? formatCurrency(Number(maior.valor), 'BRL') : '—',           'warning', '★'),
+    kpiCard('Maior pagamento',  maior ? formatCurrency(toBRL(maior.valor, pagMoeda(maior)), 'BRL') : '—', 'warning', '★'),
   ].join('');
 
-  // Agrupado por dívida
+  // Agrupado por dívida — total em BRL pra comparar horizontal bars
   const byDiv = new Map();
   pags.forEach((p) => {
     if (!byDiv.has(p.divida_id)) byDiv.set(p.divida_id, { divida: divMap.get(p.divida_id), total: 0, count: 0 });
     const b = byDiv.get(p.divida_id);
-    b.total += Number(p.valor) || 0;
+    b.total += toBRL(p.valor, pagMoeda(p));
     b.count++;
   });
   const groups = Array.from(byDiv.values()).sort((a, b) => b.total - a.total);
@@ -2185,7 +2232,7 @@ async function loadProjetos() {
   if (_projetos) return _projetos;
   const { data, error } = await supabase
     .from('projetos_investimento')
-    .select('id, nome, descricao, cor, status, meta_valor, data_alvo, saldo_inicial, inclui_no_patrimonio, data_inicio')
+    .select('id, nome, descricao, cor, status, moeda, meta_valor, data_alvo, saldo_inicial, inclui_no_patrimonio, data_inicio')
     .order('nome');
   if (error) console.warn('[loadProjetos]', error);
   _projetos = data || [];
@@ -2196,7 +2243,7 @@ async function loadAportesAll() {
   if (_aportesAll) return _aportesAll;
   const { data, error } = await supabase
     .from('aportes_projeto')
-    .select('id, projeto_id, data, valor, descricao')
+    .select('id, projeto_id, data, valor, moeda, descricao')
     .order('data', { ascending: false });
   if (error) console.warn('[loadAportesAll]', error);
   _aportesAll = data || [];
@@ -2208,7 +2255,7 @@ async function loadAportesPeriodo() {
   const range = getDateRange();
   let q = supabase
     .from('aportes_projeto')
-    .select('id, projeto_id, data, valor, descricao')
+    .select('id, projeto_id, data, valor, moeda, descricao')
     .order('data', { ascending: false });
   if (range && range.start) q = q.gte('data', range.start).lte('data', range.end);
   const { data, error } = await q;
@@ -2224,8 +2271,10 @@ async function renderInvestimentos() {
 }
 
 function projetoRealizado(proj, aportesByProj) {
-  const aportesSum = (aportesByProj.get(proj.id) || []).reduce((s, a) => s + (Number(a.valor) || 0), 0);
-  return (Number(proj.saldo_inicial) || 0) + aportesSum;
+  // Retorna em BRL: saldo_inicial está na moeda do projeto; cada aporte na sua moeda.
+  const aportesSum = (aportesByProj.get(proj.id) || [])
+    .reduce((s, a) => s + toBRL(a.valor, a.moeda), 0);
+  return toBRL(proj.saldo_inicial, proj.moeda) + aportesSum;
 }
 
 function projetoCor(p) {
@@ -2239,23 +2288,27 @@ async function renderInvVisao() {
   const projetos = await loadProjetos();
   const aportes  = await loadAportesAll();
 
+  // Garante taxas: projetos podem ter moeda nativa, aportes idem
+  await refreshRatesFor([...projetos, ...aportes]);
+
   const aportesByProj = new Map();
   aportes.forEach((a) => {
     if (!aportesByProj.has(a.projeto_id)) aportesByProj.set(a.projeto_id, []);
     aportesByProj.get(a.projeto_id).push(a);
   });
 
+  // realizado já vem em BRL via projetoRealizado; meta está na moeda do projeto.
   const enriched = projetos.map((p) => ({
     ...p,
     realizado: projetoRealizado(p, aportesByProj),
-    meta:      Number(p.meta_valor) || 0,
+    meta:      toBRL(p.meta_valor, p.moeda),
   }));
 
   const ativos = enriched.filter((p) => p.status !== 'arquivado' && p.status !== 'concluido');
 
   const totalRealizado = ativos.reduce((s, p) => s + p.realizado, 0);
   const totalMeta      = ativos.reduce((s, p) => s + p.meta, 0);
-  const totalAportes   = aportes.reduce((s, a) => s + (Number(a.valor) || 0), 0);
+  const totalAportes   = aportes.reduce((s, a) => s + toBRL(a.valor, a.moeda), 0);
   const pctGeral       = totalMeta > 0 ? (totalRealizado / totalMeta * 100) : 0;
 
   document.getElementById('inv-visao-kpis').innerHTML = [
@@ -2319,6 +2372,8 @@ async function renderInvProgresso() {
   const projetos = await loadProjetos();
   const aportes  = await loadAportesAll();
 
+  await refreshRatesFor([...projetos, ...aportes]);
+
   const aportesByProj = new Map();
   aportes.forEach((a) => {
     if (!aportesByProj.has(a.projeto_id)) aportesByProj.set(a.projeto_id, []);
@@ -2328,8 +2383,8 @@ async function renderInvProgresso() {
   const enriched = projetos
     .filter((p) => p.status !== 'arquivado')
     .map((p) => {
-      const realizado = projetoRealizado(p, aportesByProj);
-      const meta = Number(p.meta_valor) || 0;
+      const realizado = projetoRealizado(p, aportesByProj); // já em BRL
+      const meta = toBRL(p.meta_valor, p.moeda);
       return {
         ...p,
         realizado,
@@ -2392,26 +2447,29 @@ async function renderInvAportes() {
   const aportes  = await loadAportesPeriodo();
   const projMap  = new Map(projetos.map((p) => [p.id, p]));
 
-  const total       = aportes.reduce((s, a) => s + (Number(a.valor) || 0), 0);
+  await refreshRatesFor(aportes);
+
+  // Totais agregados em BRL (multi-projeto/multi-moeda)
+  const total       = aportes.reduce((s, a) => s + toBRL(a.valor, a.moeda), 0);
   const count       = aportes.length;
   const projsUnq    = new Set(aportes.map((a) => a.projeto_id)).size;
   const maior       = aportes.length > 0
-    ? aportes.reduce((a, b) => (Number(a.valor) > Number(b.valor) ? a : b))
+    ? aportes.reduce((a, b) => (toBRL(a.valor, a.moeda) > toBRL(b.valor, b.moeda) ? a : b))
     : null;
 
   document.getElementById('inv-aportes-kpis').innerHTML = [
     kpiCard('Aportado no período', formatCurrency(total, 'BRL'),                                 'success', '↑'),
     kpiCard('# Aportes',           String(count),                                                'primary', '#'),
     kpiCard('Projetos aportados',  String(projsUnq),                                             'info',    '▤'),
-    kpiCard('Maior aporte',        maior ? formatCurrency(Number(maior.valor), 'BRL') : '—',     'warning', '★'),
+    kpiCard('Maior aporte',        maior ? formatCurrency(toBRL(maior.valor, maior.moeda), 'BRL') : '—',     'warning', '★'),
   ].join('');
 
-  // Agrupado por projeto
+  // Agrupado por projeto (totais em BRL pra comparar lado-a-lado)
   const byProj = new Map();
   aportes.forEach((a) => {
     if (!byProj.has(a.projeto_id)) byProj.set(a.projeto_id, { projeto: projMap.get(a.projeto_id), total: 0, count: 0 });
     const b = byProj.get(a.projeto_id);
-    b.total += Number(a.valor) || 0;
+    b.total += toBRL(a.valor, a.moeda);
     b.count++;
   });
   const groups = Array.from(byProj.values()).sort((a, b) => b.total - a.total);
@@ -2436,7 +2494,7 @@ async function renderInvAportes() {
       <td>${dataFmt}</td>
       <td><span class="cat-dot" style="background:${p ? projetoCor(p) : 'var(--color-text-muted)'}"></span>${escapeHtml(p?.nome || 'Projeto removido')}</td>
       <td class="relat-text-muted">${escapeHtml(a.descricao || '—')}</td>
-      <td class="relat-td-num">${formatCurrencyHTML(Number(a.valor) || 0, 'BRL')}</td>
+      <td class="relat-td-num">${formatCurrencyHTML(toBRL(a.valor, a.moeda), 'BRL')}</td>
     </tr>`;
   });
 
@@ -2467,10 +2525,12 @@ async function loadTransAnterior() {
 
   const { data, error } = await supabase
     .from('transacoes')
-    .select('id, data, tipo, valor, subcategoria_id, pagamento_id, conta_id')
+    .select('id, data, tipo, valor, moeda, subcategoria_id, pagamento_id, conta_id')
     .gte('data', isoStart).lte('data', isoEnd);
   if (error) console.warn('[loadTransAnterior]', error);
   _transAnterior = { rows: data || [], start: isoStart, end: isoEnd };
+  // Garante taxas pras moedas presentes — usado por renderSaudeIndicadores etc.
+  await refreshRatesFor(_transAnterior.rows);
   return _transAnterior;
 }
 
@@ -2484,11 +2544,11 @@ async function renderSaude() {
 // R-20: Indicadores de saúde financeira
 // -------------------------------------------------------
 async function renderSaudeIndicadores() {
-  // Período atual
+  // Período atual — totais em BRL (multi-moeda)
   const trans = allTransacoes || [];
   const range = getDateRange();
-  const receitas = trans.filter((t) => t.tipo === 'Receita').reduce((s, t) => s + Number(t.valor || 0), 0);
-  const despesas = trans.filter((t) => t.tipo === 'Despesa').reduce((s, t) => s + Number(t.valor || 0), 0);
+  const receitas = trans.filter((t) => t.tipo === 'Receita').reduce((s, t) => s + toBRL(t.valor, t.moeda), 0);
+  const despesas = trans.filter((t) => t.tipo === 'Despesa').reduce((s, t) => s + toBRL(t.valor, t.moeda), 0);
   const saldoPeriodo = receitas - despesas;
 
   // # meses no período (para média)
@@ -2501,21 +2561,23 @@ async function renderSaudeIndicadores() {
   const despesaMensalMedia = despesas / nMeses;
   const receitaMensalMedia = receitas / nMeses;
 
-  // Saldo disponível em contas (Corrente + Poupança + Carteira)
+  // Saldo disponível em contas (Corrente + Poupança + Carteira) — agregado em BRL
   const contas = await loadContasAtivas();
   const saldos = await loadSaldosAtuais(contas);
+  await refreshRatesFor(contas);
   const disponivel = contas
     .filter((c) => TIPOS_DISPONIVEIS.has(c.tipo))
-    .reduce((s, c) => s + (saldos.get(c.id) || 0), 0);
+    .reduce((s, c) => s + toBRL(saldos.get(c.id) || 0, c.moeda), 0);
   const patrimContas = contas
     .filter((c) => c.tipo !== 'Cartão de Crédito')
-    .reduce((s, c) => s + (saldos.get(c.id) || 0), 0);
+    .reduce((s, c) => s + toBRL(saldos.get(c.id) || 0, c.moeda), 0);
 
-  // Dívidas a pagar (restante)
+  // Dívidas a pagar (restante) — agregado em BRL (multi-moeda)
   const dividas = await loadDividas();
+  await refreshRatesFor(dividas);
   const totalDividas = dividas
     .filter((d) => d.tipo === 'a_pagar' && d.status !== 'Quitada' && d.status !== 'Arquivada')
-    .reduce((s, d) => s + Math.max(0, (Number(d.valor_total) || 0) - (Number(d.valor_pago) || 0)), 0);
+    .reduce((s, d) => s + toBRL(Math.max(0, (Number(d.valor_total) || 0) - (Number(d.valor_pago) || 0)), d.moeda), 0);
 
   // Indicadores
   const taxaPoupanca   = receitas > 0 ? (saldoPeriodo / receitas * 100) : 0;
@@ -2612,7 +2674,7 @@ async function renderSaudeComparativo() {
   const anterior = await loadTransAnterior();
   const prevRows = anterior?.rows || [];
 
-  const sum = (arr, tipo) => arr.filter((t) => t.tipo === tipo).reduce((s, t) => s + Number(t.valor || 0), 0);
+  const sum = (arr, tipo) => arr.filter((t) => t.tipo === tipo).reduce((s, t) => s + toBRL(t.valor, t.moeda), 0);
   const recAtual = sum(trans, 'Receita');
   const desAtual = sum(trans, 'Despesa');
   const recAnt   = sum(prevRows, 'Receita');
@@ -2643,7 +2705,7 @@ async function renderSaudeComparativo() {
       const catId = subToCat.get(t.subcategoria_id);
       if (!catId) return;
       const k = catNomes.get(catId) || '—';
-      map.set(k, (map.get(k) || 0) + Number(t.valor || 0));
+      map.set(k, (map.get(k) || 0) + toBRL(t.valor, t.moeda));
     });
     return map;
   };
@@ -2722,8 +2784,8 @@ async function renderSaudeTendencias() {
     const k = t.data.slice(0, 7);
     if (!byMes.has(k)) byMes.set(k, { receitas: 0, despesas: 0 });
     const b = byMes.get(k);
-    if (t.tipo === 'Receita') b.receitas += Number(t.valor || 0);
-    else if (t.tipo === 'Despesa') b.despesas += Number(t.valor || 0);
+    if (t.tipo === 'Receita') b.receitas += toBRL(t.valor, t.moeda);
+    else if (t.tipo === 'Despesa') b.despesas += toBRL(t.valor, t.moeda);
   });
 
   const mesesOrd = [...byMes.keys()].sort();
@@ -2858,12 +2920,12 @@ function renderFiscal() {
   const byTipo = {};
   FISCAL_RULES.forEach((r) => { byTipo[r.tipo] = { tipo: r.tipo, color: r.color, total: 0, count: 0 }; });
   enriched.forEach((e) => {
-    const v = Number(e.valor) || 0;
+    const v = toBRL(e.valor, e.moeda);
     byTipo[e.tipoDedut].total += v;
     byTipo[e.tipoDedut].count++;
   });
 
-  const totalGeral = enriched.reduce((s, e) => s + (Number(e.valor) || 0), 0);
+  const totalGeral = enriched.reduce((s, e) => s + toBRL(e.valor, e.moeda), 0);
 
   document.getElementById('fiscal-kpis').innerHTML = [
     kpiCard('Total dedutível estimado', formatCurrency(totalGeral,           'BRL'), 'success', '✓'),
@@ -2883,7 +2945,7 @@ function renderFiscal() {
   enriched.forEach((e) => {
     const k = e.data.slice(0, 7);
     if (!byMes.has(k)) byMes.set(k, 0);
-    byMes.set(k, byMes.get(k) + (Number(e.valor) || 0));
+    byMes.set(k, byMes.get(k) + toBRL(e.valor, e.moeda));
   });
   const mesesOrd = [...byMes.keys()].sort();
   if (mesesOrd.length > 0) {
@@ -2905,7 +2967,7 @@ function renderFiscal() {
     const k = `${e.cat?.nome || '—'}::${e.tipoDedut}`;
     if (!byCat.has(k)) byCat.set(k, { catNome: e.cat?.nome || '—', tipoDedut: e.tipoDedut, corDedut: e.corDedut, total: 0, count: 0 });
     const b = byCat.get(k);
-    b.total += Number(e.valor) || 0;
+    b.total += toBRL(e.valor, e.moeda);
     b.count++;
   });
   const catRows = [...byCat.values()].sort((a, b) => b.total - a.total);
@@ -2936,7 +2998,7 @@ function renderFiscal() {
       <td>${escapeHtml(e.cat?.nome || '—')}</td>
       <td>${escapeHtml(e.sub?.apelido?.trim() || e.sub?.nome || '—')}</td>
       <td><span class="cat-dot" style="background:${e.corDedut}"></span>${e.tipoDedut}</td>
-      <td class="relat-td-num">${formatCurrencyHTML(Number(e.valor) || 0, 'BRL')}</td>
+      <td class="relat-td-num">${formatCurrencyHTML(toBRL(e.valor, e.moeda), 'BRL')}</td>
     </tr>`;
   });
   document.getElementById('fiscal-tx-tbody').innerHTML = tbodyTx ||
@@ -2958,6 +3020,7 @@ async function renderPatrimonio() {
 }
 
 // Calcula snapshot atual de patrimônio (reutilizado pelas 3 sub-abas)
+// Todos os `valor` retornados estão em BRL (regra arquitetural pra agregação).
 async function calcPatrimonioAtual() {
   const contas   = await loadContasAtivas();
   const saldos   = await loadSaldosAtuais(contas);
@@ -2965,20 +3028,27 @@ async function calcPatrimonioAtual() {
   const projetos = await loadProjetos();
   const aportes  = await loadAportesAll();
 
+  // Garante taxas
+  await refreshRatesFor([...contas, ...dividas, ...projetos, ...aportes]);
+
   // ATIVOS
-  // Contas: tudo exceto cartões de crédito
+  // Contas: tudo exceto cartões de crédito (saldo convertido à BRL)
   const contaSaldos = contas
     .filter((c) => c.tipo !== 'Cartão de Crédito')
-    .map((c) => ({
-      tipo:    'Conta',
-      classe:  c.tipo || 'Conta',
-      nome:    c.apelido?.trim() || c.nome,
-      valor:   Math.max(0, saldos.get(c.id) || 0),
-      bruto:   saldos.get(c.id) || 0,
-    }))
+    .map((c) => {
+      const bruto = saldos.get(c.id) || 0;
+      const valorBRL = toBRL(bruto, c.moeda);
+      return {
+        tipo:    'Conta',
+        classe:  c.tipo || 'Conta',
+        nome:    c.apelido?.trim() || c.nome,
+        valor:   Math.max(0, valorBRL),
+        bruto:   valorBRL,
+      };
+    })
     .filter((c) => c.bruto > 0);
 
-  // Investimentos: realizado por projeto
+  // Investimentos: realizado por projeto (projetoRealizado já retorna BRL)
   const aportesByProj = new Map();
   aportes.forEach((a) => {
     if (!aportesByProj.has(a.projeto_id)) aportesByProj.set(a.projeto_id, []);
@@ -2994,39 +3064,39 @@ async function calcPatrimonioAtual() {
     }))
     .filter((p) => p.valor > 0);
 
-  // Dívidas a receber
+  // Dívidas a receber — converte da moeda da dívida à BRL
   const aReceber = dividas
     .filter((d) => d.tipo === 'a_receber' && d.status !== 'Quitada' && d.status !== 'Arquivada')
     .map((d) => ({
       tipo:   'A receber',
       classe: 'A receber',
       nome:   d.nome || 'Sem nome',
-      valor:  Math.max(0, (Number(d.valor_total) || 0) - (Number(d.valor_pago) || 0)),
+      valor:  toBRL(Math.max(0, (Number(d.valor_total) || 0) - (Number(d.valor_pago) || 0)), d.moeda),
     }))
     .filter((d) => d.valor > 0);
 
   const ativos = [...contaSaldos, ...projetosAtivos, ...aReceber];
 
   // PASSIVOS
-  // Dívidas a pagar
+  // Dívidas a pagar — converte à BRL
   const aPagar = dividas
     .filter((d) => d.tipo === 'a_pagar' && d.status !== 'Quitada' && d.status !== 'Arquivada' && d.inclui_no_patrimonio !== false)
     .map((d) => ({
       tipo:   'A pagar',
       classe: 'Dívida',
       nome:   d.nome || 'Sem nome',
-      valor:  Math.max(0, (Number(d.valor_total) || 0) - (Number(d.valor_pago) || 0)),
+      valor:  toBRL(Math.max(0, (Number(d.valor_total) || 0) - (Number(d.valor_pago) || 0)), d.moeda),
     }))
     .filter((d) => d.valor > 0);
 
-  // Cartões: saldo NEGATIVO em contas tipo Cartão de Crédito
+  // Cartões: saldo NEGATIVO em contas tipo Cartão de Crédito (em BRL)
   const cartoes = contas
     .filter((c) => c.tipo === 'Cartão de Crédito')
     .map((c) => ({
       tipo:   'Cartão',
       classe: 'Cartão',
       nome:   c.apelido?.trim() || c.nome,
-      valor:  Math.max(0, -(saldos.get(c.id) || 0)),
+      valor:  Math.max(0, -toBRL(saldos.get(c.id) || 0, c.moeda)),
     }))
     .filter((c) => c.valor > 0);
 
@@ -3187,10 +3257,14 @@ async function loadPatrEvolucao() {
   const projetos = await loadProjetos();
   const aportes = await loadAportesAll();
 
+  // Garante taxas pra agregar tudo em BRL.
+  await refreshRatesFor([...contas, ...dividas, ...projetos, ...aportes]);
+  const moedaPorConta = new Map(contas.map((c) => [c.id, c.moeda || 'BRL']));
+
   // Carrega TODAS as transações pra reconstruir saldo por mês
   const { data: trans, error } = await supabase
     .from('transacoes')
-    .select('data, tipo, valor, conta_id, conta_destino_id, transferencia_par_id, reconciliacao_status')
+    .select('data, tipo, valor, moeda, conta_id, conta_destino_id, transferencia_par_id, reconciliacao_status')
     .neq('reconciliacao_status', 'importado')
     .order('data', { ascending: true });
   if (error) console.warn('[loadPatrEvolucao trans]', error);
@@ -3244,15 +3318,16 @@ async function loadPatrEvolucao() {
       else if (isSaida) saldosPorConta.set(t.conta_id, cur - Number(t.valor || 0));
     }
 
-    // Calcula ativos e passivos NESTE mês
+    // Calcula ativos e passivos NESTE mês — agrega em BRL (multi-moeda)
     let ativos = 0;
     let passivos = 0;
     for (const c of contas) {
       const s = saldosPorConta.get(c.id) || 0;
+      const sBRL = toBRL(s, moedaPorConta.get(c.id));
       if (tipoPorConta.get(c.id) === 'Cartão de Crédito') {
-        if (s < 0) passivos += -s;
-      } else if (s > 0) {
-        ativos += s;
+        if (sBRL < 0) passivos += -sBRL;
+      } else if (sBRL > 0) {
+        ativos += sBRL;
       }
     }
     // Investimentos (snapshot, não evolução real — simplificação)
@@ -3265,12 +3340,13 @@ async function loadPatrEvolucao() {
       });
       projetos
         .filter((p) => p.status !== 'arquivado' && p.inclui_no_patrimonio !== false)
-        .forEach((p) => { ativos += projetoRealizado(p, aportesByProj); });
-      // Dívidas a pagar e a receber (atuais — sem histórico)
+        .forEach((p) => { ativos += projetoRealizado(p, aportesByProj); }); // já BRL
+      // Dívidas a pagar e a receber (atuais — sem histórico) — converte da moeda da dívida
       dividas.filter((d) => d.status !== 'Quitada' && d.status !== 'Arquivada').forEach((d) => {
         const rest = Math.max(0, (Number(d.valor_total) || 0) - (Number(d.valor_pago) || 0));
-        if (d.tipo === 'a_pagar' && d.inclui_no_patrimonio !== false) passivos += rest;
-        else if (d.tipo === 'a_receber') ativos += rest;
+        const restBRL = toBRL(rest, d.moeda);
+        if (d.tipo === 'a_pagar' && d.inclui_no_patrimonio !== false) passivos += restBRL;
+        else if (d.tipo === 'a_receber') ativos += restBRL;
       });
     }
 
