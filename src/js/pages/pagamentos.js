@@ -1941,10 +1941,26 @@ async function saveStatus(select) {
       }
     }
 
-    // Valor inicial pro input: valor_real se existe, senão valor_previsto.
-    const valorInicial = pag.valor_real != null
+    // Valor inicial pro input: convertido pra moeda principal (BRL),
+    // igual à coluna VALOR da tabela. Convenção do sistema: usuário vê
+    // e edita em BRL; o storage mantém na moeda original do pagamento.
+    const moedaPag = pag.moeda || 'BRL';
+    const valorOrig = pag.valor_real != null
       ? Number(pag.valor_real)
       : Number(pag.valor_previsto) || 0;
+    let valorInicialBRL = valorOrig;
+    let popoverCurrency = 'BRL';
+    let popoverSymbol = getMainCurrencySymbol();
+    if (moedaPag !== 'BRL') {
+      const convertido = convertToBRL(valorOrig, moedaPag);
+      if (convertido !== null) {
+        valorInicialBRL = convertido;
+      } else {
+        // Câmbio indisponível — mostra na moeda original como fallback
+        popoverCurrency = moedaPag;
+        popoverSymbol = moedaPag;
+      }
+    }
 
     const result = await showDateConfirmPopover({
       anchor: select,
@@ -1952,8 +1968,8 @@ async function saveStatus(select) {
       initialDate: pag.data_pagamento || null,
       accountSelector,
       valorInput: {
-        value: valorInicial,
-        currency: pag.moeda || 'BRL',
+        value: valorInicialBRL,
+        currency: popoverCurrency, // 'BRL' por padrão (símbolo R$)
         label: 'Valor pago',
       },
     });
@@ -1969,10 +1985,23 @@ async function saveStatus(select) {
     if (result.accountId && result.accountId !== subContaId) {
       contaEfetivaEscolhida = result.accountId;
     }
-    // Valor confirmado/editado no popover
+    // Valor confirmado/editado no popover.
+    // result.valor está na moeda exibida (BRL na maioria dos casos).
+    // Precisa converter de volta pra moeda original do pagamento antes
+    // de salvar — mantém invariante storage=moeda original.
     if (result.valor != null && Number.isFinite(result.valor)) {
-      // Guarda no pag pra usar no UPDATE abaixo
-      pag._valorConfirmado = result.valor;
+      let valorParaSalvar = result.valor;
+      if (popoverCurrency === 'BRL' && moedaPag !== 'BRL') {
+        const rate = ratesMap.get(moedaPag);
+        if (rate) {
+          valorParaSalvar = result.valor / rate; // BRL → moeda original
+        } else {
+          showToast(`Câmbio ${moedaPag} indisponível — não foi possível salvar`, 'error', 6000);
+          select.value = pag.status;
+          return;
+        }
+      }
+      pag._valorConfirmado = valorParaSalvar;
     }
   }
 
