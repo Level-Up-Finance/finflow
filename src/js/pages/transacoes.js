@@ -46,7 +46,6 @@ import { createContaPicker, contaAvatarHtml } from '../lib/conta-picker.js';
 import { initContatoPicker } from '../components/contato-picker.js';
 import { initColVisibility } from '../lib/col-visibility.js';
 import { fetchExchangeRate } from '../lib/currency.js';
-import { convertToBRL, refreshRatesFor } from '../lib/currency-rates.js';
 import { t, loadStrings, applyTranslationsToDom } from '../lib/textos.js';
 import {
   isContaCartao,
@@ -1009,14 +1008,6 @@ async function loadAll() {
   cachedTransacoes    = transRes.data || [];
   cachedContas        = contRes.data  || [];
   cachedSubcategorias = filterVisibleSubs(subRes.data);
-
-  // Carrega câmbio das moedas usadas nas transações em paralelo.
-  // O resultado popula o ratesMap compartilhado de currency-rates.js,
-  // que convertToBRL() lê na hora de renderizar valores. Roda em
-  // background — render inicial pode mostrar "—" pra não-BRL até
-  // resolver, mas pra a esmagadora maioria dos casos resolve antes
-  // do primeiro paint (Promise.all de fetches HTTP curtos).
-  await refreshRatesFor(cachedTransacoes);
   cachedCategorias    = catRes.data   || [];
   // Dívidas (silencioso se erro — campo divida_id pode não existir antes da migration 0063)
   if (divRes && !divRes.error) cachedDividas = divRes.data || [];
@@ -1424,26 +1415,11 @@ function applyFilters(items) {
   });
 }
 
-/**
- * Retorna o valor da transação convertido pra BRL (moeda de display).
- * Se o câmbio ainda não tiver carregado (refreshRatesFor pendente),
- * cai pro valor cru — melhor mostrar algo errado momentaneamente
- * que mostrar nada. Transações já em BRL passam direto.
- */
-function valorTransacaoBRL(t) {
-  const raw = Number(t.valor || 0);
-  const moeda = t.moeda || 'BRL';
-  if (moeda === 'BRL') return raw;
-  const conv = convertToBRL(raw, moeda);
-  return conv != null ? conv : raw;
-}
-
 function renderWidgets(items) {
   const recItems = items.filter((t) => t.tipo === 'Receita');
   const desItems = items.filter((t) => t.tipo === 'Despesa');
-  // KPIs sempre em BRL — moeda de display do sistema.
-  const receitas = recItems.reduce((s, t) => s + valorTransacaoBRL(t), 0);
-  const despesas = desItems.reduce((s, t) => s + valorTransacaoBRL(t), 0);
+  const receitas = recItems.reduce((s, t) => s + Number(t.valor || 0), 0);
+  const despesas = desItems.reduce((s, t) => s + Number(t.valor || 0), 0);
   const saldo    = receitas - despesas;
 
   document.getElementById('kpi-receitas-value').innerHTML = formatCurrencyHTML(receitas);
@@ -1519,12 +1495,7 @@ function renderDataRows(items) {
     || (a.created_at || '').localeCompare(b.created_at || ''));
   for (const t of itemsAsc) {
     const isEntradaT = t.tipo === 'Transferência' && !!t.transferencia_par_id && !t.conta_destino_id;
-    // Saldo corrente também em BRL — caso contrário, somar GBP+USD+BRL não
-    // tem significado financeiro. Quando filtra por conta única, todas as
-    // transações estão na mesma moeda, então não muda nada visualmente
-    // (a não ser pelo símbolo R$ na coluna).
-    const valBRL = valorTransacaoBRL(t);
-    balance += (t.tipo === 'Receita' || isEntradaT) ? valBRL : -valBRL;
+    balance += (t.tipo === 'Receita' || isEntradaT) ? Number(t.valor || 0) : -Number(t.valor || 0);
     runningBalances.set(t.id, balance);
   }
 
@@ -1714,7 +1685,7 @@ function renderDataRows(items) {
             ${reconBadge}${parcialIcon}
           </div>
         </td>
-        <td class="trans-td-valor tabular ${tipoCls}" data-col="valor">${formatCurrencyHTML((t.tipo === 'Receita' || isTransferEntrada) ? valorTransacaoBRL(t) : -valorTransacaoBRL(t), 'BRL')}</td>
+        <td class="trans-td-valor tabular ${tipoCls}" data-col="valor">${formatCurrencyHTML((t.tipo === 'Receita' || isTransferEntrada) ? Number(t.valor || 0) : -Number(t.valor || 0), t.moeda)}</td>
         <td class="trans-td-saldo tabular" data-col="saldo" style="${saldoColor}">${formatCurrencyHTML(saldoVal)}</td>
         <td class="trans-td-actions">
           <div class="trans-actions-col">
@@ -1728,12 +1699,12 @@ function renderDataRows(items) {
           </div>
         </td>
       </tr>
-      ${hasSplits ? renderSplitsDetailRow(t.id, splits, t.moeda || 'BRL') : ''}`;
+      ${hasSplits ? renderSplitsDetailRow(t.id, splits) : ''}`;
   }).join('');
 
-  // Footer: totais do período filtrado (em BRL — moeda de display).
-  const totalReceitas = items.filter((t) => t.tipo === 'Receita').reduce((s, t) => s + valorTransacaoBRL(t), 0);
-  const totalDespesas = items.filter((t) => t.tipo === 'Despesa').reduce((s, t) => s + valorTransacaoBRL(t), 0);
+  // Footer: totais do período filtrado
+  const totalReceitas = items.filter((t) => t.tipo === 'Receita').reduce((s, t) => s + Number(t.valor || 0), 0);
+  const totalDespesas = items.filter((t) => t.tipo === 'Despesa').reduce((s, t) => s + Number(t.valor || 0), 0);
   const saldoMes = totalReceitas - totalDespesas;
   const saldoMesColor = saldoMes < 0 ? 'color: var(--color-danger)' : '';
 
@@ -1754,15 +1725,7 @@ function renderDataRows(items) {
 }
 
 // Linha de detalhe das divisões (inicialmente oculta, toggle pelo botão "Vários")
-// `moedaPai` é a moeda da transação que contém os splits — splits não têm
-// campo moeda próprio, herdam. Convertemos pra BRL pra exibir, igual ao resto.
-function renderSplitsDetailRow(transId, splits, moedaPai = 'BRL') {
-  const splitToBRL = (val) => {
-    const raw = Number(val || 0);
-    if (moedaPai === 'BRL') return raw;
-    const conv = convertToBRL(raw, moedaPai);
-    return conv != null ? conv : raw;
-  };
+function renderSplitsDetailRow(transId, splits) {
   const rows = splits.map((s, i) => {
     const sSub = cachedSubcategorias.find((x) => x.id === s.subcategoria_id);
     const sCat = sSub ? cachedCategorias.find((x) => x.id === sSub.categoria_id) : null;
@@ -1776,7 +1739,7 @@ function renderSplitsDetailRow(transId, splits, moedaPai = 'BRL') {
         <td class="splits-detail-bloco">${sBloco ? `<span class="trans-bloco-pill" style="--bloco-color:${sBloco.color};">${escapeHtml(sBloco.label)}</span>` : '<span class="trans-bloco-empty">—</span>'}</td>
         <td class="splits-detail-cat">${sCat ? `<span class="trans-cat-name">${escapeHtml(sCat.nome)}</span>` : '<span class="trans-cat-empty">—</span>'}</td>
         <td class="splits-detail-sub">${sSub ? `<span class="trans-sub-name">${escapeHtml(sSub.apelido || sSub.nome)}</span>` : '<span class="trans-sub-empty">—</span>'}</td>
-        <td class="splits-detail-valor tabular">${formatCurrencyHTML(splitToBRL(s.valor))}</td>
+        <td class="splits-detail-valor tabular">${formatCurrencyHTML(s.valor || 0)}</td>
         <td class="splits-detail-tags">${tagsHtml}</td>
         <td class="splits-detail-desc">${s.descricao ? escapeHtml(s.descricao) : '<span class="trans-sub-empty">—</span>'}</td>
       </tr>`;
@@ -1882,8 +1845,6 @@ function exportPDF(items) {
     const sinal   = tr.tipo === 'Receita' ? '+' : (tr.tipo === 'Despesa' ? '−' : '');
     const tagsStr = (tr.tags || []).map((tag) => `#${tag}`).join(' ');
 
-    // PDF tb em BRL — mantém consistência com a tela.
-    const valBRL = valorTransacaoBRL(tr);
     const mainRow = `<tr>
       <td>${tr.data}</td>
       <td>${escapeHtml(tr.tipo)}</td>
@@ -1891,26 +1852,22 @@ function exportPDF(items) {
       <td>${escapeHtml(bloco?.label || (splits.length > 0 ? 'Vários' : '—'))}</td>
       <td>${escapeHtml(cat?.nome || (splits.length > 0 ? 'Vários' : '—'))}</td>
       <td>${escapeHtml(sub?.apelido || sub?.nome || (splits.length > 0 ? 'Vários' : '—'))}</td>
-      <td class="${tipoCls}">${sinal}${formatCurrency(valBRL, 'BRL')}</td>
+      <td class="${tipoCls}">${sinal}${formatCurrency(tr.valor, tr.moeda)}</td>
       <td>${escapeHtml(contato?.nome || tr.banco_desc || tr.descricao || '—')}</td>
       <td>${escapeHtml(tagsStr)}</td>
     </tr>`;
 
-    const moedaPai = tr.moeda || 'BRL';
     const splitRows = splits.map((s) => {
       const sSub  = cachedSubcategorias.find((x) => x.id === s.subcategoria_id);
       const sCat  = sSub ? cachedCategorias.find((x) => x.id === sSub.categoria_id) : null;
       const sBloco = getBlocoFromSub(sSub);
       const sTags = (s.tags || []).map((tag) => `#${tag}`).join(' ');
-      const sValBRL = moedaPai === 'BRL'
-        ? Number(s.valor || 0)
-        : (convertToBRL(Number(s.valor || 0), moedaPai) ?? Number(s.valor || 0));
       return `<tr class="pdf-split-row">
         <td colspan="3" style="padding-left:20px;">↳ parte</td>
         <td>${escapeHtml(sBloco?.label || '—')}</td>
         <td>${escapeHtml(sCat?.nome || '—')}</td>
         <td>${escapeHtml(sSub?.apelido || sSub?.nome || '—')}</td>
-        <td>${formatCurrency(sValBRL, 'BRL')}</td>
+        <td>${formatCurrency(s.valor)}</td>
         <td>${escapeHtml(s.descricao || '—')}</td>
         <td>${escapeHtml(sTags)}</td>
       </tr>`;
@@ -1919,9 +1876,8 @@ function exportPDF(items) {
     return mainRow + splitRows;
   }).join('');
 
-  // Totais do PDF em BRL.
-  const totalRec  = items.filter((t) => t.tipo === 'Receita').reduce((s, t) => s + valorTransacaoBRL(t), 0);
-  const totalDesp = items.filter((t) => t.tipo === 'Despesa').reduce((s, t) => s + valorTransacaoBRL(t), 0);
+  const totalRec  = items.filter((t) => t.tipo === 'Receita').reduce((s, t) => s + Number(t.valor || 0), 0);
+  const totalDesp = items.filter((t) => t.tipo === 'Despesa').reduce((s, t) => s + Number(t.valor || 0), 0);
 
   const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
     <title>Relatório de Transações</title>
@@ -2895,9 +2851,8 @@ function showSyncPromptModal({ scenario, transacao, pagamento, linkedTr }) {
   const sub      = cachedSubcategorias.find((s) => s.id === transacao.subcategoria_id);
   const subName  = sub ? (sub.apelido || sub.nome) : 'compromisso';
   const mes      = monthLabelBR(transacao.data);
-  // Modal de sync também exibe em BRL — display currency do sistema.
   const valorPag = formatCurrencyHTML(Number(pagamento.valor_real ?? pagamento.valor_previsto ?? 0));
-  const valorTr  = formatCurrencyHTML(valorTransacaoBRL(transacao), 'BRL');
+  const valorTr  = formatCurrencyHTML(Number(transacao.valor || 0), transacao.moeda);
 
   const titleEl   = document.getElementById('sync-title');
   const msgEl     = document.getElementById('sync-message');

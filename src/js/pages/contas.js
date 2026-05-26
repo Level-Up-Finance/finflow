@@ -1096,27 +1096,25 @@ async function loadContas() {
  * Renderiza o KPI consolidado de conciliação bancária no topo da página.
  * Mostra: total nas contas + última conciliação + diferença total.
  */
-async function renderConciliacaoKpi() {
+function renderConciliacaoKpi() {
   const container = document.getElementById('conciliacao-kpi-container');
   if (!container) return;
   // Considera apenas contas ativas com saldo conhecido
   const contasAtivas = cachedContas.filter((c) => c.status === 'ativa' && cachedSaldos.has(c.id));
   if (contasAtivas.length === 0) {
-    container.replaceChildren();
+    container.innerHTML = '';
     return;
   }
-  // Garante taxas pra converter saldos de moedas estrangeiras → BRL pro total agregado
-  await ensureRates(contasAtivas.map((c) => c.moeda));
   let totalCalculado = 0;
   let totalBanco = 0;
   let contasComSnapshot = 0;
   let maxData = null;
   for (const c of contasAtivas) {
     const saldo = cachedSaldos.get(c.id) ?? 0;
-    totalCalculado += toBRL(saldo, c.moeda);
+    totalCalculado += Number(saldo);
     const snap = cachedSnapshots.get(c.id);
     if (snap) {
-      totalBanco += toBRL(snap.saldo, c.moeda);
+      totalBanco += Number(snap.saldo);
       contasComSnapshot++;
       if (!maxData || snap.data > maxData) maxData = snap.data;
     }
