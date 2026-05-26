@@ -1986,22 +1986,15 @@ async function saveStatus(select) {
       contaEfetivaEscolhida = result.accountId;
     }
     // Valor confirmado/editado no popover.
-    // result.valor está na moeda exibida (BRL na maioria dos casos).
-    // Precisa converter de volta pra moeda original do pagamento antes
-    // de salvar — mantém invariante storage=moeda original.
+    // CONVENÇÃO NOVA (system-design): valor_real é SEMPRE em BRL
+    // (moeda principal do user). Storage preserva o FATO HISTÓRICO
+    // de quanto efetivamente saiu da conta — imune a flutuação
+    // futura do câmbio.
+    //
+    // result.valor está em BRL (display currency). NÃO converte de
+    // volta. Salva direto + marca pag.moeda='BRL' pra consagrar.
     if (result.valor != null && Number.isFinite(result.valor)) {
-      let valorParaSalvar = result.valor;
-      if (popoverCurrency === 'BRL' && moedaPag !== 'BRL') {
-        const rate = ratesMap.get(moedaPag);
-        if (rate) {
-          valorParaSalvar = result.valor / rate; // BRL → moeda original
-        } else {
-          showToast(`Câmbio ${moedaPag} indisponível — não foi possível salvar`, 'error', 6000);
-          select.value = pag.status;
-          return;
-        }
-      }
-      pag._valorConfirmado = valorParaSalvar;
+      pag._valorConfirmado = result.valor; // BRL
     }
   }
 
@@ -2042,10 +2035,13 @@ async function saveStatus(select) {
     // Se usuário escolheu conta diferente da configurada, guarda em conta_id_efetiva.
     // Se igual (ou cancelou a escolha), limpa pra usar o default da subcategoria.
     updatePayload.conta_id_efetiva = contaEfetivaEscolhida;
-    // Valor confirmado/editado no popover (feature nova: campo de valor
-    // no popover substituiu o input inline da coluna VALOR).
+    // Valor confirmado/editado no popover (feature nova). Salva em BRL
+    // E marca a moeda do pagamento como BRL — consagra que esse pagamento
+    // foi efetivado em BRL (fato histórico) independente da moeda em que
+    // o compromisso foi configurado.
     if (pag._valorConfirmado != null) {
       updatePayload.valor_real = pag._valorConfirmado;
+      updatePayload.moeda = 'BRL';
     }
     // Atribuição: quem marcou como pago + quando
     const _u = await getCurrentUser();
@@ -2077,9 +2073,9 @@ async function saveStatus(select) {
   pag.conta_id_efetiva = updatePayload.conta_id_efetiva ?? null;
   if (updatePayload.valor_real != null) {
     pag.valor_real = updatePayload.valor_real;
-    // Propaga pra transação vinculada (se houver) — sync_pagamento_to_transacao
-    // já lida com criação/update de tx no fluxo normal. Aqui só garantimos que
-    // se já há tx vinculada, ela reflita o novo valor_real.
+    pag.moeda = 'BRL'; // consagra o pagamento como BRL
+    // Propaga pra transação vinculada — também em BRL (fato histórico
+    // consistente). Atualiza valor + moeda em cascata.
     try {
       const { data: txs } = await supabase
         .from('transacoes')
@@ -2088,7 +2084,10 @@ async function saveStatus(select) {
       if (txs && txs.length > 0) {
         await supabase
           .from('transacoes')
-          .update({ valor: updatePayload.valor_real })
+          .update({
+            valor: updatePayload.valor_real,
+            moeda: 'BRL',
+          })
           .eq('pagamento_id', id);
       }
     } catch (e) {
