@@ -282,34 +282,16 @@ async function renderPassadosForMonth(container, availableMonths, selectedMesAno
     return;
   }
 
-  // Pre-fetch de câmbio pras moedas estrangeiras presentes (evita somar
-  // valores em USD/GBP como se fossem BRL no rodapé).
-  const moedasEstrangeiras = new Set();
-  for (const p of (pagamentos || [])) {
-    const m = p.moeda || 'BRL';
-    if (m !== 'BRL') moedasEstrangeiras.add(m);
-  }
-  const ratesMap = new Map();
-  await Promise.all([...moedasEstrangeiras].map(async (m) => {
-    try { ratesMap.set(m, await fetchExchangeRate(m, 'BRL')); }
-    catch { ratesMap.set(m, null); }
-  }));
-  const toBRL = (val, moeda) => {
-    if (!moeda || moeda === 'BRL') return Number(val) || 0;
-    const rate = ratesMap.get(moeda);
-    return rate ? (Number(val) || 0) * rate : (Number(val) || 0);
-  };
-
   // Render por categoria (apenas visualização)
+  // Pagamentos já estão em BRL (fronteira de moeda na criação) — sem conversão.
   let totalRealizado = 0;
   let totalPrevisto = 0;
   const html = Array.from(groups.values()).map(({ categoria, rows }) => {
     const subRows = rows.map(({ pagamento, sub }) => {
       const real     = Number(pagamento.valor_real) || 0;
       const previsto = Number(pagamento.valor_previsto) || 0;
-      // Soma totais sempre em BRL (converte moeda estrangeira)
-      totalRealizado += toBRL(real, pagamento.moeda || 'BRL');
-      totalPrevisto  += toBRL(previsto, pagamento.moeda || 'BRL');
+      totalRealizado += real;
+      totalPrevisto  += previsto;
       const statusClass = ({
         'Pago':         'status-pago',
         'Transferido':  'status-transferido',
@@ -321,8 +303,8 @@ async function renderPassadosForMonth(container, availableMonths, selectedMesAno
         <tr class="orcamento-row" data-pagamento-id="${pagamento.id}">
           <td>${escapeHtml(sub.apelido?.trim() || sub.nome)}</td>
           <td><span class="status-pill ${statusClass}">${pagamento.status}</span></td>
-          <td class="text-right tabular">${formatCurrency(previsto, pagamento.moeda || 'BRL')}</td>
-          <td class="text-right tabular">${formatCurrency(real, pagamento.moeda || 'BRL')}</td>
+          <td class="text-right tabular">${formatCurrency(previsto, 'BRL')}</td>
+          <td class="text-right tabular">${formatCurrency(real, 'BRL')}</td>
           <td class="text-muted" style="font-size: var(--fs-xs);">${escapeHtml(pagamento.observacao || '')}</td>
         </tr>
       `;

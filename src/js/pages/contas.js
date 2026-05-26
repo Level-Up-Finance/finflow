@@ -2077,7 +2077,7 @@ async function submitCaixinhaResgate() {
       bloco_quinzenal: bloco,
       valor_previsto:  0,
       valor_real:      -Math.abs(valor),
-      moeda:           cx.moeda || 'BRL',
+      moeda:           'BRL', // fronteira de moeda: pagamento sempre BRL
       status:          'Transferido',
       data_vencimento: data,
       observacao:      obs,

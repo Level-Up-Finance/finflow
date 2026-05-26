@@ -546,10 +546,11 @@ async function loadAll() {
 }
 
 async function refreshRates() {
-  const fromData = [...new Set([
-    ...cachedOrcamento.map((e) => e.moeda).filter((m) => m && m !== 'BRL'),
-    ...cachedPagamentos.map((p) => p.moeda).filter((m) => m && m !== 'BRL'),
-  ])];
+  // Apenas orcamento ainda pode estar em moeda nativa (compromisso/dívida/investimento
+  // mantêm moeda na config). Pagamentos e transações já estão em BRL pós-fronteira.
+  const fromData = [...new Set(
+    cachedOrcamento.map((e) => e.moeda).filter((m) => m && m !== 'BRL')
+  )];
   // Sempre inclui USD e EUR para o widget de câmbio
   const used = [...new Set([...fromData, 'USD', 'EUR'])];
   await Promise.all(used.map(async (c) => {
@@ -603,13 +604,12 @@ function renderKPIs() {
   }
   const saldoPrev = receitasPrevBRL - despesasPrevBRL;
 
-  // Real (pagamentos efetivados)
+  // Real (pagamentos efetivados) — já em BRL pós-fronteira de moeda.
   let receitasRealBRL = 0, despesasRealBRL = 0;
   for (const p of cachedPagamentos) {
     if (!isPaidStatus(p.status)) continue;
     const val = p.valor_real != null ? Number(p.valor_real) : Number(p.valor_previsto);
-    const vBRL = convertToBRL(val || 0, p.moeda, p);
-    if (vBRL === null) continue;
+    const vBRL = Number(val) || 0;
     if (p.subcategorias?.tipo === 'Receita') receitasRealBRL += vBRL;
     else despesasRealBRL += vBRL;
   }
@@ -628,17 +628,15 @@ function renderKPIs() {
   }
   const oportCls  = oportunidade > 0 ? 'dre-positive' : oportunidade < 0 ? 'dre-negative' : 'dre-zero';
 
-  // Despesas pagas %
+  // Despesas pagas % — pagamentos já em BRL (fronteira de moeda).
   let realPagoBRL = 0, totalPrevistoBRL = 0;
   for (const p of cachedPagamentos) {
     if (p.status === 'Cancelado' || p.subcategorias?.tipo !== 'Despesa') continue;
-    const prevBRL = convertToBRL(Number(p.valor_previsto) || 0, p.moeda, p);
-    if (prevBRL === null) continue;
+    const prevBRL = Number(p.valor_previsto) || 0;
     totalPrevistoBRL += prevBRL;
     if (isPaidStatus(p.status)) {
       const val = p.valor_real != null ? Number(p.valor_real) : Number(p.valor_previsto);
-      const vBRL = convertToBRL(val || 0, p.moeda, p);
-      if (vBRL !== null) realPagoBRL += vBRL;
+      realPagoBRL += Number(val) || 0;
     }
   }
   const pctPago  = totalPrevistoBRL > 0 ? Math.min(100, (realPagoBRL / totalPrevistoBRL) * 100) : 0;
@@ -823,8 +821,8 @@ function renderAtrasados() {
 
   let totalBRL = 0;
   atrasados.forEach((p) => {
-    const v = convertToBRL(Number(p.valor_previsto) || 0, p.moeda, p);
-    if (v !== null) totalBRL += v;
+    // Pagamento já em BRL (fronteira de moeda).
+    totalBRL += Number(p.valor_previsto) || 0;
   });
 
   container.className = 'dash-atrasados-widget dash-alert';
@@ -841,8 +839,9 @@ function renderAtrasadoRow(p) {
   const hoje  = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const sub   = p.subcategorias;
   const display = sub?.apelido?.trim() || sub?.nome || '—';
-  const vBRL  = convertToBRL(Number(p.valor_previsto) || 0, p.moeda, p);
-  const valor = vBRL !== null ? formatCurrencyHTML(vBRL, 'BRL') : formatCurrencyHTML(Number(p.valor_previsto), p.moeda);
+  // Pagamento já em BRL (fronteira de moeda).
+  const vBRL  = Number(p.valor_previsto) || 0;
+  const valor = formatCurrencyHTML(vBRL, 'BRL');
   const cat   = sub?.categorias;
   const d     = new Date(p.data_vencimento + 'T00:00:00');
   const dia   = String(d.getDate()).padStart(2, '0');
@@ -889,9 +888,9 @@ function renderProximosVencimentos() {
   container.innerHTML = upcoming.map((p) => {
     const sub   = p.subcategorias;
     const display = sub?.apelido?.trim() || sub?.nome || '—';
-    const v     = Number(p.valor_previsto) || 0;
-    const vBRL  = convertToBRL(v, p.moeda, p);
-    const valor = vBRL !== null ? formatCurrencyHTML(vBRL, 'BRL') : formatCurrencyHTML(v, p.moeda);
+    // Pagamento já em BRL (fronteira de moeda).
+    const vBRL  = Number(p.valor_previsto) || 0;
+    const valor = formatCurrencyHTML(vBRL, 'BRL');
     const cat   = sub?.categorias;
     const tipo  = sub?.tipo;
     const sign  = tipo === 'Receita' ? '+' : '−';
@@ -1016,9 +1015,10 @@ function renderTopGastos() {
     if (!isPaidStatus(p.status) || p.subcategorias?.tipo !== 'Despesa') continue;
     const cat = p.subcategorias?.categorias;
     if (!cat) continue;
+    // Pagamento já em BRL (fronteira de moeda).
     const val = p.valor_real != null ? Number(p.valor_real) : Number(p.valor_previsto);
-    const vBRL = convertToBRL(val || 0, p.moeda, p);
-    if (vBRL === null || vBRL === 0) continue;
+    const vBRL = Number(val) || 0;
+    if (vBRL === 0) continue;
     if (!byCat[cat.id]) byCat[cat.id] = { nome: cat.nome, cor: cat.cor || '#9CA3AF', total: 0 };
     byCat[cat.id].total += vBRL;
   }

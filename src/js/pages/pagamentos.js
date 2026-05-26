@@ -53,7 +53,6 @@ let flatFrom = '';            // YYYY-MM-DD
 let flatTo   = '';            // YYYY-MM-DD
 
 
-const ratesMap = new Map();          // 'USD' → 5.15
 const finalizedItemsByBloco = new Map(); // num → items[], para o modal de finalizados
 const canceledItemsByBloco  = new Map(); // num → items[], para o modal de cancelados
 
@@ -384,10 +383,7 @@ async function loadMonth() {
   // 4. Busca transações vinculadas pra detectar pagamentos travados (vinculados ao banco)
   await attachLinkedTransacoes(cachedPagamentos);
 
-  // 5. Busca cotações pra moedas em uso
-  await refreshRates();
-
-  // 6. Carrega alocações do Caixa Livre do mês + auto-carry-forward entre blocos
+  // 5. Carrega alocações do Caixa Livre do mês + auto-carry-forward entre blocos
   const { loadAlocacoesMes } = await import('../lib/caixa-livre.js');
   cachedAlocacoes = await loadAlocacoesMes(mesAno);
   await ensureCarryForward(mesAno);
@@ -492,13 +488,12 @@ let alocDisponivel = 0;
 
 function calcularDisponivelDoBloco(blocoIndice) {
   // Reproduz a fórmula do renderBloco: saldoBloco + carry - alocações != rollover
+  // Pagamentos já estão em BRL (fronteira de moeda na criação) — sem conversão aqui.
   const items = cachedPagamentos.filter((p) => p.bloco_quinzenal === blocoIndice && p.status !== 'Cancelado');
   let saldoBRL = 0;
   for (const p of items) {
     const tipo = p.subcategorias?.tipo;
-    const v = Number(p.valor_real ?? p.valor_previsto) || 0;
-    const vBRL = convertToBRL(v, p.moeda);
-    if (vBRL === null) continue;
+    const vBRL = Number(p.valor_real ?? p.valor_previsto) || 0;
     saldoBRL += (tipo === 'Receita' ? vBRL : -vBRL);
   }
   const blocoAlocacoes = cachedAlocacoes.filter((a) => a.bloco_indice === blocoIndice && a.status !== 'cancelada');
@@ -657,7 +652,6 @@ async function loadFlat() {
 
   cachedPagamentos = (data || []).filter((p) => p.subcategorias?.status === 'ativa');
   await attachLinkedTransacoes(cachedPagamentos);
-  await refreshRates();
   const { loadDescontosAtivos } = await import('../lib/adiantamentos.js');
   cachedAdiantamentosMap = await loadDescontosAtivos();
   renderFlat();
@@ -791,6 +785,25 @@ async function ensurePagamentosForMonth(year, month) {
   const orcMap = new Map();
   for (const o of orcamentos) orcMap.set(`${o.subcategoria_id}__${o.mes_ano}`, o);
 
+  // Pre-fetch rates pras moedas não-BRL em paralelo.
+  // Pagamentos nascem em BRL (fronteira de moeda na criação): se orçamento
+  // está em USD/GBP, converte aqui usando a taxa atual e gravamos em BRL.
+  // Display em pagamentos/dashboards consome valor cru, sem conversão.
+  // Inclui moedas vindas de orcamentos + sub.moeda (sync dívida usa sub.moeda).
+  const nonBrlMoedas = [...new Set([
+    ...(orcamentos || []).map((o) => o.moeda),
+    ...cachedSubcategorias.filter((s) => s.divida_id).map((s) => s.moeda),
+  ].filter((m) => m && m !== 'BRL'))];
+  const ratesLocal = new Map();
+  await Promise.all(nonBrlMoedas.map(async (m) => {
+    try {
+      const rate = await fetchExchangeRate(m, 'BRL');
+      ratesLocal.set(m, rate);
+    } catch (err) {
+      console.warn('[ensurePagamentosForMonth] sem taxa pra', m, err);
+    }
+  }));
+
   // Pra cada sub ativa, itera pelos blocos do mês e gera pagamento pra cada ocorrência.
   // O orcamento usado é o do mês civil da data de vencimento (que pode ser diferente do mês visível).
   const rows = [];
@@ -818,6 +831,20 @@ async function ensurePagamentosForMonth(year, month) {
           if (orc && (Number(orc.valor_previsto) > 0 || ehVariavel)) {
             const occInVenMes = countOccurrencesInMonth(sub, cur.getFullYear(), cur.getMonth()) || 1;
             const valorPorOcorrencia = Number(orc.valor_previsto) / occInVenMes;
+            // Fronteira de moeda: pagamento nasce em BRL.
+            // Se orçamento está em moeda estrangeira, converte com a taxa
+            // atual. Sem taxa disponível → pula essa linha (não cria com
+            // valor incorreto em moeda errada).
+            let valorBRL = valorPorOcorrencia;
+            if (orc.moeda && orc.moeda !== 'BRL') {
+              const rate = ratesLocal.get(orc.moeda);
+              if (!rate) {
+                console.warn('[ensurePagamentosForMonth] taxa ausente, pulando pagamento', sub.nome, orc.moeda);
+                cur = addDays(cur, 1);
+                continue;
+              }
+              valorBRL = valorPorOcorrencia * rate;
+            }
             rows.push({
               user_id: user.id,
               workspace_id: requireWorkspaceId(),
@@ -826,9 +853,9 @@ async function ensurePagamentosForMonth(year, month) {
               subcategoria_id: sub.id,
               mes_ano: mesAno,
               bloco_quinzenal: bloco.indice,
-              valor_previsto: valorPorOcorrencia,
-              valor_real: valorPorOcorrencia,
-              moeda: orc.moeda,
+              valor_previsto: valorBRL,
+              valor_real: valorBRL,
+              moeda: 'BRL',
               status: (sub.tipo === 'Transferência' || sub.tipo === 'Caixinha') ? 'A Transferir' : 'A Pagar',
               data_vencimento: isoDate(cur.getFullYear(), cur.getMonth(), cur.getDate()),
             });
@@ -896,10 +923,12 @@ async function ensurePagamentosForMonth(year, month) {
     if (!sub.divida_id) continue;
 
     let valorSinc;
+    let moedaSinc;
     if (!sub.valor_variavel && Number(sub.valor_base) > 0) {
       // Parcelas iguais: usa valor_base direto da subcategoria (sempre atualizado ao salvar a dívida)
       const occThisMonth = countOccurrencesInMonth(sub, year, month) || 1;
       valorSinc = Number((Number(sub.valor_base) / occThisMonth).toFixed(2));
+      moedaSinc = sub.moeda || 'BRL';
     } else {
       // Taxa variável: usa orcamento_geral que é regenerado por parcela ao salvar a dívida
       // (Filtra pelo mês visível porque agora 'orcamentos' inclui meses adjacentes pra cobrir blocos atravessados.)
@@ -907,12 +936,24 @@ async function ensurePagamentosForMonth(year, month) {
       if (!orc || Number(orc.valor_previsto) <= 0) continue;
       const occThisMonth = countOccurrencesInMonth(sub, year, month) || 1;
       valorSinc = Number((Number(orc.valor_previsto) / occThisMonth).toFixed(2));
+      moedaSinc = orc.moeda || 'BRL';
     }
 
     if (!valorSinc || valorSinc <= 0) continue;
+
+    // Fronteira de moeda: pagamento é SEMPRE em BRL. Converte se necessário.
+    if (moedaSinc && moedaSinc !== 'BRL') {
+      const rate = ratesLocal.get(moedaSinc);
+      if (!rate) {
+        console.warn('[ensurePagamentosForMonth] sync dívida: taxa ausente pra', moedaSinc, '— pulando sub', sub.nome);
+        continue;
+      }
+      valorSinc = Number((valorSinc * rate).toFixed(2));
+    }
+
     await supabase
       .from('pagamentos')
-      .update({ valor_previsto: valorSinc, valor_real: valorSinc })
+      .update({ valor_previsto: valorSinc, valor_real: valorSinc, moeda: 'BRL' })
       .eq('subcategoria_id', sub.id)
       .eq('mes_ano', mesAno)
       .in('status', PENDENTE);
@@ -1041,32 +1082,6 @@ function formatPeriod(start, end) {
 }
 
 // -----------------------------
-// Câmbio
-// -----------------------------
-async function refreshRates() {
-  const used = [...new Set(
-    cachedPagamentos.map((p) => p.moeda).filter((m) => m && m !== 'BRL')
-  )];
-  if (used.length === 0) return;
-
-  await Promise.all(used.map(async (c) => {
-    try {
-      const rate = await fetchExchangeRate(c, 'BRL');
-      ratesMap.set(c, rate);
-    } catch (err) {
-      console.warn('[refreshRates] falhou:', err);
-    }
-  }));
-}
-
-function convertToBRL(value, currency) {
-  if (!currency || currency === 'BRL') return Number(value) || 0;
-  const rate = ratesMap.get(currency);
-  if (!rate) return null;
-  return (Number(value) || 0) * rate;
-}
-
-// -----------------------------
 // Renderização
 // -----------------------------
 function renderPagamentos() {
@@ -1155,9 +1170,8 @@ function renderBloco(num, title, period, items) {
   for (const p of items) {
     if (p.status === 'Cancelado') continue;
     const tipo = p.subcategorias?.tipo;
-    const v = Number(p.valor_real ?? p.valor_previsto) || 0;
-    const vBRL = convertToBRL(v, p.moeda);
-    if (vBRL === null) continue;
+    // Pagamentos já estão em BRL (fronteira de moeda na criação) — sem conversão aqui.
+    const vBRL = Number(p.valor_real ?? p.valor_previsto) || 0;
     saldoBRL += (tipo === 'Receita' ? vBRL : -vBRL);
 
     if (tipo === 'Despesa') {
@@ -1398,24 +1412,16 @@ function renderPagamentoRow(p, catColor) {
   const tipoColor = tipo === 'Receita' ? 'var(--color-success)' : 'var(--color-danger)';
   const tipoSymbol = tipo === 'Receita' ? '+' : '-';
   const moeda = p.moeda || 'BRL';
-  const moedaSymbol = MOEDAS.find((m) => m.code === moeda)?.symbol || moeda;
   const isCancelado = p.status === 'Cancelado';
   const hasObs = !!(p.observacao && p.observacao.trim());
   const atrasadoFlag = isAtrasado(p);
-  // Valor: converte pra BRL se tiver taxa; senão mostra no valor original.
-  // displaySymbol: R$ quando convertido, símbolo da moeda original quando não.
+  // Valor: pagamento SEMPRE em BRL (fronteira de moeda na criação).
+  // Sem conversão em display.
   let valorInputValue = '';
-  let displaySymbol = moedaSymbol;
+  const displaySymbol = getMainCurrencySymbol();
   const valorBase = p.valor_real ?? p.valor_previsto;
   if (valorBase !== null && valorBase !== undefined) {
-    const valorBRL = convertToBRL(Number(valorBase), moeda);
-    if (valorBRL !== null) {
-      valorInputValue = valorBRL.toFixed(2);
-      displaySymbol = getMainCurrencySymbol(); // convertido → moeda principal
-    } else {
-      valorInputValue = Number(valorBase).toFixed(2);
-      // displaySymbol mantém o símbolo original (taxa não encontrada)
-    }
+    valorInputValue = Number(valorBase).toFixed(2);
   }
 
   // Vencimento dia + delta (se houver data_pagamento divergente)
@@ -1778,9 +1784,9 @@ function openDetailsModal(p) {
     bancoHtml = `<span style="display:inline-flex;align-items:center;gap:6px;">${bancoIcon}${escapeHtml(contaDisplay)} (${conta.tipo})</span>`;
   }
 
-  const moeda = p.moeda || 'BRL';
-  const previstoBRL = convertToBRL(Number(p.valor_previsto) || 0, moeda);
-  const realBRL = p.valor_real != null ? convertToBRL(Number(p.valor_real), moeda) : null;
+  // Pagamento SEMPRE em BRL (fronteira de moeda na criação). Sem conversão.
+  const previstoBRL = Number(p.valor_previsto) || 0;
+  const realBRL = p.valor_real != null ? Number(p.valor_real) : null;
 
   const tipo = sub?.tipo || '—';
   const statusLabel = STATUS_OPTIONS.find((s) => s.value === p.status)?.label || p.status;
@@ -1792,10 +1798,9 @@ function openDetailsModal(p) {
     { label: 'Tipo pagamento',  value: sub?.tipo_pagamento || '—' },
     { label: 'Vencimento',      value: p.data_vencimento ? formatDateBR(p.data_vencimento) : '—' },
     { label: 'Bloco',           value: `Bloco ${p.bloco_quinzenal}` },
-    { label: 'Valor previsto',  value: previstoBRL !== null ? formatCurrency(previstoBRL, 'BRL') : `${formatCurrency(p.valor_previsto, moeda)} ${moeda}` },
-    { label: 'Valor real',      value: realBRL !== null ? formatCurrency(realBRL, 'BRL') : (p.valor_real != null ? `${formatCurrency(p.valor_real, moeda)} ${moeda}` : '—') },
+    { label: 'Valor previsto',  value: formatCurrency(previstoBRL, 'BRL') },
+    { label: 'Valor real',      value: realBRL !== null ? formatCurrency(realBRL, 'BRL') : '—' },
     { label: 'Status',          value: statusLabel },
-    { label: 'Moeda original',  value: moeda },
   ];
 
   document.getElementById('pag-details-grid').innerHTML = fields.map((f) => `
@@ -1941,26 +1946,10 @@ async function saveStatus(select) {
       }
     }
 
-    // Valor inicial pro input: convertido pra moeda principal (BRL),
-    // igual à coluna VALOR da tabela. Convenção do sistema: usuário vê
-    // e edita em BRL; o storage mantém na moeda original do pagamento.
-    const moedaPag = pag.moeda || 'BRL';
+    // Valor inicial pro input: já está em BRL (pagamento sempre BRL pós-fronteira).
     const valorOrig = pag.valor_real != null
       ? Number(pag.valor_real)
       : Number(pag.valor_previsto) || 0;
-    let valorInicialBRL = valorOrig;
-    let popoverCurrency = 'BRL';
-    let popoverSymbol = getMainCurrencySymbol();
-    if (moedaPag !== 'BRL') {
-      const convertido = convertToBRL(valorOrig, moedaPag);
-      if (convertido !== null) {
-        valorInicialBRL = convertido;
-      } else {
-        // Câmbio indisponível — mostra na moeda original como fallback
-        popoverCurrency = moedaPag;
-        popoverSymbol = moedaPag;
-      }
-    }
 
     const result = await showDateConfirmPopover({
       anchor: select,
@@ -1968,8 +1957,8 @@ async function saveStatus(select) {
       initialDate: pag.data_pagamento || null,
       accountSelector,
       valorInput: {
-        value: valorInicialBRL,
-        currency: popoverCurrency, // 'BRL' por padrão (símbolo R$)
+        value: valorOrig,
+        currency: 'BRL',
         label: 'Valor pago',
       },
     });
@@ -2228,28 +2217,17 @@ async function saveValorReal(input) {
   const pag = cachedPagamentos.find((p) => p.id === id);
   if (!pag) return;
 
-  // Empty = unset (null)
+  // Empty = unset (null). Input já está em BRL — pagamento sempre BRL (fronteira de moeda).
   let newValueOrig = null;
   if (raw !== '') {
     const newValueBRL = parseUserNumber(raw);
     if (isNaN(newValueBRL) || newValueBRL < 0) {
       showToast(t('pagamentos.validacao.valor_invalido', 'Valor inválido'), 'error');
       // Restore
-      const oldBRL = pag.valor_real != null ? convertToBRL(Number(pag.valor_real), pag.moeda) : null;
-      input.value = oldBRL !== null ? oldBRL.toFixed(2) : '';
+      input.value = pag.valor_real != null ? Number(pag.valor_real).toFixed(2) : '';
       return;
     }
-    // Convert BRL → moeda original
-    if (pag.moeda === 'BRL') {
-      newValueOrig = newValueBRL;
-    } else {
-      const rate = ratesMap.get(pag.moeda);
-      if (!rate) {
-        showToast(`Câmbio ${pag.moeda} indisponível`, 'error', 8000);
-        return;
-      }
-      newValueOrig = newValueBRL / rate;
-    }
+    newValueOrig = newValueBRL;
   }
 
   // Sem mudança real
@@ -2270,8 +2248,7 @@ async function saveValorReal(input) {
   if (error) {
     console.error('[saveValorReal]', error);
     showToast('Erro ao salvar: ' + error.message, 'error', 8000);
-    const oldBRL = oldOrig != null ? convertToBRL(Number(oldOrig), pag.moeda) : null;
-    input.value = oldBRL !== null ? oldBRL.toFixed(2) : '';
+    input.value = oldOrig != null ? Number(oldOrig).toFixed(2) : '';
     return;
   }
 
