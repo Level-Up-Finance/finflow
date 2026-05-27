@@ -1719,13 +1719,16 @@ function renderDataRows(items) {
   const saldoMes = totalReceitas - totalDespesas;
   const saldoMesColor = saldoMes < 0 ? 'color: var(--color-danger)' : '';
 
-  // Footer estruturado: colspan=9 cobre DATA→CONTA, depois 1 cell pra VALOR
-  // (net = receitas - despesas com sinal), 1 cell pra SALDO (saldoMes), 1 cell
-  // vazia pras actions. Cada total alinha com a coluna correspondente — sem
-  // formatCurrencyHTML no colspan (que disparava flex-space-between e bagunçava
-  // a posição dos R$ e números).
+  // Footer estruturado: cada total na sua coluna.
+  // - colspan=9: label com contagem + badges +receita/-despesa inline (texto plano)
+  // - VALOR cell: net do período (receitas - despesas, com sinal)
+  // - SALDO cell: saldo FINAL = último running balance (inclui opening balance)
+  //   bate com "saldo atual" no card de Contas.
+  // - ACTIONS cell: vazia
   const netMes = totalReceitas - totalDespesas;
   const netCls = netMes >= 0 ? 'trans-tipo-receita' : 'trans-tipo-despesa';
+  const saldoFinal = balance; // último valor após o loop running (já inclui saldoInicialOpening)
+  const saldoFinalColor = saldoFinal < 0 ? 'color: var(--color-danger)' : '';
   const footer = `
     <tr class="trans-footer-row">
       <td colspan="9" class="trans-footer-label">
@@ -1736,7 +1739,7 @@ function renderDataRows(items) {
         <span class="trans-tipo-despesa">−${formatCurrency(totalDespesas, 'BRL')}</span>
       </td>
       <td class="trans-td-valor tabular ${netCls}" data-col="valor">${formatCurrencyHTML(netMes, 'BRL')}</td>
-      <td class="trans-td-saldo tabular trans-footer-saldo" data-col="saldo" style="${saldoMesColor}">${formatCurrencyHTML(saldoMes, 'BRL')}</td>
+      <td class="trans-td-saldo tabular trans-footer-saldo" data-col="saldo" style="${saldoFinalColor}">${formatCurrencyHTML(saldoFinal, 'BRL')}</td>
       <td></td>
     </tr>`;
 
