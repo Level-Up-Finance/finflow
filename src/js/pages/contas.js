@@ -150,6 +150,9 @@ function bindEvents() {
   document.getElementById('btn-nova-conta').addEventListener('click', () => openContaModal());
   document.querySelector('[data-trigger-nova]')?.addEventListener('click', () => openContaModal());
 
+  // Saldo inicial — Salvar
+  document.getElementById('btn-salvar-saldo-inicial')?.addEventListener('click', saveSaldoInicial);
+
   // View toggle
   document.getElementById('view-toggle').addEventListener('click', (e) => {
     const btn = e.target.closest('.view-toggle-btn');
@@ -324,15 +327,29 @@ async function loadSaldos(contaIds) {
   // só passam a afetar o saldo após reconciliação manual ou auto-confirmação.
   const { data, error } = await supabase
     .from('transacoes')
-    .select('conta_id, tipo, valor, conta_destino_id, transferencia_par_id, reconciliacao_status')
+    .select('conta_id, tipo, valor, data, conta_destino_id, transferencia_par_id, reconciliacao_status')
     .in('conta_id', contaIds)
     .neq('reconciliacao_status', 'importado');
   if (error) { console.error('[loadSaldos]', error); return; }
 
-  // Initialize all accounts at 0
-  for (const id of contaIds) cachedSaldos.set(id, 0);
+  // Inicializa cada conta com seu saldo_inicial (campo opening balance).
+  // Mapeia conta_id → { saldoInicial, dataCorte } pra usar no filtro abaixo.
+  // Se data_saldo_inicial = NULL, dataCorte = null → não filtra (legado).
+  const aperturas = new Map();
+  for (const id of contaIds) {
+    const c = cachedContas.find((x) => x.id === id);
+    const saldoIni = Number(c?.saldo_inicial) || 0;
+    aperturas.set(id, { dataCorte: c?.data_saldo_inicial || null });
+    cachedSaldos.set(id, saldoIni);
+  }
 
   for (const tr of (data || [])) {
+    // Pula transações ANTES da data de abertura da conta — elas representam
+    // movimentos retroativos cadastrados pra histórico, não devem afetar
+    // o saldo "como está hoje" (que tem o opening balance como ponto de partida).
+    const dataCorte = aperturas.get(tr.conta_id)?.dataCorte;
+    if (dataCorte && tr.data && tr.data < dataCorte) continue;
+
     const cur = cachedSaldos.get(tr.conta_id) ?? 0;
     const isEntrada = tr.tipo === 'Receita'
       || (tr.tipo === 'Transferência' && tr.transferencia_par_id && !tr.conta_destino_id);
@@ -1410,6 +1427,37 @@ function renderContaCard(conta) {
        </div>`
     : '';
 
+  // Saldo inicial (opening balance): só conta não-cartão.
+  // Se ainda não definido (default 0 + data NULL), mostra CTA discreta;
+  // se já definido, mostra valor + data clicável pra editar.
+  let saldoInicialHtml = '';
+  if (!isCartao) {
+    const sIni  = Number(conta.saldo_inicial) || 0;
+    const dIni  = conta.data_saldo_inicial;
+    const aindaNaoDefinido = sIni === 0 && !dIni;
+    if (aindaNaoDefinido) {
+      saldoInicialHtml = `
+        <button type="button" class="conta-card-saldo-inicial-cta"
+                data-action="set-saldo-inicial" data-conta-id="${conta.id}"
+                title="Defina o valor que a conta tinha no dia que você começou a usar o app">
+          → Definir saldo inicial
+        </button>`;
+    } else {
+      const [yy, mm, dd] = (dIni || '').split('-');
+      const dataFmt = dIni ? `${dd}/${mm}/${yy.slice(2)}` : '—';
+      saldoInicialHtml = `
+        <button type="button" class="conta-card-saldo-inicial-info"
+                data-action="set-saldo-inicial" data-conta-id="${conta.id}"
+                title="Clique pra editar o saldo inicial">
+          <span class="conta-card-row-label">Saldo inicial</span>
+          <span class="conta-card-saldo-inicial-valor">
+            ${formatCurrencyHTML(sIni, conta.moeda)}
+            <span class="conta-card-saldo-inicial-data">em ${dataFmt}</span>
+          </span>
+        </button>`;
+    }
+  }
+
   // Conciliação com banco (snapshot OFX — padrão Xero)
   const snap = cachedSnapshots.get(conta.id);
   let conciliacaoHtml;
@@ -1463,6 +1511,7 @@ function renderContaCard(conta) {
         </div>
         ${faturaRow}
         ${saldoHtml}
+        ${saldoInicialHtml}
         ${faturaBadge}
         ${comprometidoBadge}
         ${conciliacaoHtml}
@@ -1676,6 +1725,69 @@ function renderFaturaRowFechada(f) {
   `;
 }
 
+// -----------------------------
+// Saldo inicial (opening balance) — modal handlers
+// -----------------------------
+let saldoInicialContaId = null;
+
+function openSaldoInicialModal(contaId) {
+  const conta = cachedContas.find((c) => c.id === contaId);
+  if (!conta) return;
+  saldoInicialContaId = contaId;
+
+  // Pré-popula com valores atuais. Se nada definido, default sugerido:
+  // valor=0, data=hoje (usuário ajusta).
+  const valorAtual = Number(conta.saldo_inicial) || 0;
+  const dataAtual  = conta.data_saldo_inicial || new Date().toISOString().slice(0, 10);
+
+  const valorInput = document.getElementById('saldo-inicial-valor');
+  const dataInput  = document.getElementById('saldo-inicial-data');
+  // Format com vírgula brasileira (consistência com outros inputs decimais do app)
+  valorInput.value = valorAtual.toFixed(2).replace('.', ',');
+  dataInput.value  = dataAtual;
+
+  openModal('modal-saldo-inicial');
+  // Foca o valor pra edição rápida
+  setTimeout(() => valorInput.focus(), 50);
+}
+
+async function saveSaldoInicial() {
+  if (!saldoInicialContaId) return;
+  const btn = document.getElementById('btn-salvar-saldo-inicial');
+  btn.disabled = true;
+  btn.textContent = 'Salvando…';
+
+  try {
+    const valor = parseUserNumber(document.getElementById('saldo-inicial-valor').value);
+    const data  = document.getElementById('saldo-inicial-data').value;
+    if (!Number.isFinite(valor)) {
+      showToast('Valor inválido', 'error');
+      return;
+    }
+    if (!data) {
+      showToast('Selecione a data do snapshot', 'error');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('contas')
+      .update({ saldo_inicial: valor, data_saldo_inicial: data })
+      .eq('id', saldoInicialContaId);
+    if (error) throw error;
+
+    showToast('Saldo inicial salvo', 'success');
+    closeModal('modal-saldo-inicial');
+    saldoInicialContaId = null;
+    // Re-carrega contas + recomputa saldos com novo opening balance
+    await loadAll();
+  } catch (err) {
+    showToast('Erro ao salvar: ' + (err?.message || String(err)), 'error', 6000);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Salvar';
+  }
+}
+
 function bindCardClicks() {
   document.querySelectorAll('.conta-card-v2').forEach((card) => {
     card.addEventListener('click', (e) => {
@@ -1684,6 +1796,13 @@ function bindCardClicks() {
         e.stopPropagation();
         const btn = e.target.closest('[data-action="ver-faturas"]');
         openFaturasModal(btn.dataset.contaId);
+        return;
+      }
+      // Botão "Definir/editar saldo inicial" tem handler próprio
+      if (e.target.closest('[data-action="set-saldo-inicial"]')) {
+        e.stopPropagation();
+        const btn = e.target.closest('[data-action="set-saldo-inicial"]');
+        openSaldoInicialModal(btn.dataset.contaId);
         return;
       }
       const conta = cachedContas.find((c) => c.id === card.dataset.id);

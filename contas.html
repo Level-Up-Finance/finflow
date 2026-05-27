@@ -394,6 +394,36 @@
   </div>
 
   <!-- ============================================================
+       MODAL: Saldo inicial (opening balance) por conta
+       ============================================================ -->
+  <div class="modal-backdrop hidden" id="modal-saldo-inicial" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title">Saldo inicial</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-saldo-inicial" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--color-text-secondary); font-size: var(--fs-sm); margin-bottom: var(--space-3); line-height: 1.5;">
+          O valor que esta conta tinha no dia em que você começou a usar o FinFlow.
+          Transações com data anterior são ignoradas no cálculo do saldo atual.
+        </p>
+        <div class="field">
+          <label class="field-label" for="saldo-inicial-valor">Valor</label>
+          <input class="input input-decimal" type="text" inputmode="decimal" id="saldo-inicial-valor" placeholder="0,00">
+        </div>
+        <div class="field mt-3">
+          <label class="field-label" for="saldo-inicial-data">Data do snapshot</label>
+          <input class="input" type="date" id="saldo-inicial-data">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="modal-saldo-inicial">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-salvar-saldo-inicial">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
        MODAL: Faturas do Cartão (aberta + projetadas + fechadas)
        ============================================================ -->
   <div class="modal-backdrop hidden" id="modal-cartao-faturas" role="dialog" aria-modal="true">

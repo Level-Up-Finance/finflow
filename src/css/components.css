@@ -18443,6 +18443,49 @@ body[data-can-write="false"] [data-delete-sub] {
 .conta-card-saldo-row.is-negativo .conta-card-saldo-valor { color: var(--color-danger); }
 .conta-card-saldo-row.is-zero .conta-card-saldo-valor { color: var(--color-text-muted); }
 
+/* Saldo inicial (opening balance) — CTA quando não definido */
+.conta-card-saldo-inicial-cta {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 4px 0;
+  font-size: var(--fs-xs);
+  color: var(--color-primary);
+  cursor: pointer;
+  font-weight: var(--fw-medium);
+}
+.conta-card-saldo-inicial-cta:hover { text-decoration: underline; }
+
+/* Saldo inicial — informação quando já definido (clicável pra editar) */
+.conta-card-saldo-inicial-info {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  width: 100%;
+  padding: 4px 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+.conta-card-saldo-inicial-info:hover { background: var(--color-bg-subtle); border-radius: 4px; }
+.conta-card-saldo-inicial-info .conta-card-row-label {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+.conta-card-saldo-inicial-valor {
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.conta-card-saldo-inicial-data {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  margin-left: 4px;
+}
+
 /* Esconde a descrição preview no card (só aparece no modal) */
 .conta-card-v2 .conta-card-desc { display: none; }
 
