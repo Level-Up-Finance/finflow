@@ -18000,13 +18000,18 @@ body[data-can-write="false"] [data-delete-sub] {
   border-left-color: var(--color-warning, #f59e0b);
 }
 .tarefa-item-title {
-  font-weight: var(--fw-semibold);
+  font-family: var(--font-body);
+  font-weight: var(--fw-medium);
   font-size: var(--fs-sm);
   color: var(--color-text-main);
+  line-height: 1.4;
 }
 .tarefa-item-desc {
-  font-size: 12px;
-  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-normal);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
   margin-top: 2px;
 }
 .tarefa-item-actions {
@@ -18313,14 +18318,19 @@ body[data-can-write="false"] [data-delete-sub] {
   gap: var(--space-2);
 }
 .tarefa-page-card-title {
-  font-weight: var(--fw-semibold);
+  font-family: var(--font-body);
+  font-weight: var(--fw-medium);
   color: var(--color-text-main);
-  font-size: var(--fs-md);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
   flex: 1;
 }
 .tarefa-page-card-desc {
+  font-family: var(--font-body);
   font-size: var(--fs-sm);
-  color: var(--color-text-muted);
+  font-weight: var(--fw-normal);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
   margin: 0;
 }
 .tarefa-page-card-actions {
@@ -18335,13 +18345,15 @@ body[data-can-write="false"] [data-delete-sub] {
 .tarefa-origem-badge {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   font-family: var(--font-display);
   font-size: var(--fs-xs);
-  font-weight: var(--fw-semibold);
-  padding: 2px 6px;
+  font-weight: var(--fw-medium);
+  padding: 2px 8px;
   border-radius: 4px;
   letter-spacing: 0;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 .tarefa-origem-badge-icon {
   flex-shrink: 0;
@@ -18350,14 +18362,14 @@ body[data-can-write="false"] [data-delete-sub] {
 /* AUTO — lembretes do sistema (purple subtle) */
 .tarefa-origem-badge--sistema,
 .tarefa-origem-badge--auto {
-  background: var(--color-primary-soft, rgba(109,94,245,0.12));
-  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
 }
 /* MINHA — tarefas manuais do usuário (green subtle) */
 .tarefa-origem-badge--usuario,
 .tarefa-origem-badge--minha {
-  background: rgba(16,185,129,0.12);
-  color: var(--color-success);
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
 }
 .tarefa-completed-at {
   font-size: var(--fs-xs);
@@ -18381,11 +18393,12 @@ body[data-can-write="false"] [data-delete-sub] {
 /* Header de grupo (Suas tarefas / Lembretes do sistema) */
 .tarefa-grupo-header {
   padding: var(--space-3) var(--space-3) var(--space-2);
+  font-family: var(--font-display);
   font-size: var(--fs-xs);
   color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  font-weight: var(--fw-semibold);
+  font-weight: var(--fw-medium);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -18438,14 +18451,18 @@ body[data-can-write="false"] [data-delete-sub] {
   min-width: 0;  /* permite truncamento */
 }
 .tarefa-row-title {
-  font-size: var(--fs-md);
-  font-weight: var(--fw-semibold);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
   color: var(--color-text-main);
-  line-height: 1.3;
+  line-height: 1.4;
 }
 .tarefa-row-desc {
+  font-family: var(--font-body);
   font-size: var(--fs-sm);
-  color: var(--color-text-muted);
+  font-weight: var(--fw-normal);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
   margin-top: 2px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -18454,13 +18471,16 @@ body[data-can-write="false"] [data-delete-sub] {
 
 /* Meta (prazo) — alinhado à direita */
 .tarefa-row-meta {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
   font-size: var(--fs-sm);
-  color: var(--color-text-muted);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-main);
   white-space: nowrap;
 }
 .tarefa-row-prazo--atrasada { color: var(--color-danger); font-weight: var(--fw-semibold); }
-.tarefa-row-prazo--hoje     { color: var(--color-warning, #f59e0b); font-weight: var(--fw-semibold); }
-.tarefa-row-prazo--vazio    { opacity: 0.6; }
+.tarefa-row-prazo--hoje     { color: var(--color-warning); font-weight: var(--fw-semibold); }
+.tarefa-row-prazo--vazio    { color: var(--color-text-muted); font-weight: var(--fw-normal); opacity: 0.6; }
 
 /* Actions */
 .tarefa-row-actions {
@@ -18469,31 +18489,48 @@ body[data-can-write="false"] [data-delete-sub] {
   align-items: center;
 }
 
-/* Badges de prioridade */
+/* Badges de prioridade — sistema unificado (mesma altura/forma/typography) */
 .tarefa-prio-badge {
   display: inline-flex;
   align-items: center;
+  gap: 4px;
   font-family: var(--font-display);
   font-size: var(--fs-xs);
-  font-weight: var(--fw-semibold);
+  font-weight: var(--fw-medium);
   padding: 2px 8px;
   border-radius: 4px;
   letter-spacing: 0;
+  line-height: 1.4;
   white-space: nowrap;
+  flex-shrink: 0;
+}
+/* Dot indicator (prefixo opcional pra prioridade alta) */
+.tarefa-prio-badge::before {
+  content: '';
+  display: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
   flex-shrink: 0;
 }
 .tarefa-prio-badge--alta {
   background: var(--color-danger-bg);
-  color: var(--color-danger);
+  color: var(--color-danger-text);
+}
+.tarefa-prio-badge--alta::before {
+  display: inline-block;
+  background: var(--color-danger);
 }
 .tarefa-prio-badge--normal {
   background: var(--color-surface-alt);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
 }
 .tarefa-prio-badge--baixa {
-  background: transparent;
+  background: var(--color-surface-alt);
   color: var(--color-text-muted);
-  opacity: 0.7;
+  border: 1px solid var(--color-border);
+  opacity: 0.75;
 }
 
 /* Botão kebab + dropdown */
@@ -18575,8 +18612,11 @@ body[data-can-write="false"] [data-delete-sub] {
 .tarefa-subrow:last-child { border-bottom: none; }
 .tarefa-subrow:hover { background: var(--color-surface-alt); }
 .tarefa-subrow-label {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
   color: var(--color-text-main);
-  font-weight: var(--fw-medium, 500);
+  line-height: 1.4;
 }
 .tarefa-subrow-actions {
   display: flex;
@@ -18696,8 +18736,9 @@ body[data-can-write="false"] [data-delete-sub] {
   cursor: pointer;
 }
 .tarefas-table-cell {
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   font-size: var(--fs-sm);
+  font-weight: var(--fw-normal);
   color: var(--color-text-main);
   min-width: 0;
 }
@@ -18708,10 +18749,11 @@ body[data-can-write="false"] [data-delete-sub] {
 }
 .tarefas-table-cell--title {
   flex: 2;
-  font-family: var(--font-sans);
-  font-size: var(--fs-md);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
   font-weight: var(--fw-medium);
   color: var(--color-text-main);
+  line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -18723,22 +18765,34 @@ body[data-can-write="false"] [data-delete-sub] {
 }
 .tarefas-table-cell--desc {
   flex: 3;
-  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-normal);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .tarefas-table-cell--empty {
-  opacity: 0.5;
+  color: var(--color-text-muted);
+  font-style: italic;
+  opacity: 0.7;
 }
 .tarefas-table-cell--prazo {
   width: 130px;
   flex-shrink: 0;
   font-family: var(--font-display);
   font-variant-numeric: tabular-nums;
-  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-main);
   white-space: nowrap;
 }
+/* Prazo states (reaproveita modifiers da row pra consistência) */
+.tarefas-table-cell--prazo.tarefa-row-prazo--atrasada { color: var(--color-danger); font-weight: var(--fw-semibold); }
+.tarefas-table-cell--prazo.tarefa-row-prazo--hoje     { color: var(--color-warning); font-weight: var(--fw-semibold); }
+.tarefas-table-cell--prazo.tarefa-row-prazo--vazio    { color: var(--color-text-muted); font-weight: var(--fw-normal); opacity: 0.6; }
 .tarefas-table-cell--actions {
   width: 120px;
   flex-shrink: 0;
@@ -18750,7 +18804,9 @@ body[data-can-write="false"] [data-delete-sub] {
 .tarefas-table-empty {
   padding: var(--space-5) var(--space-4);
   text-align: center;
+  font-family: var(--font-body);
   font-size: var(--fs-sm);
+  font-weight: var(--fw-normal);
   color: var(--color-text-muted);
   background: var(--color-surface);
 }
@@ -18834,19 +18890,19 @@ body[data-can-write="false"] [data-delete-sub] {
   flex-wrap: wrap;
 }
 .modal-tarefa-detalhes-title {
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   font-size: var(--fs-lg);
-  font-weight: var(--fw-bold);
+  font-weight: var(--fw-semibold);
   color: var(--color-text-main);
   line-height: 1.3;
   margin: 0;
 }
 .modal-tarefa-detalhes-desc {
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   font-size: var(--fs-sm);
   font-weight: var(--fw-normal);
   line-height: 1.6;
-  color: var(--color-text-secondary, var(--color-text-main));
+  color: var(--color-text-secondary);
   margin: 0;
   white-space: pre-wrap;
 }
@@ -18879,8 +18935,9 @@ body[data-can-write="false"] [data-delete-sub] {
   flex-shrink: 0;
 }
 .modal-tarefa-detalhes-meta-value {
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
   color: var(--color-text-main);
   text-align: right;
   font-variant-numeric: tabular-nums;

@@ -29,6 +29,7 @@
   --color-primary:      var(--color-primary-500);
   --color-primary-dark: var(--color-primary-700);
   --color-primary-light:var(--color-primary-400);
+  --color-primary-soft: rgba(109, 94, 245, 0.10);  /* primary 10% — usado em backgrounds subtle */
 
   /* ────────────────────────────────────────────────────────────────────────
      2. CORES ACENTO — Lime
