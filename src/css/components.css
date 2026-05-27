@@ -18594,6 +18594,179 @@ body[data-can-write="false"] [data-delete-sub] {
 }
 
 /* =============================================================
+   Tarefas — vista única, 3 grupos colapsáveis (MINHAS / SISTEMA / CONCLUÍDAS)
+   ============================================================= */
+.tarefa-grupo-top {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  overflow: hidden;
+  margin-bottom: var(--space-3);
+}
+.tarefa-grupo-top-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  background: var(--color-surface-alt);
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  text-align: left;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-main);
+  transition: background 150ms;
+}
+.tarefa-grupo-top-header:hover {
+  background: var(--color-surface);
+}
+.tarefa-grupo-top-header[aria-expanded="false"] {
+  border-bottom: none;
+}
+.tarefa-grupo-top-chevron {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+.tarefa-grupo-top-label {
+  flex: 1;
+}
+.tarefa-grupo-sistema-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+/* =============================================================
+   Tarefas — tabela compacta (MINHAS TAREFAS / CONCLUÍDAS)
+   ============================================================= */
+.tarefas-table {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+}
+.tarefas-table-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-alt);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.tarefas-table-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 12px var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  transition: background 150ms;
+}
+.tarefas-table-row:last-child {
+  border-bottom: none;
+}
+.tarefas-table-row:hover {
+  background: var(--color-surface-alt);
+}
+.tarefas-table-row--concluida {
+  opacity: 0.75;
+}
+.tarefas-table-cell {
+  font-size: var(--fs-sm);
+  color: var(--color-text-main);
+  min-width: 0;
+}
+.tarefas-table-cell--prio,
+.tarefas-table-cell--origem {
+  width: 90px;
+  flex-shrink: 0;
+}
+.tarefas-table-cell--title {
+  flex: 2;
+  font-weight: var(--fw-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tarefas-table-cell--strike {
+  text-decoration: line-through;
+  text-decoration-color: var(--color-text-muted);
+  opacity: 0.7;
+}
+.tarefas-table-cell--desc {
+  flex: 3;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tarefas-table-cell--empty {
+  opacity: 0.5;
+}
+.tarefas-table-cell--prazo {
+  width: 130px;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.tarefas-table-cell--actions {
+  width: 120px;
+  flex-shrink: 0;
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  align-items: center;
+}
+.tarefas-table-empty {
+  padding: var(--space-5) var(--space-4);
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+}
+
+/* Botões de ação (icon-only) na tabela */
+.tarefas-table-icon-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm, 4px);
+}
+.tarefas-table-icon-btn--success:hover {
+  background: var(--color-success-bg, var(--color-surface-alt));
+  color: var(--color-success, #16a34a);
+}
+.tarefas-table-icon-btn--primary:hover {
+  background: var(--color-primary-bg, var(--color-surface-alt));
+  color: var(--color-primary);
+}
+.tarefas-table-icon-btn--danger:hover {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+/* Responsivo: ocultar DESCRIÇÃO em viewports estreitos */
+@media (max-width: 700px) {
+  .tarefas-table-cell--desc { display: none; }
+  .tarefas-table-cell--prazo { width: auto; min-width: 90px; }
+}
+@media (max-width: 480px) {
+  .tarefas-table-cell--prio,
+  .tarefas-table-cell--origem { width: 70px; }
+  .tarefas-table-cell--actions { width: auto; }
+}
+
+/* =============================================================
    Indicadores no card de conta (pendentes + status de importação)
    ============================================================= */
 .conta-indicadores-row {

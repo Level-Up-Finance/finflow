@@ -1,8 +1,11 @@
 // =============================================================
 // FinFlow — Página /tarefas
-// Lista pendentes + concluídas. Permite criar tarefas manuais e
-// concluir/dispensar tarefas automáticas. Auto-geração de tarefas
-// (import_extrato, reconciliacao_pendente) roda em background.
+// Vista única com 3 grupos colapsáveis empilhados:
+//   1. MINHAS TAREFAS    (tabela — pendentes manuais)
+//   2. LEMBRETES DO SISTEMA (list-rows agregadas — pendentes auto)
+//   3. CONCLUÍDAS        (tabela — manuais + auto concluídas)
+// Auto-geração de tarefas (import_extrato, reconciliacao_pendente)
+// roda em background antes do primeiro render.
 // =============================================================
 import { guardSession, getCurrentUser } from '../lib/auth.js';
 import { initSidebar } from '../components/sidebar.js';
@@ -21,13 +24,13 @@ import {
   nuncaLembrarMais,
 } from '../lib/tarefas.js';
 
-let viewTab = 'pendentes'; // 'pendentes' | 'concluidas'
 let cachedPendentes = [];
 let cachedConcluidas = [];
 // Estado de expansão dos grupos do sistema (keyed por t.tipo)
 let gruposExpandidos = new Set();
-// Estado dos menus kebab abertos (id da tarefa)
-let menuAbertoId = null;
+// Estado de colapso dos 3 grupos top-level: 'minhas' | 'sistema' | 'concluidas'
+// Default: todos expandidos (set vazio = nada colapsado).
+let gruposColapsados = new Set();
 
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
@@ -45,17 +48,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 function bindEvents() {
   document.getElementById('btn-nova-tarefa').addEventListener('click', () => openTarefaModal());
 
-  document.getElementById('tarefas-tabs').addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-tab]');
-    if (!btn) return;
-    if (btn.dataset.tab === viewTab) return;
-    viewTab = btn.dataset.tab;
-    document.querySelectorAll('#tarefas-tabs [data-tab]').forEach((b) =>
-      b.classList.toggle('active', b.dataset.tab === viewTab)
-    );
-    render();
-  });
-
   // Fechar modal
   document.querySelectorAll('[data-close-modal]').forEach((btn) => {
     btn.addEventListener('click', () => closeModal(btn.dataset.closeModal));
@@ -64,7 +56,7 @@ function bindEvents() {
   // Salvar tarefa manual
   document.getElementById('form-tarefa').addEventListener('submit', salvarTarefa);
 
-  // Delegation pra ações na lista (concluir, dispensar, etc)
+  // Delegation pra ações na lista
   document.getElementById('tarefas-page-list').addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-action]');
     if (!btn) return;
@@ -72,21 +64,35 @@ function bindEvents() {
     const id = btn.dataset.id;
 
     // -----------------------------
+    // Toggle de grupos top-level
+    // -----------------------------
+    if (action === 'toggle-top') {
+      const key = btn.dataset.top;
+      if (gruposColapsados.has(key)) gruposColapsados.delete(key);
+      else gruposColapsados.add(key);
+      render();
+      return;
+    }
+
+    // -----------------------------
     // Ações de grupo (sistema)
     // -----------------------------
     if (action === 'expand-grupo') {
+      e.stopPropagation();
       const tipo = btn.dataset.grupo;
       gruposExpandidos.add(tipo);
       render();
       return;
     }
     if (action === 'collapse-grupo') {
+      e.stopPropagation();
       const tipo = btn.dataset.grupo;
       gruposExpandidos.delete(tipo);
       render();
       return;
     }
     if (action === 'snooze-grupo') {
+      e.stopPropagation();
       const tipo = btn.dataset.grupo;
       const tarefasDoGrupo = cachedPendentes.filter((x) => x.criada_por === 'sistema' && x.tipo === tipo);
       await Promise.all(tarefasDoGrupo.map((x) => dispensarTarefa(x.id, 3)));
@@ -96,6 +102,7 @@ function bindEvents() {
       return;
     }
     if (action === 'dispensar-todos') {
+      e.stopPropagation();
       const ok = await showConfirm('Dispensar todos os lembretes do sistema?', { okLabel: 'Dispensar', danger: true });
       if (!ok) return;
       const tarefasSistema = cachedPendentes.filter((x) => x.criada_por === 'sistema');
@@ -112,64 +119,58 @@ function bindEvents() {
     }
 
     // -----------------------------
-    // Menu kebab (suas tarefas)
-    // -----------------------------
-    if (action === 'menu') {
-      e.stopPropagation();
-      menuAbertoId = (menuAbertoId === id) ? null : id;
-      render();
-      return;
-    }
-
-    // -----------------------------
     // Ações individuais
     // -----------------------------
     if (action === 'concluir') {
+      e.stopPropagation();
       await concluirTarefa(id);
-      menuAbertoId = null;
       await loadAll();
       render();
       return;
     }
     if (action === 'snooze') {
+      e.stopPropagation();
       await dispensarTarefa(id, 3);
-      menuAbertoId = null;
       await loadAll();
       render();
       showToast(t('tarefas.toast.snooze_3d', 'Lembrarei em 3 dias'), 'info', 4000);
       return;
     }
     if (action === 'never') {
+      e.stopPropagation();
       const contaId = btn.dataset.conta || null;
       await nuncaLembrarMais(id, contaId);
-      menuAbertoId = null;
       await loadAll();
       render();
       return;
     }
     if (action === 'edit') {
+      e.stopPropagation();
       const tarefa = cachedPendentes.find((x) => x.id === id) || cachedConcluidas.find((x) => x.id === id);
-      menuAbertoId = null;
       if (tarefa) openTarefaModal(tarefa);
       return;
     }
+    if (action === 'reabrir') {
+      e.stopPropagation();
+      const ok = await showConfirm('Reabrir esta tarefa?', { okLabel: 'Reabrir', danger: false });
+      if (!ok) return;
+      await reabrirTarefa(id);
+      return;
+    }
+    if (action === 'esconder') {
+      e.stopPropagation();
+      await esconderTarefa(id);
+      return;
+    }
     if (action === 'delete') {
+      e.stopPropagation();
       const ok = await showConfirm('Excluir essa tarefa?', { okLabel: 'Excluir', danger: true });
-      menuAbertoId = null;
       if (!ok) return;
       // Defense in depth: filtra por workspace_id explícito
       await supabase.from('tarefas_usuario').delete().eq('id', id).eq('workspace_id', requireWorkspaceId());
       await loadAll();
       render();
       return;
-    }
-  });
-
-  // Fechar menu kebab ao clicar fora
-  document.addEventListener('click', (e) => {
-    if (menuAbertoId && !e.target.closest('.tarefa-row-menu, [data-action="menu"]')) {
-      menuAbertoId = null;
-      render();
     }
   });
 }
@@ -185,154 +186,213 @@ async function loadAll() {
   cachedConcluidas = concluidas || [];
 }
 
+// =============================================================
+// Render principal — 3 grupos empilhados, vista única
+// =============================================================
 function render() {
-  const list  = document.getElementById('tarefas-page-list');
-  const empty = document.getElementById('tarefas-page-empty');
-  const data = viewTab === 'pendentes' ? cachedPendentes : cachedConcluidas;
+  const list = document.getElementById('tarefas-page-list');
 
-  // Badge da aba Pendentes
-  const badge = document.getElementById('tarefas-pendentes-count');
-  badge.textContent = String(cachedPendentes.length);
-  badge.classList.toggle('hidden', cachedPendentes.length === 0);
+  const minhas = cachedPendentes
+    .filter((x) => x.criada_por !== 'sistema' && x.status !== 'concluida')
+    .sort(sortMinhas);
+  const sistema = cachedPendentes.filter((x) => x.criada_por === 'sistema' && x.status !== 'concluida');
+  const concluidas = cachedConcluidas;
 
-  if (data.length === 0) {
-    list.innerHTML = '';
-    empty.classList.remove('hidden');
-    document.getElementById('empty-title').textContent =
-      viewTab === 'pendentes' ? 'Tudo em dia!' : 'Nenhuma tarefa concluída ainda';
-    document.getElementById('empty-message').textContent =
-      viewTab === 'pendentes'
-        ? 'Nenhuma tarefa pendente. Use "Nova tarefa" pra criar seus lembretes.'
-        : 'Quando você concluir uma tarefa, ela vai aparecer aqui.';
-    return;
-  }
-  empty.classList.add('hidden');
+  const inner = [
+    renderGrupoTopMinhas(minhas),
+    sistema.length > 0 ? renderGrupoTopSistema(sistema) : '',
+    renderGrupoTopConcluidas(concluidas),
+  ].join('');
 
-  if (viewTab === 'pendentes') {
-    list.innerHTML = renderPendentes(data);
-  } else {
-    list.innerHTML = renderConcluidas(data);
-  }
+  list.innerHTML = `<div class="tarefas-page-list-inner">${inner}</div>`;
 }
 
 // =============================================================
-// Render: pendentes (Suas tarefas + Lembretes do sistema)
+// Header colapsável (chevron + título + count)
 // =============================================================
-function renderPendentes(pendentes) {
-  const suas = pendentes.filter((t) => t.criada_por !== 'sistema');
-  const sistema = pendentes.filter((t) => t.criada_por === 'sistema');
-
-  // Agrupa sistema por t.tipo
-  const gruposSistema = new Map();
-  for (const t of sistema) {
-    const tipo = t.tipo || 'outro';
-    if (!gruposSistema.has(tipo)) gruposSistema.set(tipo, []);
-    gruposSistema.get(tipo).push(t);
-  }
-
-  let out = '<div class="tarefas-page-list-inner">';
-
-  // Suas tarefas
-  if (suas.length > 0) {
-    out += `
-      <div class="tarefa-grupo-header">
-        <span>Suas tarefas · ${suas.length}</span>
-      </div>
-      ${suas.map(renderTarefaRow).join('')}
-    `;
-  }
-
-  // Lembretes do sistema
-  if (sistema.length > 0) {
-    out += `
-      <div class="tarefa-grupo-header">
-        <span>Lembretes do sistema · ${sistema.length}</span>
-        <button type="button" class="tarefa-grupo-bulk" data-action="dispensar-todos">Dispensar todos</button>
-      </div>
-    `;
-    for (const [tipo, tarefas] of gruposSistema) {
-      const expandido = gruposExpandidos.has(tipo);
-      out += expandido
-        ? renderGrupoExpandido(tipo, tarefas)
-        : renderGrupoRow(tipo, tarefas);
-    }
-  }
-
-  out += '</div>';
-  return out;
-}
-
-// =============================================================
-// Render: aba "Concluídas" — mantém visualização simples como rows
-// =============================================================
-function renderConcluidas(concluidas) {
-  return `<div class="tarefas-page-list-inner">${concluidas.map(renderTarefaRowConcluida).join('')}</div>`;
-}
-
-// =============================================================
-// Row: tarefa "sua" (pendente)
-// =============================================================
-function renderTarefaRow(t) {
-  const prio = t.prioridade || 'normal';
-  const prazoIso = t.metadata?.prazo || null;
-  const prazoInfo = renderPrazo(prazoIso);
-  const menuOpen = menuAbertoId === t.id;
-
-  const badgePrio = prio === 'alta'
-    ? '<span class="tarefa-prio-badge tarefa-prio-badge--alta">🔥 ALTA</span>'
-    : prio === 'baixa'
-      ? '<span class="tarefa-prio-badge tarefa-prio-badge--baixa">BAIXA</span>'
-      : '<span class="tarefa-prio-badge tarefa-prio-badge--normal">NORMAL</span>';
-
+function renderTopHeader(key, label, count) {
+  const colapsado = gruposColapsados.has(key);
+  const chevron = colapsado
+    ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>'
+    : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
   return `
-    <div class="tarefa-row tarefa-row--sua tarefa-row--${prio}" data-id="${t.id}" data-prio="${prio}">
-      ${badgePrio}
-      <div class="tarefa-row-content">
-        <div class="tarefa-row-title">${escapeHtml(t.titulo)}</div>
-        ${t.descricao ? `<div class="tarefa-row-desc">${escapeHtml(t.descricao)}</div>` : ''}
+    <button type="button" class="tarefa-grupo-top-header" data-action="toggle-top" data-top="${key}" aria-expanded="${!colapsado}">
+      <span class="tarefa-grupo-top-chevron">${chevron}</span>
+      <span class="tarefa-grupo-top-label">${escapeHtml(label)} · ${count}</span>
+    </button>
+  `;
+}
+
+// =============================================================
+// Grupo 1: MINHAS TAREFAS (tabela)
+// =============================================================
+function renderGrupoTopMinhas(minhas) {
+  const colapsado = gruposColapsados.has('minhas');
+  const body = colapsado ? '' : renderMinhasTarefasTabela(minhas);
+  return `
+    <section class="tarefa-grupo-top">
+      ${renderTopHeader('minhas', 'MINHAS TAREFAS', minhas.length)}
+      ${body}
+    </section>
+  `;
+}
+
+function renderMinhasTarefasTabela(tarefas) {
+  if (tarefas.length === 0) {
+    return `
+      <div class="tarefas-table-empty">
+        Nenhuma tarefa pendente. Use "Nova tarefa" pra criar.
       </div>
-      <div class="tarefa-row-meta">
-        ${prazoInfo}
-      </div>
-      <div class="tarefa-row-actions">
-        <div class="tarefa-row-menu-wrap">
-          <button type="button" class="btn btn-icon tarefa-row-menu-btn" data-action="menu" data-id="${t.id}" aria-label="Mais ações">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+    `;
+  }
+
+  const rows = tarefas.map((t) => {
+    const prio = t.prioridade || 'normal';
+    const prazoIso = t.metadata?.prazo || null;
+    const prazoHtml = renderPrazoCell(prazoIso);
+    const desc = t.descricao ? clampText(t.descricao, 50) : '—';
+    const descClass = t.descricao ? '' : 'tarefas-table-cell--empty';
+
+    const badgePrio = prio === 'alta'
+      ? '<span class="tarefa-prio-badge tarefa-prio-badge--alta">ALTA</span>'
+      : prio === 'baixa'
+        ? '<span class="tarefa-prio-badge tarefa-prio-badge--baixa">BAIXA</span>'
+        : '<span class="tarefa-prio-badge tarefa-prio-badge--normal">NORMAL</span>';
+
+    return `
+      <div class="tarefas-table-row" data-id="${t.id}">
+        <div class="tarefas-table-cell tarefas-table-cell--prio">${badgePrio}</div>
+        <div class="tarefas-table-cell tarefas-table-cell--title">${escapeHtml(t.titulo)}</div>
+        <div class="tarefas-table-cell tarefas-table-cell--desc ${descClass}">${escapeHtml(desc)}</div>
+        <div class="tarefas-table-cell tarefas-table-cell--prazo">${prazoHtml}</div>
+        <div class="tarefas-table-cell tarefas-table-cell--actions">
+          <button type="button" class="btn-icon tarefas-table-icon-btn tarefas-table-icon-btn--success" data-action="concluir" data-id="${t.id}" aria-label="Concluir tarefa" title="Concluir">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </button>
-          ${menuOpen ? `
-            <div class="tarefa-row-menu">
-              <button type="button" class="tarefa-row-menu-item" data-action="concluir" data-id="${t.id}">✓ Concluir</button>
-              <button type="button" class="tarefa-row-menu-item" data-action="edit" data-id="${t.id}">Editar</button>
-              <button type="button" class="tarefa-row-menu-item tarefa-row-menu-item--danger" data-action="delete" data-id="${t.id}">Excluir</button>
-            </div>
-          ` : ''}
+          <button type="button" class="btn-icon tarefas-table-icon-btn tarefas-table-icon-btn--primary" data-action="edit" data-id="${t.id}" aria-label="Editar tarefa" title="Editar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+          </button>
+          <button type="button" class="btn-icon tarefas-table-icon-btn tarefas-table-icon-btn--danger" data-action="delete" data-id="${t.id}" aria-label="Excluir tarefa" title="Excluir">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          </button>
         </div>
       </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="tarefas-table">
+      <div class="tarefas-table-head">
+        <div class="tarefas-table-cell tarefas-table-cell--prio">PRIO</div>
+        <div class="tarefas-table-cell tarefas-table-cell--title">TÍTULO</div>
+        <div class="tarefas-table-cell tarefas-table-cell--desc">DESCRIÇÃO</div>
+        <div class="tarefas-table-cell tarefas-table-cell--prazo">PRAZO</div>
+        <div class="tarefas-table-cell tarefas-table-cell--actions">AÇÕES</div>
+      </div>
+      ${rows}
     </div>
   `;
 }
 
 // =============================================================
-// Row: tarefa concluída (simples)
+// Grupo 2: LEMBRETES DO SISTEMA (list-rows agregadas — preserva design)
 // =============================================================
-function renderTarefaRowConcluida(t) {
-  const isSistema = t.criada_por === 'sistema';
-  const origemBadge = isSistema
-    ? '<span class="tarefa-origem-badge tarefa-origem-badge--sistema">⚙ AUTO</span>'
-    : '<span class="tarefa-origem-badge tarefa-origem-badge--usuario">SUA</span>';
+function renderGrupoTopSistema(sistema) {
+  const colapsado = gruposColapsados.has('sistema');
+  let body = '';
+  if (!colapsado) {
+    // Agrupa sistema por t.tipo
+    const gruposSistema = new Map();
+    for (const t of sistema) {
+      const tipo = t.tipo || 'outro';
+      if (!gruposSistema.has(tipo)) gruposSistema.set(tipo, []);
+      gruposSistema.get(tipo).push(t);
+    }
+    let inner = '';
+    for (const [tipo, tarefas] of gruposSistema) {
+      const expandido = gruposExpandidos.has(tipo);
+      inner += expandido
+        ? renderGrupoExpandido(tipo, tarefas)
+        : renderGrupoRow(tipo, tarefas);
+    }
+    body = `
+      <div class="tarefa-grupo-sistema-toolbar">
+        <button type="button" class="tarefa-grupo-bulk" data-action="dispensar-todos">Dispensar todos</button>
+      </div>
+      ${inner}
+    `;
+  }
   return `
-    <div class="tarefa-row tarefa-row--concluida" data-id="${t.id}">
-      ${origemBadge}
-      <div class="tarefa-row-content">
-        <div class="tarefa-row-title">${escapeHtml(t.titulo)}</div>
-        ${t.descricao ? `<div class="tarefa-row-desc">${escapeHtml(t.descricao)}</div>` : ''}
+    <section class="tarefa-grupo-top">
+      ${renderTopHeader('sistema', 'LEMBRETES DO SISTEMA', sistema.length)}
+      ${body}
+    </section>
+  `;
+}
+
+// =============================================================
+// Grupo 3: CONCLUÍDAS (tabela)
+// =============================================================
+function renderGrupoTopConcluidas(concluidas) {
+  const colapsado = gruposColapsados.has('concluidas');
+  const body = colapsado ? '' : renderConcluidasTabela(concluidas);
+  return `
+    <section class="tarefa-grupo-top">
+      ${renderTopHeader('concluidas', 'CONCLUÍDAS', concluidas.length)}
+      ${body}
+    </section>
+  `;
+}
+
+function renderConcluidasTabela(tarefas) {
+  if (tarefas.length === 0) {
+    return `
+      <div class="tarefas-table-empty">
+        Nenhuma tarefa concluída ainda.
       </div>
-      <div class="tarefa-row-meta">
-        <span class="tarefa-completed-at">Concluída em ${formatDateBR(t.completed_at)}</span>
+    `;
+  }
+
+  const rows = tarefas.map((t) => {
+    const isSistema = t.criada_por === 'sistema';
+    const origemBadge = isSistema
+      ? '<span class="tarefa-origem-badge tarefa-origem-badge--sistema">AUTO</span>'
+      : '<span class="tarefa-origem-badge tarefa-origem-badge--usuario">SUA</span>';
+    const desc = t.descricao ? clampText(t.descricao, 50) : '—';
+    const descClass = t.descricao ? '' : 'tarefas-table-cell--empty';
+
+    const acoes = isSistema
+      ? `<button type="button" class="btn-icon tarefas-table-icon-btn tarefas-table-icon-btn--danger" data-action="esconder" data-id="${t.id}" aria-label="Esconder lembrete" title="Esconder">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+        </button>`
+      : `<button type="button" class="btn-icon tarefas-table-icon-btn tarefas-table-icon-btn--primary" data-action="reabrir" data-id="${t.id}" aria-label="Reabrir tarefa" title="Reabrir">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        </button>
+        <button type="button" class="btn-icon tarefas-table-icon-btn tarefas-table-icon-btn--danger" data-action="delete" data-id="${t.id}" aria-label="Excluir tarefa" title="Excluir">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>`;
+
+    return `
+      <div class="tarefas-table-row tarefas-table-row--concluida" data-id="${t.id}">
+        <div class="tarefas-table-cell tarefas-table-cell--origem">${origemBadge}</div>
+        <div class="tarefas-table-cell tarefas-table-cell--title tarefas-table-cell--strike">${escapeHtml(t.titulo)}</div>
+        <div class="tarefas-table-cell tarefas-table-cell--desc ${descClass}">${escapeHtml(desc)}</div>
+        <div class="tarefas-table-cell tarefas-table-cell--prazo">${formatDateBR(t.completed_at)}</div>
+        <div class="tarefas-table-cell tarefas-table-cell--actions">${acoes}</div>
       </div>
-      <div class="tarefa-row-actions">
-        ${!isSistema ? `<button type="button" class="btn btn-ghost btn-sm" data-action="delete" data-id="${t.id}" style="color:var(--color-danger);">Excluir</button>` : ''}
+    `;
+  }).join('');
+
+  return `
+    <div class="tarefas-table">
+      <div class="tarefas-table-head">
+        <div class="tarefas-table-cell tarefas-table-cell--origem">ORIGEM</div>
+        <div class="tarefas-table-cell tarefas-table-cell--title">TÍTULO</div>
+        <div class="tarefas-table-cell tarefas-table-cell--desc">DESCRIÇÃO</div>
+        <div class="tarefas-table-cell tarefas-table-cell--prazo">CONCLUÍDA EM</div>
+        <div class="tarefas-table-cell tarefas-table-cell--actions">AÇÕES</div>
       </div>
+      ${rows}
     </div>
   `;
 }
@@ -399,8 +459,71 @@ function renderSubRow(t) {
 }
 
 // =============================================================
+// Actions: reabrir, esconder
+// =============================================================
+async function reabrirTarefa(id) {
+  const { error } = await supabase
+    .from('tarefas_usuario')
+    .update({ status: 'pendente', completed_at: null })
+    .eq('id', id)
+    .eq('workspace_id', requireWorkspaceId());
+  if (error) {
+    showToast(`${t('common.toast.erro', 'Erro')}: ${error.message}`, 'error', 8000);
+    return;
+  }
+  await loadAll();
+  render();
+  showToast('Tarefa reaberta', 'success');
+}
+
+async function esconderTarefa(id) {
+  const { error } = await supabase
+    .from('tarefas_usuario')
+    .delete()
+    .eq('id', id)
+    .eq('workspace_id', requireWorkspaceId());
+  if (error) {
+    showToast(`${t('common.toast.erro', 'Erro')}: ${error.message}`, 'error', 8000);
+    return;
+  }
+  await loadAll();
+  render();
+}
+
+// =============================================================
 // Helpers
 // =============================================================
+function sortMinhas(a, b) {
+  const dA = diasAteISO(a.metadata?.prazo || null);
+  const dB = diasAteISO(b.metadata?.prazo || null);
+  // sem prazo no fim
+  if (dA === null && dB !== null) return 1;
+  if (dB === null && dA !== null) return -1;
+  if (dA !== dB && dA !== null && dB !== null) return dA - dB;
+  // depois prio: alta > normal > baixa
+  return prioRank(a.prioridade) - prioRank(b.prioridade);
+}
+
+function prioRank(p) {
+  if (p === 'alta') return 0;
+  if (p === 'baixa') return 2;
+  return 1;
+}
+
+function clampText(s, max) {
+  if (!s) return '';
+  return s.length > max ? s.slice(0, max - 1) + '…' : s;
+}
+
+function renderPrazoCell(iso) {
+  const dias = diasAteISO(iso);
+  if (dias === null) return '<span class="tarefa-row-prazo--vazio">—</span>';
+  if (dias < 0)  return `<span class="tarefa-row-prazo--atrasada">atrasada ${Math.abs(dias)}d</span>`;
+  if (dias === 0) return '<span class="tarefa-row-prazo--hoje">hoje</span>';
+  if (dias === 1) return '<span>em 1 dia</span>';
+  return `<span>em ${dias} dias</span>`;
+}
+
 function labelDoGrupo(tipo) {
   switch (tipo) {
     case 'import_extrato':
@@ -426,15 +549,6 @@ function diasAteISO(iso) {
   today.setHours(0, 0, 0, 0);
   const target = new Date(iso + 'T00:00:00');
   return Math.round((target - today) / 86400000);
-}
-
-function renderPrazo(iso) {
-  const dias = diasAteISO(iso);
-  if (dias === null) return '<span class="tarefa-row-prazo tarefa-row-prazo--vazio">Sem prazo</span>';
-  if (dias < 0)  return `<span class="tarefa-row-prazo tarefa-row-prazo--atrasada">⏰ atrasada ${Math.abs(dias)}d</span>`;
-  if (dias === 0) return '<span class="tarefa-row-prazo tarefa-row-prazo--hoje">⏰ hoje</span>';
-  if (dias === 1) return '<span class="tarefa-row-prazo">⏰ em 1 dia</span>';
-  return `<span class="tarefa-row-prazo">⏰ em ${dias} dias</span>`;
 }
 
 function formatDateBR(iso) {
