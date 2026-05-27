@@ -56,10 +56,62 @@ function bindEvents() {
   // Salvar tarefa manual
   document.getElementById('form-tarefa').addEventListener('submit', salvarTarefa);
 
+  // Ações dentro do modal de detalhes
+  document.getElementById('modal-tarefa-detalhes').addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-detail-action]');
+    if (!btn) return;
+    const action = btn.dataset.detailAction;
+    const id = btn.dataset.id;
+    if (!id) return;
+
+    if (action === 'concluir') {
+      await concluirTarefa(id);
+      closeModal('modal-tarefa-detalhes');
+      await loadAll();
+      render();
+      return;
+    }
+    if (action === 'edit') {
+      const tarefa = cachedPendentes.find((x) => x.id === id) || cachedConcluidas.find((x) => x.id === id);
+      closeModal('modal-tarefa-detalhes');
+      if (tarefa) openTarefaModal(tarefa);
+      return;
+    }
+    if (action === 'reabrir') {
+      const ok = await showConfirm('Reabrir esta tarefa?', { okLabel: 'Reabrir', danger: false });
+      if (!ok) return;
+      closeModal('modal-tarefa-detalhes');
+      await reabrirTarefa(id);
+      return;
+    }
+    if (action === 'esconder') {
+      closeModal('modal-tarefa-detalhes');
+      await esconderTarefa(id);
+      return;
+    }
+    if (action === 'delete') {
+      const ok = await showConfirm('Excluir essa tarefa?', { okLabel: 'Excluir', danger: true });
+      if (!ok) return;
+      await supabase.from('tarefas_usuario').delete().eq('id', id).eq('workspace_id', requireWorkspaceId());
+      closeModal('modal-tarefa-detalhes');
+      await loadAll();
+      render();
+      return;
+    }
+  });
+
   // Delegation pra ações na lista
   document.getElementById('tarefas-page-list').addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-action]');
-    if (!btn) return;
+
+    // Se NÃO é um botão de ação, mas clicou numa row clicável → abre modal de detalhes
+    if (!btn) {
+      const row = e.target.closest('[data-row-open]');
+      if (row) {
+        openTarefaDetalhes(row.dataset.rowOpen);
+      }
+      return;
+    }
     const action = btn.dataset.action;
     const id = btn.dataset.id;
 
@@ -260,10 +312,11 @@ function renderMinhasTarefasTabela(tarefas) {
         : '<span class="tarefa-prio-badge tarefa-prio-badge--normal">NORMAL</span>';
 
     return `
-      <div class="tarefas-table-row" data-id="${t.id}">
-        <div class="tarefas-table-cell tarefas-table-cell--prio">${badgePrio}</div>
+      <div class="tarefas-table-row tarefas-table-row--clickable" data-id="${t.id}" data-row-open="${t.id}">
+        <div class="tarefas-table-cell tarefas-table-cell--origem"><span class="tarefa-origem-badge tarefa-origem-badge--minha">MINHA</span></div>
         <div class="tarefas-table-cell tarefas-table-cell--title">${escapeHtml(t.titulo)}</div>
         <div class="tarefas-table-cell tarefas-table-cell--desc ${descClass}">${escapeHtml(desc)}</div>
+        <div class="tarefas-table-cell tarefas-table-cell--prio">${badgePrio}</div>
         <div class="tarefas-table-cell tarefas-table-cell--prazo">${prazoHtml}</div>
         <div class="tarefas-table-cell tarefas-table-cell--actions">
           <button type="button" class="btn-icon tarefas-table-icon-btn tarefas-table-icon-btn--success" data-action="concluir" data-id="${t.id}" aria-label="Concluir tarefa" title="Concluir">
@@ -283,9 +336,10 @@ function renderMinhasTarefasTabela(tarefas) {
   return `
     <div class="tarefas-table">
       <div class="tarefas-table-head">
-        <div class="tarefas-table-cell tarefas-table-cell--prio">PRIO</div>
+        <div class="tarefas-table-cell tarefas-table-cell--origem">ORIGEM</div>
         <div class="tarefas-table-cell tarefas-table-cell--title">TÍTULO</div>
         <div class="tarefas-table-cell tarefas-table-cell--desc">DESCRIÇÃO</div>
+        <div class="tarefas-table-cell tarefas-table-cell--prio">PRIO</div>
         <div class="tarefas-table-cell tarefas-table-cell--prazo">PRAZO</div>
         <div class="tarefas-table-cell tarefas-table-cell--actions">AÇÕES</div>
       </div>
@@ -356,10 +410,19 @@ function renderConcluidasTabela(tarefas) {
   const rows = tarefas.map((t) => {
     const isSistema = t.criada_por === 'sistema';
     const origemBadge = isSistema
-      ? '<span class="tarefa-origem-badge tarefa-origem-badge--sistema">AUTO</span>'
-      : '<span class="tarefa-origem-badge tarefa-origem-badge--usuario">SUA</span>';
+      ? '<span class="tarefa-origem-badge tarefa-origem-badge--auto">AUTO</span>'
+      : '<span class="tarefa-origem-badge tarefa-origem-badge--minha">MINHA</span>';
     const desc = t.descricao ? clampText(t.descricao, 50) : '—';
     const descClass = t.descricao ? '' : 'tarefas-table-cell--empty';
+
+    const prio = t.prioridade || 'normal';
+    const badgePrio = isSistema
+      ? '<span class="tarefas-table-cell--empty">—</span>'
+      : prio === 'alta'
+        ? '<span class="tarefa-prio-badge tarefa-prio-badge--alta">ALTA</span>'
+        : prio === 'baixa'
+          ? '<span class="tarefa-prio-badge tarefa-prio-badge--baixa">BAIXA</span>'
+          : '<span class="tarefa-prio-badge tarefa-prio-badge--normal">NORMAL</span>';
 
     const acoes = isSistema
       ? `<button type="button" class="btn-icon tarefas-table-icon-btn tarefas-table-icon-btn--danger" data-action="esconder" data-id="${t.id}" aria-label="Esconder lembrete" title="Esconder">
@@ -373,10 +436,11 @@ function renderConcluidasTabela(tarefas) {
         </button>`;
 
     return `
-      <div class="tarefas-table-row tarefas-table-row--concluida" data-id="${t.id}">
+      <div class="tarefas-table-row tarefas-table-row--concluida tarefas-table-row--clickable" data-id="${t.id}" data-row-open="${t.id}">
         <div class="tarefas-table-cell tarefas-table-cell--origem">${origemBadge}</div>
         <div class="tarefas-table-cell tarefas-table-cell--title tarefas-table-cell--strike">${escapeHtml(t.titulo)}</div>
         <div class="tarefas-table-cell tarefas-table-cell--desc ${descClass}">${escapeHtml(desc)}</div>
+        <div class="tarefas-table-cell tarefas-table-cell--prio">${badgePrio}</div>
         <div class="tarefas-table-cell tarefas-table-cell--prazo">${formatDateBR(t.completed_at)}</div>
         <div class="tarefas-table-cell tarefas-table-cell--actions">${acoes}</div>
       </div>
@@ -389,6 +453,7 @@ function renderConcluidasTabela(tarefas) {
         <div class="tarefas-table-cell tarefas-table-cell--origem">ORIGEM</div>
         <div class="tarefas-table-cell tarefas-table-cell--title">TÍTULO</div>
         <div class="tarefas-table-cell tarefas-table-cell--desc">DESCRIÇÃO</div>
+        <div class="tarefas-table-cell tarefas-table-cell--prio">PRIO</div>
         <div class="tarefas-table-cell tarefas-table-cell--prazo">CONCLUÍDA EM</div>
         <div class="tarefas-table-cell tarefas-table-cell--actions">AÇÕES</div>
       </div>
@@ -488,6 +553,141 @@ async function esconderTarefa(id) {
   }
   await loadAll();
   render();
+}
+
+// =============================================================
+// Modal: detalhes da tarefa (read-only com ações)
+// Conteúdo dinâmico é todo escapado via escapeHtml() — XSS-safe.
+// =============================================================
+function openTarefaDetalhes(id) {
+  const tarefa = cachedPendentes.find((x) => x.id === id) || cachedConcluidas.find((x) => x.id === id);
+  if (!tarefa) return;
+  renderTarefaDetalhesModal(tarefa);
+  openModal('modal-tarefa-detalhes');
+}
+
+function renderTarefaDetalhesModal(tarefa) {
+  const isSistema = tarefa.criada_por === 'sistema';
+  const isConcluida = tarefa.status === 'concluida';
+  const prio = tarefa.prioridade || 'normal';
+  const prazoIso = tarefa.metadata?.prazo || null;
+
+  const priorityClass = isSistema
+    ? 'modal-tarefa-detalhes--auto'
+    : `modal-tarefa-detalhes--${prio}`;
+
+  const origemBadge = isSistema
+    ? '<span class="tarefa-origem-badge tarefa-origem-badge--auto">AUTO</span>'
+    : '<span class="tarefa-origem-badge tarefa-origem-badge--minha">MINHA</span>';
+
+  const prioBadge = isSistema
+    ? ''
+    : prio === 'alta'
+      ? '<span class="tarefa-prio-badge tarefa-prio-badge--alta">ALTA</span>'
+      : prio === 'baixa'
+        ? '<span class="tarefa-prio-badge tarefa-prio-badge--baixa">BAIXA</span>'
+        : '<span class="tarefa-prio-badge tarefa-prio-badge--normal">NORMAL</span>';
+
+  const prazoLabel = prazoIso ? `${formatDateBR(prazoIso)} ${prazoFraseRelativa(prazoIso)}` : '—';
+  const criadaEm = tarefa.created_at ? formatDateBR(tarefa.created_at) : '—';
+  const origemLabel = isSistema ? 'Sistema (automática)' : 'Você (manual)';
+  const concluidaEm = isConcluida && tarefa.completed_at ? formatDateBR(tarefa.completed_at) : null;
+
+  const tid = escapeHtml(tarefa.id);
+  let acoesHtml = '';
+  if (!isConcluida) {
+    acoesHtml = `
+      <button type="button" class="btn btn-success btn-sm" data-detail-action="concluir" data-id="${tid}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Concluir
+      </button>
+      <button type="button" class="btn btn-ghost btn-sm" data-detail-action="edit" data-id="${tid}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+        Editar
+      </button>
+      <button type="button" class="btn btn-ghost btn-sm" data-detail-action="delete" data-id="${tid}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+        Excluir
+      </button>
+    `;
+  } else if (isSistema) {
+    acoesHtml = `
+      <button type="button" class="btn btn-ghost btn-sm" data-detail-action="esconder" data-id="${tid}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+        Esconder
+      </button>
+    `;
+  } else {
+    acoesHtml = `
+      <button type="button" class="btn btn-primary btn-sm" data-detail-action="reabrir" data-id="${tid}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        Reabrir
+      </button>
+      <button type="button" class="btn btn-ghost btn-sm" data-detail-action="delete" data-id="${tid}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        Excluir
+      </button>
+    `;
+  }
+
+  const descricaoHtml = tarefa.descricao
+    ? `<p class="modal-tarefa-detalhes-desc">${escapeHtml(tarefa.descricao)}</p>`
+    : '<p class="modal-tarefa-detalhes-desc modal-tarefa-detalhes-desc--empty">Sem descrição</p>';
+
+  const metaPrazoLabel = isConcluida ? 'Concluída em' : 'Prazo';
+  const metaPrazoValue = isConcluida ? (concluidaEm || '—') : prazoLabel;
+
+  const html = `
+    <div class="modal modal-md modal-tarefa-detalhes ${priorityClass}">
+      <div class="modal-header modal-tarefa-detalhes-header">
+        <h2 class="modal-title">Detalhes da tarefa</h2>
+        <button type="button" class="modal-close" data-close-modal="modal-tarefa-detalhes" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body modal-tarefa-detalhes-body">
+        <div class="modal-tarefa-detalhes-badges">
+          ${origemBadge}
+          ${prioBadge}
+        </div>
+        <h3 class="modal-tarefa-detalhes-title">${escapeHtml(tarefa.titulo)}</h3>
+        ${descricaoHtml}
+        <div class="modal-tarefa-detalhes-meta">
+          <div class="modal-tarefa-detalhes-meta-row">
+            <span class="modal-tarefa-detalhes-meta-label">${metaPrazoLabel}</span>
+            <span class="modal-tarefa-detalhes-meta-value">${escapeHtml(metaPrazoValue)}</span>
+          </div>
+          <div class="modal-tarefa-detalhes-meta-row">
+            <span class="modal-tarefa-detalhes-meta-label">Criada em</span>
+            <span class="modal-tarefa-detalhes-meta-value">${escapeHtml(criadaEm)}</span>
+          </div>
+          <div class="modal-tarefa-detalhes-meta-row">
+            <span class="modal-tarefa-detalhes-meta-label">Origem</span>
+            <span class="modal-tarefa-detalhes-meta-value">${origemLabel}</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer modal-tarefa-detalhes-footer">
+        ${acoesHtml}
+      </div>
+    </div>
+  `;
+
+  const root = document.getElementById('modal-tarefa-detalhes');
+  setSafeMarkup(root, html);
+}
+
+// innerHTML wrapper isolado — todo input dinâmico passa por escapeHtml() acima.
+function setSafeMarkup(el, markup) {
+  // eslint-disable-next-line no-unsanitized/property
+  el.innerHTML = markup;
+}
+
+function prazoFraseRelativa(iso) {
+  const dias = diasAteISO(iso);
+  if (dias === null) return '';
+  if (dias < 0) return `(atrasada ${Math.abs(dias)}d)`;
+  if (dias === 0) return '(hoje)';
+  if (dias === 1) return '(em 1 dia)';
+  return `(em ${dias} dias)`;
 }
 
 // =============================================================
