@@ -45,12 +45,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   render();
 });
 
+// SVG inline (Heroicons-style outline). Reutilizados nos badges ORIGEM.
+// Mantemos como constantes pra evitar string-templating repetitivo.
+const ICON_PERSON = '<svg class="tarefa-origem-badge-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+const ICON_SETTINGS = '<svg class="tarefa-origem-badge-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+
+function badgeMinha() {
+  return `<span class="tarefa-origem-badge tarefa-origem-badge--minha">${ICON_PERSON}Minha</span>`;
+}
+function badgeAuto() {
+  return `<span class="tarefa-origem-badge tarefa-origem-badge--auto">${ICON_SETTINGS}Auto</span>`;
+}
+
 function bindEvents() {
   document.getElementById('btn-nova-tarefa').addEventListener('click', () => openTarefaModal());
 
-  // Fechar modal
-  document.querySelectorAll('[data-close-modal]').forEach((btn) => {
-    btn.addEventListener('click', () => closeModal(btn.dataset.closeModal));
+  // Fechar modal — event delegation no document, porque o modal de detalhes
+  // é renderizado dinamicamente via setSafeMarkup (innerHTML) DEPOIS do init.
+  // Um querySelectorAll no init não pegaria o X criado depois.
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-close-modal]');
+    if (btn) closeModal(btn.dataset.closeModal);
   });
 
   // Salvar tarefa manual
@@ -306,14 +321,14 @@ function renderMinhasTarefasTabela(tarefas) {
     const descClass = t.descricao ? '' : 'tarefas-table-cell--empty';
 
     const badgePrio = prio === 'alta'
-      ? '<span class="tarefa-prio-badge tarefa-prio-badge--alta">ALTA</span>'
+      ? '<span class="tarefa-prio-badge tarefa-prio-badge--alta">Alta</span>'
       : prio === 'baixa'
-        ? '<span class="tarefa-prio-badge tarefa-prio-badge--baixa">BAIXA</span>'
-        : '<span class="tarefa-prio-badge tarefa-prio-badge--normal">NORMAL</span>';
+        ? '<span class="tarefa-prio-badge tarefa-prio-badge--baixa">Baixa</span>'
+        : '<span class="tarefa-prio-badge tarefa-prio-badge--normal">Normal</span>';
 
     return `
       <div class="tarefas-table-row tarefas-table-row--clickable" data-id="${t.id}" data-row-open="${t.id}">
-        <div class="tarefas-table-cell tarefas-table-cell--origem"><span class="tarefa-origem-badge tarefa-origem-badge--minha">MINHA</span></div>
+        <div class="tarefas-table-cell tarefas-table-cell--origem">${badgeMinha()}</div>
         <div class="tarefas-table-cell tarefas-table-cell--title">${escapeHtml(t.titulo)}</div>
         <div class="tarefas-table-cell tarefas-table-cell--desc ${descClass}">${escapeHtml(desc)}</div>
         <div class="tarefas-table-cell tarefas-table-cell--prio">${badgePrio}</div>
@@ -409,9 +424,7 @@ function renderConcluidasTabela(tarefas) {
 
   const rows = tarefas.map((t) => {
     const isSistema = t.criada_por === 'sistema';
-    const origemBadge = isSistema
-      ? '<span class="tarefa-origem-badge tarefa-origem-badge--auto">AUTO</span>'
-      : '<span class="tarefa-origem-badge tarefa-origem-badge--minha">MINHA</span>';
+    const origemBadge = isSistema ? badgeAuto() : badgeMinha();
     const desc = t.descricao ? clampText(t.descricao, 50) : '—';
     const descClass = t.descricao ? '' : 'tarefas-table-cell--empty';
 
@@ -419,10 +432,10 @@ function renderConcluidasTabela(tarefas) {
     const badgePrio = isSistema
       ? '<span class="tarefas-table-cell--empty">—</span>'
       : prio === 'alta'
-        ? '<span class="tarefa-prio-badge tarefa-prio-badge--alta">ALTA</span>'
+        ? '<span class="tarefa-prio-badge tarefa-prio-badge--alta">Alta</span>'
         : prio === 'baixa'
-          ? '<span class="tarefa-prio-badge tarefa-prio-badge--baixa">BAIXA</span>'
-          : '<span class="tarefa-prio-badge tarefa-prio-badge--normal">NORMAL</span>';
+          ? '<span class="tarefa-prio-badge tarefa-prio-badge--baixa">Baixa</span>'
+          : '<span class="tarefa-prio-badge tarefa-prio-badge--normal">Normal</span>';
 
     const acoes = isSistema
       ? `<button type="button" class="btn-icon tarefas-table-icon-btn tarefas-table-icon-btn--danger" data-action="esconder" data-id="${t.id}" aria-label="Esconder lembrete" title="Esconder">
@@ -470,7 +483,7 @@ function renderGrupoRow(tipo, tarefas) {
   const subtitulo = sumarizarContas(tarefas);
   return `
     <div class="tarefa-row tarefa-row--grupo" data-grupo="${tipo}">
-      <span class="tarefa-origem-badge tarefa-origem-badge--sistema">⚙ AUTO</span>
+      ${badgeAuto()}
       <div class="tarefa-row-content">
         <div class="tarefa-row-title">${escapeHtml(meta.titulo)} · ${tarefas.length} ${meta.unidade}</div>
         <div class="tarefa-row-desc">${escapeHtml(subtitulo)}</div>
@@ -491,7 +504,7 @@ function renderGrupoExpandido(tipo, tarefas) {
   return `
     <div class="tarefa-row-grupo-expandido" data-grupo="${tipo}">
       <div class="tarefa-row tarefa-row--grupo-header">
-        <span class="tarefa-origem-badge tarefa-origem-badge--sistema">⚙ AUTO</span>
+        ${badgeAuto()}
         <div class="tarefa-row-content">
           <div class="tarefa-row-title">${escapeHtml(meta.titulo)} · ${tarefas.length} ${meta.unidade}</div>
         </div>
@@ -576,21 +589,19 @@ function renderTarefaDetalhesModal(tarefa) {
     ? 'modal-tarefa-detalhes--auto'
     : `modal-tarefa-detalhes--${prio}`;
 
-  const origemBadge = isSistema
-    ? '<span class="tarefa-origem-badge tarefa-origem-badge--auto">AUTO</span>'
-    : '<span class="tarefa-origem-badge tarefa-origem-badge--minha">MINHA</span>';
+  const origemBadge = isSistema ? badgeAuto() : badgeMinha();
 
   const prioBadge = isSistema
     ? ''
     : prio === 'alta'
-      ? '<span class="tarefa-prio-badge tarefa-prio-badge--alta">ALTA</span>'
+      ? '<span class="tarefa-prio-badge tarefa-prio-badge--alta">Alta</span>'
       : prio === 'baixa'
-        ? '<span class="tarefa-prio-badge tarefa-prio-badge--baixa">BAIXA</span>'
-        : '<span class="tarefa-prio-badge tarefa-prio-badge--normal">NORMAL</span>';
+        ? '<span class="tarefa-prio-badge tarefa-prio-badge--baixa">Baixa</span>'
+        : '<span class="tarefa-prio-badge tarefa-prio-badge--normal">Normal</span>';
 
   const prazoLabel = prazoIso ? `${formatDateBR(prazoIso)} ${prazoFraseRelativa(prazoIso)}` : '—';
   const criadaEm = tarefa.created_at ? formatDateBR(tarefa.created_at) : '—';
-  const origemLabel = isSistema ? 'Sistema (automática)' : 'Você (manual)';
+  const origemLabel = isSistema ? 'Auto' : 'Minha';
   const concluidaEm = isConcluida && tarefa.completed_at ? formatDateBR(tarefa.completed_at) : null;
 
   const tid = escapeHtml(tarefa.id);

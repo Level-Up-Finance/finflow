@@ -18341,8 +18341,11 @@ body[data-can-write="false"] [data-delete-sub] {
   font-weight: var(--fw-semibold);
   padding: 2px 6px;
   border-radius: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
+}
+.tarefa-origem-badge-icon {
+  flex-shrink: 0;
+  vertical-align: -1px;
 }
 /* AUTO — lembretes do sistema (purple subtle) */
 .tarefa-origem-badge--sistema,
@@ -18475,8 +18478,7 @@ body[data-can-write="false"] [data-delete-sub] {
   font-weight: var(--fw-semibold);
   padding: 2px 8px;
   border-radius: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -18708,7 +18710,7 @@ body[data-can-write="false"] [data-delete-sub] {
   flex: 2;
   font-family: var(--font-sans);
   font-size: var(--fs-md);
-  font-weight: var(--fw-semibold);
+  font-weight: var(--fw-medium);
   color: var(--color-text-main);
   overflow: hidden;
   text-overflow: ellipsis;
