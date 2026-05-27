@@ -123,12 +123,42 @@ function diasAteISO(iso) {
   return Math.round((target - hoje) / 86400000);
 }
 
-// "Precisa de atenção hoje": minha + (prazo <= 0 OU prioridade alta).
+// Tarefa atrasada: minha + prazo passado (< 0).
+function isAtrasada(t) {
+  if (t.criada_por === 'sistema') return false;
+  const dias = diasAteISO(t?.metadata?.prazo);
+  return dias !== null && dias < 0;
+}
+
+// "Precisa de atenção hoje": minha + (prazo === 0 OU prioridade alta sem
+// estar atrasada). Atrasadas vão pra grupo separado acima.
 function isUrgente(t) {
   if (t.criada_por === 'sistema') return false;
+  if (isAtrasada(t)) return false; // não duplica em "atenção hoje"
   if (t.prioridade === 'alta') return true;
   const dias = diasAteISO(t?.metadata?.prazo);
-  return dias !== null && dias <= 0;
+  return dias === 0;
+}
+
+// Retorna HTML do label de prazo apropriado pra tarefa.
+// Atrasada: "atrasada Nd" (danger)
+// Hoje:     "hoje" (warning)
+// Futuro:   "em N dias" (muted)
+// Sem prazo: "sem prazo" (muted) — só pra tasks de alta prioridade no grupo "atenção hoje"
+function renderPrazoBadge(t, opts = {}) {
+  const dias = diasAteISO(t?.metadata?.prazo);
+  if (dias === null) {
+    return opts.showSemPrazo
+      ? `<span class="tarefas-drawer-urgente-prazo tarefas-drawer-urgente-prazo--muted">sem prazo</span>`
+      : '';
+  }
+  if (dias < 0) {
+    return `<span class="tarefas-drawer-urgente-prazo tarefas-drawer-urgente-prazo--atrasada">atrasada ${Math.abs(dias)}d</span>`;
+  }
+  if (dias === 0) {
+    return `<span class="tarefas-drawer-urgente-prazo tarefas-drawer-urgente-prazo--hoje">hoje</span>`;
+  }
+  return `<span class="tarefas-drawer-urgente-prazo tarefas-drawer-urgente-prazo--futuro">em ${dias} dia${dias !== 1 ? 's' : ''}</span>`;
 }
 
 // Labels amigáveis pra grupos do sistema.
@@ -154,13 +184,15 @@ async function renderLista() {
     return;
   }
 
-  // Particiona em 3 buckets (princípio do drawer: triagem rápida)
-  //   urgentes: minhas com prioridade alta OU prazo <= hoje
-  //   sistema:  agrupadas por tipo (uma linha por grupo)
-  //   outras:   minhas não-urgentes (só contagem inline)
-  const urgentes = tarefas.filter(isUrgente);
-  const sistema  = tarefas.filter((t) => t.criada_por === 'sistema');
-  const outras   = tarefas.filter((t) => t.criada_por !== 'sistema' && !isUrgente(t));
+  // Particiona em 4 buckets (princípio do drawer: triagem rápida com hierarquia temporal)
+  //   atrasadas:  minhas com prazo já vencido (mais urgente, top)
+  //   urgentes:   minhas com prazo === hoje OU prioridade alta (não atrasada)
+  //   sistema:    agrupadas por tipo (uma linha por grupo)
+  //   outras:     minhas não-urgentes (só contagem inline)
+  const atrasadas = tarefas.filter(isAtrasada);
+  const urgentes  = tarefas.filter(isUrgente);
+  const sistema   = tarefas.filter((t) => t.criada_por === 'sistema');
+  const outras    = tarefas.filter((t) => t.criada_por !== 'sistema' && !isAtrasada(t) && !isUrgente(t));
 
   // Agrupa sistema por tipo
   const sistemaGrupos = new Map();
@@ -180,12 +212,22 @@ async function renderLista() {
     </div>
   `);
 
-  // SEÇÃO 1 — PRECISA DE ATENÇÃO HOJE
+  // SEÇÃO 0 — ATRASADAS (top: mais urgente, vermelho intenso)
+  if (atrasadas.length > 0) {
+    parts.push(`
+      <div class="tarefas-drawer-section">
+        <div class="tarefas-drawer-section-label tarefas-drawer-section-label--atrasada">Atrasadas · ${atrasadas.length}</div>
+        ${atrasadas.map((t) => renderTarefaUrgente(t, true)).join('')}
+      </div>
+    `);
+  }
+
+  // SEÇÃO 1 — PRECISA DE ATENÇÃO HOJE (hoje OU alta prioridade não-atrasada)
   if (urgentes.length > 0) {
     parts.push(`
       <div class="tarefas-drawer-section">
         <div class="tarefas-drawer-section-label">Precisa de atenção hoje</div>
-        ${urgentes.map(renderTarefaUrgente).join('')}
+        ${urgentes.map((t) => renderTarefaUrgente(t, false)).join('')}
       </div>
     `);
   }
@@ -241,20 +283,24 @@ async function renderLista() {
   });
 }
 
-// Renderiza tarefa urgente como linha compacta com prazo inline.
-function renderTarefaUrgente(t) {
-  const prazoDias = diasAteISO(t?.metadata?.prazo);
-  let prazoStr = '';
-  if (prazoDias !== null) {
-    if (prazoDias < 0) {
-      prazoStr = `<span class="tarefas-drawer-urgente-prazo tarefas-drawer-urgente-prazo--atrasada">atrasada ${Math.abs(prazoDias)}d</span>`;
-    } else if (prazoDias === 0) {
-      prazoStr = `<span class="tarefas-drawer-urgente-prazo tarefas-drawer-urgente-prazo--hoje">hoje</span>`;
-    }
+// Renderiza tarefa urgente/atrasada como linha compacta com prazo inline.
+// isAtrasadaSection=true muda o dot pra vermelho (atrasada sinaliza fail).
+function renderTarefaUrgente(t, isAtrasadaSection = false) {
+  // Mostra "sem prazo" só pras tarefas com prioridade alta que NÃO têm prazo
+  // (aí o usuário entende por que está na seção urgente — não é por prazo)
+  const showSemPrazo = !isAtrasadaSection && t.prioridade === 'alta'
+    && diasAteISO(t?.metadata?.prazo) === null;
+  const prazoStr = renderPrazoBadge(t, { showSemPrazo });
+
+  let dotClass;
+  if (isAtrasadaSection) {
+    dotClass = 'tarefas-drawer-urgente-dot--atrasada';
+  } else if (t.prioridade === 'alta') {
+    dotClass = 'tarefas-drawer-urgente-dot--alta';
+  } else {
+    dotClass = 'tarefas-drawer-urgente-dot--normal';
   }
-  const dotClass = t.prioridade === 'alta'
-    ? 'tarefas-drawer-urgente-dot--alta'
-    : 'tarefas-drawer-urgente-dot--normal';
+
   return `
     <a href="/tarefas.html" class="tarefas-drawer-urgente" data-id="${t.id}">
       <span class="tarefas-drawer-urgente-dot ${dotClass}" aria-hidden="true"></span>

@@ -18028,6 +18028,11 @@ body[data-can-write="false"] [data-delete-sub] {
   padding: 0 var(--space-2);
   margin-bottom: var(--space-2);
 }
+/* Variant pra seção "Atrasadas" — sinaliza urgência sem precisar abrir */
+.tarefas-drawer-section-label--atrasada {
+  color: var(--color-danger);
+  font-weight: var(--fw-semibold);
+}
 
 /* Linha urgente: dot + título + prazo */
 .tarefas-drawer-urgente {
@@ -18051,6 +18056,12 @@ body[data-can-write="false"] [data-delete-sub] {
 }
 .tarefas-drawer-urgente-dot--alta {
   background: var(--color-danger);
+}
+.tarefas-drawer-urgente-dot--atrasada {
+  /* Atrasada: anel vermelho preenchido com ponto branco no centro pra
+     diferenciar visualmente de "alta prioridade normal" sem mudar palette */
+  background: var(--color-danger);
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 3px var(--color-danger);
 }
 .tarefas-drawer-urgente-dot--normal {
   background: var(--color-text-muted);
@@ -18078,6 +18089,15 @@ body[data-can-write="false"] [data-delete-sub] {
 }
 .tarefas-drawer-urgente-prazo--atrasada {
   color: var(--color-danger);
+  font-weight: var(--fw-semibold);
+}
+.tarefas-drawer-urgente-prazo--futuro {
+  color: var(--color-text-muted);
+}
+.tarefas-drawer-urgente-prazo--muted {
+  color: var(--color-text-muted);
+  opacity: 0.7;
+  font-style: italic;
 }
 
 /* Linha de grupo (sistema agrupado OU "outras tarefas") */
