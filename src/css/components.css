@@ -9620,20 +9620,57 @@ td > .currency-split {
   font-weight: var(--fw-medium);
 }
 
-/* Footer row de totais */
+/* Footer row de totais — versão pós-auditoria UX:
+   linha única com labels inline pra cada valor (Receitas, Despesas, Saldo final).
+   Sem fragmentação esquerda/direita, sem dependência de cor pra significado. */
 .trans-footer-row td {
   padding: var(--space-3) var(--space-4);
   background: var(--color-surface-alt);
   border-top: 2px solid var(--color-border);
   border-bottom: none;
 }
-.trans-footer-label {
+.trans-footer-summary {
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.trans-footer-count {
   font-size: var(--fs-xs);
   color: var(--color-text-muted);
+  text-transform: lowercase;
 }
+.trans-footer-sep {
+  color: var(--color-text-muted);
+  opacity: 0.6;
+  padding: 0 2px;
+}
+.trans-footer-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.trans-footer-label-text {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: var(--fw-medium);
+}
+.trans-footer-item--final .trans-footer-label-text {
+  color: var(--color-text-main);
+}
+.trans-footer-saldo-value {
+  font-weight: var(--fw-bold);
+  color: var(--color-text-main);
+}
+
+/* Mantém a class legada caso algum lugar ainda referencie */
+.trans-footer-label,
 .trans-footer-saldo {
   font-size: var(--fs-sm);
-  font-weight: var(--fw-bold);
 }
 
 .trans-desc-main {

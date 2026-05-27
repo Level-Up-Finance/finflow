@@ -1719,28 +1719,39 @@ function renderDataRows(items) {
   const saldoMes = totalReceitas - totalDespesas;
   const saldoMesColor = saldoMes < 0 ? 'color: var(--color-danger)' : '';
 
-  // Footer estruturado: cada total na sua coluna.
-  // - colspan=9: label com contagem + badges +receita/-despesa inline (texto plano)
-  // - VALOR cell: net do período (receitas - despesas, com sinal)
-  // - SALDO cell: saldo FINAL = último running balance (inclui opening balance)
-  //   bate com "saldo atual" no card de Contas.
-  // - ACTIONS cell: vazia
-  const netMes = totalReceitas - totalDespesas;
-  const netCls = netMes >= 0 ? 'trans-tipo-receita' : 'trans-tipo-despesa';
-  const saldoFinal = balance; // último valor após o loop running (já inclui saldoInicialOpening)
+  // Footer em LINHA ÚNICA com labels inline — versão pós-auditoria UX.
+  // Decisão (substitui colunas alinhadas): cada valor ganha um rótulo
+  // explícito (Receitas, Despesas, Saldo final). Cor verde/vermelho passa
+  // a ser REFORÇO visual, não único transportador de significado (atende
+  // WCAG color-not-only). Sem redundância — removido o "net" que
+  // duplicava as receitas quando despesas=0.
+  //
+  // Equação implícita que o footer agora comunica:
+  //   Saldo final = Saldo inicial (linha virtual no topo) + Receitas - Despesas
+  const saldoFinal = balance; // último running balance (já inclui opening)
   const saldoFinalColor = saldoFinal < 0 ? 'color: var(--color-danger)' : '';
+  const mostraSaldoFinal = temOpeningBalance || items.length > 0;
   const footer = `
     <tr class="trans-footer-row">
-      <td colspan="9" class="trans-footer-label">
-        ${items.length} transaç${items.length === 1 ? 'ão' : 'ões'}
-        &nbsp;·&nbsp;
-        <span class="trans-tipo-receita">+${formatCurrency(totalReceitas, 'BRL')}</span>
-        &nbsp;·&nbsp;
-        <span class="trans-tipo-despesa">−${formatCurrency(totalDespesas, 'BRL')}</span>
+      <td colspan="12" class="trans-footer-summary">
+        <span class="trans-footer-count">${items.length} transaç${items.length === 1 ? 'ão' : 'ões'}</span>
+        <span class="trans-footer-sep">·</span>
+        <span class="trans-footer-item">
+          <span class="trans-footer-label-text">Receitas</span>
+          <span class="trans-tipo-receita tabular">+${formatCurrency(totalReceitas, 'BRL')}</span>
+        </span>
+        <span class="trans-footer-sep">·</span>
+        <span class="trans-footer-item">
+          <span class="trans-footer-label-text">Despesas</span>
+          <span class="trans-tipo-despesa tabular">−${formatCurrency(totalDespesas, 'BRL')}</span>
+        </span>
+        ${mostraSaldoFinal ? `
+        <span class="trans-footer-sep">·</span>
+        <span class="trans-footer-item trans-footer-item--final">
+          <span class="trans-footer-label-text">Saldo final</span>
+          <span class="trans-footer-saldo-value tabular" style="${saldoFinalColor}">${formatCurrency(saldoFinal, 'BRL')}</span>
+        </span>` : ''}
       </td>
-      <td class="trans-td-valor tabular ${netCls}" data-col="valor">${formatCurrencyHTML(netMes, 'BRL')}</td>
-      <td class="trans-td-saldo tabular trans-footer-saldo" data-col="saldo" style="${saldoFinalColor}">${formatCurrencyHTML(saldoFinal, 'BRL')}</td>
-      <td></td>
     </tr>`;
 
   // Linha virtual de "Saldo inicial" — só quando filtrado por conta única
