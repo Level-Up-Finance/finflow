@@ -74,8 +74,19 @@ export async function initTarefasDrawer() {
 }
 
 function insertBeforeAvatar(el, headerRight) {
-  // Tenta inserir antes do avatar/menu do usuário; se não achar, append.
-  const avatar = headerRight.querySelector('.user-avatar, .avatar, [data-user-menu]');
+  // Tenta inserir antes do avatar/menu do usuário. Avatar deve ficar SEMPRE
+  // como último elemento à direita (canto superior direito). O trigger de
+  // tarefas mora logo à esquerda dele.
+  //
+  // Seletores na ordem de prioridade (mais específico → mais genérico):
+  //   #hum-trigger             — botão do avatar criado em header-user-menu.js
+  //   .header-user-trigger     — classe do mesmo botão
+  //   #header-user-menu        — container do menu inteiro
+  //   [data-user-menu]         — generic data-attr fallback
+  //   .user-avatar / .avatar   — legacy selectors
+  const avatar = headerRight.querySelector(
+    '#hum-trigger, .header-user-trigger, #header-user-menu, [data-user-menu], .user-avatar, .avatar'
+  );
   if (avatar) {
     headerRight.insertBefore(el, avatar);
   } else {
