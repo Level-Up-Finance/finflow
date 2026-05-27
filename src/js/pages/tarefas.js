@@ -230,6 +230,8 @@ async function salvarTarefa(e) {
     ({ error } = await supabase.from('tarefas_usuario').insert({
       ...payload,
       user_id: user.id,
+      workspace_id: requireWorkspaceId(),
+      created_by: user.id,
       tipo: 'manual',
       criada_por: 'usuario',
       status: 'pendente',
