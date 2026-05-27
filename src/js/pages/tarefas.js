@@ -24,6 +24,10 @@ import {
 let viewTab = 'pendentes'; // 'pendentes' | 'concluidas'
 let cachedPendentes = [];
 let cachedConcluidas = [];
+// Estado de expansão dos grupos do sistema (keyed por t.tipo)
+let gruposExpandidos = new Set();
+// Estado dos menus kebab abertos (id da tarefa)
+let menuAbertoId = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   await guardSession();
@@ -66,14 +70,70 @@ function bindEvents() {
     if (!btn) return;
     const action = btn.dataset.action;
     const id = btn.dataset.id;
+
+    // -----------------------------
+    // Ações de grupo (sistema)
+    // -----------------------------
+    if (action === 'expand-grupo') {
+      const tipo = btn.dataset.grupo;
+      gruposExpandidos.add(tipo);
+      render();
+      return;
+    }
+    if (action === 'collapse-grupo') {
+      const tipo = btn.dataset.grupo;
+      gruposExpandidos.delete(tipo);
+      render();
+      return;
+    }
+    if (action === 'snooze-grupo') {
+      const tipo = btn.dataset.grupo;
+      const tarefasDoGrupo = cachedPendentes.filter((x) => x.criada_por === 'sistema' && x.tipo === tipo);
+      await Promise.all(tarefasDoGrupo.map((x) => dispensarTarefa(x.id, 3)));
+      await loadAll();
+      render();
+      showToast(t('tarefas.toast.snooze_3d', 'Lembrarei em 3 dias'), 'info', 4000);
+      return;
+    }
+    if (action === 'dispensar-todos') {
+      const ok = await showConfirm('Dispensar todos os lembretes do sistema?', { okLabel: 'Dispensar', danger: true });
+      if (!ok) return;
+      const tarefasSistema = cachedPendentes.filter((x) => x.criada_por === 'sistema');
+      await Promise.all(tarefasSistema.map((x) => nuncaLembrarMais(x.id, x.conta_id || null)));
+      await loadAll();
+      render();
+      return;
+    }
+    if (action === 'primary') {
+      // sub-row "Importar" — apenas navega
+      const url = btn.dataset.url;
+      if (url) window.location.href = url;
+      return;
+    }
+
+    // -----------------------------
+    // Menu kebab (suas tarefas)
+    // -----------------------------
+    if (action === 'menu') {
+      e.stopPropagation();
+      menuAbertoId = (menuAbertoId === id) ? null : id;
+      render();
+      return;
+    }
+
+    // -----------------------------
+    // Ações individuais
+    // -----------------------------
     if (action === 'concluir') {
       await concluirTarefa(id);
+      menuAbertoId = null;
       await loadAll();
       render();
       return;
     }
     if (action === 'snooze') {
       await dispensarTarefa(id, 3);
+      menuAbertoId = null;
       await loadAll();
       render();
       showToast(t('tarefas.toast.snooze_3d', 'Lembrarei em 3 dias'), 'info', 4000);
@@ -82,23 +142,34 @@ function bindEvents() {
     if (action === 'never') {
       const contaId = btn.dataset.conta || null;
       await nuncaLembrarMais(id, contaId);
+      menuAbertoId = null;
       await loadAll();
       render();
       return;
     }
     if (action === 'edit') {
-      const t = cachedPendentes.find((x) => x.id === id) || cachedConcluidas.find((x) => x.id === id);
-      if (t) openTarefaModal(t);
+      const tarefa = cachedPendentes.find((x) => x.id === id) || cachedConcluidas.find((x) => x.id === id);
+      menuAbertoId = null;
+      if (tarefa) openTarefaModal(tarefa);
       return;
     }
     if (action === 'delete') {
       const ok = await showConfirm('Excluir essa tarefa?', { okLabel: 'Excluir', danger: true });
+      menuAbertoId = null;
       if (!ok) return;
       // Defense in depth: filtra por workspace_id explícito
       await supabase.from('tarefas_usuario').delete().eq('id', id).eq('workspace_id', requireWorkspaceId());
       await loadAll();
       render();
       return;
+    }
+  });
+
+  // Fechar menu kebab ao clicar fora
+  document.addEventListener('click', (e) => {
+    if (menuAbertoId && !e.target.closest('.tarefa-row-menu, [data-action="menu"]')) {
+      menuAbertoId = null;
+      render();
     }
   });
 }
@@ -136,54 +207,234 @@ function render() {
     return;
   }
   empty.classList.add('hidden');
-  list.innerHTML = `<div class="tarefas-page-grid">${data.map(renderTarefaCard).join('')}</div>`;
+
+  if (viewTab === 'pendentes') {
+    list.innerHTML = renderPendentes(data);
+  } else {
+    list.innerHTML = renderConcluidas(data);
+  }
 }
 
-function renderTarefaCard(t) {
-  const isPendente = t.status === 'pendente';
-  const isSistema  = t.criada_por === 'sistema';
-  const prioCls = t.prioridade === 'alta'  ? 'tarefa-page-card--alta'
-                : t.prioridade === 'baixa' ? 'tarefa-page-card--baixa'
-                : '';
-  const origemBadge = isSistema
-    ? `<span class="tarefa-origem-badge tarefa-origem-badge--sistema" title="Gerada automaticamente pelo sistema">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="10" height="10"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        Auto
-      </span>`
-    : `<span class="tarefa-origem-badge tarefa-origem-badge--usuario" title="Criada por você">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="10" height="10"><circle cx="12" cy="7" r="4"/><path d="M17 21v-2a4 4 0 0 0-4-4H11a4 4 0 0 0-4 4v2"/></svg>
-        Sua
-      </span>`;
+// =============================================================
+// Render: pendentes (Suas tarefas + Lembretes do sistema)
+// =============================================================
+function renderPendentes(pendentes) {
+  const suas = pendentes.filter((t) => t.criada_por !== 'sistema');
+  const sistema = pendentes.filter((t) => t.criada_por === 'sistema');
 
-  const acoesPendente = `
-    ${t.acao_url ? `<a href="${t.acao_url}" class="btn btn-primary btn-sm">${escapeHtml(t.acao_label || 'Abrir')}</a>` : ''}
-    <button type="button" class="btn btn-ghost btn-sm" data-action="concluir" data-id="${t.id}">✓ Concluir</button>
-    ${isSistema && t.tipo === 'import_extrato' ? `
-      <button type="button" class="btn btn-ghost btn-sm" data-action="snooze" data-id="${t.id}">Lembrar em 3d</button>
-      <button type="button" class="btn btn-ghost btn-sm" data-action="never" data-id="${t.id}" data-conta="${t.conta_id || ''}">Não lembrar</button>
-    ` : ''}
-    ${!isSistema ? `
-      <button type="button" class="btn btn-ghost btn-sm" data-action="edit" data-id="${t.id}">Editar</button>
-      <button type="button" class="btn btn-ghost btn-sm" data-action="delete" data-id="${t.id}" style="color:var(--color-danger);">Excluir</button>
-    ` : ''}
-  `;
-  const acoesConcluida = `
-    <span class="tarefa-completed-at">Concluída em ${formatDateBR(t.completed_at)}</span>
-    ${!isSistema ? `<button type="button" class="btn btn-ghost btn-sm" data-action="delete" data-id="${t.id}" style="color:var(--color-danger);">Excluir</button>` : ''}
-  `;
+  // Agrupa sistema por t.tipo
+  const gruposSistema = new Map();
+  for (const t of sistema) {
+    const tipo = t.tipo || 'outro';
+    if (!gruposSistema.has(tipo)) gruposSistema.set(tipo, []);
+    gruposSistema.get(tipo).push(t);
+  }
+
+  let out = '<div class="tarefas-page-list-inner">';
+
+  // Suas tarefas
+  if (suas.length > 0) {
+    out += `
+      <div class="tarefa-grupo-header">
+        <span>Suas tarefas · ${suas.length}</span>
+      </div>
+      ${suas.map(renderTarefaRow).join('')}
+    `;
+  }
+
+  // Lembretes do sistema
+  if (sistema.length > 0) {
+    out += `
+      <div class="tarefa-grupo-header">
+        <span>Lembretes do sistema · ${sistema.length}</span>
+        <button type="button" class="tarefa-grupo-bulk" data-action="dispensar-todos">Dispensar todos</button>
+      </div>
+    `;
+    for (const [tipo, tarefas] of gruposSistema) {
+      const expandido = gruposExpandidos.has(tipo);
+      out += expandido
+        ? renderGrupoExpandido(tipo, tarefas)
+        : renderGrupoRow(tipo, tarefas);
+    }
+  }
+
+  out += '</div>';
+  return out;
+}
+
+// =============================================================
+// Render: aba "Concluídas" — mantém visualização simples como rows
+// =============================================================
+function renderConcluidas(concluidas) {
+  return `<div class="tarefas-page-list-inner">${concluidas.map(renderTarefaRowConcluida).join('')}</div>`;
+}
+
+// =============================================================
+// Row: tarefa "sua" (pendente)
+// =============================================================
+function renderTarefaRow(t) {
+  const prio = t.prioridade || 'normal';
+  const prazoIso = t.metadata?.prazo || null;
+  const prazoInfo = renderPrazo(prazoIso);
+  const menuOpen = menuAbertoId === t.id;
+
+  const badgePrio = prio === 'alta'
+    ? '<span class="tarefa-prio-badge tarefa-prio-badge--alta">🔥 ALTA</span>'
+    : prio === 'baixa'
+      ? '<span class="tarefa-prio-badge tarefa-prio-badge--baixa">BAIXA</span>'
+      : '<span class="tarefa-prio-badge tarefa-prio-badge--normal">NORMAL</span>';
 
   return `
-    <div class="tarefa-page-card ${prioCls}" data-id="${t.id}">
-      <div class="tarefa-page-card-head">
-        <span class="tarefa-page-card-title">${escapeHtml(t.titulo)}</span>
-        ${origemBadge}
+    <div class="tarefa-row tarefa-row--sua tarefa-row--${prio}" data-id="${t.id}" data-prio="${prio}">
+      ${badgePrio}
+      <div class="tarefa-row-content">
+        <div class="tarefa-row-title">${escapeHtml(t.titulo)}</div>
+        ${t.descricao ? `<div class="tarefa-row-desc">${escapeHtml(t.descricao)}</div>` : ''}
       </div>
-      ${t.descricao ? `<p class="tarefa-page-card-desc">${escapeHtml(t.descricao)}</p>` : ''}
-      <div class="tarefa-page-card-actions">
-        ${isPendente ? acoesPendente : acoesConcluida}
+      <div class="tarefa-row-meta">
+        ${prazoInfo}
+      </div>
+      <div class="tarefa-row-actions">
+        <div class="tarefa-row-menu-wrap">
+          <button type="button" class="btn btn-icon tarefa-row-menu-btn" data-action="menu" data-id="${t.id}" aria-label="Mais ações">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+          </button>
+          ${menuOpen ? `
+            <div class="tarefa-row-menu">
+              <button type="button" class="tarefa-row-menu-item" data-action="concluir" data-id="${t.id}">✓ Concluir</button>
+              <button type="button" class="tarefa-row-menu-item" data-action="edit" data-id="${t.id}">Editar</button>
+              <button type="button" class="tarefa-row-menu-item tarefa-row-menu-item--danger" data-action="delete" data-id="${t.id}">Excluir</button>
+            </div>
+          ` : ''}
+        </div>
       </div>
     </div>
   `;
+}
+
+// =============================================================
+// Row: tarefa concluída (simples)
+// =============================================================
+function renderTarefaRowConcluida(t) {
+  const isSistema = t.criada_por === 'sistema';
+  const origemBadge = isSistema
+    ? '<span class="tarefa-origem-badge tarefa-origem-badge--sistema">⚙ AUTO</span>'
+    : '<span class="tarefa-origem-badge tarefa-origem-badge--usuario">SUA</span>';
+  return `
+    <div class="tarefa-row tarefa-row--concluida" data-id="${t.id}">
+      ${origemBadge}
+      <div class="tarefa-row-content">
+        <div class="tarefa-row-title">${escapeHtml(t.titulo)}</div>
+        ${t.descricao ? `<div class="tarefa-row-desc">${escapeHtml(t.descricao)}</div>` : ''}
+      </div>
+      <div class="tarefa-row-meta">
+        <span class="tarefa-completed-at">Concluída em ${formatDateBR(t.completed_at)}</span>
+      </div>
+      <div class="tarefa-row-actions">
+        ${!isSistema ? `<button type="button" class="btn btn-ghost btn-sm" data-action="delete" data-id="${t.id}" style="color:var(--color-danger);">Excluir</button>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+// =============================================================
+// Row: grupo do sistema (colapsado)
+// =============================================================
+function renderGrupoRow(tipo, tarefas) {
+  const meta = labelDoGrupo(tipo);
+  const subtitulo = sumarizarContas(tarefas);
+  return `
+    <div class="tarefa-row tarefa-row--grupo" data-grupo="${tipo}">
+      <span class="tarefa-origem-badge tarefa-origem-badge--sistema">⚙ AUTO</span>
+      <div class="tarefa-row-content">
+        <div class="tarefa-row-title">${escapeHtml(meta.titulo)} · ${tarefas.length} ${meta.unidade}</div>
+        <div class="tarefa-row-desc">${escapeHtml(subtitulo)}</div>
+      </div>
+      <div class="tarefa-row-actions">
+        <button type="button" class="btn btn-primary btn-sm" data-action="expand-grupo" data-grupo="${tipo}">Ver e ${meta.verbo}</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-action="snooze-grupo" data-grupo="${tipo}">Lembrar em 3d</button>
+      </div>
+    </div>
+  `;
+}
+
+// =============================================================
+// Row: grupo do sistema (expandido — sub-rows individuais)
+// =============================================================
+function renderGrupoExpandido(tipo, tarefas) {
+  const meta = labelDoGrupo(tipo);
+  return `
+    <div class="tarefa-row-grupo-expandido" data-grupo="${tipo}">
+      <div class="tarefa-row tarefa-row--grupo-header">
+        <span class="tarefa-origem-badge tarefa-origem-badge--sistema">⚙ AUTO</span>
+        <div class="tarefa-row-content">
+          <div class="tarefa-row-title">${escapeHtml(meta.titulo)} · ${tarefas.length} ${meta.unidade}</div>
+        </div>
+        <div class="tarefa-row-actions">
+          <button type="button" class="btn btn-ghost btn-sm" data-action="collapse-grupo" data-grupo="${tipo}">Recolher</button>
+        </div>
+      </div>
+      <ul class="tarefa-subrows">
+        ${tarefas.map((t) => renderSubRow(t)).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+function renderSubRow(t) {
+  // Extrai apenas o nome da conta do título "Importar extrato — LATAM Itau"
+  const label = t.titulo.includes('—') ? t.titulo.split('—').slice(1).join('—').trim() : t.titulo;
+  const url = t.acao_url || '';
+  const primaryLabel = t.acao_label || 'Abrir';
+  return `
+    <li class="tarefa-subrow" data-id="${t.id}">
+      <span class="tarefa-subrow-label">${escapeHtml(label)}</span>
+      <div class="tarefa-subrow-actions">
+        ${url ? `<button type="button" class="btn btn-primary btn-sm" data-action="primary" data-id="${t.id}" data-url="${escapeHtml(url)}">${escapeHtml(primaryLabel)}</button>` : ''}
+        <button type="button" class="btn btn-ghost btn-sm" data-action="snooze" data-id="${t.id}">Lembrar</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-action="never" data-id="${t.id}" data-conta="${t.conta_id || ''}">Dispensar</button>
+      </div>
+    </li>
+  `;
+}
+
+// =============================================================
+// Helpers
+// =============================================================
+function labelDoGrupo(tipo) {
+  switch (tipo) {
+    case 'import_extrato':
+      return { titulo: 'Importações pendentes', unidade: 'contas', verbo: 'importar' };
+    case 'reconciliacao_pendente':
+      return { titulo: 'Reconciliações pendentes', unidade: 'contas', verbo: 'reconciliar' };
+    default:
+      return { titulo: `Lembretes (${tipo})`, unidade: 'itens', verbo: 'abrir' };
+  }
+}
+
+function sumarizarContas(tarefas) {
+  const nomes = tarefas
+    .map((t) => (t.titulo.includes('—') ? t.titulo.split('—').slice(1).join('—').trim() : t.titulo))
+    .filter(Boolean);
+  const joined = nomes.join(', ');
+  return joined.length > 80 ? joined.slice(0, 77) + '…' : joined;
+}
+
+function diasAteISO(iso) {
+  if (!iso) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(iso + 'T00:00:00');
+  return Math.round((target - today) / 86400000);
+}
+
+function renderPrazo(iso) {
+  const dias = diasAteISO(iso);
+  if (dias === null) return '<span class="tarefa-row-prazo tarefa-row-prazo--vazio">Sem prazo</span>';
+  if (dias < 0)  return `<span class="tarefa-row-prazo tarefa-row-prazo--atrasada">⏰ atrasada ${Math.abs(dias)}d</span>`;
+  if (dias === 0) return '<span class="tarefa-row-prazo tarefa-row-prazo--hoje">⏰ hoje</span>';
+  if (dias === 1) return '<span class="tarefa-row-prazo">⏰ em 1 dia</span>';
+  return `<span class="tarefa-row-prazo">⏰ em ${dias} dias</span>`;
 }
 
 function formatDateBR(iso) {

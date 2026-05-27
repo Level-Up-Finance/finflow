@@ -18358,6 +18358,242 @@ body[data-can-write="false"] [data-delete-sub] {
 }
 
 /* =============================================================
+   Página /tarefas — REDESIGN: lista densa (rows) + grupos
+   ============================================================= */
+.tarefas-page-list-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+/* Header de grupo (Suas tarefas / Lembretes do sistema) */
+.tarefa-grupo-header {
+  padding: var(--space-3) var(--space-3) var(--space-2);
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: var(--fw-semibold);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+}
+.tarefa-grupo-header:not(:first-child) {
+  border-top: 1px solid var(--color-border);
+}
+.tarefa-grupo-bulk {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: var(--fs-xs);
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm, 4px);
+  transition: background 150ms, color 150ms;
+}
+.tarefa-grupo-bulk:hover {
+  background: var(--color-surface);
+  color: var(--color-danger);
+}
+
+/* Row genérica */
+.tarefa-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-border);
+  transition: background 150ms;
+  background: var(--color-surface);
+}
+.tarefa-row:last-child { border-bottom: none; }
+.tarefa-row:hover { background: var(--color-surface-alt); }
+
+/* Row sua tarefa — borda colorida na esquerda quando ALTA */
+.tarefa-row--alta {
+  border-left: 3px solid var(--color-danger);
+  padding-left: 13px;
+}
+.tarefa-row--baixa { opacity: 0.85; }
+
+/* Conteúdo central da row */
+.tarefa-row-content {
+  flex: 1;
+  min-width: 0;  /* permite truncamento */
+}
+.tarefa-row-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-main);
+  line-height: 1.3;
+}
+.tarefa-row-desc {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Meta (prazo) — alinhado à direita */
+.tarefa-row-meta {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.tarefa-row-prazo--atrasada { color: var(--color-danger); font-weight: var(--fw-semibold); }
+.tarefa-row-prazo--hoje     { color: var(--color-warning, #f59e0b); font-weight: var(--fw-semibold); }
+.tarefa-row-prazo--vazio    { opacity: 0.6; }
+
+/* Actions */
+.tarefa-row-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Badges de prioridade */
+.tarefa-prio-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.tarefa-prio-badge--alta {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+.tarefa-prio-badge--normal {
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+}
+.tarefa-prio-badge--baixa {
+  background: transparent;
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}
+
+/* Botão kebab + dropdown */
+.tarefa-row-menu-wrap {
+  position: relative;
+}
+.tarefa-row-menu-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--color-text-muted);
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm, 4px);
+  cursor: pointer;
+  padding: 0;
+  transition: background 150ms, color 150ms;
+}
+.tarefa-row-menu-btn:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-text-main);
+}
+.tarefa-row-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 160px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 50;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+}
+.tarefa-row-menu-item {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 8px 12px;
+  font-size: var(--fs-sm);
+  color: var(--color-text-main);
+  cursor: pointer;
+  border-radius: var(--radius-sm, 4px);
+  transition: background 150ms;
+  white-space: nowrap;
+}
+.tarefa-row-menu-item:hover { background: var(--color-surface-alt); }
+.tarefa-row-menu-item--danger { color: var(--color-danger); }
+.tarefa-row-menu-item--danger:hover { background: var(--color-danger-bg); }
+
+/* Grupo expandido (sub-linhas) */
+.tarefa-row-grupo-expandido {
+  border-bottom: 1px solid var(--color-border);
+}
+.tarefa-row-grupo-expandido:last-child { border-bottom: none; }
+.tarefa-row--grupo-header {
+  background: var(--color-surface-alt);
+  border-bottom: 1px solid var(--color-border);
+}
+.tarefa-subrows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--color-surface);
+}
+.tarefa-subrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px 10px 48px;
+  font-size: var(--fs-sm);
+  border-bottom: 1px solid var(--color-border);
+  gap: 12px;
+}
+.tarefa-subrow:last-child { border-bottom: none; }
+.tarefa-subrow:hover { background: var(--color-surface-alt); }
+.tarefa-subrow-label {
+  color: var(--color-text-main);
+  font-weight: var(--fw-medium, 500);
+}
+.tarefa-subrow-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* Row concluída — visual mais discreto */
+.tarefa-row--concluida {
+  opacity: 0.75;
+}
+.tarefa-row--concluida .tarefa-row-title {
+  text-decoration: line-through;
+  text-decoration-color: var(--color-text-muted);
+}
+
+/* Responsivo: em telas pequenas empilha actions abaixo */
+@media (max-width: 640px) {
+  .tarefa-row { flex-wrap: wrap; }
+  .tarefa-row-meta { width: 100%; padding-left: 0; }
+  .tarefa-row-actions { width: 100%; justify-content: flex-end; }
+  .tarefa-subrow { flex-wrap: wrap; padding-left: 32px; }
+  .tarefa-subrow-actions { width: 100%; justify-content: flex-end; }
+}
+
+/* =============================================================
    Indicadores no card de conta (pendentes + status de importação)
    ============================================================= */
 .conta-indicadores-row {
