@@ -9629,6 +9629,12 @@ td > .currency-split {
   border-top: 2px solid var(--color-border);
   border-bottom: none;
 }
+/* O TD permanece display: table-cell (default) pra respeitar colspan=12.
+   O flex layout é aplicado num DIV interno (.trans-footer-summary) que
+   estica pela largura inteira da célula. */
+.trans-footer-cell {
+  /* herda padding e background de .trans-footer-row td */
+}
 .trans-footer-summary {
   font-size: var(--fs-sm);
   color: var(--color-text-secondary);
@@ -9636,6 +9642,7 @@ td > .currency-split {
   align-items: baseline;
   flex-wrap: wrap;
   gap: var(--space-2);
+  width: 100%;
 }
 .trans-footer-count {
   font-size: var(--fs-xs);

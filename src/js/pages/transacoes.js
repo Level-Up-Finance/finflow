@@ -1733,24 +1733,26 @@ function renderDataRows(items) {
   const mostraSaldoFinal = temOpeningBalance || items.length > 0;
   const footer = `
     <tr class="trans-footer-row">
-      <td colspan="12" class="trans-footer-summary">
-        <span class="trans-footer-count">${items.length} transaç${items.length === 1 ? 'ão' : 'ões'}</span>
-        <span class="trans-footer-sep">·</span>
-        <span class="trans-footer-item">
-          <span class="trans-footer-label-text">Receitas</span>
-          <span class="trans-tipo-receita tabular">+${formatCurrency(totalReceitas, 'BRL')}</span>
-        </span>
-        <span class="trans-footer-sep">·</span>
-        <span class="trans-footer-item">
-          <span class="trans-footer-label-text">Despesas</span>
-          <span class="trans-tipo-despesa tabular">−${formatCurrency(totalDespesas, 'BRL')}</span>
-        </span>
-        ${mostraSaldoFinal ? `
-        <span class="trans-footer-sep">·</span>
-        <span class="trans-footer-item trans-footer-item--final">
-          <span class="trans-footer-label-text">Saldo final</span>
-          <span class="trans-footer-saldo-value tabular" style="${saldoFinalColor}">${formatCurrency(saldoFinal, 'BRL')}</span>
-        </span>` : ''}
+      <td colspan="12" class="trans-footer-cell">
+        <div class="trans-footer-summary">
+          <span class="trans-footer-count">${items.length} transaç${items.length === 1 ? 'ão' : 'ões'}</span>
+          <span class="trans-footer-sep">·</span>
+          <span class="trans-footer-item">
+            <span class="trans-footer-label-text">Receitas</span>
+            <span class="trans-tipo-receita tabular">+${formatCurrency(totalReceitas, 'BRL')}</span>
+          </span>
+          <span class="trans-footer-sep">·</span>
+          <span class="trans-footer-item">
+            <span class="trans-footer-label-text">Despesas</span>
+            <span class="trans-tipo-despesa tabular">−${formatCurrency(totalDespesas, 'BRL')}</span>
+          </span>
+          ${mostraSaldoFinal ? `
+          <span class="trans-footer-sep">·</span>
+          <span class="trans-footer-item trans-footer-item--final">
+            <span class="trans-footer-label-text">Saldo final</span>
+            <span class="trans-footer-saldo-value tabular" style="${saldoFinalColor}">${formatCurrency(saldoFinal, 'BRL')}</span>
+          </span>` : ''}
+        </div>
       </td>
     </tr>`;
 
