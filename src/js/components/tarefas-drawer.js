@@ -1,10 +1,9 @@
 // =============================================================
 // FinFlow — Drawer de tarefas (ícone no header + painel lateral)
 //
-// Inicializa o ícone com badge no header (próximo ao avatar) e
-// abre um drawer com a lista de tarefas pendentes ao clicar.
-//
-// Inicia geração automática de tarefas em background (sem bloquear UI).
+// Filosofia: drawer = TRIAGEM RÁPIDA, não management.
+// Mostra só o que precisa de atenção AGORA + summary do resto +
+// link pra página completa. Detalhes em /tarefas.html.
 // =============================================================
 import {
   loadTarefasPendentes,
@@ -23,99 +22,85 @@ export async function initTarefasDrawer() {
   // Cria o trigger (botão no header com badge) — sempre antes do avatar do usuário
   let trigger = document.getElementById('tarefas-trigger');
   if (!trigger) {
-    const headerRight = document.querySelector('.app-header .header-right') || document.querySelector('.app-header');
-    if (!headerRight) return;
     trigger = document.createElement('button');
     trigger.id = 'tarefas-trigger';
     trigger.type = 'button';
     trigger.className = 'tarefas-trigger';
     trigger.setAttribute('aria-label', 'Tarefas');
-    trigger.innerHTML = `
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      <span class="tarefas-trigger-badge hidden" id="tarefas-trigger-badge">0</span>
-    `;
-    insertBeforeAvatar(trigger, headerRight);
+    setMarkup(trigger, `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span id="tarefas-trigger-badge" class="tarefas-trigger-badge hidden">0</span>
+    `);
+
+    const headerRight = document.querySelector('.header-right, .header-controls, header .user-section');
+    if (headerRight) {
+      insertBeforeAvatar(trigger, headerRight);
+    } else {
+      document.body.appendChild(trigger);
+    }
   }
 
-  // Cria o drawer (overlay + painel lateral) só uma vez
+  // Cria o drawer (painel lateral)
   let drawer = document.getElementById('tarefas-drawer');
   if (!drawer) {
     drawer = document.createElement('div');
     drawer.id = 'tarefas-drawer';
     drawer.className = 'tarefas-drawer hidden';
-    drawer.setAttribute('role', 'dialog');
-    drawer.setAttribute('aria-label', 'Tarefas pendentes');
-    drawer.innerHTML = `
-      <div class="tarefas-drawer-backdrop" data-close-drawer></div>
-      <aside class="tarefas-drawer-panel">
-        <header class="tarefas-drawer-header">
+    setMarkup(drawer, `
+      <div class="tarefas-drawer-backdrop" id="tarefas-drawer-backdrop"></div>
+      <div class="tarefas-drawer-panel">
+        <div class="tarefas-drawer-header">
           <h2 class="tarefas-drawer-title">Tarefas</h2>
-          <button type="button" class="tarefas-drawer-close" data-close-drawer aria-label="Fechar">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <button type="button" class="tarefas-drawer-close" id="tarefas-drawer-close" aria-label="Fechar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
-        </header>
-        <div class="tarefas-drawer-body" id="tarefas-drawer-body">
-          <div class="loading-overlay" style="position:relative;min-height:120px;"><span class="spinner"></span></div>
         </div>
-      </aside>
-    `;
+        <div class="tarefas-drawer-body" id="tarefas-drawer-body"></div>
+      </div>
+    `);
     document.body.appendChild(drawer);
   }
 
-  // Bindings
-  trigger.addEventListener('click', () => openDrawer());
-  drawer.addEventListener('click', (e) => {
-    // Usa closest pra capturar cliques no SVG dentro do botão
-    if (e.target.closest('[data-close-drawer]')) closeDrawer();
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !drawer.classList.contains('hidden')) closeDrawer();
-  });
+  trigger.addEventListener('click', openDrawer);
+  document.getElementById('tarefas-drawer-close').addEventListener('click', closeDrawer);
+  document.getElementById('tarefas-drawer-backdrop').addEventListener('click', closeDrawer);
 
-  // Geração em background (não bloqueia init) + badge inicial
-  gerarTarefasImportExtrato().then(() => atualizarBadge());
-  atualizarBadge();
+  // Geração em background — não bloqueia UI
+  gerarTarefasImportExtrato().catch((err) => console.warn('[tarefas-drawer] gerar import extrato', err));
+
+  // Render inicial
+  await renderLista();
+  await atualizarBadge();
 }
 
-/**
- * Mantém o avatar (#header-user-menu) sempre por último na direita do header.
- * Se o avatar já existe → insere ANTES dele.
- * Se ainda não existe (ordem de inicialização) → insere o elemento e usa
- * window.MutationObserver pra reorganizar quando o avatar for adicionado.
- */
 function insertBeforeAvatar(el, headerRight) {
-  const avatar = headerRight.querySelector('#header-user-menu');
+  // Tenta inserir antes do avatar/menu do usuário; se não achar, append.
+  const avatar = headerRight.querySelector('.user-avatar, .avatar, [data-user-menu]');
   if (avatar) {
     headerRight.insertBefore(el, avatar);
-    return;
+  } else {
+    headerRight.appendChild(el);
   }
-  headerRight.appendChild(el);
-  const MO = window.MutationObserver;
-  if (!MO) return;
-  const obs = new MO(() => {
-    const av = headerRight.querySelector('#header-user-menu');
-    if (av && av.previousSibling !== el) {
-      headerRight.insertBefore(el, av);
-      obs.disconnect();
-    }
-  });
-  obs.observe(headerRight, { childList: true });
-  setTimeout(() => obs.disconnect(), 5000);
+}
+
+// Helper que aceita HTML montado pelo próprio módulo (já escapado em valores
+// de usuário via escapeHtml). Isolado pra ficar claro onde aplicamos innerHTML.
+function setMarkup(el, html) {
+  el.innerHTML = html;
 }
 
 async function openDrawer() {
   const drawer = document.getElementById('tarefas-drawer');
-  if (!drawer) return;
   drawer.classList.remove('hidden');
-  // Garante geração antes de listar (caso seja a primeira abertura da sessão)
-  await gerarTarefasImportExtrato();
+  document.body.style.overflow = 'hidden';
+  // Re-render ao abrir pra garantir dados frescos
   await renderLista();
-  atualizarBadge();
+  await atualizarBadge();
 }
 
 function closeDrawer() {
-  const drawer = document.getElementById('tarefas-drawer');
-  if (drawer) drawer.classList.add('hidden');
+  document.getElementById('tarefas-drawer').classList.add('hidden');
+  document.body.style.overflow = '';
 }
 
 async function atualizarBadge() {
@@ -127,40 +112,155 @@ async function atualizarBadge() {
   badge.classList.toggle('hidden', n === 0);
 }
 
+// Calcula dias até uma data ISO. Negativo = atrasada. Null se data inválida.
+function diasAteISO(iso) {
+  if (!iso) return null;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const target = new Date(iso + (iso.length === 10 ? 'T00:00:00' : ''));
+  target.setHours(0, 0, 0, 0);
+  if (isNaN(target.getTime())) return null;
+  return Math.round((target - hoje) / 86400000);
+}
+
+// "Precisa de atenção hoje": minha + (prazo <= 0 OU prioridade alta).
+function isUrgente(t) {
+  if (t.criada_por === 'sistema') return false;
+  if (t.prioridade === 'alta') return true;
+  const dias = diasAteISO(t?.metadata?.prazo);
+  return dias !== null && dias <= 0;
+}
+
+// Labels amigáveis pra grupos do sistema.
+const SISTEMA_LABELS = {
+  import_extrato:         'importações pendentes',
+  reconciliacao_pendente: 'reconciliações pendentes',
+  outro:                  'lembretes do sistema',
+};
+
 async function renderLista() {
   const body = document.getElementById('tarefas-drawer-body');
   if (!body) return;
   const tarefas = await loadTarefasPendentes();
+
   if (tarefas.length === 0) {
-    body.innerHTML = `
+    setMarkup(body, `
       <div class="tarefas-empty">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-success);"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         <p class="tarefas-empty-title">Tudo em dia!</p>
         <p class="tarefas-empty-sub">Nenhuma tarefa pendente no momento.</p>
       </div>
-    `;
+    `);
     return;
   }
-  body.innerHTML = tarefas.map(renderTarefaItem).join('');
+
+  // Particiona em 3 buckets (princípio do drawer: triagem rápida)
+  //   urgentes: minhas com prioridade alta OU prazo <= hoje
+  //   sistema:  agrupadas por tipo (uma linha por grupo)
+  //   outras:   minhas não-urgentes (só contagem inline)
+  const urgentes = tarefas.filter(isUrgente);
+  const sistema  = tarefas.filter((t) => t.criada_por === 'sistema');
+  const outras   = tarefas.filter((t) => t.criada_por !== 'sistema' && !isUrgente(t));
+
+  // Agrupa sistema por tipo
+  const sistemaGrupos = new Map();
+  for (const t of sistema) {
+    const tipo = t.tipo || 'outro';
+    if (!sistemaGrupos.has(tipo)) sistemaGrupos.set(tipo, []);
+    sistemaGrupos.get(tipo).push(t);
+  }
+
+  const parts = [];
+
+  // Header com contagem total
+  parts.push(`
+    <div class="tarefas-drawer-summary">
+      <span class="tarefas-drawer-summary-count">${tarefas.length}</span>
+      <span class="tarefas-drawer-summary-text">tarefa${tarefas.length !== 1 ? 's' : ''} pendente${tarefas.length !== 1 ? 's' : ''}</span>
+    </div>
+  `);
+
+  // SEÇÃO 1 — PRECISA DE ATENÇÃO HOJE
+  if (urgentes.length > 0) {
+    parts.push(`
+      <div class="tarefas-drawer-section">
+        <div class="tarefas-drawer-section-label">Precisa de atenção hoje</div>
+        ${urgentes.map(renderTarefaUrgente).join('')}
+      </div>
+    `);
+  }
+
+  // SEÇÃO 2 — SISTEMA (agrupado por tipo)
+  if (sistemaGrupos.size > 0) {
+    const sistemaHtml = [];
+    if (urgentes.length === 0) {
+      sistemaHtml.push(`<div class="tarefas-drawer-section-label">Lembretes do sistema</div>`);
+    }
+    for (const [tipo, items] of sistemaGrupos) {
+      const label = SISTEMA_LABELS[tipo] || SISTEMA_LABELS.outro;
+      sistemaHtml.push(`
+        <a href="/tarefas.html" class="tarefas-drawer-grupo-row">
+          <span class="tarefas-drawer-grupo-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </span>
+          <span class="tarefas-drawer-grupo-text">
+            <strong class="tarefas-drawer-grupo-count">${items.length}</strong> ${label}
+          </span>
+          <span class="tarefas-drawer-grupo-arrow" aria-hidden="true">→</span>
+        </a>
+      `);
+    }
+    parts.push(`<div class="tarefas-drawer-section">${sistemaHtml.join('')}</div>`);
+  }
+
+  // SEÇÃO 3 — OUTRAS MINHAS (só contagem inline)
+  if (outras.length > 0) {
+    parts.push(`
+      <div class="tarefas-drawer-section">
+        <a href="/tarefas.html" class="tarefas-drawer-grupo-row tarefas-drawer-grupo-row--secondary">
+          <span class="tarefas-drawer-grupo-dot" aria-hidden="true"></span>
+          <span class="tarefas-drawer-grupo-text">
+            <strong class="tarefas-drawer-grupo-count">${outras.length}</strong> outra${outras.length !== 1 ? 's' : ''} tarefa${outras.length !== 1 ? 's' : ''} pessoa${outras.length !== 1 ? 'is' : 'l'}
+          </span>
+          <span class="tarefas-drawer-grupo-arrow" aria-hidden="true">→</span>
+        </a>
+      </div>
+    `);
+  }
+
+  // FOOTER — link pra página completa
+  parts.push(`
+    <div class="tarefas-drawer-footer">
+      <a href="/tarefas.html" class="tarefas-drawer-ver-todas">Ver todas as tarefas →</a>
+    </div>
+  `);
+
+  setMarkup(body, parts.join(''));
   body.querySelectorAll('[data-tarefa-action]').forEach((btn) => {
     btn.addEventListener('click', (e) => handleAction(e.currentTarget));
   });
 }
 
-function renderTarefaItem(t) {
-  const prioClass = t.prioridade === 'alta' ? 'tarefa-item--alta' : '';
+// Renderiza tarefa urgente como linha compacta com prazo inline.
+function renderTarefaUrgente(t) {
+  const prazoDias = diasAteISO(t?.metadata?.prazo);
+  let prazoStr = '';
+  if (prazoDias !== null) {
+    if (prazoDias < 0) {
+      prazoStr = `<span class="tarefas-drawer-urgente-prazo tarefas-drawer-urgente-prazo--atrasada">atrasada ${Math.abs(prazoDias)}d</span>`;
+    } else if (prazoDias === 0) {
+      prazoStr = `<span class="tarefas-drawer-urgente-prazo tarefas-drawer-urgente-prazo--hoje">hoje</span>`;
+    }
+  }
+  const dotClass = t.prioridade === 'alta'
+    ? 'tarefas-drawer-urgente-dot--alta'
+    : 'tarefas-drawer-urgente-dot--normal';
   return `
-    <div class="tarefa-item ${prioClass}" data-id="${t.id}">
-      <div class="tarefa-item-content">
-        <div class="tarefa-item-title">${escapeHtml(t.titulo)}</div>
-        ${t.descricao ? `<div class="tarefa-item-desc">${escapeHtml(t.descricao)}</div>` : ''}
-      </div>
-      <div class="tarefa-item-actions">
-        ${t.acao_url ? `<a href="${t.acao_url}" class="btn btn-primary btn-sm" data-tarefa-action="acao" data-id="${t.id}">${escapeHtml(t.acao_label || 'Abrir')}</a>` : ''}
-        <button type="button" class="btn btn-ghost btn-sm" data-tarefa-action="snooze" data-id="${t.id}" title="Lembrar em 3 dias">Lembrar depois</button>
-        <button type="button" class="btn btn-ghost btn-sm" data-tarefa-action="never" data-id="${t.id}" data-conta="${t.conta_id || ''}" title="Não lembrar mais">Não lembrar</button>
-      </div>
-    </div>
+    <a href="/tarefas.html" class="tarefas-drawer-urgente" data-id="${t.id}">
+      <span class="tarefas-drawer-urgente-dot ${dotClass}" aria-hidden="true"></span>
+      <span class="tarefas-drawer-urgente-title">${escapeHtml(t.titulo)}</span>
+      ${prazoStr}
+    </a>
   `;
 }
 

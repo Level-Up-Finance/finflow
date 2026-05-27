@@ -17985,6 +17985,175 @@ body[data-can-write="false"] [data-delete-sub] {
   padding: var(--space-3);
 }
 
+/* ================================================================
+   DRAWER de tarefas — redesign "triagem rápida" (opção C)
+   Sumário no topo · seção "Precisa de atenção hoje" · sistema agrupado
+   · outras como contagem · link pra página completa
+   ================================================================ */
+
+/* Header de sumário com contagem total */
+.tarefas-drawer-summary {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-3);
+}
+.tarefas-drawer-summary-count {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-main);
+  font-variant-numeric: tabular-nums;
+}
+.tarefas-drawer-summary-text {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+/* Seções */
+.tarefas-drawer-section {
+  padding: 0 var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.tarefas-drawer-section-label {
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  padding: 0 var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+/* Linha urgente: dot + título + prazo */
+.tarefas-drawer-urgente {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: inherit;
+  transition: background 120ms ease;
+}
+.tarefas-drawer-urgente:hover {
+  background: var(--color-surface-alt);
+}
+.tarefas-drawer-urgente-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.tarefas-drawer-urgente-dot--alta {
+  background: var(--color-danger);
+}
+.tarefas-drawer-urgente-dot--normal {
+  background: var(--color-text-muted);
+  opacity: 0.5;
+}
+.tarefas-drawer-urgente-title {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-main);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tarefas-drawer-urgente-prazo {
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.tarefas-drawer-urgente-prazo--hoje {
+  color: var(--color-warning);
+}
+.tarefas-drawer-urgente-prazo--atrasada {
+  color: var(--color-danger);
+}
+
+/* Linha de grupo (sistema agrupado OU "outras tarefas") */
+.tarefas-drawer-grupo-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--color-text-main);
+  transition: background 120ms ease;
+  margin-bottom: var(--space-2);
+}
+.tarefas-drawer-grupo-row:hover {
+  background: var(--color-bg-subtle, #eef2f6);
+}
+.tarefas-drawer-grupo-row--secondary {
+  background: transparent;
+  padding: var(--space-2) var(--space-3);
+}
+.tarefas-drawer-grupo-icon {
+  color: var(--color-primary);
+  display: flex;
+  flex-shrink: 0;
+}
+.tarefas-drawer-grupo-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+.tarefas-drawer-grupo-text {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  color: var(--color-text-main);
+  flex: 1;
+}
+.tarefas-drawer-grupo-count {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+}
+.tarefas-drawer-grupo-arrow {
+  color: var(--color-text-muted);
+  font-size: var(--fs-md);
+  flex-shrink: 0;
+}
+
+/* Footer com link "Ver todas" */
+.tarefas-drawer-footer {
+  padding: var(--space-3) var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--space-3);
+}
+.tarefas-drawer-ver-todas {
+  display: block;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--color-primary);
+  text-decoration: none;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: background 120ms ease;
+}
+.tarefas-drawer-ver-todas:hover {
+  background: var(--color-surface-alt);
+}
+
+/* Legacy — .tarefa-item* mantido caso algum lugar ainda referencie.
+   O drawer não usa mais essas classes diretamente. */
 .tarefa-item {
   display: flex;
   flex-direction: column;
