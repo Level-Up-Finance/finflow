@@ -3295,8 +3295,11 @@
   gap: 3px;
 }
 
-/* Dentro de célula de tabela: preenche a célula inteira com símbolo à esquerda e número à direita */
-td .currency-split {
+/* Dentro de célula de tabela: preenche a célula inteira com símbolo à esquerda e número à direita.
+   Usa "child direto" (>) e não descendente — se o split estiver dentro de um <span> wrapper
+   (ex: badges de receita/despesa em footer com colspan), preserva o inline-flex default em
+   vez de esticar pra largura inteira do colspan. */
+td > .currency-split {
   display: flex;
   width: 100%;
   justify-content: space-between;
