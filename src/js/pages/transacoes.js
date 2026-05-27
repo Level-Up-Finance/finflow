@@ -1488,9 +1488,20 @@ function renderDataRows(items) {
 
   // Saldo corrente: acumula sempre do mais antigo para o mais novo,
   // independente da ordem de exibição.
+  // Quando filtrado por uma conta única, parte do saldo_inicial da conta
+  // (em vez de 0). Garante que a coluna Saldo bata com o saldo_atual
+  // exibido em Contas (que tb usa saldo_inicial como ponto de partida).
   const parById = new Map(cachedTransacoes.map((x) => [x.id, x]));
   const runningBalances = new Map();
-  let balance = 0;
+
+  const contaFiltrada = (filterConta && !filterConta.startsWith('cx:'))
+    ? cachedContas.find((c) => c.id === filterConta)
+    : null;
+  const saldoInicialOpening = Number(contaFiltrada?.saldo_inicial) || 0;
+  const dataInicialOpening  = contaFiltrada?.data_saldo_inicial || null;
+  const temOpeningBalance   = !!(contaFiltrada && (saldoInicialOpening !== 0 || dataInicialOpening));
+
+  let balance = temOpeningBalance ? saldoInicialOpening : 0;
   const itemsAsc = [...items].sort((a, b) => (a.data || '').localeCompare(b.data || '')
     || (a.created_at || '').localeCompare(b.created_at || ''));
   for (const t of itemsAsc) {
@@ -1721,7 +1732,35 @@ function renderDataRows(items) {
       <td></td>
     </tr>`;
 
-  return rows + footer;
+  // Linha virtual de "Saldo inicial" — só quando filtrado por conta única
+  // que tem opening balance definido. Aparece no TOPO da listagem (display
+  // é descendente, ascendente quando filtra), antes da primeira transação,
+  // ancorando o running balance no valor de partida da conta.
+  let openingRow = '';
+  if (temOpeningBalance) {
+    const dataFmt = dataInicialOpening ? formatDateBR(dataInicialOpening) : '—';
+    const contaNome = contaFiltrada.apelido?.trim() || contaFiltrada.nome || 'Conta';
+    const valorFmt = formatCurrencyHTML(saldoInicialOpening, 'BRL');
+    openingRow = `
+      <tr class="trans-row trans-row-opening" data-id="opening-balance">
+        <td class="trans-td-data tabular">${dataFmt}</td>
+        <td class="trans-td-planejada" data-col="planejada">—</td>
+        <td class="trans-td-id" data-col="id">—</td>
+        <td class="trans-td-banco" data-col="banco"><em>Saldo inicial</em></td>
+        <td class="trans-td-contato" data-col="contato">—</td>
+        <td class="trans-td-bloco" data-col="bloco">—</td>
+        <td class="trans-td-categoria" data-col="categoria">—</td>
+        <td class="trans-td-subcategoria" data-col="subcategoria">—</td>
+        <td class="trans-td-conta" data-col="conta">
+          <div class="trans-conta-cell"><span class="trans-conta-name">${escapeHtml(contaNome)}</span></div>
+        </td>
+        <td class="trans-td-valor tabular" data-col="valor">${valorFmt}</td>
+        <td class="trans-td-saldo tabular" data-col="saldo">${valorFmt}</td>
+        <td class="trans-td-actions"></td>
+      </tr>`;
+  }
+
+  return openingRow + rows + footer;
 }
 
 // Linha de detalhe das divisões (inicialmente oculta, toggle pelo botão "Vários")

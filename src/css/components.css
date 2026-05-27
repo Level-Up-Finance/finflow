@@ -9599,6 +9599,24 @@ td .currency-split {
   font-style: italic;
 }
 
+/* Linha virtual de saldo inicial (opening balance) — ancora o running balance.
+   Estilo discreto: fundo sutil, itálico na descrição, sem cor de tipo. */
+.trans-row-opening td {
+  background: var(--color-surface-alt);
+  border-bottom: 1px dashed var(--color-border);
+  color: var(--color-text-secondary);
+  font-style: normal;
+}
+.trans-row-opening .trans-td-banco em {
+  font-style: italic;
+  color: var(--color-text-secondary);
+}
+.trans-row-opening .trans-td-valor,
+.trans-row-opening .trans-td-saldo {
+  color: var(--color-text-secondary);
+  font-weight: var(--fw-medium);
+}
+
 /* Footer row de totais */
 .trans-footer-row td {
   padding: var(--space-3) var(--space-4);
