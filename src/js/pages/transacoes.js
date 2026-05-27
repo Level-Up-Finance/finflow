@@ -972,7 +972,7 @@ async function loadAll() {
       .order('created_at', { ascending: false }),
     supabase
       .from('contas')
-      .select('id, nome, apelido, tipo, icone_cor, moeda, status, fec_fatura, vencimento')
+      .select('id, nome, apelido, tipo, icone_cor, moeda, status, fec_fatura, vencimento, saldo_inicial, data_saldo_inicial')
       .neq('status', 'arquivada')
       .order('nome'),
     supabase
