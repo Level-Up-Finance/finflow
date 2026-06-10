@@ -1,29 +1,35 @@
 // =============================================================
 // FinFlow — Catálogo de bancos
-// • 18 bancos curados com logo + cor de marca (Clearbit)
+// • 18 bancos curados com logo local (ícone oficial da App Store,
+//   256×256, em /public/logo/banks/{domain}.png) + cor de marca
+// • aliases: nomes alternativos pra matching de contas existentes
+//   ("Caixa" → Caixa Econômica Federal, "Cartão Nubank" → Nubank)
 // • Lista completa de bancos brasileiros via BrasilAPI (sem logo)
 // =============================================================
 
 export const CURATED_BANKS = [
-  { name: 'Itaú Unibanco',           domain: 'itau.com.br',                color: '#EC7000' },
-  { name: 'Banco do Brasil',         domain: 'bb.com.br',                  color: '#FAE128' },
-  { name: 'Bradesco',                domain: 'bradesco.com.br',            color: '#CC092F' },
-  { name: 'Caixa Econômica Federal', domain: 'caixa.gov.br',               color: '#005CA9' },
-  { name: 'Santander Brasil',        domain: 'santander.com.br',           color: '#EC0000' },
-  { name: 'Nubank',                  domain: 'nubank.com.br',              color: '#820AD1' },
-  { name: 'C6 Bank',                 domain: 'c6bank.com.br',              color: '#1E1E1E' },
-  { name: 'Inter',                   domain: 'bancointer.com.br',          color: '#FF6900' },
+  { name: 'Itaú Unibanco',           domain: 'itau.com.br',                color: '#EC7000', aliases: ['itaú', 'itau', 'banco itaú', 'banco itau'] },
+  { name: 'Banco do Brasil',         domain: 'bb.com.br',                  color: '#FAE128', aliases: ['bb'] },
+  { name: 'Bradesco',                domain: 'bradesco.com.br',            color: '#CC092F', aliases: ['banco bradesco'] },
+  { name: 'Caixa Econômica Federal', domain: 'caixa.gov.br',               color: '#005CA9', aliases: ['caixa', 'cef', 'caixa econômica', 'caixa economica', 'caixa economica federal'] },
+  { name: 'Santander Brasil',        domain: 'santander.com.br',           color: '#EC0000', aliases: ['santander', 'banco santander'] },
+  { name: 'Nubank',                  domain: 'nubank.com.br',              color: '#820AD1', aliases: ['nu'] },
+  { name: 'C6 Bank',                 domain: 'c6bank.com.br',              color: '#1E1E1E', aliases: ['c6'] },
+  { name: 'Inter',                   domain: 'bancointer.com.br',          color: '#FF6900', aliases: ['banco inter'] },
   { name: 'Neon',                    domain: 'neon.com.br',                color: '#00B5A0' },
-  { name: 'PagBank',                 domain: 'pagbank.com.br',             color: '#008C39' },
-  { name: 'PicPay',                  domain: 'picpay.com',                 color: '#21C25E' },
+  { name: 'PagBank',                 domain: 'pagbank.com.br',             color: '#008C39', aliases: ['pagseguro', 'pag bank'] },
+  { name: 'PicPay',                  domain: 'picpay.com',                 color: '#21C25E', aliases: ['pic pay'] },
   { name: 'Genial',                  domain: 'genial.com.br',              color: '#1A1A2E' },
-  { name: 'Rico Investimentos',      domain: 'rico.com.vc',                color: '#00B7E1' },
-  { name: 'BTG Pactual',             domain: 'btgpactual.com',             color: '#00377A' },
-  { name: 'XP Investimentos',        domain: 'xpi.com.br',                 color: '#000000' },
-  { name: 'Clear Corretora',         domain: 'clear.com.br',               color: '#00B7E1' },
-  { name: 'NuInvest',                domain: 'nuinvest.com.br',            color: '#820AD1' },
+  { name: 'Rico Investimentos',      domain: 'rico.com.vc',                color: '#00B7E1', aliases: ['rico'] },
+  { name: 'BTG Pactual',             domain: 'btgpactual.com',             color: '#00377A', aliases: ['btg'] },
+  { name: 'XP Investimentos',        domain: 'xpi.com.br',                 color: '#000000', aliases: ['xp'] },
+  { name: 'Clear Corretora',         domain: 'clear.com.br',               color: '#00B7E1', aliases: ['clear'] },
+  { name: 'NuInvest',                domain: 'nuinvest.com.br',            color: '#820AD1', aliases: ['nu invest'] },
   { name: 'Genial Investimentos',    domain: 'genialinvestimentos.com.br', color: '#1A1A2E' },
 ];
+
+// Domínios com logo local em /public/logo/banks/ (servido na raiz pelo Vite)
+const LOCAL_LOGO_DOMAINS = new Set(CURATED_BANKS.map((b) => b.domain));
 
 const BRASIL_API_URL = 'https://brasilapi.com.br/api/banks/v1';
 const CACHE_KEY = 'finflow:banks-cache';
@@ -33,22 +39,58 @@ let allBanksCache = null;
 
 /**
  * URL do logo de um banco.
- * Usa icon.horse — gratuito, sem chave, sem rate limit.
- * (Clearbit Logo API foi descontinuada em 2025.)
+ * Curados: asset local (ícone oficial da App Store, nítido em qualquer
+ * tamanho, zero dependência externa). Demais domínios: icon.horse como
+ * fallback (gratuito, sem chave — qualidade varia).
  */
 export function logoUrl(domain) {
   if (!domain) return null;
+  if (LOCAL_LOGO_DOMAINS.has(domain)) return `/logo/banks/${domain}.png`;
   return `https://icon.horse/icon/${domain}`;
 }
 
 /**
- * Procura um banco curado pelo nome (case-insensitive).
+ * Procura um banco curado pelo nome da conta (case-insensitive).
+ *
+ * Estratégia de match, da mais forte pra mais fraca:
+ *  1. Igualdade exata com o nome ou um alias ("Caixa" → Caixa Econômica)
+ *  2. O nome da conta CONTÉM o nome/alias como palavra(s) inteira(s)
+ *     ("Cartão Nubank" → Nubank). Word-boundary evita falso positivo
+ *     ("Conta Internacional" NÃO vira Inter). Empate: vence o match
+ *     mais longo ("Genial Investimentos" > "Genial").
+ *
  * Retorna o objeto com domain + color, ou null.
  */
 export function findBank(name) {
   if (!name) return null;
   const lc = String(name).trim().toLowerCase();
-  return CURATED_BANKS.find((b) => b.name.toLowerCase() === lc) || null;
+  if (!lc) return null;
+
+  let best = null;
+  let bestLen = 0;
+  for (const b of CURATED_BANKS) {
+    for (const cand of [b.name, ...(b.aliases || [])]) {
+      const c = cand.toLowerCase();
+      if (lc === c) return b; // exato ganha na hora
+      if (c.length > bestLen && containsAsWords(lc, c)) {
+        best = b;
+        bestLen = c.length;
+      }
+    }
+  }
+  return best;
+}
+
+// true se `phrase` aparece em `text` como sequência de palavras inteiras.
+// Split por tudo que não é letra/dígito (acentos preservados como letras).
+function containsAsWords(text, phrase) {
+  const tw = text.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  const pw = phrase.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  if (pw.length === 0 || pw.length > tw.length) return false;
+  for (let i = 0; i <= tw.length - pw.length; i++) {
+    if (pw.every((w, j) => tw[i + j] === w)) return true;
+  }
+  return false;
 }
 
 /**

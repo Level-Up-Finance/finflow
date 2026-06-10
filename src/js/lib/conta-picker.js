@@ -4,6 +4,7 @@
 // picker backed by a hidden input.
 // =============================================================
 import { typeIcon, typeColor } from './account-types.js';
+import { findBank, logoUrl } from './banks.js';
 import { escapeHtml } from './utils.js';
 
 const GROUPS = [
@@ -33,6 +34,15 @@ function _avatarHtml(conta, size = 'sm') {
   const badge = tipo
     ? `<div class="bank-avatar-badge" style="--type-color:${typeColor(tipo)};">${typeIcon(tipo)}</div>`
     : '';
+
+  // Se o nome da conta bate com um banco curado, mostra o logo oficial.
+  // onerror troca pra iniciais (mesmo fallback de sempre).
+  const bank = findBank(conta.nome) || findBank(conta.apelido);
+  if (bank) {
+    const fb = `<div class=&quot;bank-avatar-fallback&quot; style=&quot;background:${color};&quot;>${init}</div>`;
+    return `<div class="bank-avatar ${sizeClass}"><img class="bank-avatar-img" src="${logoUrl(bank.domain)}" alt="${escapeHtml(conta.nome || '')}" loading="lazy" onerror="this.outerHTML='${fb}'">${badge}</div>`;
+  }
+
   return `<div class="bank-avatar ${sizeClass}"><div class="bank-avatar-fallback" style="background:${color};">${init}</div>${badge}</div>`;
 }
 
