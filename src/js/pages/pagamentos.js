@@ -46,6 +46,12 @@ let cachedContas = [];        // pra display de banco
 let cachedPagamentos = [];    // entries do mês/período visível com subcategoria + categoria aninhadas
 let cachedAlocacoes = [];     // alocações do Caixa Livre do mês visível
 let cachedAdiantamentosMap = new Map(); // chave `${subId}__${mesAno}` → { total, parcelas:[{indice,n_parcelas}], ... }
+// Snapshot em memória do último estado renderizado por mês (mes_ano → {...}).
+// Usado pra render-then-refresh: ao navegar de volta pra um mês já visto na
+// sessão, pinta instantaneamente do snapshot e revalida em background.
+// Some no reload (estado de módulo), então não substitui o cache de mês
+// preparado (markMonthAsPrepared) — é complementar, só pra perceived speed.
+const monthSnapshots = new Map();
 let detailsPagamento = null;  // pagamento exibido no modal de detalhes
 let filterStatus = 'todos';   // 'todos' | 'pendentes' | 'atrasados' | 'pagos' | 'cancelados'
 let viewMode = 'blocos';      // 'blocos' | 'proximos'
@@ -241,14 +247,26 @@ async function loadSubcategorias() {
 
 async function loadMonth() {
   const container = document.getElementById('pagamentos-container');
-  container.innerHTML = '<div class="loading-overlay"><span class="spinner"></span>Carregando…</div>';
-  document.getElementById('empty-state').classList.add('hidden');
 
   // Atualiza label
   document.getElementById('pag-month-label').textContent = `${MONTH_LABELS[viewMonth]} ${viewYear}`;
 
   const mesAnoCacheKey = isoMonth(viewYear, viewMonth);
   const skipEnsures = isMonthPrepared(mesAnoCacheKey);
+
+  // RENDER-THEN-REFRESH: se já temos snapshot deste mês na sessão, pinta na
+  // hora (perceived speed instantâneo) e segue revalidando em background.
+  // Senão, mostra o spinner como antes.
+  const snap = monthSnapshots.get(mesAnoCacheKey);
+  if (snap) {
+    cachedPagamentos       = snap.pagamentos;
+    cachedAlocacoes        = snap.alocacoes;
+    cachedAdiantamentosMap = snap.adiantamentosMap;
+    renderPagamentos(); // paint imediato do estado conhecido
+  } else {
+    container.innerHTML = '<div class="loading-overlay"><span class="spinner"></span>Carregando…</div>';
+    document.getElementById('empty-state').classList.add('hidden');
+  }
 
   // PERF-MEASURE: log de timing por etapa pra identificar gargalo real.
   const _perfStart = performance.now();
@@ -380,17 +398,29 @@ async function loadMonth() {
     return true;
   });
 
-  // 4. Busca transações vinculadas pra detectar pagamentos travados (vinculados ao banco)
-  await attachLinkedTransacoes(cachedPagamentos);
+  // 4-7. Fetches finais em PARALELO (antes eram 3 round-trips sequenciais).
+  // São independentes entre si:
+  //   - attachLinkedTransacoes: precisa de cachedPagamentos (já temos)
+  //   - loadAlocacoesMes: precisa só de mesAno
+  //   - loadDescontosAtivos: não depende de nada
+  // ensureCarryForward fica DEPOIS (precisa das alocações carregadas).
+  const [, alocacoes, { loadDescontosAtivos }] = await Promise.all([
+    attachLinkedTransacoes(cachedPagamentos),
+    import('../lib/caixa-livre.js').then((m) => m.loadAlocacoesMes(mesAno)),
+    import('../lib/adiantamentos.js'),
+  ]);
+  cachedAlocacoes = alocacoes;
+  cachedAdiantamentosMap = await loadDescontosAtivos();
+  _perfLog('fetches finais (paralelo)');
 
-  // 5. Carrega alocações do Caixa Livre do mês + auto-carry-forward entre blocos
-  const { loadAlocacoesMes } = await import('../lib/caixa-livre.js');
-  cachedAlocacoes = await loadAlocacoesMes(mesAno);
   await ensureCarryForward(mesAno);
 
-  // 7. Carrega mapa de descontos de adiantamento ativos
-  const { loadDescontosAtivos } = await import('../lib/adiantamentos.js');
-  cachedAdiantamentosMap = await loadDescontosAtivos();
+  // Salva snapshot pra render-then-refresh em navegações futuras nesta sessão.
+  monthSnapshots.set(mesAnoCacheKey, {
+    pagamentos: cachedPagamentos,
+    alocacoes: cachedAlocacoes,
+    adiantamentosMap: cachedAdiantamentosMap,
+  });
 
   renderPagamentos();
 }
