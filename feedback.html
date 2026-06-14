@@ -40,65 +40,44 @@
       <!-- ============================================================
            Stats
            ============================================================ -->
+      <!-- Widgets SÃO os filtros de status (clicáveis). Pendentes é o padrão;
+           Total fica por último e mostra tudo. -->
       <div class="dev-stats" id="fb-stats">
-        <div class="dev-stats-card dev-stats-card--total">
-          <span class="dev-stats-num" id="fb-stat-total">—</span>
-          <span class="dev-stats-label">Total</span>
-        </div>
-        <div class="dev-stats-card dev-stats-card--pendente">
+        <button type="button" class="dev-stats-card dev-stats-card--pendente is-active" data-group="pendentes">
           <span class="dev-stats-num" id="fb-stat-pendente">—</span>
-          <span class="dev-stats-label">Pendente</span>
-        </div>
-        <div class="dev-stats-card dev-stats-card--aprovada">
+          <span class="dev-stats-label">Pendentes</span>
+        </button>
+        <button type="button" class="dev-stats-card dev-stats-card--aprovada" data-group="aprovadas">
           <span class="dev-stats-num" id="fb-stat-aprovada">—</span>
           <span class="dev-stats-label">Aprovadas</span>
-        </div>
-        <div class="dev-stats-card dev-stats-card--progresso">
+        </button>
+        <button type="button" class="dev-stats-card dev-stats-card--progresso" data-group="em_progresso">
           <span class="dev-stats-num" id="fb-stat-progresso">—</span>
           <span class="dev-stats-label">Em progresso</span>
-        </div>
-        <div class="dev-stats-card dev-stats-card--concluida">
+        </button>
+        <button type="button" class="dev-stats-card dev-stats-card--concluida" data-group="concluidas">
           <span class="dev-stats-num" id="fb-stat-concluida">—</span>
           <span class="dev-stats-label">Concluídas</span>
-        </div>
-        <div class="dev-stats-card dev-stats-card--rejeitada">
+        </button>
+        <button type="button" class="dev-stats-card dev-stats-card--rejeitada" data-group="rejeitadas">
           <span class="dev-stats-num" id="fb-stat-rejeitada">—</span>
           <span class="dev-stats-label">Rejeitadas</span>
-        </div>
+        </button>
+        <button type="button" class="dev-stats-card dev-stats-card--total" data-group="todas">
+          <span class="dev-stats-num" id="fb-stat-total">—</span>
+          <span class="dev-stats-label">Total</span>
+        </button>
       </div>
 
-      <!-- ============================================================
-           Filter bar
-           ============================================================ -->
-      <div class="dev-filter-bar" id="fb-filter-bar">
+      <!-- Toolbar slim: busca + limpar. Filtros de coluna vivem nos headers. -->
+      <div class="dev-toolbar" id="fb-toolbar">
         <div class="dev-filter-search-wrap">
           <svg class="dev-filter-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
           <input type="search" id="fb-search" class="input dev-filter-search"
                  placeholder="Buscar por código, título ou descrição…" autocomplete="off">
         </div>
-
-        <select id="fb-fil-tipo" class="input dev-filter-select">
-          <option value="">Tipo</option>
-          <option value="bug">Bug</option>
-          <option value="sugestao">Sugestão</option>
-          <option value="feature">Funcionalidade</option>
-          <option value="pergunta">Pergunta</option>
-          <option value="elogio">Elogio</option>
-          <option value="parceria">Parceria</option>
-        </select>
-
-        <select id="fb-fil-status" class="input dev-filter-select">
-          <option value="">Status</option>
-          <option value="novo">Novo</option>
-          <option value="em_analise">Em análise</option>
-          <option value="aprovada">Aprovada</option>
-          <option value="em_progresso">Em progresso</option>
-          <option value="feito">Feito</option>
-          <option value="agora_nao">Agora não</option>
-        </select>
-
         <button type="button" class="btn btn-ghost dev-filter-clear" id="fb-btn-clear">
-          Limpar
+          Limpar filtros
         </button>
       </div>
 
@@ -117,10 +96,29 @@
           <thead>
             <tr>
               <th class="dev-th dev-th--codigo">Código</th>
-              <th class="dev-th dev-th--tipo">Tipo</th>
+              <th class="dev-th dev-th--tipo">
+                <select id="fb-fil-tipo" class="dev-th-select" title="Filtrar por tipo">
+                  <option value="">Tipo</option>
+                  <option value="bug">Bug</option>
+                  <option value="sugestao">Sugestão</option>
+                  <option value="feature">Funcionalidade</option>
+                  <option value="pergunta">Pergunta</option>
+                  <option value="elogio">Elogio</option>
+                  <option value="parceria">Parceria</option>
+                </select>
+              </th>
               <th class="dev-th dev-th--titulo">Título</th>
               <th class="dev-th fb-th-desc">Descrição</th>
-              <th class="dev-th dev-th--status">Status</th>
+              <th class="dev-th dev-th--status">
+                <select id="fb-fil-status-grupo" class="dev-th-select" title="Filtrar por status">
+                  <option value="todas">Status</option>
+                  <option value="pendentes" selected>Pendentes</option>
+                  <option value="aprovadas">Aprovadas</option>
+                  <option value="em_progresso">Em progresso</option>
+                  <option value="concluidas">Concluídas</option>
+                  <option value="rejeitadas">Rejeitadas</option>
+                </select>
+              </th>
               <th class="dev-th fb-th-retorno">Retorno</th>
               <th class="dev-th fb-th-date">Criada</th>
             </tr>

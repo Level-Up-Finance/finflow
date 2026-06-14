@@ -14,9 +14,20 @@ let userId = null;
 let todos  = [];   // todos os registros do usuário
 
 // Filtros
-let busca     = '';
-let filTipo   = '';
-let filStatus = '';
+let busca   = '';
+let filTipo = '';
+let grupo   = 'pendentes';   // visualização padrão = pendentes
+
+// Cada "grupo" (widget/coluna Status) mapeia para 1+ status reais.
+// null = sem filtro de status (todas).
+const TAB_STATUSES = {
+  todas:        null,
+  pendentes:    ['novo', 'em_analise'],
+  aprovadas:    ['aprovada'],
+  em_progresso: ['em_progresso'],
+  concluidas:   ['feito'],
+  rejeitadas:   ['agora_nao'],
+};
 
 
 const TYPE_LABELS = {
@@ -112,9 +123,10 @@ function renderStats() {
 }
 
 function getFiltered() {
+  const statuses = TAB_STATUSES[grupo]; // null = todas
   return todos.filter(item => {
-    if (filTipo   && item.type   !== filTipo)   return false;
-    if (filStatus && item.status !== filStatus) return false;
+    if (statuses && !statuses.includes(item.status)) return false;
+    if (filTipo  && item.type !== filTipo)           return false;
     if (busca) {
       const q = busca.toLowerCase();
       const hay = [item.codigo ?? '', item.title ?? '', item.description ?? ''].join(' ').toLowerCase();
@@ -123,6 +135,20 @@ function getFiltered() {
     return true;
   });
 }
+
+// Troca o grupo ativo e sincroniza os dois pontos de entrada
+// (widgets-botão e o dropdown no cabeçalho da coluna Status).
+function setGrupo(g) {
+  grupo = g;
+  document.querySelectorAll('#fb-stats .dev-stats-card')
+    .forEach(c => c.classList.toggle('is-active', c.dataset.group === g));
+  const sel = document.getElementById('fb-fil-status-grupo');
+  if (sel && sel.value !== g) sel.value = g;
+  renderTable();
+}
+
+// Realça o cabeçalho-filtro quando há um valor selecionado.
+const markFilterState = (el) => el && el.classList.toggle('is-filtering', !!el.value);
 
 function renderTable() {
   const filtered = getFiltered();
@@ -172,25 +198,38 @@ function renderTable() {
 // ─────────────────────────────────────────────────────────────
 
 function bindEvents() {
-  // Filtros
+  // Widgets-botão → trocam o grupo ativo
+  document.getElementById('fb-stats').addEventListener('click', (e) => {
+    const card = e.target.closest('.dev-stats-card');
+    if (card?.dataset.group) setGrupo(card.dataset.group);
+  });
+
+  // Busca
   document.getElementById('fb-search').addEventListener('input', (e) => {
     busca = e.target.value.trim();
     renderTable();
   });
+
+  // Dropdown no cabeçalho da coluna Tipo
   document.getElementById('fb-fil-tipo').addEventListener('change', (e) => {
     filTipo = e.target.value;
+    markFilterState(e.target);
     renderTable();
   });
-  document.getElementById('fb-fil-status').addEventListener('change', (e) => {
-    filStatus = e.target.value;
-    renderTable();
+
+  // Dropdown no cabeçalho da coluna Status (sincroniza com os widgets)
+  document.getElementById('fb-fil-status-grupo').addEventListener('change', (e) => {
+    setGrupo(e.target.value);
   });
+
+  // Limpar filtros → volta ao padrão (pendentes)
   document.getElementById('fb-btn-clear').addEventListener('click', () => {
-    busca = filTipo = filStatus = '';
+    busca = filTipo = '';
     document.getElementById('fb-search').value = '';
-    document.getElementById('fb-fil-tipo').value = '';
-    document.getElementById('fb-fil-status').value = '';
-    renderTable();
+    const tipoSel = document.getElementById('fb-fil-tipo');
+    tipoSel.value = '';
+    markFilterState(tipoSel);
+    setGrupo('pendentes');
   });
 
   // Clique na linha → detalhe

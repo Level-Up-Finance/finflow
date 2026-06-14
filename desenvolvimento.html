@@ -170,7 +170,16 @@
                   <option value="Muito Baixa">Muito Baixa</option>
                 </select>
               </th>
-              <th class="dev-th dev-th--status">Status</th>
+              <th class="dev-th dev-th--status">
+                <select id="dev-fil-status-grupo" class="dev-th-select" title="Filtrar por status">
+                  <option value="todas">Status</option>
+                  <option value="pendentes" selected>Pendentes</option>
+                  <option value="aprovadas">Aprovadas</option>
+                  <option value="em_progresso">Em progresso</option>
+                  <option value="concluidas">Concluídas</option>
+                  <option value="rejeitadas">Rejeitadas</option>
+                </select>
+              </th>
             </tr>
           </thead>
           <tbody id="dev-tbody"></tbody>

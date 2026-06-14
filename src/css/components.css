@@ -17191,7 +17191,8 @@ body.comp-embedded { background: transparent; }
 /* Wrapper da tabela com scroll próprio — o cabeçalho fica grudado (sticky)
    enquanto o corpo rola. max-height calculado pra caber acima do fold;
    ajusta conforme o header/widgets/filtros ocupam ~360px no topo. */
-#dev-table-wrap {
+#dev-table-wrap,
+#fb-table-wrap {
   max-height: calc(100vh - 360px);
   overflow-y: auto;
   border: 1px solid var(--color-border);
@@ -17226,20 +17227,28 @@ body.comp-embedded { background: transparent; }
   background: transparent;
   border: none;
   width: 100%;
-  padding: 0 16px 0 0;            /* espaço pro chevron à direita */
+  padding: 0 15px 0 0;            /* espaço pro chevron à direita */
   margin: 0;
   font-family: var(--font-display);
   font-size: var(--fs-xs);
   font-weight: var(--fw-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.01em;         /* tight — evita cortar "COMPLEXIDADE" */
   color: var(--color-text-secondary);
   cursor: pointer;
+  text-overflow: ellipsis;
   /* chevron desenhado em SVG inline (segue a cor do texto via stroke) */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right center;
 }
+/* Largura mínima por coluna-filtro pra o rótulo caber inteiro + chevron */
+.dev-th--tipo    { min-width: 96px; }
+.dev-th--modulo  { min-width: 130px; }
+.dev-th--impacto { min-width: 104px; }
+.dev-th--complex { min-width: 150px; }
+.dev-th--fase    { min-width: 86px; }
+.dev-th--status  { min-width: 120px; }
 /* Quando há um filtro ativo (value != ""), destaca o cabeçalho em primary */
 .dev-th-select.is-filtering {
   color: var(--color-primary);

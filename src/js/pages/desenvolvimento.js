@@ -151,6 +151,17 @@ function renderAll() {
   renderTable();
 }
 
+// Define o grupo de status ativo e sincroniza os DOIS controles:
+// os widgets (cards) e o dropdown da coluna Status. Estado único.
+function setGrupo(g) {
+  grupo = g;
+  document.querySelectorAll('.dev-stats-card').forEach((c) =>
+    c.classList.toggle('is-active', c.dataset.group === g));
+  const sel = document.getElementById('dev-fil-status-grupo');
+  if (sel && sel.value !== g) sel.value = g;
+  renderTable();
+}
+
 function renderStats() {
   const total    = todos.length;
   const pendente = todos.filter(i => ['novo', 'em_analise'].includes(i.status)).length;
@@ -267,14 +278,15 @@ function buildRow(item) {
 // ─────────────────────────────────────────────────────────────
 
 function bindEvents() {
-  // ── Filtro de status via widgets (os cards SÃO os botões de filtro) ──
+  // ── Filtro de status: widgets (cards) E dropdown da coluna Status ──
+  // Estado único `grupo`, dois pontos de entrada que ficam sincronizados.
   document.getElementById('dev-stats').addEventListener('click', (e) => {
     const card = e.target.closest('.dev-stats-card');
     if (!card) return;
-    grupo = card.dataset.group;
-    document.querySelectorAll('.dev-stats-card').forEach(c => c.classList.remove('is-active'));
-    card.classList.add('is-active');
-    renderTable();
+    setGrupo(card.dataset.group);
+  });
+  document.getElementById('dev-fil-status-grupo')?.addEventListener('change', (e) => {
+    setGrupo(e.target.value);
   });
 
   // ── Filtros ───────────────────────────────────────────────
