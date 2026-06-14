@@ -17,7 +17,7 @@ import { renderAttribBadge } from '../lib/attribution-badge.js';
 import { canWrite } from '../lib/permissions.js';
 import { ensureGastosDiversosForBlocos } from '../lib/gastos-diversos.js';
 import { ensureSubcategoriasFaturas, checkAndCloseFaturas, ensurePagamentosFaturaForMonths } from '../lib/faturas-cartao.js';
-import { isMonthPrepared, markMonthAsPrepared, markAllAsStale } from '../lib/month-cache.js';
+import { isMonthPrepared, markMonthAsPrepared } from '../lib/month-cache.js';
 import { initSidebar } from '../components/sidebar.js';
 import { initTutorial } from '../lib/tutorial.js';
 import { supabase } from '../lib/supabase.js';
@@ -295,9 +295,6 @@ async function loadMonth() {
  * antes de terminar, NÃO re-renderiza por cima da view atual.
  */
 async function runEnsuresInBackground(ano, mes, mesAno) {
-  const _t0 = performance.now();
-  const _log = (l) => console.log(`[PERF bg] ${l}: ${(performance.now() - _t0).toFixed(0)}ms`);
-
   try {
     // 0a. Fecha faturas vencidas (fire-and-forget)
     checkAndCloseFaturas().catch((e) => console.warn('[checkAndCloseFaturas]', e));
@@ -345,7 +342,6 @@ async function runEnsuresInBackground(ano, mes, mesAno) {
     await Promise.all([loadCategorias(), loadSubcategorias()]);
 
     markMonthAsPrepared(mesAno);
-    _log('ensures completos');
   } catch (e) {
     console.warn('[runEnsuresInBackground]', e);
     return; // não marca preparado se falhou — tenta de novo no próximo load
