@@ -282,36 +282,43 @@ function bindEvents() {
     busca = e.target.value.trim();
     renderTable();
   });
+  // Marca o <select> do cabeçalho com .is-filtering quando há valor escolhido
+  // (destaca a coluna que está filtrando).
+  const markFilterState = (el) => el.classList.toggle('is-filtering', !!el.value);
+
   document.getElementById('dev-fil-tipo').addEventListener('change', (e) => {
     filTipo = e.target.value;
+    markFilterState(e.target);
     renderTable();
   });
   document.getElementById('dev-fil-fase')?.addEventListener('change', (e) => {
     filFase = e.target.value;
+    markFilterState(e.target);
     renderTable();
   });
   document.getElementById('dev-fil-modulo').addEventListener('change', (e) => {
     filModulo = e.target.value;
+    markFilterState(e.target);
     renderTable();
   });
   document.getElementById('dev-fil-impacto').addEventListener('change', (e) => {
     filImpacto = e.target.value;
+    markFilterState(e.target);
     renderTable();
   });
   document.getElementById('dev-fil-complex').addEventListener('change', (e) => {
     filComplex = e.target.value;
+    markFilterState(e.target);
     renderTable();
   });
   document.getElementById('btn-clear-filters').addEventListener('click', () => {
-    busca = filTipo = filModulo = filImpacto = filComplex = '';
+    busca = filTipo = filModulo = filImpacto = filComplex = filFase = '';
     document.getElementById('dev-search').value = '';
-    document.getElementById('dev-fil-tipo').value = '';
-    document.getElementById('dev-fil-modulo').value = '';
-    document.getElementById('dev-fil-impacto').value = '';
-    document.getElementById('dev-fil-complex').value = '';
-    const fEl = document.getElementById('dev-fil-fase');
-    if (fEl) fEl.value = '';
-    filFase = '';
+    ['dev-fil-tipo', 'dev-fil-modulo', 'dev-fil-impacto', 'dev-fil-complex', 'dev-fil-fase']
+      .forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) { el.value = ''; el.classList.remove('is-filtering'); }
+      });
     renderTable();
   });
 

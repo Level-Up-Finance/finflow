@@ -78,74 +78,17 @@
       </div>
 
       <!-- ============================================================
-           Filter bar
+           Toolbar: só busca + limpar. Os FILTROS por coluna agora vivem
+           nos próprios cabeçalhos da tabela (<select> dentro do <th>).
            ============================================================ -->
-      <div class="dev-filter-bar" id="dev-filter-bar">
+      <div class="dev-toolbar" id="dev-toolbar">
         <div class="dev-filter-search-wrap">
           <svg class="dev-filter-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
           <input type="search" id="dev-search" class="input dev-filter-search"
                  placeholder="Buscar por código, título ou descrição…" autocomplete="off">
         </div>
-
-        <select id="dev-fil-tipo" class="input dev-filter-select">
-          <option value="">Tipo</option>
-          <option value="bug">Bug</option>
-          <option value="sugestao">Sugestão</option>
-          <option value="feature">Funcionalidade</option>
-          <option value="pergunta">Pergunta</option>
-          <option value="elogio">Elogio</option>
-          <option value="parceria">Parceria</option>
-        </select>
-
-        <select id="dev-fil-modulo" class="input dev-filter-select">
-          <option value="">Módulo</option>
-          <option value="dashboard">Dashboard</option>
-          <option value="transacoes">Transações</option>
-          <option value="pagamentos">Pagamentos</option>
-          <option value="contas">Contas</option>
-          <option value="compromissos">Compromissos</option>
-          <option value="orcamento">Orçamento</option>
-          <option value="dividas">Financiamentos e Dívidas</option>
-          <option value="investimentos">Projetos e Investimentos</option>
-          <option value="relatorios">Relatórios</option>
-          <option value="contatos">Contatos</option>
-          <option value="importar">Importar extrato</option>
-          <option value="perfil">Perfil & Configurações</option>
-          <option value="admin">Admin</option>
-          <option value="outros">Outros</option>
-        </select>
-
-        <select id="dev-fil-impacto" class="input dev-filter-select">
-          <option value="">Impacto</option>
-          <option value="Alto">Alto</option>
-          <option value="Médio">Médio</option>
-          <option value="Baixo">Baixo</option>
-        </select>
-
-        <select id="dev-fil-complex" class="input dev-filter-select">
-          <option value="">Complexidade</option>
-          <option value="Alta">Alta</option>
-          <option value="Média">Média</option>
-          <option value="Baixa">Baixa</option>
-          <option value="Muito Baixa">Muito Baixa</option>
-        </select>
-
-        <select id="dev-fil-fase" class="input dev-filter-select" title="Fase de desenvolvimento sugerida">
-          <option value="">Fase</option>
-          <option value="A">A — Fundações / Infraestrutura</option>
-          <option value="B">B — Marca e UX</option>
-          <option value="C">C — Quality of life UX</option>
-          <option value="D">D — Onboarding, ajuda, academia</option>
-          <option value="E">E — Funcionalidades nativas</option>
-          <option value="F">F — Integrações externas</option>
-          <option value="G">G — Integrações financeiras</option>
-          <option value="H">H — AI</option>
-          <option value="I">I — Comunidade e educação</option>
-          <option value="__null__">Sem fase</option>
-        </select>
-
         <button type="button" class="btn btn-ghost dev-filter-clear" id="btn-clear-filters">
-          Limpar
+          Limpar filtros
         </button>
       </div>
 
@@ -164,12 +107,69 @@
           <thead>
             <tr>
               <th class="dev-th dev-th--codigo">Código</th>
-              <th class="dev-th dev-th--fase" title="Fase de desenvolvimento sugerida">Fase</th>
-              <th class="dev-th dev-th--tipo">Tipo</th>
+              <th class="dev-th dev-th--fase">
+                <select id="dev-fil-fase" class="dev-th-select" title="Filtrar por fase">
+                  <option value="">Fase</option>
+                  <option value="A">A — Fundações / Infraestrutura</option>
+                  <option value="B">B — Marca e UX</option>
+                  <option value="C">C — Quality of life UX</option>
+                  <option value="D">D — Onboarding, ajuda, academia</option>
+                  <option value="E">E — Funcionalidades nativas</option>
+                  <option value="F">F — Integrações externas</option>
+                  <option value="G">G — Integrações financeiras</option>
+                  <option value="H">H — AI</option>
+                  <option value="I">I — Comunidade e educação</option>
+                  <option value="__null__">Sem fase</option>
+                </select>
+              </th>
+              <th class="dev-th dev-th--tipo">
+                <select id="dev-fil-tipo" class="dev-th-select" title="Filtrar por tipo">
+                  <option value="">Tipo</option>
+                  <option value="bug">Bug</option>
+                  <option value="sugestao">Sugestão</option>
+                  <option value="feature">Funcionalidade</option>
+                  <option value="pergunta">Pergunta</option>
+                  <option value="elogio">Elogio</option>
+                  <option value="parceria">Parceria</option>
+                </select>
+              </th>
               <th class="dev-th dev-th--titulo">Título</th>
-              <th class="dev-th dev-th--modulo">Módulo</th>
-              <th class="dev-th dev-th--impacto">Impacto</th>
-              <th class="dev-th dev-th--complex">Complexidade</th>
+              <th class="dev-th dev-th--modulo">
+                <select id="dev-fil-modulo" class="dev-th-select" title="Filtrar por módulo">
+                  <option value="">Módulo</option>
+                  <option value="dashboard">Dashboard</option>
+                  <option value="transacoes">Transações</option>
+                  <option value="pagamentos">Pagamentos</option>
+                  <option value="contas">Contas</option>
+                  <option value="compromissos">Compromissos</option>
+                  <option value="orcamento">Orçamento</option>
+                  <option value="dividas">Financiamentos e Dívidas</option>
+                  <option value="investimentos">Projetos e Investimentos</option>
+                  <option value="relatorios">Relatórios</option>
+                  <option value="contatos">Contatos</option>
+                  <option value="importar">Importar extrato</option>
+                  <option value="perfil">Perfil & Configurações</option>
+                  <option value="admin">Admin</option>
+                  <option value="outros">Outros</option>
+                </select>
+              </th>
+              <th class="dev-th dev-th--impacto">
+                <select id="dev-fil-impacto" class="dev-th-select" title="Filtrar por impacto">
+                  <option value="">Impacto</option>
+                  <option value="Alto">Alto</option>
+                  <option value="Médio">Médio</option>
+                  <option value="Baixo">Baixo</option>
+                </select>
+              </th>
+              <th class="dev-th dev-th--complex">
+                <select id="dev-fil-complex" class="dev-th-select" title="Filtrar por complexidade">
+                  <option value="">Complexidade</option>
+                  <option value="Alta">Alta</option>
+                  <option value="Média">Média</option>
+                  <option value="Baixa">Baixa</option>
+                  <option value="Muito Baixa">Muito Baixa</option>
+                </select>
+              </th>
               <th class="dev-th dev-th--status">Status</th>
             </tr>
           </thead>

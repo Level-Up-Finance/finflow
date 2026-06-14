@@ -17218,6 +17218,54 @@ body.comp-embedded { background: transparent; }
 .dev-th--titulo { width: 35%; }
 .dev-th--codigo { width: 130px; }
 
+/* Coluna-filtro: o <select> dentro do <th> parece um cabeçalho mas é
+   clicável e abre o dropdown de filtro. Sem borda, uppercase, com chevron. */
+.dev-th-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: none;
+  width: 100%;
+  padding: 0 16px 0 0;            /* espaço pro chevron à direita */
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  /* chevron desenhado em SVG inline (segue a cor do texto via stroke) */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right center;
+}
+/* Quando há um filtro ativo (value != ""), destaca o cabeçalho em primary */
+.dev-th-select.is-filtering {
+  color: var(--color-primary);
+}
+.dev-th-select:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+/* As options herdam o estilo do sistema (não dá pra estilizar muito) —
+   forçamos cor legível e capitalização normal pra leitura dentro do dropdown. */
+.dev-th-select option {
+  color: var(--color-text-main);
+  text-transform: none;
+  font-weight: var(--fw-normal);
+}
+
+/* Toolbar slim: busca + limpar (os filtros de coluna saíram daqui) */
+.dev-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.dev-toolbar .dev-filter-search-wrap { flex: 1; }
+
 .dev-td {
   padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--color-border);
