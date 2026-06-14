@@ -142,8 +142,10 @@ function setGrupo(g) {
   grupo = g;
   document.querySelectorAll('#fb-stats .dev-stats-card')
     .forEach(c => c.classList.toggle('is-active', c.dataset.group === g));
+  // O cabeçalho da coluna sempre exibe "Status"; quem indica o grupo
+  // ativo é o widget destacado. Por isso o select volta à opção-título.
   const sel = document.getElementById('fb-fil-status-grupo');
-  if (sel && sel.value !== g) sel.value = g;
+  if (sel) sel.selectedIndex = 0;
   renderTable();
 }
 
