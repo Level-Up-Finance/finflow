@@ -251,33 +251,54 @@ async function loadMonth() {
   // Atualiza label
   document.getElementById('pag-month-label').textContent = `${MONTH_LABELS[viewMonth]} ${viewYear}`;
 
-  const mesAnoCacheKey = isoMonth(viewYear, viewMonth);
-  const skipEnsures = isMonthPrepared(mesAnoCacheKey);
+  const mesAno = isoMonth(viewYear, viewMonth);
+  const skipEnsures = isMonthPrepared(mesAno);
 
   // RENDER-THEN-REFRESH: se já temos snapshot deste mês na sessão, pinta na
-  // hora (perceived speed instantâneo) e segue revalidando em background.
-  // Senão, mostra o spinner como antes.
-  const snap = monthSnapshots.get(mesAnoCacheKey);
+  // hora (perceived speed instantâneo). Senão, spinner.
+  const snap = monthSnapshots.get(mesAno);
   if (snap) {
     cachedPagamentos       = snap.pagamentos;
     cachedAlocacoes        = snap.alocacoes;
     cachedAdiantamentosMap = snap.adiantamentosMap;
-    renderPagamentos(); // paint imediato do estado conhecido
+    renderPagamentos();
   } else {
     container.innerHTML = '<div class="loading-overlay"><span class="spinner"></span>Carregando…</div>';
     document.getElementById('empty-state').classList.add('hidden');
   }
 
-  // PERF-MEASURE: log de timing por etapa pra identificar gargalo real.
-  const _perfStart = performance.now();
-  const _perfLog = (label) => {
-    const t = performance.now() - _perfStart;
-    console.log(`[PERF] ${label}: ${t.toFixed(0)}ms (acumulado)`);
-  };
+  // PAINT-FIRST: busca e renderiza o que JÁ existe no banco (rápido, ~3
+  // round-trips). Na maioria dos reloads as linhas auto-geradas já existem
+  // (criadas em sessão anterior) — então o usuário vê tudo na hora.
+  //
+  // allowEmptyState: só mostra "nenhum pagamento" se NÃO vamos rodar ensures.
+  // Se vamos rodar (cache-miss), um mês 0-rows provavelmente vai ser populado
+  // pelos ensures — mantemos spinner pra não piscar o empty-state.
+  await fetchAndRenderMonth(mesAno, { allowEmptyState: skipEnsures });
 
-  if (skipEnsures) {
-    _perfLog('cache hit, skip ensures');
-  } else {
+  // BACKGROUND-ENSURES: se os ensures não rodaram nesta sessão, roda a cascata
+  // SEM bloquear o paint. Quando terminar, re-renderiza (se o user ainda
+  // estiver vendo este mês) com o que foi criado/atualizado.
+  //
+  // Os ensures são redes de segurança idempotentes — rodar em background
+  // mantém a correção (continuam rodando) mas tira ~30 round-trips do caminho
+  // crítico do primeiro paint.
+  if (!skipEnsures) {
+    runEnsuresInBackground(viewYear, viewMonth, mesAno);
+  }
+}
+
+/**
+ * Roda a cascata de ensures (criação idempotente de orcamento/pagamentos/
+ * faturas/gastos diversos) em background e re-renderiza ao terminar.
+ * Captura ano/mês no momento da chamada — se o user navegar pra outro mês
+ * antes de terminar, NÃO re-renderiza por cima da view atual.
+ */
+async function runEnsuresInBackground(ano, mes, mesAno) {
+  const _t0 = performance.now();
+  const _log = (l) => console.log(`[PERF bg] ${l}: ${(performance.now() - _t0).toFixed(0)}ms`);
+
+  try {
     // 0a. Fecha faturas vencidas (fire-and-forget)
     checkAndCloseFaturas().catch((e) => console.warn('[checkAndCloseFaturas]', e));
 
@@ -288,90 +309,145 @@ async function loadMonth() {
     } catch (e) {
       console.warn('[ensureSubcategoriasFaturas]', e);
     }
-    _perfLog('ensureSubcategoriasFaturas');
 
-  // 0c. Se criou sub nova, RE-FETCH o cache — senão ensureOrcamento e
-  // ensurePagamentos abaixo iteram sem ver as subs recém-criadas.
-  // Bug histórico HF-4a: cartões novos não geravam pagamento porque o
-  // cache foi populado antes do sweep de faturas.
-  if (novasFaturas > 0 || cachedSubcategorias.length === 0) {
-    await loadSubcategorias();
-  }
-
-  // 1. Garante que orcamento_geral tenha entries pro mês (cascata: subcategoria → orcamento)
-  await ensureOrcamentoForMonth(viewYear, viewMonth);
-  _perfLog('ensureOrcamentoForMonth');
-
-  // 2. Garante que pagamentos tenha entries pro mês (cascata: orcamento → pagamentos)
-  await ensurePagamentosForMonth(viewYear, viewMonth);
-  _perfLog('ensurePagamentosForMonth');
-
-  // 2a. Garante pagamentos das subs Fatura. Cobre 7 meses fixos
-  // (atual -1 até +5) — independente dos blocos visíveis. Garante
-  // que TODAS as faturas conhecidas no DB tenham pagamento criado,
-  // não importa qual mês o user navega primeiro.
-  //
-  // Sem essa janela fixa, fatura mes_ref=05 do Inter (venc 05/06)
-  // podia "sumir" quando user navegava entre meses específicos —
-  // dependendo de qual ordem as funções idempotentes rodavam.
-  try {
-    const mesesFixos = [];
-    for (let i = -1; i <= 5; i++) {
-      const d = new Date(viewYear, viewMonth + i, 1);
-      mesesFixos.push(isoMonth(d.getFullYear(), d.getMonth()));
+    // 0c. Se criou sub nova, RE-FETCH o cache — senão ensureOrcamento e
+    // ensurePagamentos abaixo iteram sem ver as subs recém-criadas.
+    if (novasFaturas > 0 || cachedSubcategorias.length === 0) {
+      await loadSubcategorias();
     }
-    await ensurePagamentosFaturaForMonths(mesesFixos);
+
+    // 1. orcamento_geral pro mês (cascata: subcategoria → orcamento)
+    await ensureOrcamentoForMonth(ano, mes);
+    // 2. pagamentos pro mês (cascata: orcamento → pagamentos)
+    await ensurePagamentosForMonth(ano, mes);
+
+    // 2a. pagamentos das subs Fatura — janela fixa de 7 meses (atual -1 até +5)
+    try {
+      const mesesFixos = [];
+      for (let i = -1; i <= 5; i++) {
+        const d = new Date(ano, mes + i, 1);
+        mesesFixos.push(isoMonth(d.getFullYear(), d.getMonth()));
+      }
+      await ensurePagamentosFaturaForMonths(mesesFixos);
+    } catch (e) {
+      console.warn('[ensurePagamentosFaturaForMonths]', e);
+    }
+
+    // 2b. "Gastos diversos" por bloco real da renda principal
+    try {
+      const blocosPagDiv = getBlocosForMonth(ano, mes);
+      await ensureGastosDiversosForBlocos(blocosPagDiv);
+    } catch (e) {
+      console.warn('[ensureGastosDiversosForBlocos]', e);
+    }
+
+    // 2c. Re-fetch categorias + subs depois dos ensures
+    await Promise.all([loadCategorias(), loadSubcategorias()]);
+
+    markMonthAsPrepared(mesAno);
+    _log('ensures completos');
   } catch (e) {
-    console.warn('[ensurePagamentosFaturaForMonths]', e);
+    console.warn('[runEnsuresInBackground]', e);
+    return; // não marca preparado se falhou — tenta de novo no próximo load
   }
-  _perfLog('ensurePagamentosFaturaForMonths');
 
-  // 2b. Garante pagamento de "Gastos diversos" pra cada BLOCO REAL da
-  // renda principal (não 1 por bloco_quinzenal civil). Fonte da verdade:
-  // getBlocosForMonth (mesma função que a UI usa pra renderizar blocos).
-  // Bloco crossover é o mesmo entre meses — pagamento é idempotente por
-  // (sub, data_vencimento), não duplica.
-  try {
-    const blocosPagDiv = getBlocosForMonth(viewYear, viewMonth);
-    await ensureGastosDiversosForBlocos(blocosPagDiv);
-  } catch (e) {
-    console.warn('[ensureGastosDiversosForBlocos]', e);
+  // Só re-renderiza se o user AINDA está neste mês (não navegou pra outro).
+  if (isoMonth(viewYear, viewMonth) === mesAno) {
+    await fetchAndRenderMonth(mesAno, { allowEmptyState: true });
+  } else {
+    // User navegou — só atualiza o snapshot em background pra quando voltar.
+    await fetchMonthIntoSnapshot(mesAno);
   }
-  _perfLog('ensureGastosDiversosForBlocos');
+}
 
-  // 2c. Re-fetch categorias + subs depois dos ensures
-  await Promise.all([loadCategorias(), loadSubcategorias()]);
-  _perfLog('re-fetch cats+subs');
+/**
+ * Busca pagamentos do mês (+ crossover + tail paralelo), atualiza os caches
+ * de módulo e renderiza. Coração do paint.
+ * @param {string} mesAno
+ * @param {{allowEmptyState:boolean}} opts
+ */
+async function fetchAndRenderMonth(mesAno, { allowEmptyState = true } = {}) {
+  const rows = await fetchMonthRows(mesAno);
+  if (rows === null) return; // erro já reportado
 
-  // Marca mês como preparado — próxima navegação pra esse mês pula
-  // tudo acima e vai direto pro fetch dos pagamentos.
-  markMonthAsPrepared(mesAnoCacheKey);
-  } // fim if (!skipEnsures)
+  // Se 0 rows e ainda vamos rodar ensures, mantém spinner (evita flash de
+  // empty-state que vai ser preenchido em background).
+  if (rows.length === 0 && !allowEmptyState && !monthSnapshots.has(mesAno)) {
+    return;
+  }
 
-  // 3. Busca pagamentos do mês com JOIN
-  const mesAno = isoMonth(viewYear, viewMonth);
+  cachedPagamentos = rows;
+
+  // Fetches finais em PARALELO (independentes entre si).
+  const [, alocacoes, { loadDescontosAtivos }] = await Promise.all([
+    attachLinkedTransacoes(cachedPagamentos),
+    import('../lib/caixa-livre.js').then((m) => m.loadAlocacoesMes(mesAno)),
+    import('../lib/adiantamentos.js'),
+  ]);
+  cachedAlocacoes = alocacoes;
+  cachedAdiantamentosMap = await loadDescontosAtivos();
+
+  await ensureCarryForward(mesAno);
+
+  // Snapshot pra render-then-refresh em navegações futuras.
+  monthSnapshots.set(mesAno, {
+    pagamentos: cachedPagamentos,
+    alocacoes: cachedAlocacoes,
+    adiantamentosMap: cachedAdiantamentosMap,
+  });
+
+  // Só pinta se o user ainda está neste mês.
+  if (isoMonth(viewYear, viewMonth) === mesAno) {
+    renderPagamentos();
+  }
+}
+
+/**
+ * Variante "headless" do fetch: atualiza só o snapshot do mês, sem renderizar.
+ * Usado quando os ensures terminam mas o user já navegou pra outro mês.
+ */
+async function fetchMonthIntoSnapshot(mesAno) {
+  const rows = await fetchMonthRows(mesAno);
+  if (rows === null) return;
+  const [, alocacoes, { loadDescontosAtivos }] = await Promise.all([
+    attachLinkedTransacoes(rows),
+    import('../lib/caixa-livre.js').then((m) => m.loadAlocacoesMes(mesAno)),
+    import('../lib/adiantamentos.js'),
+  ]);
+  monthSnapshots.set(mesAno, {
+    pagamentos: rows,
+    alocacoes,
+    adiantamentosMap: await loadDescontosAtivos(),
+  });
+}
+
+/**
+ * Busca as linhas de pagamento do mês (principal + crossover do bloco que
+ * atravessa do mês anterior), filtra subs arquivadas e dedupe.
+ * @returns {Promise<Array|null>} linhas, ou null em caso de erro.
+ */
+async function fetchMonthRows(mesAno) {
   const { data, error } = await supabase
     .from('pagamentos')
     .select('*, subcategorias(*, categorias(*))')
     .eq('mes_ano', mesAno)
     .order('data_vencimento');
-  _perfLog(`fetch pagamentos do mes (${data?.length || 0} rows)`);
 
   if (error) {
-    console.error('[loadMonth]', error);
-    container.innerHTML = '';
+    console.error('[fetchMonthRows]', error);
     let msg = error.message || JSON.stringify(error);
     if (/relation.*pagamentos.*does not exist/i.test(msg)) {
-      msg = 'Schema desatualizado. Rode todas as migrations (0001 a 0010) no Supabase.';
+      msg = 'Schema desatualizado. Rode todas as migrations no Supabase.';
     }
     showToast('Erro: ' + msg, 'error', 12000);
-    return;
+    return null;
   }
 
-  // 3b. Busca também pagamentos do BLOCO CROSSOVER (último bloco do mês anterior
-  // que se estende para o mês visível). Esses pagamentos têm mes_ano do mês anterior
-  // mas suas datas caem dentro do mês visível — devem aparecer no "Bloco anterior".
-  const blocosVisible = getBlocosForMonth(viewYear, viewMonth);
+  // Crossover: último bloco do mês anterior que se estende pro mês buscado.
+  // Deriva ano/mês do PRÓPRIO mesAno (não da view atual) — assim funciona
+  // mesmo quando chamado em background após o user navegar pra outro mês.
+  const [mAno, mMes] = mesAno.split('-').map(Number);
+  const blocosVisible = getBlocosForMonth(mAno, mMes - 1);
   const crossoverBloco = blocosVisible.find((b) => b.crossover === true);
   let crossoverPagamentos = [];
   if (crossoverBloco) {
@@ -388,41 +464,14 @@ async function loadMonth() {
     if (!crossErr) crossoverPagamentos = crossData || [];
   }
 
-  // Filtra subcategorias arquivadas/inativas + dedupe por id (defensivo)
   const allRows = [...(data || []), ...crossoverPagamentos];
   const seenIds = new Set();
-  cachedPagamentos = allRows.filter((p) => {
+  return allRows.filter((p) => {
     if (!p.subcategorias || p.subcategorias.status !== 'ativa') return false;
     if (seenIds.has(p.id)) return false;
     seenIds.add(p.id);
     return true;
   });
-
-  // 4-7. Fetches finais em PARALELO (antes eram 3 round-trips sequenciais).
-  // São independentes entre si:
-  //   - attachLinkedTransacoes: precisa de cachedPagamentos (já temos)
-  //   - loadAlocacoesMes: precisa só de mesAno
-  //   - loadDescontosAtivos: não depende de nada
-  // ensureCarryForward fica DEPOIS (precisa das alocações carregadas).
-  const [, alocacoes, { loadDescontosAtivos }] = await Promise.all([
-    attachLinkedTransacoes(cachedPagamentos),
-    import('../lib/caixa-livre.js').then((m) => m.loadAlocacoesMes(mesAno)),
-    import('../lib/adiantamentos.js'),
-  ]);
-  cachedAlocacoes = alocacoes;
-  cachedAdiantamentosMap = await loadDescontosAtivos();
-  _perfLog('fetches finais (paralelo)');
-
-  await ensureCarryForward(mesAno);
-
-  // Salva snapshot pra render-then-refresh em navegações futuras nesta sessão.
-  monthSnapshots.set(mesAnoCacheKey, {
-    pagamentos: cachedPagamentos,
-    alocacoes: cachedAlocacoes,
-    adiantamentosMap: cachedAdiantamentosMap,
-  });
-
-  renderPagamentos();
 }
 
 /**
