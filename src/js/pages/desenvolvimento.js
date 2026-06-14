@@ -148,7 +148,6 @@ async function loadFeedback() {
 
 function renderAll() {
   renderStats();
-  renderTabBadges();
   renderTable();
 }
 
@@ -168,14 +167,8 @@ function renderStats() {
   setText('stat-rejeitada',rejeitada);
 }
 
-function renderTabBadges() {
-  for (const [tab, statuses] of Object.entries(TAB_STATUSES)) {
-    const count = statuses === null
-      ? todos.length
-      : todos.filter(i => statuses.includes(i.status)).length;
-    setText(`tab-badge-${tab}`, count);
-  }
-}
+// (renderTabBadges removido — as tabs viraram os próprios widgets de status,
+//  cujos números já são preenchidos por renderStats.)
 
 function getFiltered() {
   const statuses = TAB_STATUSES[grupo];
@@ -274,13 +267,13 @@ function buildRow(item) {
 // ─────────────────────────────────────────────────────────────
 
 function bindEvents() {
-  // ── Tabs ──────────────────────────────────────────────────
-  document.getElementById('dev-tabs').addEventListener('click', (e) => {
-    const btn = e.target.closest('.dev-tab');
-    if (!btn) return;
-    grupo = btn.dataset.tab;
-    document.querySelectorAll('.dev-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+  // ── Filtro de status via widgets (os cards SÃO os botões de filtro) ──
+  document.getElementById('dev-stats').addEventListener('click', (e) => {
+    const card = e.target.closest('.dev-stats-card');
+    if (!card) return;
+    grupo = card.dataset.group;
+    document.querySelectorAll('.dev-stats-card').forEach(c => c.classList.remove('is-active'));
+    card.classList.add('is-active');
     renderTable();
   });
 

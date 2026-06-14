@@ -46,56 +46,34 @@
       </div>
 
       <!-- ============================================================
-           Stats
+           Stats / Filtros de status (os widgets SÃO os filtros)
+           Clicar num card filtra a tabela por aquele status.
+           Ordem: Pendentes (default) → ... → Total (mostra todos).
            ============================================================ -->
       <div class="dev-stats" id="dev-stats">
-        <div class="dev-stats-card dev-stats-card--total">
-          <span class="dev-stats-num" id="stat-total">—</span>
-          <span class="dev-stats-label">Total</span>
-        </div>
-        <div class="dev-stats-card dev-stats-card--pendente">
+        <button type="button" class="dev-stats-card dev-stats-card--pendente is-active" data-group="pendentes">
           <span class="dev-stats-num" id="stat-pendente">—</span>
-          <span class="dev-stats-label">Pendente</span>
-        </div>
-        <div class="dev-stats-card dev-stats-card--aprovada">
+          <span class="dev-stats-label">Pendentes</span>
+        </button>
+        <button type="button" class="dev-stats-card dev-stats-card--aprovada" data-group="aprovadas">
           <span class="dev-stats-num" id="stat-aprovada">—</span>
           <span class="dev-stats-label">Aprovadas</span>
-        </div>
-        <div class="dev-stats-card dev-stats-card--progresso">
+        </button>
+        <button type="button" class="dev-stats-card dev-stats-card--progresso" data-group="em_progresso">
           <span class="dev-stats-num" id="stat-progresso">—</span>
           <span class="dev-stats-label">Em progresso</span>
-        </div>
-        <div class="dev-stats-card dev-stats-card--concluida">
+        </button>
+        <button type="button" class="dev-stats-card dev-stats-card--concluida" data-group="concluidas">
           <span class="dev-stats-num" id="stat-concluida">—</span>
           <span class="dev-stats-label">Concluídas</span>
-        </div>
-        <div class="dev-stats-card dev-stats-card--rejeitada">
+        </button>
+        <button type="button" class="dev-stats-card dev-stats-card--rejeitada" data-group="rejeitadas">
           <span class="dev-stats-num" id="stat-rejeitada">—</span>
           <span class="dev-stats-label">Rejeitadas</span>
-        </div>
-      </div>
-
-      <!-- ============================================================
-           Tabs
-           ============================================================ -->
-      <div class="dev-tabs" id="dev-tabs">
-        <button type="button" class="dev-tab" data-tab="todas">
-          Todas <span class="dev-tab-badge" id="tab-badge-todas">0</span>
         </button>
-        <button type="button" class="dev-tab active" data-tab="pendentes">
-          Pendentes <span class="dev-tab-badge" id="tab-badge-pendentes">0</span>
-        </button>
-        <button type="button" class="dev-tab" data-tab="aprovadas">
-          Aprovadas <span class="dev-tab-badge" id="tab-badge-aprovadas">0</span>
-        </button>
-        <button type="button" class="dev-tab" data-tab="em_progresso">
-          Em Progresso <span class="dev-tab-badge" id="tab-badge-em_progresso">0</span>
-        </button>
-        <button type="button" class="dev-tab" data-tab="concluidas">
-          Concluídas <span class="dev-tab-badge" id="tab-badge-concluidas">0</span>
-        </button>
-        <button type="button" class="dev-tab" data-tab="rejeitadas">
-          Rejeitadas <span class="dev-tab-badge" id="tab-badge-rejeitadas">0</span>
+        <button type="button" class="dev-stats-card dev-stats-card--total" data-group="todas">
+          <span class="dev-stats-num" id="stat-total">—</span>
+          <span class="dev-stats-label">Total</span>
         </button>
       </div>
 

@@ -17036,7 +17036,34 @@ body.comp-embedded { background: transparent; }
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  /* Os cards SÃO botões de filtro de status — reset + interatividade */
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  opacity: 0.5;            /* inativo: esmaecido pra destacar o ativo */
+  transition: opacity var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
+.dev-stats-card:hover { opacity: 0.8; }
+.dev-stats-card.is-active {
+  opacity: 1;
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px var(--color-surface), 0 0 0 5px currentColor;
+}
+.dev-stats-card:focus-visible {
+  outline: none;
+  opacity: 1;
+  box-shadow: 0 0 0 3px var(--color-surface), 0 0 0 5px currentColor;
+}
+/* currentColor do ring = cor da própria marca do card (texto branco não serve);
+   defino currentColor por variante pra o anel herdar a cor do status. */
+.dev-stats-card--total     { color: var(--color-primary); }
+.dev-stats-card--pendente  { color: #64748b; }
+.dev-stats-card--aprovada  { color: #1d4ed8; }
+.dev-stats-card--progresso { color: #d97706; }
+.dev-stats-card--concluida { color: #16a34a; }
+.dev-stats-card--rejeitada { color: #dc2626; }
 
 .dev-stats-card--total    { background: var(--color-primary); }
 .dev-stats-card--pendente { background: #64748b; }
@@ -17161,6 +17188,16 @@ body.comp-embedded { background: transparent; }
   font-size: var(--fs-sm);
 }
 
+/* Wrapper da tabela com scroll próprio — o cabeçalho fica grudado (sticky)
+   enquanto o corpo rola. max-height calculado pra caber acima do fold;
+   ajusta conforme o header/widgets/filtros ocupam ~360px no topo. */
+#dev-table-wrap {
+  max-height: calc(100vh - 360px);
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
 .dev-th {
   text-align: left;
   padding: var(--space-2) var(--space-3);
@@ -17172,6 +17209,10 @@ body.comp-embedded { background: transparent; }
   border-bottom: 2px solid var(--color-border);
   white-space: nowrap;
   background: var(--color-surface-alt);
+  /* Sticky: o cabeçalho da tabela fica sempre visível ao rolar os tickets */
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .dev-th--titulo { width: 35%; }
